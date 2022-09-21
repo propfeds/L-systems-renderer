@@ -7,8 +7,8 @@ import { Vector3 } from "../api/Vector3";
 
 var id = "L_systems_renderer"
 var name = "L-systems Renderer";
-var description = "An implementation .";
-var authors = "Gilles-Minh Minh";
+var description = "An renderer.";
+var authors = "propfeds#5988";
 var version = 0.01;
 
 var derive = (state, rules) =>
@@ -30,7 +30,7 @@ rules.set('X', 'F-[[X]+X]+F[-X]-X');
 // rules.set('Y', '-FX-Y');
 const axiom = '[X]';
 const figureScale = 2;
-const turnAngle = Math.PI/6;
+const turnAngle = Math.PI/12;
 
 let s = [];
 s[0] = `${axiom}`;
