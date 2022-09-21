@@ -26,7 +26,7 @@ var derive = (state, rules) =>
 
 const rules = new Map();
 rules.set('F', 'FF');
-rules.set('X', 'F-[[X]+X]+F[-X]-X');
+rules.set('X', 'F-[[X]+X]+F[+FX]-X');
 // rules.set('Y', '-FX-Y');
 const axiom = '[X]';
 const figureScale = 2;
@@ -49,6 +49,8 @@ let centre = (level) => new Vector3(figureScale ** level, 0, 0);
 let state = new Vector3(0, 0, 0);
 let stack = [];
 let stackSize = 0;
+let idStack = [];
+let idStackSize = 0;
 let idx = 0;
 let time = 0;
 
@@ -113,17 +115,25 @@ var tick = (elapsedTime, multiplier) =>
             else if(s[lvl][i] == '[')
             {
                 stack[stackSize] = state;
+                idStack[idStackSize] = stackSize;
+                idStackSize++;
                 stackSize++;
             }
             else if(s[lvl][i] == ']')
             {
                 stackSize--;
                 state = stack[stackSize];
-                idx = i + 1;
+                if(stackSize == idStack[idStackSize - 1])
+                {
+                    idStackSize--;
+                    idx = i + 1;
+                }
                 break;
             }
             else
             {
+                stack[stackSize] = state;
+                stackSize++;
                 state = forward(state);
                 idx = i + 1;
                 break;
@@ -158,6 +168,8 @@ var resetSystem = () =>
     state = new Vector3(0, 0, 0);
     stack = [];
     stackSize = 0;
+    idStack = [];
+    idStackSize = 0;
     idx = 0;
     theory.clearGraph();
     theory.invalidateTertiaryEquation();
