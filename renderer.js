@@ -11,6 +11,17 @@ var description = "An renderer.";
 var authors = "propfeds#5988";
 var version = 0.01;
 
+const rules = new Map();
+rules.set('F', 'FF');
+rules.set('X', 'F[+X][-X]FX');
+// rules.set('Y', '-FX-Y');
+const axiom = '[X]';
+const figureScale = 2;
+const turnAngle = Math.PI/6;
+
+let s = [];
+s[0] = `${axiom}`;
+
 var derive = (state, rules) =>
 {
     let result = '';
@@ -24,20 +35,11 @@ var derive = (state, rules) =>
     return result;
 }
 
-const rules = new Map();
-rules.set('F', 'FF');
-rules.set('X', 'F-[[X]+X]+F[+FX]-X');
-// rules.set('Y', '-FX-Y');
-const axiom = '[X]';
-const figureScale = 2;
-const turnAngle = Math.PI/12;
-
-let s = [];
-s[0] = `${axiom}`;
-
-for(let i = 1; i < 7; ++i)
+var update = (level) =>
 {
-    s[i] = derive(s[i - 1], rules);
+    for(let i = 1; i <= level; ++i)
+        if(s[i] === undefined)
+            s[i] = derive(s[i - 1], rules);
 }
 
 let turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
@@ -63,31 +65,27 @@ var init = () => {
         let getDesc = (level) => 'lvl=' + getL(level).toString();
         let getInfo = (level) => 'lvl=' + getL(level).toString();
         l = theory.createUpgrade(0, angle, new FreeCost);
-        l.getDescription = (amount) => Utils.getMath(getDesc(l.level));
+        l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
-        l.boughtOrRefunded = (_) => resetSystem();
+        l.boughtOrRefunded = (_) =>
+        {
+            update(l.level);
+            resetSystem();
+        }
         l.canBeRefunded = (_) => true;
     }
-    // q1 (Tickspeed)
+    // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => "q_1=" + (level > 0 ? "1.28^{" + (level - 1) + "}" : "\\text{off}");
-        let getDescNum = (level) => "q_1=" + getQ1(level).toString();
-        q1 = theory.createUpgrade(1, angle, new FreeCost);
-        q1.getDescription = (_) => Utils.getMath(getDesc(q1.level));
-        q1.getInfo = (amount) => Utils.getMathTo(getDescNum(q1.level), getDescNum(q1.level + amount));
-        q1.canBeRefunded = (_) => true;
+        let getDesc = (level) => "ts=" + getTickspeed(level).toString();
+        let getInfo = (level) => "ts=" + getTickspeed(level).toString();
+        ts = theory.createUpgrade(1, angle, new FreeCost);
+        ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
+        ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
+        ts.maxLevel = 10;
+        ts.canBeRefunded = (_) => true;
     }
-    // q2 (Tickspeed)
-    // Literally the same as q1, just more expensive
-    {
-        let getDesc = (level) => "q_2=2^{" + level + "}";
-        let getInfo = (level) => "q_2=" + getQ2(level).toString(0);
-        q2 = theory.createUpgrade(2, angle, new FreeCost);
-        q2.getDescription = (_) => Utils.getMath(getDesc(q2.level));
-        q2.getInfo = (amount) => Utils.getMathTo(getInfo(q2.level), getInfo(q2.level + amount));
-        q2.canBeRefunded = (_) => true;
-    }
+
     resetSystem();
 }
 
@@ -95,18 +93,18 @@ var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
 {
-    let tickSpeed = getTickspeed();
+    let tickSpeed = getTickspeed(ts.level);
 
     if(tickSpeed.isZero)
         return;
     
-    let timeLimit = 1 / tickSpeed.Min(BigNumber.TEN).toNumber();
+    let timeLimit = 1 / tickSpeed;
     time += elapsedTime;
 
     if(time >= timeLimit - 1e-8)
     {
         let lvl = getL(l.level);
-        for(let i = idx; i < s[lvl].length; i++)
+        for(let i = idx; i < s[lvl].length; ++i)
         {
             if(s[lvl][i] == '+')
                 state = turnLeft(state);
@@ -142,7 +140,7 @@ var tick = (elapsedTime, multiplier) =>
         if(idx >= s[lvl].length)
             idx = 0;
 
-        if(tickSpeed > BigNumber.TEN)
+        if(tickSpeed > 9)
             time = 0;
         else
             time -= timeLimit;
@@ -191,9 +189,7 @@ var postPublish = () =>
     time = 0;
 }
 
-var getQ1 = (level) => (level > 0 ? BigNumber.from(1.28).pow(level - 1) : 0);
-var getQ2 = (level) => BigNumber.TWO.pow(level);
-var getTickspeed = () => getQ1(q1.level) * getQ2(q2.level);
-var getL = (level) => level % 7;
+var getL = (level) => level;
+var getTickspeed = (level) => level;
 
 init();
