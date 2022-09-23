@@ -1,26 +1,29 @@
-import { FreeCost } from "../api/Costs";
-import { Localization } from "../api/Localization";
-import { BigNumber } from "../api/BigNumber";
-import { theory } from "../api/Theory";
-import { Utils } from "../api/Utils";
-import { Vector3 } from "../api/Vector3";
+import { FreeCost } from '../api/Costs';
+import { theory } from '../api/Theory';
+import { ui } from '../api/ui/UI';
+import { Utils } from '../api/Utils';
+import { Vector3 } from '../api/Vector3';
+import { StackOrientation } from '../api/ui/properties/StackOrientation';
 
-var id = "L_systems_renderer"
-var name = "L-systems Renderer";
-var description = "An renderer.";
-var authors = "propfeds#5988";
-var version = 0.01;
+var id = 'L_systems_renderer';
+var name = 'L-systems Renderer';
+var description = 'An L-systems renderer.';
+var authors = 'propfeds#5988';
+var version = 0.03;
 
-const rules = new Map();
+var rules = new Map();
 rules.set('F', 'FF');
 rules.set('X', 'F[+X][-X]FX');
 // rules.set('Y', '-FX-Y');
-const axiom = '[X]';
-const figureScale = 2;
-const turnAngle = Math.PI/6;
+var axiom = 'X';
+var turnAngle = Math.PI/6;
+var figureScale = 2;
+var XCentre = 1;
+var YCentre = 0;
+var upright = false;
 
-let s = [];
-s[0] = `${axiom}`;
+var s = [];
+var maxS = -1;
 
 var derive = (state, rules) =>
 {
@@ -37,24 +40,27 @@ var derive = (state, rules) =>
 
 var update = (level) =>
 {
+    if(s[0] === undefined)
+        s[0] = `[${axiom}]`;
     for(let i = 1; i <= level; ++i)
         if(s[i] === undefined)
             s[i] = derive(s[i - 1], rules);
+    maxS = level;
 }
 
-let turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
-let turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
-let forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z), v.y + Math.sin(turnAngle * v.z), v.z);
-let swizzle = (v) => new Vector3(v.y, -v.x, 0);
-let centre = (level) => new Vector3(figureScale ** level, 0, 0);
+var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
+var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
+var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z), v.y + Math.sin(turnAngle * v.z), v.z);
+var swizzle = (v) => new Vector3(v.y, -v.x, 0);
+var centre = (level) => new Vector3(XCentre * (figureScale ** level), YCentre * (figureScale ** level), 0);
 
-let state = new Vector3(0, 0, 0);
-let stack = [];
-let stackSize = 0;
-let idStack = [];
-let idStackSize = 0;
-let idx = 0;
-let time = 0;
+var state = new Vector3(0, 0, 0);
+var stack = [];
+var stackSize = 0;
+var idStack = [];
+var idStackSize = 0;
+var idx = 0;
+var time = 0;
 
 
 var init = () => {
@@ -62,14 +68,15 @@ var init = () => {
     index = theory.createCurrency('i');
     // l
     {
-        let getDesc = (level) => 'lvl=' + getL(level).toString();
-        let getInfo = (level) => 'lvl=' + getL(level).toString();
+        let getDesc = (level) => `lvl=${l.level.toString()}`;
+        let getInfo = (level) => `lvl=${l.level.toString()}`;
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.boughtOrRefunded = (_) =>
         {
-            update(l.level);
+            if(l.level > maxS)
+                update(l.level);
             resetSystem();
         }
         l.canBeRefunded = (_) => true;
@@ -77,8 +84,8 @@ var init = () => {
     // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => "ts=" + getTickspeed(level).toString();
-        let getInfo = (level) => "ts=" + getTickspeed(level).toString();
+        let getDesc = (level) => `ts=${ts.level.toString()}`;
+        let getInfo = (level) => `ts=${ts.level.toString()}`;
         ts = theory.createUpgrade(1, angle, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
@@ -93,17 +100,17 @@ var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
 {
-    let tickSpeed = getTickspeed(ts.level);
-
-    if(tickSpeed.isZero)
+    if(ts.level.isZero)
         return;
     
-    let timeLimit = 1 / tickSpeed;
+    let timeLimit = 1 / ts.level;
     time += elapsedTime;
 
     if(time >= timeLimit - 1e-8)
     {
-        let lvl = getL(l.level);
+        let lvl = l.level;
+            if(lvl > maxS)
+                update(lvl);
         for(let i = idx; i < s[lvl].length; ++i)
         {
             if(s[lvl][i] == '+')
@@ -140,7 +147,7 @@ var tick = (elapsedTime, multiplier) =>
         if(idx >= s[lvl].length)
             idx = 0;
 
-        if(tickSpeed > 9)
+        if(ts.level > 9)
             time = 0;
         else
             time -= timeLimit;
@@ -149,6 +156,104 @@ var tick = (elapsedTime, multiplier) =>
         index.value = idx;
         theory.invalidateTertiaryEquation();
     }
+}
+
+var createConfigMenu = () =>
+{
+    let menu = ui.createPopup
+    ({
+        title: 'Config',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                angleRow = ui.createStackLayout
+                ({
+                    orientation: StackOrientation.HORIZONTAL,
+                    children:
+                    [
+                        angleLabel = ui.createLabel({text: 'Turning angle: '}),
+                        angleEntry = ui.createEntry
+                        ({
+                            placeholder: '30',
+                            onTextChanged: (oldText, newText) =>
+                            {
+                                a = Number(newText);
+                                turnAngle = a * Math.PI / 180;
+                            }
+                        })
+                    ]
+                }),
+                scaleRow = ui.createStackLayout
+                ({
+                    orientation: StackOrientation.HORIZONTAL,
+                    children:
+                    [
+                        scaleLabel = ui.createLabel({text: 'Figure scale: '}),
+                        scaleEntry = ui.createEntry
+                        ({
+                            placeholder: '2',
+                            onTextChanged: (oldText, newText) =>
+                            {
+                                s = Number(newText);
+                                figureScale = s;
+                            }
+                        })
+                    ]
+                }),
+                xcRow = ui.createStackLayout
+                ({
+                    orientation: StackOrientation.HORIZONTAL,
+                    children:
+                    [
+                        xcLabel = ui.createLabel({text: 'x centre: '}),
+                        xcEntry = ui.createEntry
+                        ({
+                            placeholder: '1',
+                            onTextChanged: (oldText, newText) =>
+                            {
+                                x = Number(newText);
+                                XCentre = x;
+                            }
+                        })
+                    ]
+                }),
+                ycRow = ui.createStackLayout
+                ({
+                    orientation: StackOrientation.HORIZONTAL,
+                    children:
+                    [
+                        ycLabel = ui.createLabel({text: 'y centre: '}),
+                        ycEntry = ui.createEntry
+                        ({
+                            placeholder: '0',
+                            onTextChanged: (oldText, newText) =>
+                            {
+                                y = Number(newText);
+                                YCentre = y;
+                            }
+                        })
+                    ]
+                }),
+                uprightRow = ui.createStackLayout
+                ({
+                    orientation: StackOrientation.HORIZONTAL,
+                    children:
+                    [
+                        uprightLabel = ui.createLabel({text: 'Upright? '}),
+                        uprightTick = ui.createCheckBox
+                        ({
+                            onCheckedChanged: () =>
+                            {
+                                upright = uprightTick.isChecked;
+                            }
+                        })
+                    ]
+                })
+            ]
+        })
+    })
+    return menu;
 }
 
 var getInternalState = () => `${time}`;
@@ -173,23 +278,44 @@ var resetSystem = () =>
     theory.invalidateTertiaryEquation();
 }
 
+var canGoToPreviousStage = () => true;
+
+var goToPreviousStage = () =>
+{
+    var configMenu = createConfigMenu();
+    configMenu.show();
+}
+
+var canGoToNextStage = () => true;
+
+// var goToNextStage = () =>
+// {
+//     var systemMenu = createSystemMenu();
+//     SystemMenu.show();
+// }
+
+var canResetStage = () => true;
+
+var resetStage = () =>
+{
+    l.level = 0;
+    ts.level = 0;
+    resetSystem();
+}
+
 var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&z=${getCoordString(state.z)}\\end{matrix}`;
 
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
-var getPublicationMultiplier = (tau) => tau;
-var getPublicationMultiplierFormula = (symbol) => `${symbol}`;
-var getTau = () => BigNumber.ZERO;
-var get3DGraphPoint = () => swizzle((state - centre(getL(l.level))) / (figureScale ** getL(l.level)));
-// var get3DGraphPoint = () => swizzle(state / (2 ** getL(l.level)));
-
-var postPublish = () =>
+var get3DGraphPoint = () =>
 {
-    resetSystem();
-    time = 0;
+    coords = (state - centre(l.level)) / (figureScale ** l.level);
+    if(upright)
+        return swizzle(coords);
+    else
+        return coords;
 }
 
-var getL = (level) => level;
-var getTickspeed = (level) => level;
+var getTau = () => BigNumber.ZERO;
 
 init();
