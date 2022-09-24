@@ -16,7 +16,7 @@ rules.set('F', 'FF');
 rules.set('X', 'F[+X][-X]FX');
 // rules.set('Y', '-FX-Y');
 var axiom = 'X';
-var turnAngle = Math.PI/6;
+var turnAngle = 30;
 var figureScale = 2;
 var XCentre = 1;
 var YCentre = 0;
@@ -42,7 +42,7 @@ var update = (level) =>
 {
     if(s[0] === undefined)
         s[0] = `[${axiom}]`;
-    for(let i = 1; i <= level; ++i)
+    for(let i = maxS + 1; i <= level; ++i)
         if(s[i] === undefined)
             s[i] = derive(s[i - 1], rules);
     maxS = level;
@@ -50,8 +50,8 @@ var update = (level) =>
 
 var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
 var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
-var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z), v.y + Math.sin(turnAngle * v.z), v.z);
-var swizzle = (v) => new Vector3(v.y, -v.x, 0);
+var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z * Math.PI / 180), v.y + Math.sin(turnAngle * v.z * Math.PI / 180), v.z);
+var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
 var centre = (level) => new Vector3(XCentre * (figureScale ** level), YCentre * (figureScale ** level), 0);
 
 var state = new Vector3(0, 0, 0);
@@ -92,7 +92,22 @@ var init = () => {
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
     }
-
+    // Config menu
+    {
+        cfg = theory.createUpgrade(2, angle, new FreeCost);
+        cfg.description = 'Config menu';
+        cfg.info = 'Configure the shape and size of the system';
+        cfg.boughtOrRefunded = (_) =>
+        {
+            if(cfg.level > 0)
+            {
+                theory.pause();
+                var configMenu = createConfigMenu();
+                configMenu.show();
+            }
+        }
+        cfg.canBeRefunded = (_) => false;
+    }
     resetSystem();
 }
 
@@ -152,7 +167,7 @@ var tick = (elapsedTime, multiplier) =>
         else
             time -= timeLimit;
 
-        angle.value = state.z * turnAngle * 180 / Math.PI;
+        angle.value = state.z * turnAngle;
         index.value = idx;
         theory.invalidateTertiaryEquation();
     }
@@ -162,7 +177,7 @@ var createConfigMenu = () =>
 {
     let menu = ui.createPopup
     ({
-        title: 'Config',
+        title: 'Config Menu',
         content: ui.createStackLayout
         ({
             children:
@@ -172,14 +187,14 @@ var createConfigMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        angleLabel = ui.createLabel({text: 'Turning angle: '}),
+                        angleLabel = ui.createLabel({text: 'Turning angle (deg): '}),
                         angleEntry = ui.createEntry
                         ({
-                            placeholder: '30',
-                            onTextChanged: (oldText, newText) =>
+                            placeholder: turnAngle.toString(),
+                            onCompleted: () =>
                             {
-                                a = Number(newText);
-                                turnAngle = a * Math.PI / 180;
+                                cfgAngle = Number(angleEntry.text);
+                                turnAngle = cfgAngle;
                             }
                         })
                     ]
@@ -189,48 +204,41 @@ var createConfigMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        scaleLabel = ui.createLabel({text: 'Figure scale: '}),
+                        scaleLabel = ui.createLabel({text: 'Figure scale per level: '}),
                         scaleEntry = ui.createEntry
                         ({
-                            placeholder: '2',
-                            onTextChanged: (oldText, newText) =>
+                            placeholder: figureScale.toString(),
+                            onCompleted: () =>
                             {
-                                s = Number(newText);
-                                figureScale = s;
+                                cfgScale = Number(scaleEntry.text);
+                                if(cfgScale != 0)
+                                    figureScale = cfgScale;
                             }
                         })
                     ]
                 }),
-                xcRow = ui.createStackLayout
+                cameraRow = ui.createStackLayout
                 ({
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        xcLabel = ui.createLabel({text: 'x centre: '}),
+                        camLabel = ui.createLabel({text: 'Camera centre: '}),
                         xcEntry = ui.createEntry
                         ({
-                            placeholder: '1',
-                            onTextChanged: (oldText, newText) =>
+                            placeholder: XCentre.toString(),
+                            onCompleted: () =>
                             {
-                                x = Number(newText);
-                                XCentre = x;
+                                cfgX = Number(xcEntry.text);
+                                XCentre = cfgX;
                             }
-                        })
-                    ]
-                }),
-                ycRow = ui.createStackLayout
-                ({
-                    orientation: StackOrientation.HORIZONTAL,
-                    children:
-                    [
-                        ycLabel = ui.createLabel({text: 'y centre: '}),
+                        }),
                         ycEntry = ui.createEntry
                         ({
-                            placeholder: '0',
-                            onTextChanged: (oldText, newText) =>
+                            placeholder: YCentre.toString(),
+                            onCompleted: () =>
                             {
-                                y = Number(newText);
-                                YCentre = y;
+                                cfgY = Number(ycEntry.text);
+                                YCentre = cfgY;
                             }
                         })
                     ]
@@ -243,15 +251,23 @@ var createConfigMenu = () =>
                         uprightLabel = ui.createLabel({text: 'Upright? '}),
                         uprightTick = ui.createCheckBox
                         ({
+                            isChecked: upright,
                             onCheckedChanged: () =>
                             {
-                                upright = uprightTick.isChecked;
+                                upright = !upright;
                             }
                         })
                     ]
                 })
             ]
-        })
+        }),
+        onDisappearing: () =>
+        {
+            if(uprightTick.isChecked)
+                upright = !upright;
+            cfg.level = 0;
+            theory.resume();
+        }
     })
     return menu;
 }
@@ -264,7 +280,7 @@ var setInternalState = (stateStr) =>
     if(values.length > 0) time = parseBigNumber(values[0]);
 }
 
-var resume = () => resetSystem();
+// var resume = () => resetSystem();
 
 var resetSystem = () =>
 {
@@ -278,14 +294,6 @@ var resetSystem = () =>
     theory.invalidateTertiaryEquation();
 }
 
-var canGoToPreviousStage = () => true;
-
-var goToPreviousStage = () =>
-{
-    var configMenu = createConfigMenu();
-    configMenu.show();
-}
-
 var canGoToNextStage = () => true;
 
 // var goToNextStage = () =>
@@ -296,24 +304,16 @@ var canGoToNextStage = () => true;
 
 var canResetStage = () => true;
 
-var resetStage = () =>
-{
-    l.level = 0;
-    ts.level = 0;
-    resetSystem();
-}
+var resetStage = () => resetSystem();
 
-var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&z=${getCoordString(state.z)}\\end{matrix}`;
+var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${getCoordString(state.z)}\\end{matrix}`;
 
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
 var get3DGraphPoint = () =>
 {
     coords = (state - centre(l.level)) / (figureScale ** l.level);
-    if(upright)
-        return swizzle(coords);
-    else
-        return coords;
+    return swizzle(coords)[upright ? 1 : 0];
 }
 
 var getTau = () => BigNumber.ZERO;
