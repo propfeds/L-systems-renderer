@@ -9,50 +9,21 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.03;
+var version = 0.04;
 
+var axiom = 'X';
 var rules = new Map();
 rules.set('F', 'FF');
 rules.set('X', 'F[+X][-X]FX');
-// rules.set('Y', '-FX-Y');
-var axiom = 'X';
+var tmpRules = [];
+var s = [];
+var maxS = -1;
+
 var turnAngle = 30;
 var figureScale = 2;
 var XCentre = 1;
 var YCentre = 0;
 var upright = false;
-
-var s = [];
-var maxS = -1;
-
-var derive = (state, rules) =>
-{
-    let result = '';
-    for(let i = 0; i < state.length; ++i)
-    {
-        if(rules.has(state[i]))
-            result += rules.get(state[i]);
-        else
-            result += state[i];
-    }
-    return result;
-}
-
-var update = (level) =>
-{
-    if(s[0] === undefined)
-        s[0] = `[${axiom}]`;
-    for(let i = maxS + 1; i <= level; ++i)
-        if(s[i] === undefined)
-            s[i] = derive(s[i - 1], rules);
-    maxS = level;
-}
-
-var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
-var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
-var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z * Math.PI / 180), v.y + Math.sin(turnAngle * v.z * Math.PI / 180), v.z);
-var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
-var centre = (level) => new Vector3(XCentre * (figureScale ** level), YCentre * (figureScale ** level), 0);
 
 var state = new Vector3(0, 0, 0);
 var stack = [];
@@ -62,6 +33,46 @@ var idStackSize = 0;
 var idx = 0;
 var time = 0;
 
+var derive = (states, rules) =>
+{
+    let result = '';
+    for(let i = 0; i < states.length; ++i)
+    {
+        if(rules.has(states[i]))
+            result += rules.get(states[i]);
+        else
+            result += states[i];
+    }
+    return result;
+}
+
+var updateSystem = (level) =>
+{
+    if(s[0] === undefined)
+        s[0] = `[${axiom}]`;
+    for(let i = maxS + 1; i <= level; ++i)
+        if(s[i] === undefined)
+            s[i] = derive(s[i - 1], rules);
+    maxS = level;
+}
+
+var resetSystem = () =>
+{
+    state = new Vector3(0, 0, 0);
+    stack = [];
+    stackSize = 0;
+    idStack = [];
+    idStackSize = 0;
+    idx = 0;
+    theory.clearGraph();
+    theory.invalidateTertiaryEquation();
+}
+
+var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
+var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
+var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z * Math.PI / 180), v.y + Math.sin(turnAngle * v.z * Math.PI / 180), v.z);
+var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
+var centre = (level) => new Vector3(XCentre * (figureScale ** level), YCentre * (figureScale ** level), 0);
 
 var init = () => {
     angle = theory.createCurrency('°', '\\circ');
@@ -76,7 +87,7 @@ var init = () => {
         l.boughtOrRefunded = (_) =>
         {
             if(l.level > maxS)
-                update(l.level);
+                updateSystem(l.level);
             resetSystem();
         }
         l.canBeRefunded = (_) => true;
@@ -108,7 +119,22 @@ var init = () => {
         }
         cfg.canBeRefunded = (_) => false;
     }
-    resetSystem();
+    // System menu
+    {
+        sys = theory.createUpgrade(3, angle, new FreeCost);
+        sys.description = 'L-system menu';
+        sys.info = 'Configure the L-system being drawn';
+        sys.boughtOrRefunded = (_) =>
+        {
+            if(sys.level > 0)
+            {
+                theory.pause();
+                var systemMenu = createSystemMenu();
+                systemMenu.show();
+            }
+        }
+        sys.canBeRefunded = (_) => false;
+    }
 }
 
 var alwaysShowRefundButtons = () => true;
@@ -125,7 +151,7 @@ var tick = (elapsedTime, multiplier) =>
     {
         let lvl = l.level;
             if(lvl > maxS)
-                update(lvl);
+                updateSystem(lvl);
         for(let i = idx; i < s[lvl].length; ++i)
         {
             if(s[lvl][i] == '+')
@@ -136,16 +162,16 @@ var tick = (elapsedTime, multiplier) =>
             {
                 stack[stackSize] = state;
                 idStack[idStackSize] = stackSize;
-                idStackSize++;
-                stackSize++;
+                ++idStackSize;
+                ++stackSize;
             }
             else if(s[lvl][i] == ']')
             {
-                stackSize--;
+                --stackSize;
                 state = stack[stackSize];
                 if(stackSize == idStack[idStackSize - 1])
                 {
-                    idStackSize--;
+                    --idStackSize;
                     idx = i + 1;
                 }
                 break;
@@ -153,7 +179,7 @@ var tick = (elapsedTime, multiplier) =>
             else
             {
                 stack[stackSize] = state;
-                stackSize++;
+                ++stackSize;
                 state = forward(state);
                 idx = i + 1;
                 break;
@@ -195,6 +221,7 @@ var createConfigMenu = () =>
                             {
                                 cfgAngle = Number(angleEntry.text);
                                 turnAngle = cfgAngle;
+                                resetSystem();
                             }
                         })
                     ]
@@ -256,8 +283,9 @@ var createConfigMenu = () =>
                             {
                                 if(e.type == TouchType.PRESSED)
                                     upright = !upright;
+                                resetSystem();
                             }
-                          }),
+                        }),
                     ]
                 })
             ]
@@ -271,6 +299,136 @@ var createConfigMenu = () =>
     return menu;
 }
 
+var createSystemMenu = () =>
+{
+    let rsIdx = 0;
+    for(let [key, value] of rules)
+    {
+        tmpRules[rsIdx] = `${key}=${value}`;
+        ++rsIdx;
+    }
+    for(let i = 0; i < 8; ++i)
+        if(tmpRules[i] === undefined)
+            tmpRules[i] = '';
+
+    let menu = ui.createPopup
+    ({
+        title: 'L-system Menu',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                axiomRow = ui.createStackLayout
+                ({
+                    orientation: StackOrientation.HORIZONTAL,
+                    children:
+                    [
+                        axiomLabel = ui.createLabel({text: 'Axiom: '}),
+                        axiomEntry = ui.createEntry
+                        ({
+                            placeholder: axiom,
+                            onCompleted: () =>
+                            {
+                                axiom = axiomEntry.text;
+                            }
+                        })
+                    ]
+                }),
+                rulesLabel = ui.createLabel({text: 'Production rules: '}),
+                rule0Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[0],
+                    onCompleted: () =>
+                    {
+                        tmpRules[0] = rule0Entry.text;
+                    }
+                }),
+                rule1Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[1],
+                    onCompleted: () =>
+                    {
+                        tmpRules[1] = rule1Entry.text;
+                    }
+                }),
+                rule2Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[2],
+                    onCompleted: () =>
+                    {
+                        tmpRules[2] = rule2Entry.text;
+                    }
+                }),
+                rule3Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[3],
+                    onCompleted: () =>
+                    {
+                        tmpRules[3] = rule3Entry.text;
+                    }
+                }),
+                rule4Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[4],
+                    onCompleted: () =>
+                    {
+                        tmpRules[4] = rule4Entry.text;
+                    }
+                }),
+                rule5Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[5],
+                    onCompleted: () =>
+                    {
+                        tmpRules[5] = rule5Entry.text;
+                    }
+                }),
+                rule6Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[6],
+                    onCompleted: () =>
+                    {
+                        tmpRules[6] = rule6Entry.text;
+                    }
+                }),
+                rule7Entry = ui.createEntry
+                ({
+                    placeholder: tmpRules[7],
+                    onCompleted: () =>
+                    {
+                        tmpRules[7] = rule7Entry.text;
+                    }
+                }),
+                constructButton = ui.createButton
+                ({
+                    text: 'Construct',
+                    onClicked: () =>
+                    {
+                        rules.clear();
+                        for(i = 0; i < tmpRules.length; ++i)
+                        {
+                            if(tmpRules[i] !== '')
+                            {
+                                let rs = tmpRules[i].split('=');
+                                rules.set(rs[0], rs[1]);
+                            }
+                        }
+                        s = [];
+                        maxS = -1;
+                        resetSystem();
+                    }
+                })
+            ]
+        }),
+        onDisappearing: () =>
+        {
+            sys.level = 0;
+            theory.resume();
+        }
+    })
+    return menu;
+}
+
 var getInternalState = () => `${time}`;
 
 var setInternalState = (stateStr) =>
@@ -278,28 +436,6 @@ var setInternalState = (stateStr) =>
     let values = stateStr.split(' ');
     if(values.length > 0) time = parseBigNumber(values[0]);
 }
-
-// var resume = () => resetSystem();
-
-var resetSystem = () =>
-{
-    state = new Vector3(0, 0, 0);
-    stack = [];
-    stackSize = 0;
-    idStack = [];
-    idStackSize = 0;
-    idx = 0;
-    theory.clearGraph();
-    theory.invalidateTertiaryEquation();
-}
-
-var canGoToNextStage = () => true;
-
-// var goToNextStage = () =>
-// {
-//     var systemMenu = createSystemMenu();
-//     SystemMenu.show();
-// }
 
 var canResetStage = () => true;
 
