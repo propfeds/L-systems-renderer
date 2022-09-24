@@ -9,20 +9,19 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.04;
+var version = 0.05;
 
 var axiom = 'X';
 var rules = new Map();
 rules.set('F', 'FF');
 rules.set('X', 'F[+X][-X]FX');
-var tmpRules = [];
 var s = [];
 var maxS = -1;
 
 var turnAngle = 30;
 var figureScale = 2;
-var XCentre = 1;
-var YCentre = 0;
+var xCentre = 1;
+var yCentre = 0;
 var upright = false;
 
 var state = new Vector3(0, 0, 0);
@@ -32,6 +31,22 @@ var idStack = [];
 var idStackSize = 0;
 var idx = 0;
 var time = 0;
+
+var rebuildSystem = (newAxiom, newRules) =>
+{
+    rules.clear();
+    axiom = `${newAxiom}`;
+    for(i = 0; i < newRules.length; ++i)
+    {
+        if(newRules[i] !== '')
+        {
+            let rs = newRules[i].split('=');
+            rules.set(rs[0], rs[1]);
+        }
+    }
+    s = [];
+    maxS = -1;
+}
 
 var derive = (states, rules) =>
 {
@@ -72,7 +87,7 @@ var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
 var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
 var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z * Math.PI / 180), v.y + Math.sin(turnAngle * v.z * Math.PI / 180), v.z);
 var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
-var centre = (level) => new Vector3(XCentre * (figureScale ** level), YCentre * (figureScale ** level), 0);
+var centre = (level) => new Vector3(xCentre * (figureScale ** level), yCentre * (figureScale ** level), 0);
 
 var init = () => {
     angle = theory.createCurrency('°', '\\circ');
@@ -112,7 +127,6 @@ var init = () => {
         {
             if(cfg.level > 0)
             {
-                theory.pause();
                 var configMenu = createConfigMenu();
                 configMenu.show();
             }
@@ -128,7 +142,6 @@ var init = () => {
         {
             if(sys.level > 0)
             {
-                theory.pause();
                 var systemMenu = createSystemMenu();
                 systemMenu.show();
             }
@@ -201,6 +214,12 @@ var tick = (elapsedTime, multiplier) =>
 
 var createConfigMenu = () =>
 {
+    let tmpAngle = turnAngle;
+    let tmpScale = figureScale;
+    let tmpXC = xCentre;
+    let tmpYC = yCentre;
+    let tmpUpright = upright;
+
     let menu = ui.createPopup
     ({
         title: 'Config Menu',
@@ -216,12 +235,10 @@ var createConfigMenu = () =>
                         angleLabel = ui.createLabel({text: 'Turning angle (deg): '}),
                         angleEntry = ui.createEntry
                         ({
-                            placeholder: turnAngle.toString(),
-                            onCompleted: () =>
+                            text: tmpAngle.toString(),
+                            onTextChanged: (ot, nt) =>
                             {
-                                cfgAngle = Number(angleEntry.text);
-                                turnAngle = cfgAngle;
-                                resetSystem();
+                                tmpAngle = Number(nt);
                             }
                         })
                     ]
@@ -234,12 +251,12 @@ var createConfigMenu = () =>
                         scaleLabel = ui.createLabel({text: 'Figure scale per level: '}),
                         scaleEntry = ui.createEntry
                         ({
-                            placeholder: figureScale.toString(),
-                            onCompleted: () =>
+                            text: tmpScale.toString(),
+                            onTextChanged: (ot, nt) =>
                             {
-                                cfgScale = Number(scaleEntry.text);
-                                if(cfgScale != 0)
-                                    figureScale = cfgScale;
+                                tmpScale = Number(nt);
+                                if(tmpScale == 0)
+                                    tmpScale = 1;
                             }
                         })
                     ]
@@ -252,20 +269,18 @@ var createConfigMenu = () =>
                         camLabel = ui.createLabel({text: 'Camera centre: '}),
                         xcEntry = ui.createEntry
                         ({
-                            placeholder: XCentre.toString(),
-                            onCompleted: () =>
+                            text: tmpXC.toString(),
+                            onTextChanged: (ot, nt) =>
                             {
-                                cfgX = Number(xcEntry.text);
-                                XCentre = cfgX;
+                                tmpXC = Number(nt);
                             }
                         }),
                         ycEntry = ui.createEntry
                         ({
-                            placeholder: YCentre.toString(),
-                            onCompleted: () =>
+                            text: tmpYC.toString(),
+                            onTextChanged: (ot, nt) =>
                             {
-                                cfgY = Number(ycEntry.text);
-                                YCentre = cfgY;
+                                tmpYC = Number(nt);
                             }
                         })
                     ]
@@ -278,22 +293,33 @@ var createConfigMenu = () =>
                         uprightLabel = ui.createLabel({text: 'Upright? '}),
                         uprightSwitch = ui.createSwitch
                         ({
-                            isToggled: () => upright,
+                            isToggled: () => tmpUpright,
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
-                                    upright = !upright;
-                                resetSystem();
+                                    tmpUpright = !tmpUpright;
                             }
                         }),
                     ]
+                }),
+                saveButton = ui.createButton
+                ({
+                    text: 'Save',
+                    onClicked: () =>
+                    {
+                        turnAngle = tmpAngle;
+                        figureScale = tmpScale;
+                        xCentre = tmpXC;
+                        yCentre = tmpYC;
+                        upright = tmpUpright;
+                        resetSystem();
+                    }
                 })
             ]
         }),
         onDisappearing: () =>
         {
             cfg.level = 0;
-            theory.resume();
         }
     })
     return menu;
@@ -301,6 +327,8 @@ var createConfigMenu = () =>
 
 var createSystemMenu = () =>
 {
+    let tmpAxiom = axiom;
+    let tmpRules = [];
     let rsIdx = 0;
     for(let [key, value] of rules)
     {
@@ -326,10 +354,10 @@ var createSystemMenu = () =>
                         axiomLabel = ui.createLabel({text: 'Axiom: '}),
                         axiomEntry = ui.createEntry
                         ({
-                            placeholder: axiom,
-                            onCompleted: () =>
+                            text: tmpAxiom,
+                            onTextChanged: (ot, nt) =>
                             {
-                                axiom = axiomEntry.text;
+                                tmpAxiom = nt;
                             }
                         })
                     ]
@@ -337,66 +365,66 @@ var createSystemMenu = () =>
                 rulesLabel = ui.createLabel({text: 'Production rules: '}),
                 rule0Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[0],
-                    onCompleted: () =>
+                    text: tmpRules[0],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[0] = rule0Entry.text;
+                        tmpRules[0] = nt;
                     }
                 }),
                 rule1Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[1],
-                    onCompleted: () =>
+                    text: tmpRules[1],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[1] = rule1Entry.text;
+                        tmpRules[1] = nt;
                     }
                 }),
                 rule2Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[2],
-                    onCompleted: () =>
+                    text: tmpRules[2],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[2] = rule2Entry.text;
+                        tmpRules[2] = nt;
                     }
                 }),
                 rule3Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[3],
-                    onCompleted: () =>
+                    text: tmpRules[3],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[3] = rule3Entry.text;
+                        tmpRules[3] = nt;
                     }
                 }),
                 rule4Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[4],
-                    onCompleted: () =>
+                    text: tmpRules[4],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[4] = rule4Entry.text;
+                        tmpRules[4] = nt;
                     }
                 }),
                 rule5Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[5],
-                    onCompleted: () =>
+                    text: tmpRules[5],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[5] = rule5Entry.text;
+                        tmpRules[5] = nt;
                     }
                 }),
                 rule6Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[6],
-                    onCompleted: () =>
+                    text: tmpRules[6],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[6] = rule6Entry.text;
+                        tmpRules[6] = nt;
                     }
                 }),
                 rule7Entry = ui.createEntry
                 ({
-                    placeholder: tmpRules[7],
-                    onCompleted: () =>
+                    text: tmpRules[7],
+                    onTextChanged: (ot, nt) =>
                     {
-                        tmpRules[7] = rule7Entry.text;
+                        tmpRules[7] = nt;
                     }
                 }),
                 constructButton = ui.createButton
@@ -404,17 +432,7 @@ var createSystemMenu = () =>
                     text: 'Construct',
                     onClicked: () =>
                     {
-                        rules.clear();
-                        for(i = 0; i < tmpRules.length; ++i)
-                        {
-                            if(tmpRules[i] !== '')
-                            {
-                                let rs = tmpRules[i].split('=');
-                                rules.set(rs[0], rs[1]);
-                            }
-                        }
-                        s = [];
-                        maxS = -1;
+                        rebuildSystem(tmpAxiom, tmpRules);
                         resetSystem();
                     }
                 })
@@ -423,18 +441,40 @@ var createSystemMenu = () =>
         onDisappearing: () =>
         {
             sys.level = 0;
-            theory.resume();
         }
     })
     return menu;
 }
 
-var getInternalState = () => `${time}`;
+var getInternalState = () =>
+{
+    let result = `${time} ${turnAngle} ${figureScale} ${xCentre} ${yCentre} ${upright} ${axiom}`;
+    for(let [key, value] of rules)
+    {
+        result += ` ${key}=${value}`;
+    }
+    return result;
+}
 
 var setInternalState = (stateStr) =>
 {
     let values = stateStr.split(' ');
-    if(values.length > 0) time = parseBigNumber(values[0]);
+    time = parseBigNumber(values[0]);
+    turnAngle = Number(values[1]);
+    figureScale = Number(values[2]);
+    xCentre = Number(values[3]);
+    yCentre = Number(values[4]);
+    upright = Boolean(values[5]);
+    // axiom = values[6];
+    let tmpRules = [];
+    for(let i = 0; i < 8; ++i)
+    {
+        if(values[7 + i] !== undefined)
+            tmpRules[i] = values[7 + i];
+        else
+            tmpRules[i] = '';
+    }
+    rebuildSystem(values[6], tmpRules);
 }
 
 var canResetStage = () => true;
