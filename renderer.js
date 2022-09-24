@@ -249,22 +249,21 @@ var createConfigMenu = () =>
                     children:
                     [
                         uprightLabel = ui.createLabel({text: 'Upright? '}),
-                        uprightTick = ui.createCheckBox
+                        uprightSwitch = ui.createSwitch
                         ({
-                            isChecked: upright,
-                            onCheckedChanged: () =>
+                            isToggled: () => upright,
+                            onTouched: (e) =>
                             {
-                                upright = !upright;
+                                if(e.type == TouchType.PRESSED)
+                                    upright = !upright;
                             }
-                        })
+                          }),
                     ]
                 })
             ]
         }),
         onDisappearing: () =>
         {
-            if(uprightTick.isChecked)
-                upright = !upright;
             cfg.level = 0;
             theory.resume();
         }
