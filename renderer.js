@@ -448,7 +448,7 @@ var createSystemMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${time} ${turnAngle} ${figureScale} ${xCentre} ${yCentre} ${upright} ${axiom}`;
+    let result = `${time} ${turnAngle} ${figureScale} ${xCentre} ${yCentre} ${upright ? 1 : 0} ${axiom}`;
     for(let [key, value] of rules)
     {
         result += ` ${key}=${value}`;
@@ -464,7 +464,7 @@ var setInternalState = (stateStr) =>
     figureScale = Number(values[2]);
     xCentre = Number(values[3]);
     yCentre = Number(values[4]);
-    upright = Boolean(values[5]);
+    upright = Boolean(Number(values[5]));
     // axiom = values[6];
     let tmpRules = [];
     for(let i = 0; i < 8; ++i)
