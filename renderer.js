@@ -3,7 +3,6 @@ import { theory } from '../api/Theory';
 import { ui } from '../api/ui/UI';
 import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
-import { StackOrientation } from '../api/ui/properties/StackOrientation';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 
@@ -11,7 +10,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.05;
+var version = 0.06;
 
 var axiom = 'X';
 var rules = new Map();
