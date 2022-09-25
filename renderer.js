@@ -232,7 +232,11 @@ var createConfigMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        angleLabel = ui.createLabel({text: 'Turning angle (deg): '}),
+                        angleLabel = ui.createLatexLabel
+                        ({
+                            // fontFamily: FontFamily.CMU_REGULAR,
+                            text: 'Turning angle (deg): '
+                        }),
                         angleEntry = ui.createEntry
                         ({
                             text: tmpAngle.toString(),
@@ -248,7 +252,11 @@ var createConfigMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        scaleLabel = ui.createLabel({text: 'Figure scale per level: '}),
+                        scaleLabel = ui.createLatexLabel
+                        ({
+                            // fontFamily: FontFamily.CMU_REGULAR,
+                            text: 'Figure scale per level: '
+                        }),
                         scaleEntry = ui.createEntry
                         ({
                             text: tmpScale.toString(),
@@ -266,7 +274,11 @@ var createConfigMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        camLabel = ui.createLabel({text: 'Camera centre: '}),
+                        camLabel = ui.createLatexLabel
+                        ({
+                            // fontFamily: FontFamily.CMU_REGULAR,
+                            text: 'Camera centre: '
+                        }),
                         xcEntry = ui.createEntry
                         ({
                             text: tmpXC.toString(),
@@ -290,7 +302,11 @@ var createConfigMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        uprightLabel = ui.createLabel({text: 'Upright? '}),
+                        uprightLabel = ui.createLatexLabel
+                        ({
+                            // fontFamily: FontFamily.CMU_REGULAR,
+                            text: 'Upright? '
+                        }),
                         uprightSwitch = ui.createSwitch
                         ({
                             isToggled: () => tmpUpright,
@@ -351,7 +367,11 @@ var createSystemMenu = () =>
                     orientation: StackOrientation.HORIZONTAL,
                     children:
                     [
-                        axiomLabel = ui.createLabel({text: 'Axiom: '}),
+                        axiomLabel = ui.createLatexLabel
+                        ({
+                            // fontFamily: FontFamily.CMU_REGULAR,
+                            text: 'Axiom: '
+                        }),
                         axiomEntry = ui.createEntry
                         ({
                             text: tmpAxiom,
@@ -362,7 +382,11 @@ var createSystemMenu = () =>
                         })
                     ]
                 }),
-                rulesLabel = ui.createLabel({text: 'Production rules: '}),
+                rulesLabel = ui.createLatexLabel
+                ({
+                    // fontFamily: FontFamily.CMU_REGULAR,
+                    text: 'Production rules: '
+                }),
                 rule0Entry = ui.createEntry
                 ({
                     text: tmpRules[0],
