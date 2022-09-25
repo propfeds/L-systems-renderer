@@ -4,6 +4,8 @@ import { ui } from '../api/ui/UI';
 import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
 import { StackOrientation } from '../api/ui/properties/StackOrientation';
+import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
+import { TextAlignment } from '../api/ui/properties/TextAlignment';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
@@ -227,89 +229,100 @@ var createConfigMenu = () =>
         ({
             children:
             [
-                angleRow = ui.createStackLayout
+                cfgGrid = ui.createGrid
                 ({
-                    orientation: StackOrientation.HORIZONTAL,
+                    columnDefinitions: ['70*', '30*'],
                     children:
                     [
                         angleLabel = ui.createLatexLabel
                         ({
-                            // fontFamily: FontFamily.CMU_REGULAR,
-                            text: 'Turning angle (deg): '
+                            text: 'Turning angle (°): ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
                         }),
                         angleEntry = ui.createEntry
                         ({
                             text: tmpAngle.toString(),
+                            row: 0,
+                            column: 1,
+                            horizontalTextAlignment: TextAlignment.END,
                             onTextChanged: (ot, nt) =>
                             {
                                 tmpAngle = Number(nt);
                             }
-                        })
-                    ]
-                }),
-                scaleRow = ui.createStackLayout
-                ({
-                    orientation: StackOrientation.HORIZONTAL,
-                    children:
-                    [
+                        }),
                         scaleLabel = ui.createLatexLabel
                         ({
-                            // fontFamily: FontFamily.CMU_REGULAR,
-                            text: 'Figure scale per level: '
+                            text: 'Figure scale per level: ',
+                            row: 1,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
                         }),
                         scaleEntry = ui.createEntry
                         ({
                             text: tmpScale.toString(),
+                            row: 1,
+                            column: 1,
+                            horizontalTextAlignment: TextAlignment.END,
                             onTextChanged: (ot, nt) =>
                             {
                                 tmpScale = Number(nt);
                                 if(tmpScale == 0)
                                     tmpScale = 1;
                             }
-                        })
-                    ]
-                }),
-                cameraRow = ui.createStackLayout
-                ({
-                    orientation: StackOrientation.HORIZONTAL,
-                    children:
-                    [
+                        }),
                         camLabel = ui.createLatexLabel
                         ({
-                            // fontFamily: FontFamily.CMU_REGULAR,
-                            text: 'Camera centre: '
+                            text: 'Camera centre: ',
+                            row: 2,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
                         }),
-                        xcEntry = ui.createEntry
+                        camGrid = ui.createGrid
                         ({
-                            text: tmpXC.toString(),
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpXC = Number(nt);
-                            }
+                            row: 2,
+                            column: 1,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                ycEntry = ui.createEntry
+                                ({
+                                    text: tmpXC.toString(),
+                                    row: 0,
+                                    column: 0,
+                                    horizontalTextAlignment: TextAlignment.END,
+                                    onTextChanged: (ot, nt) =>
+                                    {
+                                        tmpXC = Number(nt);
+                                    }
+                                }),
+                                ycEntry = ui.createEntry
+                                ({
+                                    text: tmpYC.toString(),
+                                    row: 0,
+                                    column: 1,
+                                    horizontalTextAlignment: TextAlignment.END,
+                                    onTextChanged: (ot, nt) =>
+                                    {
+                                        tmpYC = Number(nt);
+                                    }
+                                })
+                            ]
                         }),
-                        ycEntry = ui.createEntry
-                        ({
-                            text: tmpYC.toString(),
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpYC = Number(nt);
-                            }
-                        })
-                    ]
-                }),
-                uprightRow = ui.createStackLayout
-                ({
-                    orientation: StackOrientation.HORIZONTAL,
-                    children:
-                    [
                         uprightLabel = ui.createLatexLabel
                         ({
-                            // fontFamily: FontFamily.CMU_REGULAR,
-                            text: 'Upright? '
+                            text: 'Upright figure: ',
+                            row: 3,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
                         }),
                         uprightSwitch = ui.createSwitch
                         ({
                             isToggled: () => tmpUpright,
+                            row: 3,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
@@ -317,6 +330,11 @@ var createConfigMenu = () =>
                             }
                         }),
                     ]
+                }),
+                separator = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
                 }),
                 saveButton = ui.createButton
                 ({
@@ -362,19 +380,23 @@ var createSystemMenu = () =>
         ({
             children:
             [
-                axiomRow = ui.createStackLayout
+                axiomRow = ui.createGrid
                 ({
-                    orientation: StackOrientation.HORIZONTAL,
+                    columnDefinitions: ['40*', '60*'],
                     children:
                     [
                         axiomLabel = ui.createLatexLabel
                         ({
-                            // fontFamily: FontFamily.CMU_REGULAR,
-                            text: 'Axiom: '
+                            text: 'Axiom: ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
                         }),
                         axiomEntry = ui.createEntry
                         ({
                             text: tmpAxiom,
+                            row: 0,
+                            column: 1,
                             onTextChanged: (ot, nt) =>
                             {
                                 tmpAxiom = nt;
@@ -384,8 +406,9 @@ var createSystemMenu = () =>
                 }),
                 rulesLabel = ui.createLatexLabel
                 ({
-                    // fontFamily: FontFamily.CMU_REGULAR,
-                    text: 'Production rules: '
+                    text: 'Production rules: ',
+                    verticalOptions: LayoutOptions.CENTER,
+                    margin: new Thickness(0, 6)
                 }),
                 rule0Entry = ui.createEntry
                 ({
@@ -450,6 +473,11 @@ var createSystemMenu = () =>
                     {
                         tmpRules[7] = nt;
                     }
+                }),
+                separator = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
                 }),
                 constructButton = ui.createButton
                 ({
