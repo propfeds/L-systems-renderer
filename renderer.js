@@ -10,7 +10,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.06;
+var version = 0.07;
 
 var axiom = 'X';
 var rules = new Map();
@@ -32,6 +32,14 @@ var idStack = [];
 var idStackSize = 0;
 var idx = 0;
 var time = 0;
+
+var manualPages =
+[
+    'Bread',
+    'I love Itsuki',
+    'I love bread',
+    'I have to return this umbrella'
+]
 
 var rebuildSystem = (newAxiom, newRules) =>
 {
@@ -148,6 +156,21 @@ var init = () => {
             }
         }
         sys.canBeRefunded = (_) => false;
+    }
+    // Manual
+    {
+        manual = theory.createUpgrade(4, angle, new FreeCost);
+        manual.description = 'Manual';
+        manual.info = 'How to use the L-system renderer';
+        manual.boughtOrRefunded = (_) =>
+        {
+            if(manual.level > 0)
+            {
+                var manualMenu = createManualMenu();
+                manualMenu.show();
+            }
+        }
+        manual.canBeRefunded = (_) => false;
     }
 }
 
@@ -487,6 +510,68 @@ var createSystemMenu = () =>
                         resetSystem();
                     }
                 })
+            ]
+        }),
+        onDisappearing: () =>
+        {
+            sys.level = 0;
+        }
+    })
+    return menu;
+}
+
+var createManualMenu = () =>
+{
+    let page = 0;
+    let prevButton = ui.createButton
+    ({
+        text: 'Previous',
+        row: 0,
+        column: 0,
+        onClicked: () =>
+        {
+            --page;
+        }
+    });
+    let nextButton = ui.createButton
+    ({
+        text: 'Next',
+        row: 0,
+        column: 1,
+        onClicked: () =>
+        {
+            ++page;
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: 'Manual',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                currentPage = ui.createLatexLabel
+                ({
+                    text: () => manualPages[page]
+                }),
+                separator = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                btnGrid = ui.createGrid
+                ({
+                    columnDefinitions: ['50*', '50*'],
+                    children: () =>
+                    {
+                        if(page == 0)
+                            return nextButton;
+                        else if(page == manualPages.length - 1)
+                            return prevButton;
+                        else return [nextButton, prevButton];
+                    }
+                }),
             ]
         }),
         onDisappearing: () =>
