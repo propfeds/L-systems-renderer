@@ -5,6 +5,7 @@ import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
+import { Thickness } from '../api/ui/properties/Thickness';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
@@ -530,6 +531,7 @@ var createManualMenu = () =>
         column: 0,
         onClicked: () =>
         {
+            if(page > 0)
             --page;
         }
     });
@@ -540,6 +542,7 @@ var createManualMenu = () =>
         column: 1,
         onClicked: () =>
         {
+            if(page < manualPages.length - 1)
             ++page;
         }
     });
@@ -553,6 +556,12 @@ var createManualMenu = () =>
             [
                 currentPage = ui.createLatexLabel
                 ({
+                    text: () => `Page ${page + 1}/${manualPages.length}`,
+                    horizontalOptions: LayoutOptions.CENTER,
+                    margin: new Thickness(0, 0, 0, 6)
+                }),
+                pageContents = ui.createLatexLabel
+                ({
                     text: () => manualPages[page]
                 }),
                 separator = ui.createBox
@@ -563,14 +572,11 @@ var createManualMenu = () =>
                 btnGrid = ui.createGrid
                 ({
                     columnDefinitions: ['50*', '50*'],
-                    children: () =>
-                    {
-                        if(page == 0)
-                            return nextButton;
-                        else if(page == manualPages.length - 1)
-                            return prevButton;
-                        else return [nextButton, prevButton];
-                    }
+                    children:
+                    [
+                        nextButton,
+                        prevButton
+                    ]
                 }),
             ]
         }),
