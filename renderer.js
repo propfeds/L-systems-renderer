@@ -36,11 +36,23 @@ var time = 0;
 
 var manualPages =
 [
-    'Bread',
-    'I love Itsuki',
-    'I love bread',
-    'I have to return this umbrella'
-]
+    [
+        'A Primer on L-systems',
+        'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how the sequence expands each level\n\nF: moves cursor forward to create a line\n\nX: acts like a seed for branches\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
+    ],
+    [
+        'Cultivar FF',
+        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X'
+    ],
+    [
+        'Cultivar FXF',
+        'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X'
+    ],
+    [
+        'Cultivar XEXF',
+        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X'
+    ]
+];
 
 var rebuildSystem = (newAxiom, newRules) =>
 {
@@ -524,49 +536,29 @@ var createSystemMenu = () =>
 var createManualMenu = () =>
 {
     let page = 0;
-    let prevButton = ui.createButton
-    ({
-        text: 'Previous',
-        row: 0,
-        column: 0,
-        isVisible: () => page > 0,
-        onClicked: () =>
-        {
-            if(page > 0)
-                --page;
-        }
-    });
-    let nextButton = ui.createButton
-    ({
-        text: 'Next',
-        row: 0,
-        column: 1,
-        isVisible: () => page < manualPages.length - 1,
-        onClicked: () =>
-        {
-            if(page < manualPages.length - 1)
-                ++page;
-        }
-    });
 
     let menu = ui.createPopup
     ({
-        title: 'Manual',
+        title: () => `Manual (${page + 1}/${manualPages.length})`,
         content: ui.createStackLayout
         ({
             children:
             [
-                currentPage = ui.createLatexLabel
+                pageTitle = ui.createLatexLabel
                 ({
-                    text: () => `Page ${page + 1}/${manualPages.length}`,
-                    horizontalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 0, 0, 6)
+                    text: manualPages[page][0],
+                    horizontalOptions: LayoutOptions.CENTER
+                }),
+                separator0 = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
                 }),
                 pageContents = ui.createLatexLabel
                 ({
-                    text: () => manualPages[page]
+                    text: manualPages[page][1]
                 }),
-                separator = ui.createBox
+                separator1 = ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
@@ -576,15 +568,45 @@ var createManualMenu = () =>
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
-                        nextButton,
-                        prevButton
+                        prevButton = ui.createButton
+                        ({
+                            text: 'Previous',
+                            row: 0,
+                            column: 0,
+                            isVisible: () => page > 0,
+                            onClicked: () =>
+                            {
+                                if(page > 0)
+                                {
+                                    --page;
+                                    pageTitle.text = manualPages[page][0];
+                                    pageContents.text = manualPages[page][1];
+                                }
+                            }
+                        }),
+                        nextButton = ui.createButton
+                        ({
+                            text: 'Next',
+                            row: 0,
+                            column: 1,
+                            isVisible: () => page < manualPages.length - 1,
+                            onClicked: () =>
+                            {
+                                if(page < manualPages.length - 1)
+                                {
+                                    ++page;
+                                    pageTitle.text = manualPages[page][0];
+                                    pageContents.text = manualPages[page][1];
+                                }
+                            }
+                        })
                     ]
                 }),
             ]
         }),
         onDisappearing: () =>
         {
-            sys.level = 0;
+            manual.level = 0;
         }
     })
     return menu;
