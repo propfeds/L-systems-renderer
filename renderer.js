@@ -529,10 +529,11 @@ var createManualMenu = () =>
         text: 'Previous',
         row: 0,
         column: 0,
+        isVisible: () => page > 0,
         onClicked: () =>
         {
             if(page > 0)
-            --page;
+                --page;
         }
     });
     let nextButton = ui.createButton
@@ -540,10 +541,11 @@ var createManualMenu = () =>
         text: 'Next',
         row: 0,
         column: 1,
+        isVisible: () => page < manualPages.length - 1,
         onClicked: () =>
         {
             if(page < manualPages.length - 1)
-            ++page;
+                ++page;
         }
     });
 
