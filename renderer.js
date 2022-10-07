@@ -5,12 +5,13 @@ import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
+import { Thickness } from '../api/ui/properties/Thickness';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.06;
+var version = 0.07;
 
 var axiom = 'X';
 var rules = new Map();
@@ -32,6 +33,34 @@ var idStack = [];
 var idStackSize = 0;
 var idx = 0;
 var time = 0;
+
+var manualPages =
+[
+    [
+        'A Primer on L-systems',
+        'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to create a line\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
+    ],
+    [
+        'Constructing an L-system',
+        'The L-system menu provides the tools for constructon with 8 whole production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nOriginally, F is used to forward, but any letter should work (lower-case letters don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
+    ],
+    [
+        'Configuring your L-system',
+        'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle turned by +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+    ],
+    [
+        'Example: Cultivar FF',
+        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright'
+    ],
+    [
+        'Example: Dragon curve',
+        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nY→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)'
+    ],
+    [
+        'Example: Cultivar XEXF',
+        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X'
+    ]
+];
 
 var rebuildSystem = (newAxiom, newRules) =>
 {
@@ -91,8 +120,8 @@ var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
 var centre = (level) => new Vector3(xCentre * (figureScale ** level), yCentre * (figureScale ** level), 0);
 
 var init = () => {
-    angle = theory.createCurrency('°', '\\circ');
-    index = theory.createCurrency('i');
+    angle = theory.createCurrency('°', '\\degree');
+    progress = theory.createCurrency('%');
     // l
     {
         let getDesc = (level) => `lvl=${l.level.toString()}`;
@@ -149,7 +178,27 @@ var init = () => {
         }
         sys.canBeRefunded = (_) => false;
     }
+    // Manual
+    {
+        manual = theory.createUpgrade(4, angle, new FreeCost);
+        manual.description = 'Manual';
+        manual.info = 'How to use the L-system renderer';
+        manual.boughtOrRefunded = (_) =>
+        {
+            if(manual.level > 0)
+            {
+                var manualMenu = createManualMenu();
+                manualMenu.show();
+            }
+        }
+        manual.canBeRefunded = (_) => false;
+    }
 }
+
+// var getCurrencyBarDelegate = () => ui.createBox
+// ({
+//     heightRequest: 0
+// });
 
 var alwaysShowRefundButtons = () => true;
 
@@ -207,8 +256,8 @@ var tick = (elapsedTime, multiplier) =>
         else
             time -= timeLimit;
 
-        angle.value = state.z * turnAngle;
-        index.value = idx;
+        angle.value = state.z * turnAngle % 360;
+        progress.value = idx * 100 / (s[lvl].length - 2);        
         theory.invalidateTertiaryEquation();
     }
 }
@@ -346,6 +395,7 @@ var createConfigMenu = () =>
                         yCentre = tmpYC;
                         upright = tmpUpright;
                         resetSystem();
+                        menu.hide();
                     }
                 })
             ]
@@ -485,6 +535,7 @@ var createSystemMenu = () =>
                     {
                         rebuildSystem(tmpAxiom, tmpRules);
                         resetSystem();
+                        menu.hide();
                     }
                 })
             ]
@@ -492,6 +543,85 @@ var createSystemMenu = () =>
         onDisappearing: () =>
         {
             sys.level = 0;
+        }
+    })
+    return menu;
+}
+
+var createManualMenu = () =>
+{
+    let page = 0;
+
+    let menu = ui.createPopup
+    ({
+        title: () => `Manual (${page + 1}/${manualPages.length})`,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                pageTitle = ui.createLatexLabel
+                ({
+                    text: manualPages[page][0],
+                    horizontalOptions: LayoutOptions.CENTER
+                }),
+                separator0 = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                pageContents = ui.createLatexLabel
+                ({
+                    text: manualPages[page][1]
+                }),
+                separator1 = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                btnGrid = ui.createGrid
+                ({
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        prevButton = ui.createButton
+                        ({
+                            text: 'Previous',
+                            row: 0,
+                            column: 0,
+                            isVisible: () => page > 0,
+                            onClicked: () =>
+                            {
+                                if(page > 0)
+                                {
+                                    --page;
+                                    pageTitle.text = manualPages[page][0];
+                                    pageContents.text = manualPages[page][1];
+                                }
+                            }
+                        }),
+                        nextButton = ui.createButton
+                        ({
+                            text: 'Next',
+                            row: 0,
+                            column: 1,
+                            isVisible: () => page < manualPages.length - 1,
+                            onClicked: () =>
+                            {
+                                if(page < manualPages.length - 1)
+                                {
+                                    ++page;
+                                    pageTitle.text = manualPages[page][0];
+                                    pageContents.text = manualPages[page][1];
+                                }
+                            }
+                        })
+                    ]
+                }),
+            ]
+        }),
+        onDisappearing: () =>
+        {
+            manual.level = 0;
         }
     })
     return menu;
@@ -532,7 +662,7 @@ var canResetStage = () => true;
 
 var resetStage = () => resetSystem();
 
-var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${getCoordString(state.z)}\\end{matrix}`;
+var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${state.z},&i=${idx}\\end{matrix}`;
 
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
@@ -541,7 +671,5 @@ var get3DGraphPoint = () =>
     coords = (state - centre(l.level)) / (figureScale ** l.level);
     return swizzle(coords)[upright ? 1 : 0];
 }
-
-var getTau = () => BigNumber.ZERO;
 
 init();
