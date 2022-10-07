@@ -38,21 +38,26 @@ var manualPages =
 [
     [
         'A Primer on L-systems',
-        'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how the sequence expands each level\n\nF: moves cursor forward to create a line\n\nX: acts like a seed for branches\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
+        'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to create a line\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
     ],
     [
-
+        'Constructing an L-system',
+        'The L-system menu provides the tools for constructon with 8 whole production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nOriginally, F is used to forward, but any letter should work (lower-case letters don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
     ],
     [
-        'Cultivar FF',
-        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X'
+        'Configuring your L-system',
+        'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle turned by +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
     ],
     [
-        'Cultivar FXF',
-        'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X'
+        'Example: Cultivar FF',
+        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright'
     ],
     [
-        'Cultivar XEXF',
+        'Example: Dragon curve',
+        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nY→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)'
+    ],
+    [
+        'Example: Cultivar XEXF',
         'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X'
     ]
 ];
@@ -252,7 +257,7 @@ var tick = (elapsedTime, multiplier) =>
             time -= timeLimit;
 
         angle.value = state.z * turnAngle % 360;
-        progress.value = idx * 100 / (s[lvl].length - 1);        
+        progress.value = idx * 100 / (s[lvl].length - 2);        
         theory.invalidateTertiaryEquation();
     }
 }
