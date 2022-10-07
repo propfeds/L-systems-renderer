@@ -115,8 +115,8 @@ var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
 var centre = (level) => new Vector3(xCentre * (figureScale ** level), yCentre * (figureScale ** level), 0);
 
 var init = () => {
-    angle = theory.createCurrency('°', '\\circ');
-    index = theory.createCurrency('i');
+    angle = theory.createCurrency('°', '\\degree');
+    progress = theory.createCurrency('%');
     // l
     {
         let getDesc = (level) => `lvl=${l.level.toString()}`;
@@ -190,6 +190,11 @@ var init = () => {
     }
 }
 
+// var getCurrencyBarDelegate = () => ui.createBox
+// ({
+//     heightRequest: 0
+// });
+
 var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
@@ -246,8 +251,8 @@ var tick = (elapsedTime, multiplier) =>
         else
             time -= timeLimit;
 
-        angle.value = state.z * turnAngle;
-        index.value = idx;
+        angle.value = state.z * turnAngle % 360;
+        progress.value = idx * 100 / (s[lvl].length - 1);        
         theory.invalidateTertiaryEquation();
     }
 }
@@ -652,7 +657,7 @@ var canResetStage = () => true;
 
 var resetStage = () => resetSystem();
 
-var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${getCoordString(state.z)}\\end{matrix}`;
+var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${state.z},&i=${idx}\\end{matrix}`;
 
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
@@ -661,7 +666,5 @@ var get3DGraphPoint = () =>
     coords = (state - centre(l.level)) / (figureScale ** l.level);
     return swizzle(coords)[upright ? 1 : 0];
 }
-
-var getTau = () => BigNumber.ZERO;
 
 init();
