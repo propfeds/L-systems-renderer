@@ -1,10 +1,10 @@
 # L-systems-renderer
 L-systems renderer in Exponential Idle.
 
-![screenshot-5](screenshots/screenshot_5.jpg "Screenshot 5")
+![ss1](screenshots/screenshot_9.jpg "Screenshot 9")
 
-![screenshot-7](screenshots/screenshot_7.jpg "Screenshot 7")
+![ss2](screenshots/screenshot_6.jpg "Screenshot 6")
 
-![screenshot-6](screenshots/screenshot_6.jpg "Screenshot 6")
+![ss3](screenshots/screenshot_8.jpg "Screenshot 8")
 
-![screenshot-2](screenshots/screenshot_2.jpg "Screenshot 2")
+![ss4](screenshots/screenshot_5.jpg "Screenshot 5")
