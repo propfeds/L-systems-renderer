@@ -41,6 +41,9 @@ var manualPages =
         'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how the sequence expands each level\n\nF: moves cursor forward to create a line\n\nX: acts like a seed for branches\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
     ],
     [
+
+    ],
+    [
         'Cultivar FF',
         'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X'
     ],
@@ -382,6 +385,7 @@ var createConfigMenu = () =>
                         yCentre = tmpYC;
                         upright = tmpUpright;
                         resetSystem();
+                        menu.hide();
                     }
                 })
             ]
@@ -521,6 +525,7 @@ var createSystemMenu = () =>
                     {
                         rebuildSystem(tmpAxiom, tmpRules);
                         resetSystem();
+                        menu.hide();
                     }
                 })
             ]
