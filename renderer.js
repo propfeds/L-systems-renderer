@@ -118,8 +118,8 @@ class Renderer
     centre(level)
     {
         return new Vector3(
-            this.xCentre * this.initScale * this.figureScale ** level,
-            this.yCentre * this.initScale * this.figureScale ** level,
+            this.xCentre * this.figureScale ** level,
+            this.yCentre * this.figureScale ** level,
             0
         );
     }
@@ -622,7 +622,7 @@ var createSystemMenu = () =>
                     {
                         renderer.system = new LSystem(tmpAxiom, tmpRules, tmpAngle);
                         renderer.levels = [];
-                        resetSystem();
+                        renderer.reset();
                         menu.hide();
                     }
                 })
