@@ -11,27 +11,210 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.07;
+var version = 0.09;
 
-var axiom = 'X';
-var rules = new Map();
-rules.set('F', 'FF');
-rules.set('X', 'F[+X][-X]FX');
-var s = [];
-var maxS = -1;
+class LSystem
+{
+    constructor(axiom, rules, turnAngle = 30)
+    {
+        this.axiom = axiom;
+        this.rules = new Map();
+        for(let i = 0; i < rules.length; ++i)
+        {
+            if(rules[i] !== '')
+            {
+                let rs = rules[i].split('=');
+                this.rules.set(rs[0], rs[1]);
+            }
+        }
+        this.turnAngle = turnAngle;
+    }
 
-var turnAngle = 30;
-var figureScale = 2;
-var xCentre = 1;
-var yCentre = 0;
-var upright = false;
+    derive(state)
+    {
+        let result = '';
+        for(let i = 0; i < state.length; ++i)
+        {
+            if(this.rules.has(state[i]))
+                result += this.rules.get(state[i]);
+            else
+                result += state[i];
+        }
+        return result;
+    }
 
-var state = new Vector3(0, 0, 0);
-var stack = [];
-var stackSize = 0;
-var idStack = [];
-var idStackSize = 0;
-var idx = 0;
+    toString()
+    {
+        let result = `${this.axiom} ${this.turnAngle}`;
+        for(let [key, value] of this.rules)
+        {
+            result += ` ${key}=${value}`;
+        }
+        return result;
+    }
+}
+
+class Renderer
+{
+    constructor(system, initScale = 1, figureScale = 2, xCentre = 0, yCentre = 0, upright = false)
+    {
+        this.system = system;
+        this.initScale = initScale;
+        this.figureScale = figureScale;
+        this.xCentre = xCentre;
+        this.yCentre = yCentre;
+        this.upright = upright;
+
+        this.state = new Vector3(0, 0, 0);
+        this.levels = [];
+        this.stack = [];
+        this.idStack = [];
+        this.idx = 0;
+    }
+
+    update(level)
+    {
+        for(let i = this.levels.length; i <= level; ++i)
+        {
+            if(i == 0)
+                this.levels[i] = `[${this.system.axiom}]`;
+            else
+                this.levels[i] = this.system.derive(this.levels[i - 1]);
+        }
+    }
+    reset()
+    {
+        this.state = new Vector3(0, 0, 0);
+        this.stack = [];
+        this.idStack = [];
+        this.idx = 0;
+        theory.clearGraph();
+        theory.invalidateTertiaryEquation();
+    }
+    apply(system)
+    {
+        this.system = system;
+        this.levels = [];
+        this.reset();
+    }
+
+    turnLeft()
+    {
+        this.state = new Vector3(this.state.x, this.state.y, this.state.z + 1);
+    }
+    turnRight()
+    {
+        this.state = new Vector3(this.state.x, this.state.y, this.state.z - 1);
+    }
+    forward()
+    {
+        this.state = new Vector3(
+            this.state.x + Math.cos(this.system.turnAngle * this.state.z * Math.PI / 180),
+            this.state.y + Math.sin(this.system.turnAngle * this.state.z * Math.PI / 180),
+            this.state.z
+        );
+    }
+    swizzle()
+    {
+        return [
+            new Vector3(this.state.x, this.state.y, 0),
+            new Vector3(this.state.y, -this.state.x, 0)
+        ];
+    }
+    centre(level)
+    {
+        return new Vector3(
+            this.xCentre * this.figureScale ** level,
+            this.yCentre * this.figureScale ** level,
+            0
+        );
+    }
+
+    draw(level)
+    {
+        this.update(level);
+        if(this.idx >= this.levels[level].length)
+            this.idx = 0;
+
+        for(let i = this.idx; i < this.levels[level].length; ++i)
+        {
+            switch(this.levels[level][i])
+            {
+                case '+': this.turnLeft(); break;
+                case '-': this.turnRight(); break;
+                case '[':
+                    this.idStack.push(this.stack.length);
+                    this.stack.push(this.state);
+                    break;
+                    // stack[stackSize] = state;
+                    // idStack[idStackSize] = stackSize;
+                    // ++idStackSize;
+                    // ++stackSize;
+                case ']':
+                    this.state = this.stack.pop();
+                    if(this.stack.length == this.idStack[this.idStack.length - 1])
+                    {
+                        this.idStack.pop();
+                        this.idx = i + 1;
+                    }
+                    return;
+                    // --stackSize;
+                    // state = stack[stackSize];
+                    // if(stackSize == idStack[idStackSize - 1])
+                    // {
+                    //     --idStackSize;
+                    //     idx = i + 1;
+                    // }
+                    // break;
+                default:
+                    this.stack.push(this.state);
+                    this.forward();
+                    this.idx = i + 1;
+                    return;
+                    // stack[stackSize] = state;
+                    // ++stackSize;
+                    // state = forward(state);
+                    // idx = i + 1;
+                    // break;
+            }
+        }
+    }
+
+    getAngle()
+    {
+        return this.state.z * this.system.turnAngle % 360;
+    }
+    getProgress(level)
+    {
+        return this.idx * 100 / (this.levels[level].length - 1);
+    }
+
+    getStateString()
+    {
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}\\end{matrix}`;
+    }
+
+    getCursor(level)
+    {
+        let coords = (this.state - this.centre(level)) / (this.initScale * this.figureScale ** level);
+        return swizzle(coords)[this.upright ? 1 : 0];
+    }
+
+    toString()
+    {
+        return`${this.initScale} ${this.figureScale} ${this.xCentre} ${this.yCentre} ${this.upright ? 1 : 0} ${this.system.toString()}`;
+    }
+}
+
+var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
+var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
+
+var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
+var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
+var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[+FX]-X'], 22.5);
+
+var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 
 var manualPages =
@@ -50,98 +233,44 @@ var manualPages =
     ],
     [
         'Example: Cultivar FF',
-        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright'
+        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright',
+        cultivarFF
     ],
     [
         'Example: Dragon curve',
-        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nY→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)'
+        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
+        dragon
     ],
     [
         'Example: Cultivar XEXF',
-        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X'
+        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X',
+        cultivarXEXF
     ]
 ];
 
-var rebuildSystem = (newAxiom, newRules) =>
+var init = () =>
 {
-    rules.clear();
-    axiom = `${newAxiom}`;
-    for(i = 0; i < newRules.length; ++i)
-    {
-        if(newRules[i] !== '')
-        {
-            let rs = newRules[i].split('=');
-            rules.set(rs[0], rs[1]);
-        }
-    }
-    s = [];
-    maxS = -1;
-}
-
-var derive = (states, rules) =>
-{
-    let result = '';
-    for(let i = 0; i < states.length; ++i)
-    {
-        if(rules.has(states[i]))
-            result += rules.get(states[i]);
-        else
-            result += states[i];
-    }
-    return result;
-}
-
-var updateSystem = (level) =>
-{
-    if(s[0] === undefined)
-        s[0] = `[${axiom}]`;
-    for(let i = maxS + 1; i <= level; ++i)
-        if(s[i] === undefined)
-            s[i] = derive(s[i - 1], rules);
-    maxS = level;
-}
-
-var resetSystem = () =>
-{
-    state = new Vector3(0, 0, 0);
-    stack = [];
-    stackSize = 0;
-    idStack = [];
-    idStackSize = 0;
-    idx = 0;
-    theory.clearGraph();
-    theory.invalidateTertiaryEquation();
-}
-
-var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
-var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
-var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z * Math.PI / 180), v.y + Math.sin(turnAngle * v.z * Math.PI / 180), v.z);
-var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
-var centre = (level) => new Vector3(xCentre * (figureScale ** level), yCentre * (figureScale ** level), 0);
-
-var init = () => {
     angle = theory.createCurrency('°', '\\degree');
     progress = theory.createCurrency('%');
     // l
     {
-        let getDesc = (level) => `lvl=${l.level.toString()}`;
-        let getInfo = (level) => `lvl=${l.level.toString()}`;
+        let getDesc = (level) => `\\text{Level:}${level.toString()}`;
+        let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.boughtOrRefunded = (_) =>
         {
-            if(l.level > maxS)
-                updateSystem(l.level);
-            resetSystem();
+            renderer.update(l.level);
+            renderer.reset();
         }
         l.canBeRefunded = (_) => true;
     }
     // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => `ts=${ts.level.toString()}`;
-        let getInfo = (level) => `ts=${ts.level.toString()}`;
+        let getDesc = (level) => `\\text{Tickspeed:}${level.toString()}/sec`;
+        let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, angle, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
@@ -151,8 +280,8 @@ var init = () => {
     // Config menu
     {
         cfg = theory.createUpgrade(2, angle, new FreeCost);
-        cfg.description = 'Config menu';
-        cfg.info = 'Configure the shape and size of the system';
+        cfg.description = 'Renderer menu';
+        cfg.info = 'Configure the L-systems renderer';
         cfg.boughtOrRefunded = (_) =>
         {
             if(cfg.level > 0)
@@ -195,11 +324,6 @@ var init = () => {
     }
 }
 
-// var getCurrencyBarDelegate = () => ui.createBox
-// ({
-//     heightRequest: 0
-// });
-
 var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
@@ -212,67 +336,26 @@ var tick = (elapsedTime, multiplier) =>
 
     if(time >= timeLimit - 1e-8)
     {
-        let lvl = l.level;
-            if(lvl > maxS)
-                updateSystem(lvl);
-        for(let i = idx; i < s[lvl].length; ++i)
-        {
-            if(s[lvl][i] == '+')
-                state = turnLeft(state);
-            else if(s[lvl][i] == '-')
-                state = turnRight(state);
-            else if(s[lvl][i] == '[')
-            {
-                stack[stackSize] = state;
-                idStack[idStackSize] = stackSize;
-                ++idStackSize;
-                ++stackSize;
-            }
-            else if(s[lvl][i] == ']')
-            {
-                --stackSize;
-                state = stack[stackSize];
-                if(stackSize == idStack[idStackSize - 1])
-                {
-                    --idStackSize;
-                    idx = i + 1;
-                }
-                break;
-            }
-            else
-            {
-                stack[stackSize] = state;
-                ++stackSize;
-                state = forward(state);
-                idx = i + 1;
-                break;
-            }
-        }
-        if(idx >= s[lvl].length)
-            idx = 0;
+        renderer.draw(l.level);
+        time = 0;
 
-        if(ts.level > 9)
-            time = 0;
-        else
-            time -= timeLimit;
-
-        angle.value = state.z * turnAngle % 360;
-        progress.value = idx * 100 / (s[lvl].length - 2);        
+        angle.value = renderer.getAngle();
+        progress.value = renderer.getProgress(l.level);        
         theory.invalidateTertiaryEquation();
     }
 }
 
 var createConfigMenu = () =>
 {
-    let tmpAngle = turnAngle;
-    let tmpScale = figureScale;
-    let tmpXC = xCentre;
-    let tmpYC = yCentre;
-    let tmpUpright = upright;
+    let tmpIScale = renderer.initScale;
+    let tmpFScale = renderer.figureScale;
+    let tmpXC = renderer.xCentre;
+    let tmpYC = renderer.yCentre;
+    let tmpUpright = renderer.upright;
 
     let menu = ui.createPopup
     ({
-        title: 'Config Menu',
+        title: 'Renderer Menu',
         content: ui.createStackLayout
         ({
             children:
@@ -282,47 +365,47 @@ var createConfigMenu = () =>
                     columnDefinitions: ['70*', '30*'],
                     children:
                     [
-                        angleLabel = ui.createLatexLabel
+                        iScaleLabel = ui.createLatexLabel
                         ({
-                            text: 'Turning angle (°): ',
+                            text: 'Initial scale: ',
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        angleEntry = ui.createEntry
+                        iScaleEntry = ui.createEntry
                         ({
-                            text: tmpAngle.toString(),
+                            text: tmpIScale.toString(),
                             row: 0,
                             column: 1,
                             horizontalTextAlignment: TextAlignment.END,
                             onTextChanged: (ot, nt) =>
                             {
-                                tmpAngle = Number(nt);
+                                tmpIScale = Number(nt);
                             }
                         }),
-                        scaleLabel = ui.createLatexLabel
+                        fScaleLabel = ui.createLatexLabel
                         ({
                             text: 'Figure scale per level: ',
                             row: 1,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        scaleEntry = ui.createEntry
+                        fScaleEntry = ui.createEntry
                         ({
-                            text: tmpScale.toString(),
+                            text: tmpFScale.toString(),
                             row: 1,
                             column: 1,
                             horizontalTextAlignment: TextAlignment.END,
                             onTextChanged: (ot, nt) =>
                             {
-                                tmpScale = Number(nt);
-                                if(tmpScale == 0)
-                                    tmpScale = 1;
+                                tmpFScale = Number(nt);
+                                if(tmpFScale == 0)
+                                    tmpFScale = 1;
                             }
                         }),
                         camLabel = ui.createLatexLabel
                         ({
-                            text: 'Camera centre: ',
+                            text: 'Camera centre (x, y): ',
                             row: 2,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -389,12 +472,12 @@ var createConfigMenu = () =>
                     text: 'Save',
                     onClicked: () =>
                     {
-                        turnAngle = tmpAngle;
-                        figureScale = tmpScale;
-                        xCentre = tmpXC;
-                        yCentre = tmpYC;
-                        upright = tmpUpright;
-                        resetSystem();
+                        renderer.initScale = tmpIScale;
+                        renderer.figureScale = tmpFScale;
+                        renderer.xCentre = tmpXC;
+                        renderer.yCentre = tmpYC;
+                        renderer.upright = tmpUpright;
+                        renderer.reset();
                         menu.hide();
                     }
                 })
@@ -410,13 +493,12 @@ var createConfigMenu = () =>
 
 var createSystemMenu = () =>
 {
-    let tmpAxiom = axiom;
+    let tmpAxiom = renderer.system.axiom;
+    let tmpAngle = renderer.system.turnAngle;
     let tmpRules = [];
-    let rsIdx = 0;
-    for(let [key, value] of rules)
+    for(let [key, value] of renderer.system.rules)
     {
-        tmpRules[rsIdx] = `${key}=${value}`;
-        ++rsIdx;
+        tmpRules.push(`${key}=${value}`);
     }
     for(let i = 0; i < 8; ++i)
         if(tmpRules[i] === undefined)
@@ -431,7 +513,7 @@ var createSystemMenu = () =>
             [
                 axiomRow = ui.createGrid
                 ({
-                    columnDefinitions: ['40*', '60*'],
+                    columnDefinitions: ['20*', '30*', '30*', '20*'],
                     children:
                     [
                         axiomLabel = ui.createLatexLabel
@@ -450,7 +532,25 @@ var createSystemMenu = () =>
                             {
                                 tmpAxiom = nt;
                             }
-                        })
+                        }),
+                        angleLabel = ui.createLatexLabel
+                        ({
+                            text: 'Turning angle (°): ',
+                            row: 0,
+                            column: 2,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        angleEntry = ui.createEntry
+                        ({
+                            text: tmpAngle.toString(),
+                            row: 0,
+                            column: 3,
+                            horizontalTextAlignment: TextAlignment.END,
+                            onTextChanged: (ot, nt) =>
+                            {
+                                tmpAngle = Number(nt);
+                            }
+                        }),
                     ]
                 }),
                 rulesLabel = ui.createLatexLabel
@@ -533,8 +633,7 @@ var createSystemMenu = () =>
                     text: 'Construct',
                     onClicked: () =>
                     {
-                        rebuildSystem(tmpAxiom, tmpRules);
-                        resetSystem();
+                        renderer.apply(new LSystem(tmpAxiom, tmpRules, tmpAngle));
                         menu.hide();
                     }
                 })
@@ -617,6 +716,16 @@ var createManualMenu = () =>
                         })
                     ]
                 }),
+                adoptBtn = ui.createButton
+                ({
+                    text: 'Apply L-system',
+                    isVisible: () => manualPages[page][2] !== undefined,
+                    onClicked: () =>
+                    {
+                        renderer.apply(manualPages[page][2]);
+                        menu.hide(); 
+                    }
+                })
             ]
         }),
         onDisappearing: () =>
@@ -627,49 +736,32 @@ var createManualMenu = () =>
     return menu;
 }
 
-var getInternalState = () =>
-{
-    let result = `${time} ${turnAngle} ${figureScale} ${xCentre} ${yCentre} ${upright ? 1 : 0} ${axiom}`;
-    for(let [key, value] of rules)
-    {
-        result += ` ${key}=${value}`;
-    }
-    return result;
-}
+var getInternalState = () => `${time} ${renderer.toString()}`;
 
 var setInternalState = (stateStr) =>
 {
     let values = stateStr.split(' ');
     time = parseBigNumber(values[0]);
-    turnAngle = Number(values[1]);
-    figureScale = Number(values[2]);
-    xCentre = Number(values[3]);
-    yCentre = Number(values[4]);
-    upright = Boolean(Number(values[5]));
     // axiom = values[6];
+    // turnAngle = values[7];
     let tmpRules = [];
     for(let i = 0; i < 8; ++i)
     {
-        if(values[7 + i] !== undefined)
-            tmpRules[i] = values[7 + i];
+        if(values[8 + i] !== undefined)
+            tmpRules[i] = values[8 + i];
         else
             tmpRules[i] = '';
     }
-    rebuildSystem(values[6], tmpRules);
+    let system = new LSystem(values[6], tmpRules, values[7]);
+    renderer = new Renderer(system, Number(values[1]), Number(values[2]), Number(values[3]), Number(values[4]), Boolean(Number(values[5])));
 }
 
 var canResetStage = () => true;
 
-var resetStage = () => resetSystem();
+var resetStage = () => renderer.reset();
 
-var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${state.z},&i=${idx}\\end{matrix}`;
+var getTertiaryEquation = () => renderer.getStateString();
 
-var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
-
-var get3DGraphPoint = () =>
-{
-    coords = (state - centre(l.level)) / (figureScale ** l.level);
-    return swizzle(coords)[upright ? 1 : 0];
-}
+var get3DGraphPoint = () => renderer.getCursor(l.level);
 
 init();
