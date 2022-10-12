@@ -11,27 +11,160 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.07;
+var version = 0.08;
 
-var axiom = 'X';
-var rules = new Map();
-rules.set('F', 'FF');
-rules.set('X', 'F[+X][-X]FX');
-var s = [];
-var maxS = -1;
+class LSystem
+{
+    constructor(axiom, rules, turnAngle = 30)
+    {
+        this.axiom = axiom;
+        this.rules = new Map();
+        for(i = 0; i < rules.length; ++i)
+        {
+            if(rules[i] !== '')
+            {
+                let rs = rules[i].split('=');
+                this.rules.set(rs[0], rs[1]);
+            }
+        }
+        this.turnAngle = turnAngle;
+    }
 
-var turnAngle = 30;
-var figureScale = 2;
-var xCentre = 1;
-var yCentre = 0;
-var upright = false;
+    derive(state)
+    {
+        let result = '';
+        for(let i = 0; i < state.length; ++i)
+        {
+            if(this.rules.has(state[i]))
+                result += this.rules.get(state[i]);
+            else
+                result += state[i];
+        }
+        return result;
+    }
+}
 
-var state = new Vector3(0, 0, 0);
-var stack = [];
-var stackSize = 0;
-var idStack = [];
-var idStackSize = 0;
-var idx = 0;
+class Renderer
+{
+    #state = new Vector3(0, 0, 0);
+    #levels = [];
+    #stack = [];
+    #idStack = [];
+    #idx = 0;
+
+    constructor(system, initScale = 1, figureScale = 2, xCentre = 0, yCentre = 0, upright = false)
+    {
+        this.system = system;
+        this.initScale = initScale;
+        this.figureScale = figureScale;
+        this.xCentre = xCentre;
+        this.yCentre = yCentre;
+        this.upright = upright;
+    }
+
+    update = (level) =>
+    {
+        for(let i = this.#levels.length; i < level; ++i)
+        {
+            if(i == 0)
+                this.#levels[i] = `[${this.system.axiom}]`;
+            else
+                this.#levels[i] = this.system.derive(this.#levels[i - 1]);
+        }
+    }
+    reset = () =>
+    {
+        this.#state = new Vector3(0, 0, 0);
+        this.#stack = [];
+        this.#idStack = [];
+        this.#idx = 0;
+        theory.clearGraph();
+        theory.invalidateTertiaryEquation();
+    }
+
+    turnLeft = () =>
+    {
+        this.#state = new Vector3(this.#state.x, this.#state.y, this.#state.z + 1);
+    }
+    turnRight = () =>
+    {
+        this.#state = new Vector3(this.#state.x, this.#state.y, this.#state.z - 1);
+    }
+    forward = () =>
+    {
+        this.#state = new Vector3(
+            this.#state.x + Math.cos(turnAngle * this.#state.z * Math.PI / 180),
+            this.#state.y + Math.sin(turnAngle * this.#state.z * Math.PI / 180),
+            this.#state.z
+        );
+    }
+    swizzle = () =>
+    [
+        new Vector3(this.#state.x, this.#state.y, 0),
+        new Vector3(this.#state.y, -this.#state.x, 0)
+    ];
+    centre = (level) => new Vector3(
+        this.xCentre * this.initScale * this.figureScale ** level,
+        this.yCentre * this.initScale * this.figureScale ** level,
+        0
+    );
+
+    draw = (level) =>
+    {
+        this.update(level);
+        if(this.#idx >= this.#levels[level].length)
+            this.#idx = 0;
+
+        for(let i = this.#idx; i < this.#levels[level].length; ++i)
+        {
+            switch(this.#levels[level][i])
+            {
+                case '+': this.turnLeft(); break;
+                case '-': this.turnRight(); break;
+                case '[':
+                    this.#idStack.push(this.#stack.length);
+                    this.#stack.push(this.#state);
+                    break;
+                    // stack[stackSize] = state;
+                    // idStack[idStackSize] = stackSize;
+                    // ++idStackSize;
+                    // ++stackSize;
+                case ']':
+                    this.#state = this.#stack.pop();
+                    if(this.#stack.length == this.#idStack[this.#idStack.length - 1])
+                    {
+                        this.#idStack.pop();
+                        this.#idx = i + 1;
+                    }
+                    return;
+                    // --stackSize;
+                    // state = stack[stackSize];
+                    // if(stackSize == idStack[idStackSize - 1])
+                    // {
+                    //     --idStackSize;
+                    //     idx = i + 1;
+                    // }
+                    // break;
+                default:
+                    this.#stack.push(this.#state);
+                    this.forward();
+                    this.#idx = i + 1;
+                    return;
+                    // stack[stackSize] = state;
+                    // ++stackSize;
+                    // state = forward(state);
+                    // idx = i + 1;
+                    // break;
+            }
+        }
+    }
+
+    getAngle = () => this.#state.z * this.system.turnAngle % 360;
+    getProgress = (level) => this.#idx * 100 / (this.#levels[level].length - 2)
+}
+
+var arrow = LSystem('X', ['F=FF', 'X=F[+X][-X]FX']);
+var renderer = Renderer(arrow, 2, 2, 1, 0, true);
 var time = 0;
 
 var manualPages =
@@ -62,86 +195,29 @@ var manualPages =
     ]
 ];
 
-var rebuildSystem = (newAxiom, newRules) =>
+var init = () =>
 {
-    rules.clear();
-    axiom = `${newAxiom}`;
-    for(i = 0; i < newRules.length; ++i)
-    {
-        if(newRules[i] !== '')
-        {
-            let rs = newRules[i].split('=');
-            rules.set(rs[0], rs[1]);
-        }
-    }
-    s = [];
-    maxS = -1;
-}
-
-var derive = (states, rules) =>
-{
-    let result = '';
-    for(let i = 0; i < states.length; ++i)
-    {
-        if(rules.has(states[i]))
-            result += rules.get(states[i]);
-        else
-            result += states[i];
-    }
-    return result;
-}
-
-var updateSystem = (level) =>
-{
-    if(s[0] === undefined)
-        s[0] = `[${axiom}]`;
-    for(let i = maxS + 1; i <= level; ++i)
-        if(s[i] === undefined)
-            s[i] = derive(s[i - 1], rules);
-    maxS = level;
-}
-
-var resetSystem = () =>
-{
-    state = new Vector3(0, 0, 0);
-    stack = [];
-    stackSize = 0;
-    idStack = [];
-    idStackSize = 0;
-    idx = 0;
-    theory.clearGraph();
-    theory.invalidateTertiaryEquation();
-}
-
-var turnLeft = (v) => new Vector3(v.x, v.y, v.z + 1);
-var turnRight = (v) => new Vector3(v.x, v.y, v.z - 1);
-var forward = (v) => new Vector3(v.x + Math.cos(turnAngle * v.z * Math.PI / 180), v.y + Math.sin(turnAngle * v.z * Math.PI / 180), v.z);
-var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
-var centre = (level) => new Vector3(xCentre * (figureScale ** level), yCentre * (figureScale ** level), 0);
-
-var init = () => {
     angle = theory.createCurrency('°', '\\degree');
     progress = theory.createCurrency('%');
     // l
     {
-        let getDesc = (level) => `lvl=${l.level.toString()}`;
-        let getInfo = (level) => `lvl=${l.level.toString()}`;
+        let getDesc = (level) => `Level: ${l.level.toString()}`;
+        let getInfo = (level) => `Lv. ${l.level.toString()}`;
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.boughtOrRefunded = (_) =>
         {
-            if(l.level > maxS)
-                updateSystem(l.level);
-            resetSystem();
+            renderer.update(l.level);
+            renderer.reset();
         }
         l.canBeRefunded = (_) => true;
     }
     // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => `ts=${ts.level.toString()}`;
-        let getInfo = (level) => `ts=${ts.level.toString()}`;
+        let getDesc = (level) => `Tickspeed: ${ts.level.toString()}`;
+        let getInfo = (level) => `Ts=${ts.level.toString()}`;
         ts = theory.createUpgrade(1, angle, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
@@ -195,11 +271,6 @@ var init = () => {
     }
 }
 
-// var getCurrencyBarDelegate = () => ui.createBox
-// ({
-//     heightRequest: 0
-// });
-
 var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
@@ -212,55 +283,17 @@ var tick = (elapsedTime, multiplier) =>
 
     if(time >= timeLimit - 1e-8)
     {
-        let lvl = l.level;
-            if(lvl > maxS)
-                updateSystem(lvl);
-        for(let i = idx; i < s[lvl].length; ++i)
-        {
-            if(s[lvl][i] == '+')
-                state = turnLeft(state);
-            else if(s[lvl][i] == '-')
-                state = turnRight(state);
-            else if(s[lvl][i] == '[')
-            {
-                stack[stackSize] = state;
-                idStack[idStackSize] = stackSize;
-                ++idStackSize;
-                ++stackSize;
-            }
-            else if(s[lvl][i] == ']')
-            {
-                --stackSize;
-                state = stack[stackSize];
-                if(stackSize == idStack[idStackSize - 1])
-                {
-                    --idStackSize;
-                    idx = i + 1;
-                }
-                break;
-            }
-            else
-            {
-                stack[stackSize] = state;
-                ++stackSize;
-                state = forward(state);
-                idx = i + 1;
-                break;
-            }
-        }
-        if(idx >= s[lvl].length)
-            idx = 0;
+        renderer.draw(l.level);
+        time = 0;
 
-        if(ts.level > 9)
-            time = 0;
-        else
-            time -= timeLimit;
-
-        angle.value = state.z * turnAngle % 360;
-        progress.value = idx * 100 / (s[lvl].length - 2);        
+        angle.value = renderer.getAngle();
+        progress.value = renderer.getProgress(l.level);        
         theory.invalidateTertiaryEquation();
     }
 }
+
+// Below is code
+
 
 var createConfigMenu = () =>
 {
