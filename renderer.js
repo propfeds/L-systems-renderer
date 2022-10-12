@@ -11,7 +11,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.08;
+var version = 0.09;
 
 class LSystem
 {
@@ -90,6 +90,12 @@ class Renderer
         this.idx = 0;
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
+    }
+    apply(system)
+    {
+        this.system = system;
+        this.levels = [];
+        this.reset();
     }
 
     turnLeft()
@@ -203,7 +209,11 @@ class Renderer
 var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
-var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX']);
+var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
+var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
+var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[+FX]-X'], 22.5);
+
 var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 
@@ -223,15 +233,18 @@ var manualPages =
     ],
     [
         'Example: Cultivar FF',
-        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright'
+        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright',
+        cultivarFF
     ],
     [
         'Example: Dragon curve',
-        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nY→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)'
+        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
+        dragon
     ],
     [
         'Example: Cultivar XEXF',
-        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X'
+        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X',
+        cultivarXEXF
     ]
 ];
 
@@ -620,9 +633,7 @@ var createSystemMenu = () =>
                     text: 'Construct',
                     onClicked: () =>
                     {
-                        renderer.system = new LSystem(tmpAxiom, tmpRules, tmpAngle);
-                        renderer.levels = [];
-                        renderer.reset();
+                        renderer.apply(new LSystem(tmpAxiom, tmpRules, tmpAngle));
                         menu.hide();
                     }
                 })
@@ -705,6 +716,16 @@ var createManualMenu = () =>
                         })
                     ]
                 }),
+                adoptBtn = ui.createButton
+                ({
+                    text: 'Apply L-system',
+                    isVisible: () => manualPages[page][2] !== undefined,
+                    onClicked: () =>
+                    {
+                        renderer.apply(manualPages[page][2]);
+                        menu.hide(); 
+                    }
+                })
             ]
         }),
         onDisappearing: () =>
