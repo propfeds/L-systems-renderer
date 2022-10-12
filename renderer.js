@@ -19,7 +19,7 @@ class LSystem
     {
         this.axiom = axiom;
         this.rules = new Map();
-        for(i = 0; i < rules.length; ++i)
+        for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
             {
@@ -30,7 +30,7 @@ class LSystem
         this.turnAngle = turnAngle;
     }
 
-    derive = (state) =>
+    derive(state)
     {
         let result = '';
         for(let i = 0; i < state.length; ++i)
@@ -43,7 +43,7 @@ class LSystem
         return result;
     }
 
-    toString = () =>
+    toString()
     {
         let result = `${this.axiom} ${this.turnAngle}`;
         for(let [key, value] of this.rules)
@@ -56,12 +56,6 @@ class LSystem
 
 class Renderer
 {
-    #state = new Vector3(0, 0, 0);
-    #levels = [];
-    #stack = [];
-    #idStack = [];
-    #idx = 0;
-
     constructor(system, initScale = 1, figureScale = 2, xCentre = 0, yCentre = 0, upright = false)
     {
         this.system = system;
@@ -70,81 +64,92 @@ class Renderer
         this.xCentre = xCentre;
         this.yCentre = yCentre;
         this.upright = upright;
+
+        this.state = new Vector3(0, 0, 0);
+        this.levels = [];
+        this.stack = [];
+        this.idStack = [];
+        this.idx = 0;
     }
 
-    update = (level) =>
+    update(level)
     {
-        for(let i = this.#levels.length; i < level; ++i)
+        for(let i = this.levels.length; i <= level; ++i)
         {
             if(i == 0)
-                this.#levels[i] = `[${this.system.axiom}]`;
+                this.levels[i] = `[${this.system.axiom}]`;
             else
-                this.#levels[i] = this.system.derive(this.#levels[i - 1]);
+                this.levels[i] = this.system.derive(this.levels[i - 1]);
         }
     }
-    reset = () =>
+    reset()
     {
-        this.#state = new Vector3(0, 0, 0);
-        this.#stack = [];
-        this.#idStack = [];
-        this.#idx = 0;
+        this.state = new Vector3(0, 0, 0);
+        this.stack = [];
+        this.idStack = [];
+        this.idx = 0;
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
 
-    turnLeft = () =>
+    turnLeft()
     {
-        this.#state = new Vector3(this.#state.x, this.#state.y, this.#state.z + 1);
+        this.state = new Vector3(this.state.x, this.state.y, this.state.z + 1);
     }
-    turnRight = () =>
+    turnRight()
     {
-        this.#state = new Vector3(this.#state.x, this.#state.y, this.#state.z - 1);
+        this.state = new Vector3(this.state.x, this.state.y, this.state.z - 1);
     }
-    forward = () =>
+    forward()
     {
-        this.#state = new Vector3(
-            this.#state.x + Math.cos(turnAngle * this.#state.z * Math.PI / 180),
-            this.#state.y + Math.sin(turnAngle * this.#state.z * Math.PI / 180),
-            this.#state.z
+        this.state = new Vector3(
+            this.state.x + Math.cos(this.system.turnAngle * this.state.z * Math.PI / 180),
+            this.state.y + Math.sin(this.system.turnAngle * this.state.z * Math.PI / 180),
+            this.state.z
         );
     }
-    swizzle = () =>
-    [
-        new Vector3(this.#state.x, this.#state.y, 0),
-        new Vector3(this.#state.y, -this.#state.x, 0)
-    ];
-    centre = (level) => new Vector3(
-        this.xCentre * this.initScale * this.figureScale ** level,
-        this.yCentre * this.initScale * this.figureScale ** level,
-        0
-    );
+    swizzle()
+    {
+        return [
+            new Vector3(this.state.x, this.state.y, 0),
+            new Vector3(this.state.y, -this.state.x, 0)
+        ];
+    }
+    centre(level)
+    {
+        return new Vector3(
+            this.xCentre * this.initScale * this.figureScale ** level,
+            this.yCentre * this.initScale * this.figureScale ** level,
+            0
+        );
+    }
 
-    draw = (level) =>
+    draw(level)
     {
         this.update(level);
-        if(this.#idx >= this.#levels[level].length)
-            this.#idx = 0;
+        if(this.idx >= this.levels[level].length)
+            this.idx = 0;
 
-        for(let i = this.#idx; i < this.#levels[level].length; ++i)
+        for(let i = this.idx; i < this.levels[level].length; ++i)
         {
-            switch(this.#levels[level][i])
+            switch(this.levels[level][i])
             {
                 case '+': this.turnLeft(); break;
                 case '-': this.turnRight(); break;
                 case '[':
-                    this.#idStack.push(this.#stack.length);
-                    this.#stack.push(this.#state);
+                    this.idStack.push(this.stack.length);
+                    this.stack.push(this.state);
                     break;
                     // stack[stackSize] = state;
                     // idStack[idStackSize] = stackSize;
                     // ++idStackSize;
                     // ++stackSize;
                 case ']':
-                    this.#state = this.#stack.pop();
-                    if(this.#stack.length == this.#idStack[this.#idStack.length - 1])
+                    this.state = this.stack.pop();
+                    if(this.stack.length == this.idStack[this.idStack.length - 1])
                     {
-                        this.#idStack.pop();
-                        this.#idx = i + 1;
+                        this.idStack.pop();
+                        this.idx = i + 1;
                     }
                     return;
                     // --stackSize;
@@ -156,9 +161,9 @@ class Renderer
                     // }
                     // break;
                 default:
-                    this.#stack.push(this.#state);
+                    this.stack.push(this.state);
                     this.forward();
-                    this.#idx = i + 1;
+                    this.idx = i + 1;
                     return;
                     // stack[stackSize] = state;
                     // ++stackSize;
@@ -169,25 +174,37 @@ class Renderer
         }
     }
 
-    getAngle = () => this.#state.z * this.system.turnAngle % 360;
-    getProgress = (level) => this.#idx * 100 / (this.#levels[level].length - 2);
-
-    getStateString = () => `\\begin{matrix}x=${getCoordString(this.#state.x)},&y=${getCoordString(this.#state.y)},&a=${this.#state.z},&i=${this.#idx}\\end{matrix}`;
-
-    getCursor = (level) =>
+    getAngle()
     {
-        let coords = (this.#state - centre(level)) / (this.initScale * this.figureScale ** level);
+        return this.state.z * this.system.turnAngle % 360;
+    }
+    getProgress(level)
+    {
+        return this.idx * 100 / (this.levels[level].length - 1);
+    }
+
+    getStateString()
+    {
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}\\end{matrix}`;
+    }
+
+    getCursor(level)
+    {
+        let coords = (this.state - this.centre(level)) / (this.initScale * this.figureScale ** level);
         return swizzle(coords)[this.upright ? 1 : 0];
     }
 
-    toString = () => `${this.initScale} ${this.figureScale} ${this.xCentre} ${this.yCentre} ${this.upright ? 1 : 0} ${this.system.toString()}`;
+    toString()
+    {
+        return`${this.initScale} ${this.figureScale} ${this.xCentre} ${this.yCentre} ${this.upright ? 1 : 0} ${this.system.toString()}`;
+    }
 }
 
 var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
-var arrow = LSystem('X', ['F=FF', 'X=F[+X][-X]FX']);
-var renderer = Renderer(arrow, 2, 2, 1, 0, true);
+var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX']);
+var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 
 var manualPages =
@@ -224,8 +241,8 @@ var init = () =>
     progress = theory.createCurrency('%');
     // l
     {
-        let getDesc = (level) => `Level: ${l.level.toString()}`;
-        let getInfo = (level) => `Lv. ${l.level.toString()}`;
+        let getDesc = (level) => `\\text{Level:}${level.toString()}`;
+        let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
@@ -239,8 +256,8 @@ var init = () =>
     // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => `Tickspeed: ${ts.level.toString()}`;
-        let getInfo = (level) => `Ts=${ts.level.toString()}`;
+        let getDesc = (level) => `\\text{Tickspeed:}${level.toString()}/sec`;
+        let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, angle, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
@@ -604,6 +621,7 @@ var createSystemMenu = () =>
                     onClicked: () =>
                     {
                         renderer.system = new LSystem(tmpAxiom, tmpRules, tmpAngle);
+                        renderer.levels = [];
                         resetSystem();
                         menu.hide();
                     }
