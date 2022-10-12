@@ -30,7 +30,7 @@ class LSystem
         this.turnAngle = turnAngle;
     }
 
-    derive(state)
+    derive = (state) =>
     {
         let result = '';
         for(let i = 0; i < state.length; ++i)
@@ -39,6 +39,16 @@ class LSystem
                 result += this.rules.get(state[i]);
             else
                 result += state[i];
+        }
+        return result;
+    }
+
+    toString = () =>
+    {
+        let result = `${this.axiom} ${this.turnAngle}`;
+        for(let [key, value] of this.rules)
+        {
+            result += ` ${key}=${value}`;
         }
         return result;
     }
@@ -160,8 +170,21 @@ class Renderer
     }
 
     getAngle = () => this.#state.z * this.system.turnAngle % 360;
-    getProgress = (level) => this.#idx * 100 / (this.#levels[level].length - 2)
+    getProgress = (level) => this.#idx * 100 / (this.#levels[level].length - 2);
+
+    getStateString = () => `\\begin{matrix}x=${getCoordString(this.#state.x)},&y=${getCoordString(this.#state.y)},&a=${this.#state.z},&i=${this.#idx}\\end{matrix}`;
+
+    getCursor = (level) =>
+    {
+        let coords = (this.#state - centre(level)) / (this.initScale * this.figureScale ** level);
+        return swizzle(coords)[this.upright ? 1 : 0];
+    }
+
+    toString = () => `${this.initScale} ${this.figureScale} ${this.xCentre} ${this.yCentre} ${this.upright ? 1 : 0} ${this.system.toString()}`;
 }
+
+var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
+var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
 var arrow = LSystem('X', ['F=FF', 'X=F[+X][-X]FX']);
 var renderer = Renderer(arrow, 2, 2, 1, 0, true);
@@ -227,8 +250,8 @@ var init = () =>
     // Config menu
     {
         cfg = theory.createUpgrade(2, angle, new FreeCost);
-        cfg.description = 'Config menu';
-        cfg.info = 'Configure the shape and size of the system';
+        cfg.description = 'Renderer menu';
+        cfg.info = 'Configure the L-systems renderer';
         cfg.boughtOrRefunded = (_) =>
         {
             if(cfg.level > 0)
@@ -292,20 +315,17 @@ var tick = (elapsedTime, multiplier) =>
     }
 }
 
-// Below is code
-
-
 var createConfigMenu = () =>
 {
-    let tmpAngle = turnAngle;
-    let tmpScale = figureScale;
-    let tmpXC = xCentre;
-    let tmpYC = yCentre;
-    let tmpUpright = upright;
+    let tmpIScale = renderer.initScale;
+    let tmpFScale = renderer.figureScale;
+    let tmpXC = renderer.xCentre;
+    let tmpYC = renderer.yCentre;
+    let tmpUpright = renderer.upright;
 
     let menu = ui.createPopup
     ({
-        title: 'Config Menu',
+        title: 'Renderer Menu',
         content: ui.createStackLayout
         ({
             children:
@@ -315,47 +335,47 @@ var createConfigMenu = () =>
                     columnDefinitions: ['70*', '30*'],
                     children:
                     [
-                        angleLabel = ui.createLatexLabel
+                        iScaleLabel = ui.createLatexLabel
                         ({
-                            text: 'Turning angle (°): ',
+                            text: 'Initial scale: ',
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        angleEntry = ui.createEntry
+                        iScaleEntry = ui.createEntry
                         ({
-                            text: tmpAngle.toString(),
+                            text: tmpIScale.toString(),
                             row: 0,
                             column: 1,
                             horizontalTextAlignment: TextAlignment.END,
                             onTextChanged: (ot, nt) =>
                             {
-                                tmpAngle = Number(nt);
+                                tmpIScale = Number(nt);
                             }
                         }),
-                        scaleLabel = ui.createLatexLabel
+                        fScaleLabel = ui.createLatexLabel
                         ({
                             text: 'Figure scale per level: ',
                             row: 1,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        scaleEntry = ui.createEntry
+                        fScaleEntry = ui.createEntry
                         ({
-                            text: tmpScale.toString(),
+                            text: tmpFScale.toString(),
                             row: 1,
                             column: 1,
                             horizontalTextAlignment: TextAlignment.END,
                             onTextChanged: (ot, nt) =>
                             {
-                                tmpScale = Number(nt);
-                                if(tmpScale == 0)
-                                    tmpScale = 1;
+                                tmpFScale = Number(nt);
+                                if(tmpFScale == 0)
+                                    tmpFScale = 1;
                             }
                         }),
                         camLabel = ui.createLatexLabel
                         ({
-                            text: 'Camera centre: ',
+                            text: 'Camera centre (x, y): ',
                             row: 2,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -422,12 +442,12 @@ var createConfigMenu = () =>
                     text: 'Save',
                     onClicked: () =>
                     {
-                        turnAngle = tmpAngle;
-                        figureScale = tmpScale;
-                        xCentre = tmpXC;
-                        yCentre = tmpYC;
-                        upright = tmpUpright;
-                        resetSystem();
+                        renderer.initScale = tmpIScale;
+                        renderer.figureScale = tmpFScale;
+                        renderer.xCentre = tmpXC;
+                        renderer.yCentre = tmpYC;
+                        renderer.upright = tmpUpright;
+                        renderer.reset();
                         menu.hide();
                     }
                 })
@@ -443,13 +463,12 @@ var createConfigMenu = () =>
 
 var createSystemMenu = () =>
 {
-    let tmpAxiom = axiom;
+    let tmpAxiom = renderer.system.axiom;
+    let tmpAngle = renderer.system.turnAngle;
     let tmpRules = [];
-    let rsIdx = 0;
-    for(let [key, value] of rules)
+    for(let [key, value] of renderer.system.rules)
     {
-        tmpRules[rsIdx] = `${key}=${value}`;
-        ++rsIdx;
+        tmpRules.push(`${key}=${value}`);
     }
     for(let i = 0; i < 8; ++i)
         if(tmpRules[i] === undefined)
@@ -464,7 +483,7 @@ var createSystemMenu = () =>
             [
                 axiomRow = ui.createGrid
                 ({
-                    columnDefinitions: ['40*', '60*'],
+                    columnDefinitions: ['20*', '30*', '30*', '20*'],
                     children:
                     [
                         axiomLabel = ui.createLatexLabel
@@ -483,7 +502,25 @@ var createSystemMenu = () =>
                             {
                                 tmpAxiom = nt;
                             }
-                        })
+                        }),
+                        angleLabel = ui.createLatexLabel
+                        ({
+                            text: 'Turning angle (°): ',
+                            row: 0,
+                            column: 2,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        angleEntry = ui.createEntry
+                        ({
+                            text: tmpAngle.toString(),
+                            row: 0,
+                            column: 3,
+                            horizontalTextAlignment: TextAlignment.END,
+                            onTextChanged: (ot, nt) =>
+                            {
+                                tmpAngle = Number(nt);
+                            }
+                        }),
                     ]
                 }),
                 rulesLabel = ui.createLatexLabel
@@ -566,7 +603,7 @@ var createSystemMenu = () =>
                     text: 'Construct',
                     onClicked: () =>
                     {
-                        rebuildSystem(tmpAxiom, tmpRules);
+                        renderer.system = new LSystem(tmpAxiom, tmpRules, tmpAngle);
                         resetSystem();
                         menu.hide();
                     }
@@ -660,49 +697,32 @@ var createManualMenu = () =>
     return menu;
 }
 
-var getInternalState = () =>
-{
-    let result = `${time} ${turnAngle} ${figureScale} ${xCentre} ${yCentre} ${upright ? 1 : 0} ${axiom}`;
-    for(let [key, value] of rules)
-    {
-        result += ` ${key}=${value}`;
-    }
-    return result;
-}
+var getInternalState = () => `${time} ${renderer.toString()}`;
 
 var setInternalState = (stateStr) =>
 {
     let values = stateStr.split(' ');
     time = parseBigNumber(values[0]);
-    turnAngle = Number(values[1]);
-    figureScale = Number(values[2]);
-    xCentre = Number(values[3]);
-    yCentre = Number(values[4]);
-    upright = Boolean(Number(values[5]));
     // axiom = values[6];
+    // turnAngle = values[7];
     let tmpRules = [];
     for(let i = 0; i < 8; ++i)
     {
-        if(values[7 + i] !== undefined)
-            tmpRules[i] = values[7 + i];
+        if(values[8 + i] !== undefined)
+            tmpRules[i] = values[8 + i];
         else
             tmpRules[i] = '';
     }
-    rebuildSystem(values[6], tmpRules);
+    let system = new LSystem(values[6], tmpRules, values[7]);
+    renderer = new Renderer(system, Number(values[1]), Number(values[2]), Number(values[3]), Number(values[4]), Boolean(Number(values[5])));
 }
 
 var canResetStage = () => true;
 
-var resetStage = () => resetSystem();
+var resetStage = () => renderer.reset();
 
-var getTertiaryEquation = () => `\\begin{matrix}x=${getCoordString(state.x)},&y=${getCoordString(state.y)},&a=${state.z},&i=${idx}\\end{matrix}`;
+var getTertiaryEquation = () => renderer.getStateString();
 
-var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
-
-var get3DGraphPoint = () =>
-{
-    coords = (state - centre(l.level)) / (figureScale ** l.level);
-    return swizzle(coords)[upright ? 1 : 0];
-}
+var get3DGraphPoint = () => renderer.getCursor(l.level);
 
 init();
