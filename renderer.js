@@ -212,7 +212,7 @@ var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
-var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[+FX]-X'], 22.5);
+var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 
 var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
@@ -243,7 +243,7 @@ var manualPages =
     ],
     [
         'Example: Cultivar XEXF',
-        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[+FX]-X',
+        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X',
         cultivarXEXF
     ]
 ];
