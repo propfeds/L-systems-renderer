@@ -11,7 +11,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = 0.09;
+var version = '0.10';
 
 class LSystem
 {
@@ -734,6 +734,19 @@ var createManualMenu = () =>
         }
     })
     return menu;
+}
+
+var getEquationOverlay = () =>
+{
+    let result = ui.createLatexLabel
+    ({
+        text: `v. ${version}`,
+        displacementX: 6,
+        displacementY: 4,
+        fontSize: 9,
+        textColor: Color.TEXT_MEDIUM
+    });
+    return result;
 }
 
 var getInternalState = () => `${time} ${renderer.toString()}`;
