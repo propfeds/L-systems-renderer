@@ -11,7 +11,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = '0.10';
+var version = '0.11';
 
 class LSystem
 {
@@ -91,7 +91,18 @@ class Renderer
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    apply(system)
+    configure(initScale, figureScale, xCentre, yCentre, upright)
+    {
+        let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
+        this.initScale = initScale;
+        this.figureScale = figureScale;
+        this.xCentre = xCentre;
+        this.yCentre = yCentre;
+        this.upright = upright;
+        if(requireReset)
+            this.reset();
+    }
+    applySystem(system)
     {
         this.system = system;
         this.levels = [];
@@ -114,18 +125,11 @@ class Renderer
             this.state.z
         );
     }
-    swizzle()
-    {
-        return [
-            new Vector3(this.state.x, this.state.y, 0),
-            new Vector3(this.state.y, -this.state.x, 0)
-        ];
-    }
-    centre(level)
+    centre()
     {
         return new Vector3(
-            this.xCentre * this.figureScale ** level,
-            this.yCentre * this.figureScale ** level,
+            -this.xCentre / this.initScale,
+            -this.yCentre / this.initScale,
             0
         );
     }
@@ -146,10 +150,6 @@ class Renderer
                     this.idStack.push(this.stack.length);
                     this.stack.push(this.state);
                     break;
-                    // stack[stackSize] = state;
-                    // idStack[idStackSize] = stackSize;
-                    // ++idStackSize;
-                    // ++stackSize;
                 case ']':
                     this.state = this.stack.pop();
                     if(this.stack.length == this.idStack[this.idStack.length - 1])
@@ -158,24 +158,11 @@ class Renderer
                         this.idx = i + 1;
                     }
                     return;
-                    // --stackSize;
-                    // state = stack[stackSize];
-                    // if(stackSize == idStack[idStackSize - 1])
-                    // {
-                    //     --idStackSize;
-                    //     idx = i + 1;
-                    // }
-                    // break;
                 default:
                     this.stack.push(this.state);
                     this.forward();
                     this.idx = i + 1;
                     return;
-                    // stack[stackSize] = state;
-                    // ++stackSize;
-                    // state = forward(state);
-                    // idx = i + 1;
-                    // break;
             }
         }
     }
@@ -196,8 +183,11 @@ class Renderer
 
     getCursor(level)
     {
-        let coords = (this.state - this.centre(level)) / (this.initScale * this.figureScale ** level);
-        return swizzle(coords)[this.upright ? 1 : 0];
+        let coords = this.state / (this.initScale * this.figureScale ** level);
+        if(this.upright)
+            return new Vector3(coords.y, -coords.x, 0);
+        else
+            return new Vector3(coords.x, coords.y, 0);
     }
 
     toString()
@@ -206,7 +196,6 @@ class Renderer
     }
 }
 
-var swizzle = (v) => [new Vector3(v.x, v.y, 0), new Vector3(v.y, -v.x, 0)];
 var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
@@ -216,36 +205,39 @@ var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+
 
 var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
+var gameOffline = false;
 
 var manualPages =
 [
-    [
-        'A Primer on L-systems',
-        'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to create a line\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
-    ],
-    [
-        'Constructing an L-system',
-        'The L-system menu provides the tools for constructon with 8 whole production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nOriginally, F is used to forward, but any letter should work (lower-case letters don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
-    ],
-    [
-        'Configuring your L-system',
-        'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle turned by +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
-    ],
-    [
-        'Example: Cultivar FF',
-        'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright',
-        cultivarFF
-    ],
-    [
-        'Example: Dragon curve',
-        'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
-        dragon
-    ],
-    [
-        'Example: Cultivar XEXF',
-        'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X',
-        cultivarXEXF
-    ]
+    {
+        title: 'A Primer on L-systems',
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to create a line\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
+    },
+    {
+        title: 'Constructing an L-system',
+        contents: 'The L-system menu provides the tools for constructon with 8 whole production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nOriginally, F is used to forward, but any letter should work (lower-case letters don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
+    },
+    {
+        title: 'Configuring your L-system',
+        contents: 'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle turned by +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+    },
+    {
+        title: 'Example: Cultivar FF',
+        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright',
+        system: cultivarFF,
+        config: [2, 2, 1, 0, true]
+    },
+    {
+        title: 'Example: Dragon curve',
+        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
+        system: dragon,
+        config: [2, Math.sqrt(2), 0, 0, false]
+    },
+    {
+        title: 'Example: Cultivar XEXF',
+        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X',
+        system: cultivarXEXF
+    }
 ];
 
 var init = () =>
@@ -336,12 +328,24 @@ var tick = (elapsedTime, multiplier) =>
 
     if(time >= timeLimit - 1e-8)
     {
-        renderer.draw(l.level);
-        time = 0;
+        if(game.isCalculatingOfflineProgress)
+            gameOffline = true;
+        else if(gameOffline)
+        {
+            // Probably triggers only once when reloading
+            renderer.reset();
+            gameOffline = false;
+        }
 
-        angle.value = renderer.getAngle();
-        progress.value = renderer.getProgress(l.level);        
-        theory.invalidateTertiaryEquation();
+        if(!gameOffline)
+        {
+            renderer.draw(l.level);
+            angle.value = renderer.getAngle();
+            progress.value = renderer.getProgress(l.level);        
+            theory.invalidateTertiaryEquation();
+        }
+
+        time = 0;
     }
 }
 
@@ -472,12 +476,7 @@ var createConfigMenu = () =>
                     text: 'Save',
                     onClicked: () =>
                     {
-                        renderer.initScale = tmpIScale;
-                        renderer.figureScale = tmpFScale;
-                        renderer.xCentre = tmpXC;
-                        renderer.yCentre = tmpYC;
-                        renderer.upright = tmpUpright;
-                        renderer.reset();
+                        renderer.configure(tmpIScale, tmpFScale, tmpXC, tmpYC, tmpUpright);
                         menu.hide();
                     }
                 })
@@ -633,7 +632,7 @@ var createSystemMenu = () =>
                     text: 'Construct',
                     onClicked: () =>
                     {
-                        renderer.apply(new LSystem(tmpAxiom, tmpRules, tmpAngle));
+                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle));
                         menu.hide();
                     }
                 })
@@ -660,7 +659,7 @@ var createManualMenu = () =>
             [
                 pageTitle = ui.createLatexLabel
                 ({
-                    text: manualPages[page][0],
+                    text: manualPages[page].title,
                     horizontalOptions: LayoutOptions.CENTER
                 }),
                 separator0 = ui.createBox
@@ -670,7 +669,7 @@ var createManualMenu = () =>
                 }),
                 pageContents = ui.createLatexLabel
                 ({
-                    text: manualPages[page][1]
+                    text: manualPages[page].contents
                 }),
                 separator1 = ui.createBox
                 ({
@@ -693,8 +692,8 @@ var createManualMenu = () =>
                                 if(page > 0)
                                 {
                                     --page;
-                                    pageTitle.text = manualPages[page][0];
-                                    pageContents.text = manualPages[page][1];
+                                    pageTitle.text = manualPages[page].title;
+                                    pageContents.text = manualPages[page].contents;
                                 }
                             }
                         }),
@@ -709,8 +708,8 @@ var createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
-                                    pageTitle.text = manualPages[page][0];
-                                    pageContents.text = manualPages[page][1];
+                                    pageTitle.text = manualPages[page].title;
+                                    pageContents.text = manualPages[page].contents;
                                 }
                             }
                         })
@@ -719,11 +718,16 @@ var createManualMenu = () =>
                 adoptBtn = ui.createButton
                 ({
                     text: 'Apply L-system',
-                    isVisible: () => manualPages[page][2] !== undefined,
+                    isVisible: () => 'system' in manualPages[page],
                     onClicked: () =>
                     {
-                        renderer.apply(manualPages[page][2]);
-                        menu.hide(); 
+                        renderer.applySystem(manualPages[page].system);
+                        if('config' in manualPages[page])
+                        {
+                            let a = manualPages[page].config;
+                            renderer.configure(a[0], a[1], a[2], a[3], a[4]);
+                        }
+                        menu.hide();
                     }
                 })
             ]
@@ -776,5 +780,7 @@ var resetStage = () => renderer.reset();
 var getTertiaryEquation = () => renderer.getStateString();
 
 var get3DGraphPoint = () => renderer.getCursor(l.level);
+
+var get3DGraphTranslation = () => renderer.centre();
 
 init();
