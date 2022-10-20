@@ -127,11 +127,18 @@ class Renderer
     }
     centre()
     {
-        return new Vector3(
-            -this.xCentre / this.initScale,
-            -this.yCentre / this.initScale,
-            0
-        );
+        if(this.upright)
+            return new Vector3(
+                -this.yCentre / this.initScale,
+                this.xCentre / this.initScale,
+                0
+            );
+        else
+            return new Vector3(
+                -this.xCentre / this.initScale,
+                -this.yCentre / this.initScale,
+                0
+            );
     }
 
     draw(level)
@@ -225,7 +232,7 @@ var manualPages =
         title: 'Example: Cultivar FF',
         contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright',
         system: cultivarFF,
-        config: [2, 2, 1, 0, true]
+        config: [1, 2, 1, 0, true]
     },
     {
         title: 'Example: Dragon curve',
