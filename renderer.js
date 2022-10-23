@@ -11,7 +11,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = '0.11';
+var version = '0.12';
 
 class LSystem
 {
@@ -106,6 +106,7 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
+        l.level = 0;
         this.reset();
     }
 
@@ -129,14 +130,14 @@ class Renderer
     {
         if(this.upright)
             return new Vector3(
-                -this.yCentre / this.initScale,
+                this.yCentre / this.initScale,
                 this.xCentre / this.initScale,
                 0
             );
         else
             return new Vector3(
                 -this.xCentre / this.initScale,
-                -this.yCentre / this.initScale,
+                this.yCentre / this.initScale,
                 0
             );
     }
@@ -144,8 +145,6 @@ class Renderer
     draw(level)
     {
         this.update(level);
-        if(this.idx >= this.levels[level].length)
-            this.idx = 0;
 
         for(let i = this.idx; i < this.levels[level].length; ++i)
         {
@@ -163,6 +162,8 @@ class Renderer
                     {
                         this.idStack.pop();
                         this.idx = i + 1;
+                        if(this.idx >= this.levels[level].length)
+                            this.idx = 0;
                     }
                     return;
                 default:
@@ -207,18 +208,20 @@ var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
-var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
+var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 
 var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
+var page = 0;
 var gameOffline = false;
 
 var manualPages =
 [
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string), and is used to draw fractal figures, which were originally intended to model plants).\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to create a line\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is used to model plants and draw fractal figures.\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to draw\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
     },
     {
         title: 'Constructing an L-system',
@@ -226,24 +229,37 @@ var manualPages =
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle turned by +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+        contents: 'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle of +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale, and is based on non-upright logic)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+    },
+    {
+        title: 'Example: Arrow weed',
+        contents: 'The default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
+        system: arrow,
+        config: [1, 2, 1, 0, false]
     },
     {
         title: 'Example: Cultivar FF',
-        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: small\n\nFigure scale: 2\n\nCamera centre: (1, 0)\n\nUpright',
+        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: 15°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
         system: cultivarFF,
         config: [1, 2, 1, 0, true]
     },
     {
-        title: 'Example: Dragon curve',
-        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
-        system: dragon,
-        config: [2, Math.sqrt(2), 0, 0, false]
+        title: 'Example: Cultivar FXF',
+        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X\n\nTurning angle: 27°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?)',
+        system: cultivarFXF,
+        config: [1.5, 2, 0.25, 0.75, false]
     },
     {
         title: 'Example: Cultivar XEXF',
-        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X',
-        system: cultivarXEXF
+        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X\n\nTurning angle: 22.5°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?)',
+        system: cultivarXEXF,
+        config: [1, 3, 0.75, -0.25, true]
+    },
+    {
+        title: 'Example: Dragon curve',
+        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\n\n\nScale: 2, sqrt(2)\n\nCamera centre: (0, 0)',
+        system: dragon,
+        config: [2, Math.sqrt(2), 0, 0, false]
     }
 ];
 
@@ -276,48 +292,42 @@ var init = () =>
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
     }
-    // Config menu
-    {
-        cfg = theory.createUpgrade(2, angle, new FreeCost);
-        cfg.description = 'Renderer menu';
-        cfg.info = 'Configure the L-systems renderer';
-        cfg.boughtOrRefunded = (_) =>
-        {
-            if(cfg.level > 0)
-            {
-                var configMenu = createConfigMenu();
-                configMenu.show();
-            }
-        }
-        cfg.canBeRefunded = (_) => false;
-    }
     // System menu
     {
-        sys = theory.createUpgrade(3, angle, new FreeCost);
+        sys = theory.createUpgrade(2, angle, new FreeCost);
         sys.description = 'L-system menu';
         sys.info = 'Configure the L-system being drawn';
-        sys.boughtOrRefunded = (_) =>
+        sys.bought = (_) =>
         {
-            if(sys.level > 0)
-            {
-                var systemMenu = createSystemMenu();
-                systemMenu.show();
-            }
+            var systemMenu = createSystemMenu();
+            systemMenu.show();
+            sys.level = 0;
         }
         sys.canBeRefunded = (_) => false;
+    }
+    // Config menu
+    {
+        cfg = theory.createUpgrade(3, angle, new FreeCost);
+        cfg.description = 'Renderer menu';
+        cfg.info = 'Configure the L-systems renderer';
+        cfg.bought = (_) =>
+        {
+            var configMenu = createConfigMenu();
+            configMenu.show();
+            cfg.level = 0;
+        }
+        cfg.canBeRefunded = (_) => false;
     }
     // Manual
     {
         manual = theory.createUpgrade(4, angle, new FreeCost);
         manual.description = 'Manual';
         manual.info = 'How to use the L-system renderer';
-        manual.boughtOrRefunded = (_) =>
+        manual.bought = (_) =>
         {
-            if(manual.level > 0)
-            {
-                var manualMenu = createManualMenu();
-                manualMenu.show();
-            }
+            var manualMenu = createManualMenu();
+            manualMenu.show();
+            manual.level = 0;
         }
         manual.canBeRefunded = (_) => false;
     }
@@ -488,11 +498,7 @@ var createConfigMenu = () =>
                     }
                 })
             ]
-        }),
-        onDisappearing: () =>
-        {
-            cfg.level = 0;
-        }
+        })
     })
     return menu;
 }
@@ -644,19 +650,13 @@ var createSystemMenu = () =>
                     }
                 })
             ]
-        }),
-        onDisappearing: () =>
-        {
-            sys.level = 0;
-        }
+        })
     })
     return menu;
 }
 
 var createManualMenu = () =>
 {
-    let page = 0;
-
     let menu = ui.createPopup
     ({
         title: () => `Manual (${page + 1}/${manualPages.length})`,
@@ -676,6 +676,7 @@ var createManualMenu = () =>
                 }),
                 pageContents = ui.createLatexLabel
                 ({
+                    heightRequest: ui.screenHeight * 0.3,
                     text: manualPages[page].contents
                 }),
                 separator1 = ui.createBox
@@ -685,7 +686,7 @@ var createManualMenu = () =>
                 }),
                 btnGrid = ui.createGrid
                 ({
-                    columnDefinitions: ['50*', '50*'],
+                    columnDefinitions: ['35*', '30*', '35*'],
                     children:
                     [
                         prevButton = ui.createButton
@@ -704,11 +705,28 @@ var createManualMenu = () =>
                                 }
                             }
                         }),
+                        adoptBtn = ui.createButton
+                        ({
+                            text: 'Apply',
+                            row: 0,
+                            column: 1,
+                            isVisible: () => 'system' in manualPages[page],
+                            onClicked: () =>
+                            {
+                                renderer.applySystem(manualPages[page].system);
+                                if('config' in manualPages[page])
+                                {
+                                    let a = manualPages[page].config;
+                                    renderer.configure(a[0], a[1], a[2], a[3], a[4]);
+                                }
+                                menu.hide();
+                            }
+                        }),
                         nextButton = ui.createButton
                         ({
                             text: 'Next',
                             row: 0,
-                            column: 1,
+                            column: 2,
                             isVisible: () => page < manualPages.length - 1,
                             onClicked: () =>
                             {
@@ -721,28 +739,9 @@ var createManualMenu = () =>
                             }
                         })
                     ]
-                }),
-                adoptBtn = ui.createButton
-                ({
-                    text: 'Apply L-system',
-                    isVisible: () => 'system' in manualPages[page],
-                    onClicked: () =>
-                    {
-                        renderer.applySystem(manualPages[page].system);
-                        if('config' in manualPages[page])
-                        {
-                            let a = manualPages[page].config;
-                            renderer.configure(a[0], a[1], a[2], a[3], a[4]);
-                        }
-                        menu.hide();
-                    }
                 })
             ]
-        }),
-        onDisappearing: () =>
-        {
-            manual.level = 0;
-        }
+        })
     })
     return menu;
 }
