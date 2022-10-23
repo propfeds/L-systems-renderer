@@ -290,24 +290,9 @@ var init = () =>
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
     }
-    // Config menu
-    {
-        cfg = theory.createUpgrade(2, angle, new FreeCost);
-        cfg.description = 'Renderer menu';
-        cfg.info = 'Configure the L-systems renderer';
-        cfg.boughtOrRefunded = (_) =>
-        {
-            if(cfg.level > 0)
-            {
-                var configMenu = createConfigMenu();
-                configMenu.show();
-            }
-        }
-        cfg.canBeRefunded = (_) => false;
-    }
     // System menu
     {
-        sys = theory.createUpgrade(3, angle, new FreeCost);
+        sys = theory.createUpgrade(2, angle, new FreeCost);
         sys.description = 'L-system menu';
         sys.info = 'Configure the L-system being drawn';
         sys.boughtOrRefunded = (_) =>
@@ -319,6 +304,21 @@ var init = () =>
             }
         }
         sys.canBeRefunded = (_) => false;
+    }
+    // Config menu
+    {
+        cfg = theory.createUpgrade(3, angle, new FreeCost);
+        cfg.description = 'Renderer menu';
+        cfg.info = 'Configure the L-systems renderer';
+        cfg.boughtOrRefunded = (_) =>
+        {
+            if(cfg.level > 0)
+            {
+                var configMenu = createConfigMenu();
+                configMenu.show();
+            }
+        }
+        cfg.canBeRefunded = (_) => false;
     }
     // Manual
     {
