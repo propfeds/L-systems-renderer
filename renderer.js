@@ -130,14 +130,14 @@ class Renderer
     {
         if(this.upright)
             return new Vector3(
-                -this.yCentre / this.initScale,
+                this.yCentre / this.initScale,
                 this.xCentre / this.initScale,
                 0
             );
         else
             return new Vector3(
                 -this.xCentre / this.initScale,
-                -this.yCentre / this.initScale,
+                this.yCentre / this.initScale,
                 0
             );
     }
@@ -212,7 +212,7 @@ var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 
-var renderer = new Renderer(arrow, 1, 2, 1, 0, true);
+var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 var page = 0;
 var gameOffline = false;
@@ -229,13 +229,13 @@ var manualPages =
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle turned by +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+        contents: 'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle of +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale, and is based on non-upright logic)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
     },
     {
         title: 'Example: Arrow weed',
         contents: 'The default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
         system: arrow,
-        config: [1, 2, 1, 0, true]
+        config: [1, 2, 1, 0, false]
     },
     {
         title: 'Example: Cultivar FF',
@@ -246,12 +246,14 @@ var manualPages =
     {
         title: 'Example: Cultivar FXF',
         contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X\n\nTurning angle: 27°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?)',
-        system: cultivarFXF
+        system: cultivarFXF,
+        config: [1.5, 2, 0.25, 0.75, false]
     },
     {
         title: 'Example: Cultivar XEXF',
         contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X\n\nTurning angle: 22.5°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?)',
-        system: cultivarXEXF
+        system: cultivarXEXF,
+        config: [1, 3, 0.75, -0.25, true]
     },
     {
         title: 'Example: Dragon curve',
