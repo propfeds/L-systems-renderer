@@ -11,7 +11,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = '0.11';
+var version = '0.12';
 
 class LSystem
 {
@@ -106,6 +106,7 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
+        l.level = 0;
         this.reset();
     }
 
@@ -207,8 +208,9 @@ var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
-var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
+var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 
 var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
@@ -235,15 +237,20 @@ var manualPages =
         config: [1, 2, 1, 0, true]
     },
     {
-        title: 'Example: Dragon curve',
-        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
-        system: dragon,
-        config: [2, Math.sqrt(2), 0, 0, false]
+        title: 'Cultivar FXF',
+        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X',
+        system: cultivarFXF
     },
     {
         title: 'Example: Cultivar XEXF',
         contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X',
         system: cultivarXEXF
+    },
+    {
+        title: 'Example: Dragon curve',
+        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\nFigure scale: ?\n\nCamera centre: (0, 0)',
+        system: dragon,
+        config: [2, Math.sqrt(2), 0, 0, false]
     }
 ];
 
