@@ -297,13 +297,11 @@ var init = () =>
         sys = theory.createUpgrade(2, angle, new FreeCost);
         sys.description = 'L-system menu';
         sys.info = 'Configure the L-system being drawn';
-        sys.boughtOrRefunded = (_) =>
+        sys.bought = (_) =>
         {
-            if(sys.level > 0)
-            {
-                var systemMenu = createSystemMenu();
-                systemMenu.show();
-            }
+            var systemMenu = createSystemMenu();
+            systemMenu.show();
+            sys.level = 0;
         }
         sys.canBeRefunded = (_) => false;
     }
@@ -312,13 +310,11 @@ var init = () =>
         cfg = theory.createUpgrade(3, angle, new FreeCost);
         cfg.description = 'Renderer menu';
         cfg.info = 'Configure the L-systems renderer';
-        cfg.boughtOrRefunded = (_) =>
+        cfg.bought = (_) =>
         {
-            if(cfg.level > 0)
-            {
-                var configMenu = createConfigMenu();
-                configMenu.show();
-            }
+            var configMenu = createConfigMenu();
+            configMenu.show();
+            cfg.level = 0;
         }
         cfg.canBeRefunded = (_) => false;
     }
@@ -327,13 +323,11 @@ var init = () =>
         manual = theory.createUpgrade(4, angle, new FreeCost);
         manual.description = 'Manual';
         manual.info = 'How to use the L-system renderer';
-        manual.boughtOrRefunded = (_) =>
+        manual.bought = (_) =>
         {
-            if(manual.level > 0)
-            {
-                var manualMenu = createManualMenu();
-                manualMenu.show();
-            }
+            var manualMenu = createManualMenu();
+            manualMenu.show();
+            manual.level = 0;
         }
         manual.canBeRefunded = (_) => false;
     }
@@ -504,11 +498,7 @@ var createConfigMenu = () =>
                     }
                 })
             ]
-        }),
-        onDisappearing: () =>
-        {
-            cfg.level = 0;
-        }
+        })
     })
     return menu;
 }
@@ -660,11 +650,7 @@ var createSystemMenu = () =>
                     }
                 })
             ]
-        }),
-        onDisappearing: () =>
-        {
-            sys.level = 0;
-        }
+        })
     })
     return menu;
 }
@@ -755,11 +741,7 @@ var createManualMenu = () =>
                     ]
                 })
             ]
-        }),
-        onDisappearing: () =>
-        {
-            manual.level = 0;
-        }
+        })
     })
     return menu;
 }
