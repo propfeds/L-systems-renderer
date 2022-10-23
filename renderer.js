@@ -145,8 +145,6 @@ class Renderer
     draw(level)
     {
         this.update(level);
-        if(this.idx >= this.levels[level].length)
-            this.idx = 0;
 
         for(let i = this.idx; i < this.levels[level].length; ++i)
         {
@@ -164,6 +162,8 @@ class Renderer
                     {
                         this.idStack.pop();
                         this.idx = i + 1;
+                        if(this.idx >= this.levels[level].length)
+                            this.idx = 0;
                     }
                     return;
                 default:
