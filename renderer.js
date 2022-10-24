@@ -533,6 +533,7 @@ var getUpgradeListDelegate = () =>
         [
             upgList = ui.createGrid
             ({
+                padding: new Thickness(3, 3),
                 columnSpacing: 3,
                 rowSpacing: 3,
                 rowDefinitions: [height, height],
@@ -570,10 +571,11 @@ var getUpgradeListDelegate = () =>
             separator1 = ui.createBox
             ({
                 heightRequest: 1,
-                margin: new Thickness(0, 6)
+                margin: new Thickness(0, 2, 0, 3)
             }),
             menuList = ui.createGrid
             ({
+                padding: new Thickness(3, 3),
                 columnSpacing: 3,
                 rowSpacing: 3,
                 rowDefinitions: [height, height],
