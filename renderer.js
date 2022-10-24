@@ -661,6 +661,11 @@ var createSystemMenu = () =>
 
 var createManualMenu = () =>
 {
+    let pageContents = ui.createLatexLabel
+    ({
+        
+        text: manualPages[page].contents
+    });
     let menu = ui.createPopup
     ({
         title: () => `Manual (${page + 1}/${manualPages.length})`,
@@ -678,10 +683,10 @@ var createManualMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                pageContents = ui.createLatexLabel
+                pageScroll = ui.createScrollView
                 ({
                     heightRequest: ui.screenHeight * 0.3,
-                    text: manualPages[page].contents
+                    content: pageContents
                 }),
                 separator1 = ui.createBox
                 ({
