@@ -126,20 +126,27 @@ class Renderer
             this.state.z
         );
     }
-    centre()
+    centre(level)
     {
-        if(this.upright)
-            return new Vector3(
-                this.yCentre / this.initScale,
-                this.xCentre / this.initScale,
-                0
-            );
+        if(cursorFocusedCamera)
+        {
+            return -this.getCursor(level);
+        }
         else
-            return new Vector3(
-                -this.xCentre / this.initScale,
-                this.yCentre / this.initScale,
-                0
-            );
+        {
+            if(this.upright)
+                return new Vector3(
+                    this.yCentre / this.initScale,
+                    this.xCentre / this.initScale,
+                    0
+                );
+            else
+                return new Vector3(
+                    -this.xCentre / this.initScale,
+                    this.yCentre / this.initScale,
+                    0
+                );
+        }
     }
 
     draw(level)
@@ -797,6 +804,6 @@ var getTertiaryEquation = () => renderer.getStateString(l.level);
 
 var get3DGraphPoint = () => renderer.getCursor(l.level);
 
-var get3DGraphTranslation = () => renderer.centre();
+var get3DGraphTranslation = () => renderer.centre(l.level);
 
 init();
