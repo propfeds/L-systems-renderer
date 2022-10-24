@@ -242,7 +242,7 @@ var gameOffline = false;
 var enableOfflineDrawing = true;
 var cursorFocusedCamera = false;
 var lastCamera = new Vector3(0, 0, 0);
-var followFactor = 0.25;
+var followFactor = 0.4;
 var quickDraw = false;
 var quickBacktrack = false;
 var useExtendedBacktrack = false;
@@ -802,6 +802,7 @@ var createExpMenu = () =>
 {
     let tmpEOD = enableOfflineDrawing;
     let tmpCFC = cursorFocusedCamera;
+    let tmpFF = followFactor;
     let tmpQD = quickDraw;
     let tmpQB = quickBacktrack;
     let tmpUEB = useExtendedBacktrack;
@@ -815,7 +816,7 @@ var createExpMenu = () =>
             [
                 cfgGrid = ui.createGrid
                 ({
-                    columnDefinitions: ['70*', '30*'],
+                    columnDefinitions: ['75*', '25*'],
                     children:
                     [
                         EODLabel = ui.createLatexLabel
@@ -856,17 +857,36 @@ var createExpMenu = () =>
                                     tmpCFC = !tmpCFC;
                             }
                         }),
+                        FFLabel = ui.createLatexLabel
+                        ({
+                            text: 'Camera follow factor (0-1): ',
+                            row: 2,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        FFEntry = ui.createEntry
+                        ({
+                            text: tmpFF.toString(),
+                            row: 2,
+                            column: 1,
+                            horizontalTextAlignment: TextAlignment.END,
+                            onTextChanged: (ot, nt) =>
+                            {
+                                tmpFF = Number(nt);
+                                tmpFF = Math.min(Math.max(tmpFF, 0), 1);
+                            }
+                        }),
                         QDLabel = ui.createLatexLabel
                         ({
                             text: 'Quickdraw straight lines: ',
-                            row: 2,
+                            row: 3,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         QDSwitch = ui.createSwitch
                         ({
                             isToggled: () => tmpQD,
-                            row: 2,
+                            row: 3,
                             column: 1,
                             horizontalOptions: LayoutOptions.END,
                             onTouched: (e) =>
@@ -878,14 +898,14 @@ var createExpMenu = () =>
                         QBLabel = ui.createLatexLabel
                         ({
                             text: 'Quick backtrack: ',
-                            row: 3,
+                            row: 4,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         QBSwitch = ui.createSwitch
                         ({
                             isToggled: () => tmpQB,
-                            row: 3,
+                            row: 4,
                             column: 1,
                             horizontalOptions: LayoutOptions.END,
                             onTouched: (e) =>
@@ -897,14 +917,14 @@ var createExpMenu = () =>
                         UEBLabel = ui.createLatexLabel
                         ({
                             text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
-                            row: 4,
+                            row: 5,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         UEBSwitch = ui.createSwitch
                         ({
                             isToggled: () => tmpUEB,
-                            row: 4,
+                            row: 5,
                             column: 1,
                             horizontalOptions: LayoutOptions.END,
                             onTouched: (e) =>
@@ -925,13 +945,14 @@ var createExpMenu = () =>
                 }),
                 saveButton = ui.createButton
                 ({
-                    text: 'Save',
+                    text: 'Save (only this session)',
                     onClicked: () =>
                     {
                         let requireReset = (quickDraw != tmpQD) || (quickBacktrack != tmpQB) || (useExtendedBacktrack != tmpUEB);
 
                         enableOfflineDrawing = tmpEOD;
                         cursorFocusedCamera = tmpCFC;
+                        followFactor = tmpFF;
                         quickDraw = tmpQD;
                         quickBacktrack = tmpQB;
                         useExtendedBacktrack = tmpUEB;
