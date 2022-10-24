@@ -241,6 +241,8 @@ var gameOffline = false;
 // Experimental options
 var enableOfflineDrawing = true;
 var cursorFocusedCamera = false;
+var lastCamera = new Vector3(0, 0, 0);
+var followFactor = 0.25;
 var quickDraw = false;
 var quickBacktrack = false;
 var useExtendedBacktrack = false;
@@ -986,6 +988,11 @@ var getTertiaryEquation = () => renderer.getStateString();
 
 var get3DGraphPoint = () => renderer.getCursor();
 
-var get3DGraphTranslation = () => renderer.centre();
+var get3DGraphTranslation = () =>
+{
+    let newCamera = renderer.centre() * followFactor + lastCamera * (1 - followFactor);
+    lastCamera = newCamera;
+    return newCamera;
+}
 
 init();
