@@ -184,9 +184,9 @@ class Renderer
         return this.idx * 100 / (this.levels[level].length - 1);
     }
 
-    getStateString()
+    getStateString(level)
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${this.levels[level].length}\\end{matrix}`;
     }
 
     getCursor(level)
@@ -787,7 +787,7 @@ var canResetStage = () => true;
 
 var resetStage = () => renderer.reset();
 
-var getTertiaryEquation = () => renderer.getStateString();
+var getTertiaryEquation = () => renderer.getStateString(l.level);
 
 var get3DGraphPoint = () => renderer.getCursor(l.level);
 
