@@ -96,11 +96,13 @@ class Renderer
     configure(initScale, figureScale, xCentre, yCentre, upright)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
+
         this.initScale = initScale;
         this.figureScale = figureScale;
         this.xCentre = xCentre;
         this.yCentre = yCentre;
         this.upright = upright;
+
         if(requireReset)
             this.reset();
     }
@@ -181,17 +183,14 @@ class Renderer
                     }
                     return;
                 default:
-                    let pushThisPoint = !rushStraightLines || ['+', '-'].includes(this.levels[this.lvl][i + 1]);
-                    if(pushThisPoint)
-                    {
+                    if(!quickBacktrack || backtrackList[useExtendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]))
                         this.stack.push(this.state);
-                    }
                     this.forward();
                     this.idx = i + 1;
-                    if(pushThisPoint)
-                        return;
-                    else
+                    if(quickDraw)
                         break;
+                    else
+                        return;
             }
         }
     }
@@ -238,9 +237,14 @@ var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 var page = 0;
 var gameOffline = false;
+
+// Experimental options
 var enableOfflineDrawing = true;
 var cursorFocusedCamera = false;
-var rushStraightLines = false;
+var quickDraw = false;
+var quickBacktrack = false;
+var useExtendedBacktrack = false;
+var backtrackList = ['+-', '+-[]'];
 
 var manualPages =
 [
@@ -350,6 +354,18 @@ var init = () =>
             manual.level = 0;
         }
         manual.canBeRefunded = (_) => false;
+    }
+    // Experimental options
+    {
+        exp = theory.createUpgrade(5, angle, new FreeCost);
+        exp.description = 'Experimental options';
+        exp.info = 'Configure how wacky your L-system looks';
+        exp.bought = (_) =>
+        {
+            var expMenu = createExpMenu();
+            expMenu.show();
+            exp.level = 0;
+        }
     }
 }
 
@@ -766,6 +782,162 @@ var createManualMenu = () =>
                             }
                         })
                     ]
+                })
+            ]
+        })
+    })
+    return menu;
+}
+
+// var enableOfflineDrawing = true;
+// var cursorFocusedCamera = false;
+// var quickDraw = false;
+// var quickBacktrack = false;
+// var useExtendedBacktrack = false;
+// var backtrackList = ['+-', '+-[]'];
+
+var createExpMenu = () =>
+{
+    let tmpEOD = enableOfflineDrawing;
+    let tmpCFC = cursorFocusedCamera;
+    let tmpQD = quickDraw;
+    let tmpQB = quickBacktrack;
+    let tmpUEB = useExtendedBacktrack;
+
+    let menu = ui.createPopup
+    ({
+        title: 'Experimental Options',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                cfgGrid = ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        EODLabel = ui.createLatexLabel
+                        ({
+                            text: 'Offline drawing: ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        EODSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpEOD,
+                            row: 0,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpEOD = !tmpEOD;
+                            }
+                        }),
+                        CFCLabel = ui.createLatexLabel
+                        ({
+                            text: 'Cursor-focused camera: ',
+                            row: 1,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        CFCSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpCFC,
+                            row: 1,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpCFC = !tmpCFC;
+                            }
+                        }),
+                        QDLabel = ui.createLatexLabel
+                        ({
+                            text: 'Quickdraw straight lines: ',
+                            row: 2,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        QDSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpQD,
+                            row: 2,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpQD = !tmpQD;
+                            }
+                        }),
+                        QBLabel = ui.createLatexLabel
+                        ({
+                            text: 'Quick backtrack: ',
+                            row: 3,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        QBSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpQB,
+                            row: 3,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpQB = !tmpQB;
+                            }
+                        }),
+                        UEBLabel = ui.createLatexLabel
+                        ({
+                            text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
+                            row: 4,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        UEBSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpUEB,
+                            row: 4,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    tmpUEB = !tmpUEB;
+                                    UEBLabel.text = `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`;
+                                }
+                            }
+                        }),
+                    ]
+                }),
+                separator = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                saveButton = ui.createButton
+                ({
+                    text: 'Save',
+                    onClicked: () =>
+                    {
+                        let requireReset = (quickDraw != tmpQD) || (quickBacktrack != tmpQB) || (useExtendedBacktrack != tmpUEB);
+
+                        enableOfflineDrawing = tmpEOD;
+                        cursorFocusedCamera = tmpCFC;
+                        quickDraw = tmpQD;
+                        quickBacktrack = tmpQB;
+                        useExtendedBacktrack = tmpUEB;
+
+                        if(requireReset)
+                            renderer.reset();
+                        menu.hide();
+                    }
                 })
             ]
         })
