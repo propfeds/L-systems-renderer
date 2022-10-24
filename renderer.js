@@ -67,6 +67,7 @@ class Renderer
 
         this.state = new Vector3(0, 0, 0);
         this.levels = [];
+        this.lvl = 0;
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
@@ -74,6 +75,7 @@ class Renderer
 
     update(level)
     {
+        this.lvl = level;
         for(let i = this.levels.length; i <= level; ++i)
         {
             if(i == 0)
@@ -106,8 +108,9 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
-        l.level = 0;
+        this.update(0);
         this.reset();
+        l.level = 0;
     }
 
     turnLeft()
@@ -126,11 +129,11 @@ class Renderer
             this.state.z
         );
     }
-    centre(level)
+    centre()
     {
         if(cursorFocusedCamera)
         {
-            return -this.getCursor(level);
+            return -this.getCursor(this.lvl);
         }
         else
         {
@@ -151,11 +154,15 @@ class Renderer
 
     draw(level)
     {
-        this.update(level);
-        let i;
-        for(i = this.idx; i < this.levels[level].length; ++i)
+        if(this.lvl != level)
         {
-            switch(this.levels[level][i])
+            this.update(level);
+            this.reset();
+        }
+        let i;
+        for(i = this.idx; i < this.levels[this.lvl].length; ++i)
+        {
+            switch(this.levels[this.lvl][i])
             {
                 case '+': this.turnLeft(); break;
                 case '-': this.turnRight(); break;
@@ -169,12 +176,12 @@ class Renderer
                     {
                         this.idStack.pop();
                         this.idx = i + 1;
-                        if(this.idx >= this.levels[level].length)
+                        if(this.idx >= this.levels[this.lvl].length)
                             this.idx = 0;
                     }
                     return;
                 default:
-                    let pushThisPoint = !rushStraightLines || ['+', '-'].includes(this.levels[level][i + 1]);
+                    let pushThisPoint = !rushStraightLines || ['+', '-'].includes(this.levels[this.lvl][i + 1]);
                     if(pushThisPoint)
                     {
                         this.stack.push(this.state);
@@ -193,20 +200,20 @@ class Renderer
     {
         return this.state.z * this.system.turnAngle % 360;
     }
-    getProgress(level)
+    getProgress()
     {
-        return this.idx * 100 / (this.levels[level].length - 1);
+        return this.idx * 100 / (this.levels[this.lvl].length - 1);
     }
 
-    getStateString(level)
+    getStateString()
     {
-        let l = this.levels.length > 0 ? this.levels[level].length : 0;
+        let l = this.levels.length > 0 ? this.levels[this.lvl].length : 0;
         return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${l}\\end{matrix}`;
     }
 
-    getCursor(level)
+    getCursor()
     {
-        let coords = this.state / (this.initScale * this.figureScale ** level);
+        let coords = this.state / (this.initScale * this.figureScale ** this.lvl);
         if(this.upright)
             return new Vector3(coords.y, -coords.x, 0);
         else
@@ -292,11 +299,6 @@ var init = () =>
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
-        l.boughtOrRefunded = (_) =>
-        {
-            renderer.update(l.level);
-            renderer.reset();
-        }
         l.canBeRefunded = (_) => true;
     }
     // ts (Tickspeed)
@@ -377,7 +379,7 @@ var tick = (elapsedTime, multiplier) =>
         {
             renderer.draw(l.level);
             angle.value = renderer.getAngle();
-            progress.value = renderer.getProgress(l.level);        
+            progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
 
@@ -808,10 +810,10 @@ var canResetStage = () => true;
 
 var resetStage = () => renderer.reset();
 
-var getTertiaryEquation = () => renderer.getStateString(l.level);
+var getTertiaryEquation = () => renderer.getStateString();
 
-var get3DGraphPoint = () => renderer.getCursor(l.level);
+var get3DGraphPoint = () => renderer.getCursor();
 
-var get3DGraphTranslation = () => renderer.centre(l.level);
+var get3DGraphTranslation = () => renderer.centre();
 
 init();
