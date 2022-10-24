@@ -663,12 +663,11 @@ var createManualMenu = () =>
 {
     let pageContents = ui.createLatexLabel
     ({
-        
         text: manualPages[page].contents
     });
     let menu = ui.createPopup
     ({
-        title: () => `Manual (${page + 1}/${manualPages.length})`,
+        title: `Manual (${page + 1}/${manualPages.length})`,
         content: ui.createStackLayout
         ({
             children:
@@ -709,6 +708,7 @@ var createManualMenu = () =>
                                 if(page > 0)
                                 {
                                     --page;
+                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text = manualPages[page].contents;
                                 }
@@ -742,6 +742,7 @@ var createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
+                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text = manualPages[page].contents;
                                 }
