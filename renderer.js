@@ -6,12 +6,13 @@ import { Vector3 } from '../api/Vector3';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
+import { Color } from '../api/ui/properties/Color';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = '0.13';
+var version = '0.14';
 
 class LSystem
 {
@@ -67,7 +68,7 @@ class Renderer
 
         this.state = new Vector3(0, 0, 0);
         this.levels = [];
-        this.lvl = 0;
+        this.lvl = -1;
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
@@ -156,11 +157,11 @@ class Renderer
 
     draw(level)
     {
-        if(this.lvl != level)
-        {
+        if(this.lvl < level)
             this.update(level);
+        if(this.lvl != level)
             this.reset();
-        }
+
         let i;
         for(i = this.idx; i < this.levels[this.lvl].length; ++i)
         {
@@ -300,7 +301,7 @@ var init = () =>
     progress = theory.createCurrency('%');
     // l
     {
-        let getDesc = (level) => `\\text{Level:}${level.toString()}`;
+        let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
@@ -310,7 +311,7 @@ var init = () =>
     // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => `\\text{Tickspeed:}${level.toString()}/sec`;
+        let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, angle, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
@@ -403,6 +404,191 @@ var tick = (elapsedTime, multiplier) =>
 
         time = 0;
     }
+}
+
+var createVariableButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: () => variable.getDescription(),
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: Color.TEXT_MEDIUM
+        }),
+        borderColor: Color.TEXT_DARK
+    });
+    return frame;
+}
+
+var createMinusButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        column: 0,
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: '-',
+            horizontalOptions: LayoutOptions.CENTER,
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                variable.refund(1);
+            }
+        },
+        borderColor: () => variable.level > 0 ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+    });
+    return frame;
+}
+
+var createPlusButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        column: 1,
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: '+',
+            horizontalOptions: LayoutOptions.CENTER,
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: () => variable.level < variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                variable.buy(1);
+            }
+        },
+        borderColor: () => variable.level < variable.maxLevel ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+    });
+    return frame;
+}
+
+var createVariablePlusButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        column: 1,
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: variable.getDescription(),
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: Color.TEXT
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                variable.buy(1);
+            }
+        },
+        borderColor: Color.TEXT_MEDIUM
+    });
+    return frame;
+}
+
+var getUpgradeListDelegate = () =>
+{
+    let height = ui.screenHeight * 0.055;
+
+    let lvlButton = createVariableButton(l, height);
+    lvlButton.row = 0;
+    lvlButton.column = 0;
+    let tsButton = createVariableButton(ts, height);
+    tsButton.row = 1;
+    tsButton.column = 0;
+    let sysButton = createVariablePlusButton(sys, height);
+    sysButton.row = 0;
+    sysButton.column = 0;
+    let cfgButton = createVariablePlusButton(cfg, height);
+    cfgButton.row = 0;
+    cfgButton.column = 1;
+    let manualButton = createVariablePlusButton(manual, height);
+    manualButton.row = 1;
+    manualButton.column = 0;
+    let expButton = createVariablePlusButton(exp, height);
+    expButton.row = 1;
+    expButton.column = 1;
+
+    let stack = ui.createStackLayout
+    ({
+        children:
+        [
+            upgList = ui.createGrid
+            ({
+                columnSpacing: 3,
+                rowSpacing: 3,
+                rowDefinitions: [height, height],
+                columnDefinitions: ['50*', '50*'],
+                children:
+                [
+                    lvlButton,
+                    lvlGrid = ui.createGrid
+                    ({
+                        row: 0,
+                        column: 1,
+                        columnSpacing: 3,
+                        columnDefinitions: ['50*', '50*'],
+                        children:
+                        [
+                            createMinusButton(l, height),
+                            createPlusButton(l, height)
+                        ]
+                    }),
+                    tsButton,
+                    tsGrid = ui.createGrid
+                    ({
+                        row: 1,
+                        column: 1,
+                        columnSpacing: 3,
+                        columnDefinitions: ['50*', '50*'],
+                        children:
+                        [
+                            createMinusButton(ts, height),
+                            createPlusButton(ts, height)
+                        ]
+                    })
+                ]
+            }),
+            separator1 = ui.createBox
+            ({
+                heightRequest: 1,
+                margin: new Thickness(0, 6)
+            }),
+            menuList = ui.createGrid
+            ({
+                columnSpacing: 3,
+                rowSpacing: 3,
+                rowDefinitions: [height, height],
+                columnDefinitions: ['50*', '50*'],
+                children:
+                [
+                    sysButton,
+                    cfgButton,
+                    manualButton,
+                    expButton
+                ]
+            })
+        ]
+    })
+    return stack;
 }
 
 var createConfigMenu = () =>
@@ -749,7 +935,7 @@ var createManualMenu = () =>
                                 }
                             }
                         }),
-                        adoptBtn = ui.createButton
+                        adoptButton = ui.createButton
                         ({
                             text: 'Apply',
                             row: 0,
@@ -790,13 +976,6 @@ var createManualMenu = () =>
     })
     return menu;
 }
-
-// var enableOfflineDrawing = true;
-// var cursorFocusedCamera = false;
-// var quickDraw = false;
-// var quickBacktrack = false;
-// var useExtendedBacktrack = false;
-// var backtrackList = ['+-', '+-[]'];
 
 var createExpMenu = () =>
 {
