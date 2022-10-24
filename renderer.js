@@ -157,10 +157,9 @@ class Renderer
 
     draw(level)
     {
-        if(this.lvl < level)
-            this.update(level);
         if(this.lvl != level)
             this.reset();
+        this.update(level);
 
         let i;
         for(i = this.idx; i < this.levels[this.lvl].length; ++i)
