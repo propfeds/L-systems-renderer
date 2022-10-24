@@ -6,12 +6,13 @@ import { Vector3 } from '../api/Vector3';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
+import { Color } from '../api/ui/properties/Color';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = '0.12';
+var version = '0.14';
 
 class LSystem
 {
@@ -67,6 +68,7 @@ class Renderer
 
         this.state = new Vector3(0, 0, 0);
         this.levels = [];
+        this.lvl = -1;
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
@@ -74,6 +76,7 @@ class Renderer
 
     update(level)
     {
+        this.lvl = level;
         for(let i = this.levels.length; i <= level; ++i)
         {
             if(i == 0)
@@ -94,11 +97,13 @@ class Renderer
     configure(initScale, figureScale, xCentre, yCentre, upright)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
+
         this.initScale = initScale;
         this.figureScale = figureScale;
         this.xCentre = xCentre;
         this.yCentre = yCentre;
         this.upright = upright;
+
         if(requireReset)
             this.reset();
     }
@@ -106,8 +111,9 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
-        l.level = 0;
+        this.update(0);
         this.reset();
+        l.level = 0;
     }
 
     turnLeft()
@@ -128,27 +134,38 @@ class Renderer
     }
     centre()
     {
-        if(this.upright)
-            return new Vector3(
-                this.yCentre / this.initScale,
-                this.xCentre / this.initScale,
-                0
-            );
+        if(cursorFocusedCamera)
+        {
+            return -this.getCursor(this.lvl);
+        }
         else
-            return new Vector3(
-                -this.xCentre / this.initScale,
-                this.yCentre / this.initScale,
-                0
-            );
+        {
+            if(this.upright)
+                return new Vector3(
+                    this.yCentre / this.initScale,
+                    this.xCentre / this.initScale,
+                    0
+                );
+            else
+                return new Vector3(
+                    -this.xCentre / this.initScale,
+                    this.yCentre / this.initScale,
+                    0
+                );
+        }
     }
 
     draw(level)
     {
-        this.update(level);
+        if(this.lvl < level)
+            this.update(level);
+        if(this.lvl != level)
+            this.reset();
 
-        for(let i = this.idx; i < this.levels[level].length; ++i)
+        let i;
+        for(i = this.idx; i < this.levels[this.lvl].length; ++i)
         {
-            switch(this.levels[level][i])
+            switch(this.levels[this.lvl][i])
             {
                 case '+': this.turnLeft(); break;
                 case '-': this.turnRight(); break;
@@ -162,15 +179,19 @@ class Renderer
                     {
                         this.idStack.pop();
                         this.idx = i + 1;
-                        if(this.idx >= this.levels[level].length)
+                        if(this.idx >= this.levels[this.lvl].length)
                             this.idx = 0;
                     }
                     return;
                 default:
-                    this.stack.push(this.state);
+                    if(!quickBacktrack || backtrackList[useExtendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]))
+                        this.stack.push(this.state);
                     this.forward();
                     this.idx = i + 1;
-                    return;
+                    if(quickDraw)
+                        break;
+                    else
+                        return;
             }
         }
     }
@@ -179,19 +200,20 @@ class Renderer
     {
         return this.state.z * this.system.turnAngle % 360;
     }
-    getProgress(level)
+    getProgress()
     {
-        return this.idx * 100 / (this.levels[level].length - 1);
+        return this.idx * 100 / (this.levels[this.lvl].length - 1);
     }
 
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}\\end{matrix}`;
+        let l = this.levels.length > 0 ? this.levels[this.lvl].length : 0;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${l}\\end{matrix}`;
     }
 
-    getCursor(level)
+    getCursor()
     {
-        let coords = this.state / (this.initScale * this.figureScale ** level);
+        let coords = this.state / (this.initScale * this.figureScale ** this.lvl);
         if(this.upright)
             return new Vector3(coords.y, -coords.x, 0);
         else
@@ -216,6 +238,16 @@ var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 var page = 0;
 var gameOffline = false;
+
+// Experimental options
+var enableOfflineDrawing = true;
+var cursorFocusedCamera = false;
+var lastCamera = new Vector3(0, 0, 0);
+var followFactor = 0.4;
+var quickDraw = false;
+var quickBacktrack = false;
+var useExtendedBacktrack = false;
+var backtrackList = ['+-', '+-[]'];
 
 var manualPages =
 [
@@ -269,22 +301,17 @@ var init = () =>
     progress = theory.createCurrency('%');
     // l
     {
-        let getDesc = (level) => `\\text{Level:}${level.toString()}`;
+        let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, angle, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
-        l.boughtOrRefunded = (_) =>
-        {
-            renderer.update(l.level);
-            renderer.reset();
-        }
         l.canBeRefunded = (_) => true;
     }
     // ts (Tickspeed)
     // Starts with 0, then goes to 1 and beyond?
     {
-        let getDesc = (level) => `\\text{Tickspeed:}${level.toString()}/sec`;
+        let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, angle, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
@@ -331,6 +358,18 @@ var init = () =>
         }
         manual.canBeRefunded = (_) => false;
     }
+    // Experimental options
+    {
+        exp = theory.createUpgrade(5, angle, new FreeCost);
+        exp.description = 'Experimental options';
+        exp.info = 'Configure how wacky your L-system looks';
+        exp.bought = (_) =>
+        {
+            var expMenu = createExpMenu();
+            expMenu.show();
+            exp.level = 0;
+        }
+    }
 }
 
 var alwaysShowRefundButtons = () => true;
@@ -350,20 +389,208 @@ var tick = (elapsedTime, multiplier) =>
         else if(gameOffline)
         {
             // Probably triggers only once when reloading
-            renderer.reset();
+            if(!enableOfflineDrawing)
+                renderer.reset();
             gameOffline = false;
         }
 
-        if(!gameOffline)
+        if(!gameOffline || enableOfflineDrawing)
         {
             renderer.draw(l.level);
             angle.value = renderer.getAngle();
-            progress.value = renderer.getProgress(l.level);        
+            progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
 
         time = 0;
     }
+}
+
+var createVariableButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: () => variable.getDescription(),
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: Color.TEXT_MEDIUM
+        }),
+        borderColor: Color.TEXT_DARK
+    });
+    return frame;
+}
+
+var createMinusButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        column: 0,
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: '-',
+            horizontalOptions: LayoutOptions.CENTER,
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                variable.refund(1);
+            }
+        },
+        borderColor: () => variable.level > 0 ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+    });
+    return frame;
+}
+
+var createPlusButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        column: 1,
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: '+',
+            horizontalOptions: LayoutOptions.CENTER,
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: () => variable.level < variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                variable.buy(1);
+            }
+        },
+        borderColor: () => variable.level < variable.maxLevel ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+    });
+    return frame;
+}
+
+var createVariablePlusButton = (variable, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        column: 1,
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: variable.getDescription(),
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: Color.TEXT
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                variable.buy(1);
+            }
+        },
+        borderColor: Color.TEXT_MEDIUM
+    });
+    return frame;
+}
+
+var getUpgradeListDelegate = () =>
+{
+    let height = ui.screenHeight * 0.055;
+
+    let lvlButton = createVariableButton(l, height);
+    lvlButton.row = 0;
+    lvlButton.column = 0;
+    let tsButton = createVariableButton(ts, height);
+    tsButton.row = 1;
+    tsButton.column = 0;
+    let sysButton = createVariablePlusButton(sys, height);
+    sysButton.row = 0;
+    sysButton.column = 0;
+    let cfgButton = createVariablePlusButton(cfg, height);
+    cfgButton.row = 0;
+    cfgButton.column = 1;
+    let manualButton = createVariablePlusButton(manual, height);
+    manualButton.row = 1;
+    manualButton.column = 0;
+    let expButton = createVariablePlusButton(exp, height);
+    expButton.row = 1;
+    expButton.column = 1;
+
+    let stack = ui.createStackLayout
+    ({
+        children:
+        [
+            upgList = ui.createGrid
+            ({
+                padding: new Thickness(3, 3),
+                columnSpacing: 3,
+                rowSpacing: 3,
+                rowDefinitions: [height, height],
+                columnDefinitions: ['50*', '50*'],
+                children:
+                [
+                    lvlButton,
+                    lvlGrid = ui.createGrid
+                    ({
+                        row: 0,
+                        column: 1,
+                        columnSpacing: 3,
+                        columnDefinitions: ['50*', '50*'],
+                        children:
+                        [
+                            createMinusButton(l, height),
+                            createPlusButton(l, height)
+                        ]
+                    }),
+                    tsButton,
+                    tsGrid = ui.createGrid
+                    ({
+                        row: 1,
+                        column: 1,
+                        columnSpacing: 3,
+                        columnDefinitions: ['50*', '50*'],
+                        children:
+                        [
+                            createMinusButton(ts, height),
+                            createPlusButton(ts, height)
+                        ]
+                    })
+                ]
+            }),
+            separator1 = ui.createBox
+            ({
+                heightRequest: 1,
+                margin: new Thickness(0, 2, 0, 3)
+            }),
+            menuList = ui.createGrid
+            ({
+                padding: new Thickness(3, 3),
+                columnSpacing: 3,
+                rowSpacing: 3,
+                rowDefinitions: [height, height],
+                columnDefinitions: ['50*', '50*'],
+                children:
+                [
+                    sysButton,
+                    cfgButton,
+                    manualButton,
+                    expButton
+                ]
+            })
+        ]
+    })
+    return stack;
 }
 
 var createConfigMenu = () =>
@@ -657,9 +884,13 @@ var createSystemMenu = () =>
 
 var createManualMenu = () =>
 {
+    let pageContents = ui.createLatexLabel
+    ({
+        text: manualPages[page].contents
+    });
     let menu = ui.createPopup
     ({
-        title: () => `Manual (${page + 1}/${manualPages.length})`,
+        title: `Manual (${page + 1}/${manualPages.length})`,
         content: ui.createStackLayout
         ({
             children:
@@ -674,10 +905,10 @@ var createManualMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                pageContents = ui.createLatexLabel
+                pageScroll = ui.createScrollView
                 ({
                     heightRequest: ui.screenHeight * 0.3,
-                    text: manualPages[page].contents
+                    content: pageContents
                 }),
                 separator1 = ui.createBox
                 ({
@@ -700,12 +931,13 @@ var createManualMenu = () =>
                                 if(page > 0)
                                 {
                                     --page;
+                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text = manualPages[page].contents;
                                 }
                             }
                         }),
-                        adoptBtn = ui.createButton
+                        adoptButton = ui.createButton
                         ({
                             text: 'Apply',
                             row: 0,
@@ -733,12 +965,183 @@ var createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
+                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text = manualPages[page].contents;
                                 }
                             }
                         })
                     ]
+                })
+            ]
+        })
+    })
+    return menu;
+}
+
+var createExpMenu = () =>
+{
+    let tmpEOD = enableOfflineDrawing;
+    let tmpCFC = cursorFocusedCamera;
+    let tmpFF = followFactor;
+    let tmpQD = quickDraw;
+    let tmpQB = quickBacktrack;
+    let tmpUEB = useExtendedBacktrack;
+
+    let menu = ui.createPopup
+    ({
+        title: 'Experimental Options',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                cfgGrid = ui.createGrid
+                ({
+                    columnDefinitions: ['75*', '25*'],
+                    children:
+                    [
+                        EODLabel = ui.createLatexLabel
+                        ({
+                            text: 'Offline drawing: ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        EODSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpEOD,
+                            row: 0,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpEOD = !tmpEOD;
+                            }
+                        }),
+                        CFCLabel = ui.createLatexLabel
+                        ({
+                            text: 'Cursor-focused camera: ',
+                            row: 1,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        CFCSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpCFC,
+                            row: 1,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpCFC = !tmpCFC;
+                            }
+                        }),
+                        FFLabel = ui.createLatexLabel
+                        ({
+                            text: 'Camera follow factor (0-1): ',
+                            row: 2,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        FFEntry = ui.createEntry
+                        ({
+                            text: tmpFF.toString(),
+                            row: 2,
+                            column: 1,
+                            horizontalTextAlignment: TextAlignment.END,
+                            onTextChanged: (ot, nt) =>
+                            {
+                                tmpFF = Number(nt);
+                                tmpFF = Math.min(Math.max(tmpFF, 0), 1);
+                            }
+                        }),
+                        QDLabel = ui.createLatexLabel
+                        ({
+                            text: 'Quickdraw straight lines: ',
+                            row: 3,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        QDSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpQD,
+                            row: 3,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpQD = !tmpQD;
+                            }
+                        }),
+                        QBLabel = ui.createLatexLabel
+                        ({
+                            text: 'Quick backtrack: ',
+                            row: 4,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        QBSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpQB,
+                            row: 4,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                    tmpQB = !tmpQB;
+                            }
+                        }),
+                        UEBLabel = ui.createLatexLabel
+                        ({
+                            text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
+                            row: 5,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        UEBSwitch = ui.createSwitch
+                        ({
+                            isToggled: () => tmpUEB,
+                            row: 5,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    tmpUEB = !tmpUEB;
+                                    UEBLabel.text = `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`;
+                                }
+                            }
+                        }),
+                    ]
+                }),
+                separator = ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                saveButton = ui.createButton
+                ({
+                    text: 'Save (only this session)',
+                    onClicked: () =>
+                    {
+                        let requireReset = (quickDraw != tmpQD) || (quickBacktrack != tmpQB) || (useExtendedBacktrack != tmpUEB);
+
+                        enableOfflineDrawing = tmpEOD;
+                        cursorFocusedCamera = tmpCFC;
+                        followFactor = tmpFF;
+                        quickDraw = tmpQD;
+                        quickBacktrack = tmpQB;
+                        useExtendedBacktrack = tmpUEB;
+
+                        if(requireReset)
+                            renderer.reset();
+                        menu.hide();
+                    }
                 })
             ]
         })
@@ -785,8 +1188,13 @@ var resetStage = () => renderer.reset();
 
 var getTertiaryEquation = () => renderer.getStateString();
 
-var get3DGraphPoint = () => renderer.getCursor(l.level);
+var get3DGraphPoint = () => renderer.getCursor();
 
-var get3DGraphTranslation = () => renderer.centre();
+var get3DGraphTranslation = () =>
+{
+    let newCamera = renderer.centre() * followFactor + lastCamera * (1 - followFactor);
+    lastCamera = newCamera;
+    return newCamera;
+}
 
 init();
