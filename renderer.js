@@ -11,7 +11,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An L-systems renderer.';
 var authors = 'propfeds#5988';
-var version = '0.12';
+var version = '0.13';
 
 class LSystem
 {
@@ -216,6 +216,9 @@ var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
 var time = 0;
 var page = 0;
 var gameOffline = false;
+var enableOfflineDrawing = true;
+var cursorFocusedCamera = true;
+var rushStraightLines = true;
 
 var manualPages =
 [
@@ -350,11 +353,12 @@ var tick = (elapsedTime, multiplier) =>
         else if(gameOffline)
         {
             // Probably triggers only once when reloading
-            renderer.reset();
+            if(!enableOfflineDrawing)
+                renderer.reset();
             gameOffline = false;
         }
 
-        if(!gameOffline)
+        if(!gameOffline || enableOfflineDrawing)
         {
             renderer.draw(l.level);
             angle.value = renderer.getAngle();
