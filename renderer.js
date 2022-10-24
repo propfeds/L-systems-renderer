@@ -152,8 +152,8 @@ class Renderer
     draw(level)
     {
         this.update(level);
-
-        for(let i = this.idx; i < this.levels[level].length; ++i)
+        let i;
+        for(i = this.idx; i < this.levels[level].length; ++i)
         {
             switch(this.levels[level][i])
             {
@@ -174,10 +174,17 @@ class Renderer
                     }
                     return;
                 default:
-                    this.stack.push(this.state);
+                    let pushThisPoint = !rushStraightLines || ['+', '-'].includes(this.levels[level][i + 1]);
+                    if(pushThisPoint)
+                    {
+                        this.stack.push(this.state);
+                    }
                     this.forward();
                     this.idx = i + 1;
-                    return;
+                    if(pushThisPoint)
+                        return;
+                    else
+                        break;
             }
         }
     }
@@ -193,7 +200,8 @@ class Renderer
 
     getStateString(level)
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${this.levels[level].length}\\end{matrix}`;
+        let l = this.levels.length > 0 ? this.levels[level].length : 0;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${l}\\end{matrix}`;
     }
 
     getCursor(level)
@@ -224,8 +232,8 @@ var time = 0;
 var page = 0;
 var gameOffline = false;
 var enableOfflineDrawing = true;
-var cursorFocusedCamera = true;
-var rushStraightLines = true;
+var cursorFocusedCamera = false;
+var rushStraightLines = false;
 
 var manualPages =
 [
