@@ -442,6 +442,7 @@ var createMinusButton = (variable, height) =>
         {
             if(e.type == TouchType.PRESSED)
             {
+                Sound.playClick();
                 variable.refund(1);
             }
         },
@@ -469,6 +470,7 @@ var createPlusButton = (variable, height) =>
         {
             if(e.type == TouchType.PRESSED)
             {
+                Sound.playClick();
                 variable.buy(1);
             }
         },
@@ -495,6 +497,7 @@ var createVariablePlusButton = (variable, height) =>
         {
             if(e.type == TouchType.PRESSED)
             {
+                Sound.playClick();
                 variable.buy(1);
             }
         },
@@ -532,7 +535,7 @@ var getUpgradeListDelegate = () =>
         [
             upgList = ui.createGrid
             ({
-                padding: new Thickness(3, 3),
+                padding: new Thickness(0, 3),
                 columnSpacing: 3,
                 rowSpacing: 3,
                 rowDefinitions: [height, height],
@@ -570,11 +573,11 @@ var getUpgradeListDelegate = () =>
             separator1 = ui.createBox
             ({
                 heightRequest: 1,
-                margin: new Thickness(0, 2, 0, 3)
+                // margin: new Thickness(0, 2, 0, 3)
             }),
             menuList = ui.createGrid
             ({
-                padding: new Thickness(3, 3),
+                padding: new Thickness(0, 3),
                 columnSpacing: 3,
                 rowSpacing: 3,
                 rowDefinitions: [height, height],
@@ -589,7 +592,10 @@ var getUpgradeListDelegate = () =>
             })
         ]
     })
-    return stack;
+    return ui.createScrollView
+    ({
+        content: stack
+    });
 }
 
 var createConfigMenu = () =>
@@ -704,7 +710,10 @@ var createConfigMenu = () =>
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
                                     tmpUpright = !tmpUpright;
+                                }
                             }
                         }),
                     ]
@@ -719,6 +728,7 @@ var createConfigMenu = () =>
                     text: 'Save',
                     onClicked: () =>
                     {
+                        Sound.playClick();
                         renderer.configure(tmpIScale, tmpFScale, tmpXC, tmpYC, tmpUpright);
                         menu.hide();
                     }
@@ -871,6 +881,7 @@ var createSystemMenu = () =>
                     text: 'Construct',
                     onClicked: () =>
                     {
+                        Sound.playClick();
                         renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle));
                         menu.hide();
                     }
@@ -929,6 +940,7 @@ var createManualMenu = () =>
                             {
                                 if(page > 0)
                                 {
+                                    Sound.playClick();
                                     --page;
                                     menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
@@ -944,6 +956,7 @@ var createManualMenu = () =>
                             isVisible: () => 'system' in manualPages[page],
                             onClicked: () =>
                             {
+                                Sound.playClick();
                                 renderer.applySystem(manualPages[page].system);
                                 if('config' in manualPages[page])
                                 {
@@ -961,6 +974,7 @@ var createManualMenu = () =>
                             isVisible: () => page < manualPages.length - 1,
                             onClicked: () =>
                             {
+                                Sound.playClick();
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
@@ -1015,7 +1029,10 @@ var createExpMenu = () =>
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
                                     tmpEOD = !tmpEOD;
+                                }
                             }
                         }),
                         CFCLabel = ui.createLatexLabel
@@ -1034,7 +1051,10 @@ var createExpMenu = () =>
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
                                     tmpCFC = !tmpCFC;
+                                }
                             }
                         }),
                         FFLabel = ui.createLatexLabel
@@ -1072,7 +1092,10 @@ var createExpMenu = () =>
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
                                     tmpQD = !tmpQD;
+                                }
                             }
                         }),
                         QBLabel = ui.createLatexLabel
@@ -1091,7 +1114,10 @@ var createExpMenu = () =>
                             onTouched: (e) =>
                             {
                                 if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
                                     tmpQB = !tmpQB;
+                                }
                             }
                         }),
                         UEBLabel = ui.createLatexLabel
@@ -1111,6 +1137,7 @@ var createExpMenu = () =>
                             {
                                 if(e.type == TouchType.PRESSED)
                                 {
+                                    Sound.playClick();
                                     tmpUEB = !tmpUEB;
                                     UEBLabel.text = `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`;
                                 }
@@ -1128,6 +1155,7 @@ var createExpMenu = () =>
                     text: 'Save (only this session)',
                     onClicked: () =>
                     {
+                        Sound.playClick();
                         let requireReset = (quickDraw != tmpQD) || (quickBacktrack != tmpQB) || (useExtendedBacktrack != tmpUEB);
 
                         enableOfflineDrawing = tmpEOD;
