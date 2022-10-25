@@ -318,57 +318,6 @@ var init = () =>
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
     }
-    // System menu
-    {
-        sys = theory.createUpgrade(2, angle, new FreeCost);
-        sys.description = 'L-system menu';
-        sys.info = 'Configure the L-system being drawn';
-        sys.bought = (_) =>
-        {
-            var systemMenu = createSystemMenu();
-            systemMenu.show();
-            sys.level = 0;
-        }
-        sys.canBeRefunded = (_) => false;
-    }
-    // Config menu
-    {
-        cfg = theory.createUpgrade(3, angle, new FreeCost);
-        cfg.description = 'Renderer menu';
-        cfg.info = 'Configure the L-systems renderer';
-        cfg.bought = (_) =>
-        {
-            var configMenu = createConfigMenu();
-            configMenu.show();
-            cfg.level = 0;
-        }
-        cfg.canBeRefunded = (_) => false;
-    }
-    // Manual
-    {
-        manual = theory.createUpgrade(4, angle, new FreeCost);
-        manual.description = 'Manual';
-        manual.info = 'How to use the L-system renderer';
-        manual.bought = (_) =>
-        {
-            var manualMenu = createManualMenu();
-            manualMenu.show();
-            manual.level = 0;
-        }
-        manual.canBeRefunded = (_) => false;
-    }
-    // Experimental options
-    {
-        exp = theory.createUpgrade(5, angle, new FreeCost);
-        exp.description = 'Experimental options';
-        exp.info = 'Configure how wacky your L-system looks';
-        exp.bought = (_) =>
-        {
-            var expMenu = createExpMenu();
-            expMenu.show();
-            exp.level = 0;
-        }
-    }
 }
 
 var alwaysShowRefundButtons = () => true;
@@ -479,8 +428,10 @@ var createPlusButton = (variable, height) =>
     return frame;
 }
 
-var createVariablePlusButton = (variable, height) =>
+var createMenuButton = (menuFunc, name, height) =>
 {
+    let menu = menuFunc();
+
     let frame = ui.createFrame
     ({
         column: 1,
@@ -489,7 +440,7 @@ var createVariablePlusButton = (variable, height) =>
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
         ({
-            text: variable.getDescription(),
+            text: name,
             verticalOptions: LayoutOptions.CENTER,
             textColor: Color.TEXT
         }),
@@ -498,7 +449,7 @@ var createVariablePlusButton = (variable, height) =>
             if(e.type == TouchType.PRESSED)
             {
                 Sound.playClick();
-                variable.buy(1);
+                menu.show();
             }
         },
         borderColor: Color.TEXT_MEDIUM
@@ -516,16 +467,16 @@ var getUpgradeListDelegate = () =>
     let tsButton = createVariableButton(ts, height);
     tsButton.row = 1;
     tsButton.column = 0;
-    let sysButton = createVariablePlusButton(sys, height);
+    let sysButton = createMenuButton(createSystemMenu, 'L-system menu', height);
     sysButton.row = 0;
     sysButton.column = 0;
-    let cfgButton = createVariablePlusButton(cfg, height);
+    let cfgButton = createMenuButton(createConfigMenu, 'Renderer menu', height);
     cfgButton.row = 0;
     cfgButton.column = 1;
-    let manualButton = createVariablePlusButton(manual, height);
+    let manualButton = createMenuButton(createManualMenu, 'Manual', height);
     manualButton.row = 1;
     manualButton.column = 0;
-    let expButton = createVariablePlusButton(exp, height);
+    let expButton = createMenuButton(createExpMenu, 'Experimental options', height);
     expButton.row = 1;
     expButton.column = 1;
 
