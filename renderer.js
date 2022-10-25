@@ -434,7 +434,6 @@ var createMenuButton = (menuFunc, name, height) =>
 
     let frame = ui.createFrame
     ({
-        column: 1,
         heightRequest: height,
         padding: new Thickness(10, 2),
         verticalOptions: LayoutOptions.CENTER,
@@ -467,6 +466,7 @@ var getUpgradeListDelegate = () =>
     let tsButton = createVariableButton(ts, height);
     tsButton.row = 1;
     tsButton.column = 0;
+
     let sysButton = createMenuButton(createSystemMenu, 'L-system menu', height);
     sysButton.row = 0;
     sysButton.column = 0;
@@ -480,73 +480,73 @@ var getUpgradeListDelegate = () =>
     expButton.row = 1;
     expButton.column = 1;
 
-    let stack = ui.createStackLayout
+    let stack = ui.createScrollView
     ({
-        children:
-        [
-            ui.createGrid
-            ({
-                padding: new Thickness(0, 3),
-                columnSpacing: 3,
-                rowSpacing: 3,
-                rowDefinitions: [height, height],
-                columnDefinitions: ['50*', '50*'],
-                children:
-                [
-                    lvlButton,
-                    ui.createGrid
-                    ({
-                        row: 0,
-                        column: 1,
-                        columnSpacing: 3,
-                        columnDefinitions: ['50*', '50*'],
-                        children:
-                        [
-                            createMinusButton(l, height),
-                            createPlusButton(l, height)
-                        ]
-                    }),
-                    tsButton,
-                    ui.createGrid
-                    ({
-                        row: 1,
-                        column: 1,
-                        columnSpacing: 3,
-                        columnDefinitions: ['50*', '50*'],
-                        children:
-                        [
-                            createMinusButton(ts, height),
-                            createPlusButton(ts, height)
-                        ]
-                    })
-                ]
-            }),
-            ui.createBox
-            ({
-                heightRequest: 1,
-                // margin: new Thickness(0, 2, 0, 3)
-            }),
-            ui.createGrid
-            ({
-                padding: new Thickness(0, 3),
-                columnSpacing: 3,
-                rowSpacing: 3,
-                rowDefinitions: [height, height],
-                columnDefinitions: ['50*', '50*'],
-                children:
-                [
-                    sysButton,
-                    cfgButton,
-                    manualButton,
-                    expButton
-                ]
-            })
-        ]
-    })
-    return ui.createScrollView
-    ({
-        content: stack
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    padding: new Thickness(0, 3),
+                    columnSpacing: 3,
+                    rowSpacing: 3,
+                    rowDefinitions: [height, height],
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        lvlButton,
+                        ui.createGrid
+                        ({
+                            row: 0,
+                            column: 1,
+                            columnSpacing: 3,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                createMinusButton(l, height),
+                                createPlusButton(l, height)
+                            ]
+                        }),
+                        tsButton,
+                        ui.createGrid
+                        ({
+                            row: 1,
+                            column: 1,
+                            columnSpacing: 3,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                createMinusButton(ts, height),
+                                createPlusButton(ts, height)
+                            ]
+                        })
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    // margin: new Thickness(0, 2, 0, 3)
+                }),
+                ui.createGrid
+                ({
+                    padding: new Thickness(0, 3),
+                    columnSpacing: 3,
+                    rowSpacing: 3,
+                    rowDefinitions: [height, height],
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        sysButton,
+                        cfgButton,
+                        manualButton,
+                        expButton
+                    ]
+                })
+            ]
+        })
     });
+    return stack;
 }
 
 var createConfigMenu = () =>
