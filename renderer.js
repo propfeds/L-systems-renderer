@@ -57,13 +57,13 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, xCentre = 0, yCentre = 0, upright = false)
+    constructor(system, initScale = 1, figureScale = 2, camX = 0, camY = 0, upright = false)
     {
         this.system = system;
         this.initScale = initScale;
         this.figureScale = figureScale;
-        this.xCentre = xCentre;
-        this.yCentre = yCentre;
+        this.camX = camX;
+        this.camY = camY;
         this.upright = upright;
 
         this.state = new Vector3(0, 0, 0);
@@ -94,14 +94,14 @@ class Renderer
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    configure(initScale, figureScale, xCentre, yCentre, upright)
+    configure(initScale, figureScale, camX, camY, upright)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
-        this.xCentre = xCentre;
-        this.yCentre = yCentre;
+        this.camX = camX;
+        this.camY = camY;
         this.upright = upright;
 
         if(requireReset)
@@ -142,14 +142,14 @@ class Renderer
         {
             if(this.upright)
                 return new Vector3(
-                    this.yCentre / this.initScale,
-                    this.xCentre / this.initScale,
+                    this.camY / this.initScale,
+                    this.camX / this.initScale,
                     0
                 );
             else
                 return new Vector3(
-                    -this.xCentre / this.initScale,
-                    this.yCentre / this.initScale,
+                    -this.camX / this.initScale,
+                    this.camY / this.initScale,
                     0
                 );
         }
@@ -221,7 +221,7 @@ class Renderer
 
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.xCentre} ${this.yCentre} ${this.upright ? 1 : 0} ${this.system.toString()}`;
+        return`${this.initScale} ${this.figureScale} ${this.camX} ${this.camY} ${this.upright ? 1 : 0} ${this.system.toString()}`;
     }
 }
 
@@ -484,7 +484,7 @@ var getUpgradeListDelegate = () =>
     ({
         children:
         [
-            upgList = ui.createGrid
+            ui.createGrid
             ({
                 padding: new Thickness(0, 3),
                 columnSpacing: 3,
@@ -494,7 +494,7 @@ var getUpgradeListDelegate = () =>
                 children:
                 [
                     lvlButton,
-                    lvlGrid = ui.createGrid
+                    ui.createGrid
                     ({
                         row: 0,
                         column: 1,
@@ -507,7 +507,7 @@ var getUpgradeListDelegate = () =>
                         ]
                     }),
                     tsButton,
-                    tsGrid = ui.createGrid
+                    ui.createGrid
                     ({
                         row: 1,
                         column: 1,
@@ -521,12 +521,12 @@ var getUpgradeListDelegate = () =>
                     })
                 ]
             }),
-            separator1 = ui.createBox
+            ui.createBox
             ({
                 heightRequest: 1,
                 // margin: new Thickness(0, 2, 0, 3)
             }),
-            menuList = ui.createGrid
+            ui.createGrid
             ({
                 padding: new Thickness(0, 3),
                 columnSpacing: 3,
@@ -553,8 +553,8 @@ var createConfigMenu = () =>
 {
     let tmpIScale = renderer.initScale;
     let tmpFScale = renderer.figureScale;
-    let tmpXC = renderer.xCentre;
-    let tmpYC = renderer.yCentre;
+    let tmpCX = renderer.camX;
+    let tmpCY = renderer.camY;
     let tmpUpright = renderer.upright;
 
     let menu = ui.createPopup
@@ -564,19 +564,19 @@ var createConfigMenu = () =>
         ({
             children:
             [
-                cfgGrid = ui.createGrid
+                ui.createGrid
                 ({
                     columnDefinitions: ['70*', '30*'],
                     children:
                     [
-                        iScaleLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Initial scale: ',
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        iScaleEntry = ui.createEntry
+                        ui.createEntry
                         ({
                             text: tmpIScale.toString(),
                             row: 0,
@@ -587,14 +587,14 @@ var createConfigMenu = () =>
                                 tmpIScale = Number(nt);
                             }
                         }),
-                        fScaleLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Figure scale per level: ',
                             row: 1,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        fScaleEntry = ui.createEntry
+                        ui.createEntry
                         ({
                             text: tmpFScale.toString(),
                             row: 1,
@@ -607,52 +607,52 @@ var createConfigMenu = () =>
                                     tmpFScale = 1;
                             }
                         }),
-                        camLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Camera centre (x, y): ',
                             row: 2,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        camGrid = ui.createGrid
+                        ui.createGrid
                         ({
                             row: 2,
                             column: 1,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                ycEntry = ui.createEntry
+                                ui.createEntry
                                 ({
-                                    text: tmpXC.toString(),
+                                    text: tmpCX.toString(),
                                     row: 0,
                                     column: 0,
                                     horizontalTextAlignment: TextAlignment.END,
                                     onTextChanged: (ot, nt) =>
                                     {
-                                        tmpXC = Number(nt);
+                                        tmpCX = Number(nt);
                                     }
                                 }),
-                                ycEntry = ui.createEntry
+                                ui.createEntry
                                 ({
-                                    text: tmpYC.toString(),
+                                    text: tmpCY.toString(),
                                     row: 0,
                                     column: 1,
                                     horizontalTextAlignment: TextAlignment.END,
                                     onTextChanged: (ot, nt) =>
                                     {
-                                        tmpYC = Number(nt);
+                                        tmpCY = Number(nt);
                                     }
                                 })
                             ]
                         }),
-                        uprightLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Upright figure: ',
                             row: 3,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        uprightSwitch = ui.createSwitch
+                        ui.createSwitch
                         ({
                             isToggled: () => tmpUpright,
                             row: 3,
@@ -669,18 +669,18 @@ var createConfigMenu = () =>
                         }),
                     ]
                 }),
-                separator = ui.createBox
+                ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                saveButton = ui.createButton
+                ui.createButton
                 ({
                     text: 'Save',
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.configure(tmpIScale, tmpFScale, tmpXC, tmpYC, tmpUpright);
+                        renderer.configure(tmpIScale, tmpFScale, tmpCX, tmpCY, tmpUpright);
                         menu.hide();
                     }
                 })
@@ -710,19 +710,19 @@ var createSystemMenu = () =>
         ({
             children:
             [
-                axiomRow = ui.createGrid
+                ui.createGrid
                 ({
                     columnDefinitions: ['20*', '30*', '30*', '20*'],
                     children:
                     [
-                        axiomLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Axiom: ',
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        axiomEntry = ui.createEntry
+                        ui.createEntry
                         ({
                             text: tmpAxiom,
                             row: 0,
@@ -732,14 +732,14 @@ var createSystemMenu = () =>
                                 tmpAxiom = nt;
                             }
                         }),
-                        angleLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Turning angle (°): ',
                             row: 0,
                             column: 2,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        angleEntry = ui.createEntry
+                        ui.createEntry
                         ({
                             text: tmpAngle.toString(),
                             row: 0,
@@ -752,13 +752,13 @@ var createSystemMenu = () =>
                         }),
                     ]
                 }),
-                rulesLabel = ui.createLatexLabel
+                ui.createLatexLabel
                 ({
                     text: 'Production rules: ',
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 6)
                 }),
-                rule0Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[0],
                     onTextChanged: (ot, nt) =>
@@ -766,7 +766,7 @@ var createSystemMenu = () =>
                         tmpRules[0] = nt;
                     }
                 }),
-                rule1Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[1],
                     onTextChanged: (ot, nt) =>
@@ -774,7 +774,7 @@ var createSystemMenu = () =>
                         tmpRules[1] = nt;
                     }
                 }),
-                rule2Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[2],
                     onTextChanged: (ot, nt) =>
@@ -782,7 +782,7 @@ var createSystemMenu = () =>
                         tmpRules[2] = nt;
                     }
                 }),
-                rule3Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[3],
                     onTextChanged: (ot, nt) =>
@@ -790,7 +790,7 @@ var createSystemMenu = () =>
                         tmpRules[3] = nt;
                     }
                 }),
-                rule4Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[4],
                     onTextChanged: (ot, nt) =>
@@ -798,7 +798,7 @@ var createSystemMenu = () =>
                         tmpRules[4] = nt;
                     }
                 }),
-                rule5Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[5],
                     onTextChanged: (ot, nt) =>
@@ -806,7 +806,7 @@ var createSystemMenu = () =>
                         tmpRules[5] = nt;
                     }
                 }),
-                rule6Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[6],
                     onTextChanged: (ot, nt) =>
@@ -814,7 +814,7 @@ var createSystemMenu = () =>
                         tmpRules[6] = nt;
                     }
                 }),
-                rule7Entry = ui.createEntry
+                ui.createEntry
                 ({
                     text: tmpRules[7],
                     onTextChanged: (ot, nt) =>
@@ -822,12 +822,12 @@ var createSystemMenu = () =>
                         tmpRules[7] = nt;
                     }
                 }),
-                separator = ui.createBox
+                ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                constructButton = ui.createButton
+                ui.createButton
                 ({
                     text: 'Construct',
                     onClicked: () =>
@@ -845,10 +845,16 @@ var createSystemMenu = () =>
 
 var createManualMenu = () =>
 {
+    let pageTitle = ui.createLatexLabel
+    ({
+        text: manualPages[page].title,
+        horizontalOptions: LayoutOptions.CENTER
+    });
     let pageContents = ui.createLatexLabel
     ({
         text: manualPages[page].contents
     });
+
     let menu = ui.createPopup
     ({
         title: `Manual (${page + 1}/${manualPages.length})`,
@@ -856,32 +862,28 @@ var createManualMenu = () =>
         ({
             children:
             [
-                pageTitle = ui.createLatexLabel
-                ({
-                    text: manualPages[page].title,
-                    horizontalOptions: LayoutOptions.CENTER
-                }),
-                separator0 = ui.createBox
+                pageTitle,
+                ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                pageScroll = ui.createScrollView
+                ui.createScrollView
                 ({
                     heightRequest: ui.screenHeight * 0.3,
                     content: pageContents
                 }),
-                separator1 = ui.createBox
+                ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                btnGrid = ui.createGrid
+                ui.createGrid
                 ({
                     columnDefinitions: ['35*', '30*', '35*'],
                     children:
                     [
-                        prevButton = ui.createButton
+                        ui.createButton
                         ({
                             text: 'Previous',
                             row: 0,
@@ -899,7 +901,7 @@ var createManualMenu = () =>
                                 }
                             }
                         }),
-                        adoptButton = ui.createButton
+                        ui.createButton
                         ({
                             text: 'Apply',
                             row: 0,
@@ -917,7 +919,7 @@ var createManualMenu = () =>
                                 menu.hide();
                             }
                         }),
-                        nextButton = ui.createButton
+                        ui.createButton
                         ({
                             text: 'Next',
                             row: 0,
@@ -959,19 +961,19 @@ var createExpMenu = () =>
         ({
             children:
             [
-                cfgGrid = ui.createGrid
+                ui.createGrid
                 ({
                     columnDefinitions: ['75*', '25*'],
                     children:
                     [
-                        EODLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Offline drawing: ',
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        EODSwitch = ui.createSwitch
+                        ui.createSwitch
                         ({
                             isToggled: () => tmpEOD,
                             row: 0,
@@ -986,14 +988,14 @@ var createExpMenu = () =>
                                 }
                             }
                         }),
-                        CFCLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Cursor-focused camera: ',
                             row: 1,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        CFCSwitch = ui.createSwitch
+                        ui.createSwitch
                         ({
                             isToggled: () => tmpCFC,
                             row: 1,
@@ -1008,14 +1010,14 @@ var createExpMenu = () =>
                                 }
                             }
                         }),
-                        FFLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Camera follow factor (0-1): ',
                             row: 2,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        FFEntry = ui.createEntry
+                        ui.createEntry
                         ({
                             text: tmpFF.toString(),
                             row: 2,
@@ -1027,14 +1029,14 @@ var createExpMenu = () =>
                                 tmpFF = Math.min(Math.max(tmpFF, 0), 1);
                             }
                         }),
-                        QDLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Quickdraw straight lines: ',
                             row: 3,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        QDSwitch = ui.createSwitch
+                        ui.createSwitch
                         ({
                             isToggled: () => tmpQD,
                             row: 3,
@@ -1049,14 +1051,14 @@ var createExpMenu = () =>
                                 }
                             }
                         }),
-                        QBLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: 'Quick backtrack: ',
                             row: 4,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        QBSwitch = ui.createSwitch
+                        ui.createSwitch
                         ({
                             isToggled: () => tmpQB,
                             row: 4,
@@ -1071,14 +1073,14 @@ var createExpMenu = () =>
                                 }
                             }
                         }),
-                        UEBLabel = ui.createLatexLabel
+                        ui.createLatexLabel
                         ({
                             text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
                             row: 5,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        UEBSwitch = ui.createSwitch
+                        ui.createSwitch
                         ({
                             isToggled: () => tmpUEB,
                             row: 5,
@@ -1096,12 +1098,12 @@ var createExpMenu = () =>
                         }),
                     ]
                 }),
-                separator = ui.createBox
+                ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                saveButton = ui.createButton
+                ui.createButton
                 ({
                     text: 'Save (only this session)',
                     onClicked: () =>
