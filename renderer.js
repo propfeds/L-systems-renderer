@@ -954,6 +954,14 @@ var createExpMenu = () =>
     let tmpQB = quickBacktrack;
     let tmpUEB = useExtendedBacktrack;
 
+    let UEBLabel = ui.createLatexLabel
+    ({
+        text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
+        row: 5,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
+
     let menu = ui.createPopup
     ({
         title: 'Experimental Options',
@@ -1073,13 +1081,7 @@ var createExpMenu = () =>
                                 }
                             }
                         }),
-                        ui.createLatexLabel
-                        ({
-                            text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
-                            row: 5,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
+                        UEBLabel,
                         ui.createSwitch
                         ({
                             isToggled: () => tmpUEB,
