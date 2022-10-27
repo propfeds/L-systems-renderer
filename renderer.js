@@ -499,7 +499,7 @@ var getUpgradeListDelegate = () =>
     let manualButton = createMenuButton(createManualMenu, 'Manual', height);
     manualButton.row = 1;
     manualButton.column = 0;
-    let expButton = createMenuButton(createExpMenu, 'Experimental options', height);
+    let expButton = createMenuButton(createSequenceMenu, 'View sequence', height);
     expButton.row = 1;
     expButton.column = 1;
 
@@ -1129,6 +1129,42 @@ var createManualMenu = () =>
             ]
         })
     })
+    return menu;
+}
+
+var createSequenceMenu = () =>
+{
+    let menu = ui.createPopup
+    ({
+        title: 'View Sequence',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createScrollView
+                ({
+                    content: ui.createLatexLabel
+                    ({
+                        text: renderer.levels[renderer.lvl]
+                    })
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: 'Close',
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
     return menu;
 }
 
