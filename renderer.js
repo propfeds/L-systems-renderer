@@ -79,6 +79,7 @@ class Renderer
         this.idStack = [];
         this.idx = 0;
         this.lastCamera = new Vector3(0, 0, 0);
+        this.update(0);
     }
 
     update(level)
@@ -1145,7 +1146,7 @@ var createSequenceMenu = () =>
                 ({
                     content: ui.createLatexLabel
                     ({
-                        text: renderer.levels[renderer.lvl]
+                        text: () => renderer.levels[renderer.lvl]
                     })
                 }),
                 ui.createBox
