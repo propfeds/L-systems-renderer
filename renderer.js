@@ -1135,6 +1135,8 @@ var createManualMenu = () =>
 
 var createSequenceMenu = () =>
 {
+    let tmpSeq = renderer.levels[renderer.lvl];
+
     let menu = ui.createPopup
     ({
         title: 'View Sequence',
@@ -1146,7 +1148,7 @@ var createSequenceMenu = () =>
                 ({
                     content: ui.createLatexLabel
                     ({
-                        text: () => renderer.levels[renderer.lvl]
+                        text: tmpSeq
                     })
                 }),
                 ui.createBox
@@ -1166,192 +1168,6 @@ var createSequenceMenu = () =>
             ]
         })
     });
-    return menu;
-}
-
-var createExpMenu = () =>
-{
-    let tmpEOD = enableOfflineDrawing;
-    let tmpCFC = cursorFocusedCamera;
-    let tmpFF = followFactor;
-    let tmpQD = quickDraw;
-    let tmpQB = quickBacktrack;
-    let tmpUEB = useExtendedBacktrack;
-
-    let UEBLabel = ui.createLatexLabel
-    ({
-        text: `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`,
-        row: 5,
-        column: 0,
-        verticalOptions: LayoutOptions.CENTER
-    });
-
-    let menu = ui.createPopup
-    ({
-        title: 'Experimental Options',
-        content: ui.createStackLayout
-        ({
-            children:
-            [
-                ui.createGrid
-                ({
-                    columnDefinitions: ['75*', '25*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Offline drawing: ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpEOD,
-                            row: 0,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpEOD = !tmpEOD;
-                                }
-                            }
-                        }),
-                        ui.createLatexLabel
-                        ({
-                            text: 'Cursor-focused camera: ',
-                            row: 1,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpCFC,
-                            row: 1,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpCFC = !tmpCFC;
-                                }
-                            }
-                        }),
-                        ui.createLatexLabel
-                        ({
-                            text: 'Camera follow factor (0-1): ',
-                            row: 2,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createEntry
-                        ({
-                            text: tmpFF.toString(),
-                            row: 2,
-                            column: 1,
-                            horizontalTextAlignment: TextAlignment.END,
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpFF = Number(nt);
-                                tmpFF = Math.min(Math.max(tmpFF, 0), 1);
-                            }
-                        }),
-                        ui.createLatexLabel
-                        ({
-                            text: 'Quickdraw straight lines: ',
-                            row: 3,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpQD,
-                            row: 3,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpQD = !tmpQD;
-                                }
-                            }
-                        }),
-                        ui.createLatexLabel
-                        ({
-                            text: 'Quick backtrack: ',
-                            row: 4,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpQB,
-                            row: 4,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpQB = !tmpQB;
-                                }
-                            }
-                        }),
-                        UEBLabel,
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpUEB,
-                            row: 5,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpUEB = !tmpUEB;
-                                    UEBLabel.text = `Backtrack list: ${backtrackList[tmpUEB ? 1 : 0]}`;
-                                }
-                            }
-                        }),
-                    ]
-                }),
-                ui.createBox
-                ({
-                    heightRequest: 1,
-                    margin: new Thickness(0, 6)
-                }),
-                ui.createButton
-                ({
-                    text: 'Save (only this session)',
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        let requireReset = (quickDraw != tmpQD) || (quickBacktrack != tmpQB) || (useExtendedBacktrack != tmpUEB);
-
-                        enableOfflineDrawing = tmpEOD;
-                        cursorFocusedCamera = tmpCFC;
-                        followFactor = tmpFF;
-                        quickDraw = tmpQD;
-                        quickBacktrack = tmpQB;
-                        useExtendedBacktrack = tmpUEB;
-
-                        if(requireReset)
-                            renderer.reset();
-                        menu.hide();
-                    }
-                })
-            ]
-        })
-    })
     return menu;
 }
 
