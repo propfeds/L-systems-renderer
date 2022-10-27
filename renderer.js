@@ -57,14 +57,20 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, camX = 0, camY = 0, upright = false)
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, followFactor = 0.4, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, extendedBacktrack = false)
     {
         this.system = system;
         this.initScale = initScale;
         this.figureScale = figureScale;
+        this.cursorFocused = cursorFocused;
         this.camX = camX;
         this.camY = camY;
+        this.followFactor = followFactor;
+        this.offlineDrawing = offlineDrawing;
         this.upright = upright;
+        this.quickDraw = quickDraw;
+        this.quickBacktrack = quickBacktrack;
+        this.extendedBacktrack = extendedBacktrack;
 
         this.state = new Vector3(0, 0, 0);
         this.levels = [];
@@ -72,6 +78,7 @@ class Renderer
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
+        this.lastCamera = new Vector3(0, 0, 0);
     }
 
     update(level)
@@ -94,7 +101,26 @@ class Renderer
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    configure(initScale, figureScale, camX, camY, upright)
+    configure(initScale, figureScale, cursorFocused, camX, camY, followFactor, offlineDrawing, upright, quickDraw, quickBacktrack, extendedBacktrack)
+    {
+        let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright) || (quickDraw != this.quickDraw) || (quickBacktrack != this.quickBacktrack) || (extendedBacktrack != this.extendedBacktrack);
+
+        this.initScale = initScale;
+        this.figureScale = figureScale;
+        this.cursorFocused = cursorFocused;
+        this.camX = camX;
+        this.camY = camY;
+        this.followFactor = followFactor;
+        this.offlineDrawing = offlineDrawing;
+        this.upright = upright;
+        this.quickDraw = quickDraw;
+        this.quickBacktrack = quickBacktrack;
+        this.extendedBacktrack = extendedBacktrack;
+
+        if(requireReset)
+            this.reset();
+    }
+    configureStaticCamera(initScale, figureScale, camX, camY, upright)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
 
@@ -134,10 +160,8 @@ class Renderer
     }
     centre()
     {
-        if(cursorFocusedCamera)
-        {
+        if(this.cursorFocused)
             return -this.getCursor(this.lvl);
-        }
         else
         {
             if(this.upright)
@@ -183,11 +207,11 @@ class Renderer
                     }
                     return;
                 default:
-                    if(!quickBacktrack || backtrackList[useExtendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]))
+                    if(!this.quickBacktrack || backtrackList[this.extendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]))
                         this.stack.push(this.state);
                     this.forward();
                     this.idx = i + 1;
-                    if(quickDraw)
+                    if(this.quickDraw)
                         break;
                     else
                         return;
@@ -203,13 +227,10 @@ class Renderer
     {
         return this.idx * 100 / (this.levels[this.lvl].length - 1);
     }
-
     getStateString()
     {
-        let l = this.levels.length > 0 ? this.levels[this.lvl].length : 0;
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${l}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${this.levels[this.lvl].length}\\end{matrix}`;
     }
-
     getCursor()
     {
         let coords = this.state / (this.initScale * this.figureScale ** this.lvl);
@@ -218,10 +239,20 @@ class Renderer
         else
             return new Vector3(coords.x, coords.y, 0);
     }
-
+    getCamera()
+    {
+        if(this.cursorFocused)
+        {
+            let newCamera = this.centre() * this.followFactor + this.lastCamera * (1 - this.followFactor);
+            this.lastCamera = newCamera;
+            return newCamera;
+        }
+        else
+            return this.centre();
+    }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.camX} ${this.camY} ${this.upright ? 1 : 0} ${this.system.toString()}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camX} ${this.camY} ${this.followFactor} ${this.offlineDrawing? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack? 1 : 0} ${this.extendedBacktrack? 1 : 0}`;
     }
 }
 
@@ -232,22 +263,14 @@ var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
 var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
 
-var renderer = new Renderer(arrow, 1, 2, 1, 0, false);
+var maxRules = 8;
+
 var time = 0;
-var page = 0;
 var gameOffline = false;
-
-// Experimental options
-var enableOfflineDrawing = true;
-var cursorFocusedCamera = false;
-var lastCamera = new Vector3(0, 0, 0);
-var followFactor = 0.4;
-var quickDraw = false;
-var quickBacktrack = false;
-var useExtendedBacktrack = false;
 var backtrackList = ['+-', '+-[]'];
-
+var page = 0;
 var manualPages =
 [
     {
@@ -337,12 +360,12 @@ var tick = (elapsedTime, multiplier) =>
         else if(gameOffline)
         {
             // Probably triggers only once when reloading
-            if(!enableOfflineDrawing)
+            if(!renderer.offlineDrawing)
                 renderer.reset();
             gameOffline = false;
         }
 
-        if(!gameOffline || enableOfflineDrawing)
+        if(!gameOffline || renderer.offlineDrawing)
         {
             renderer.draw(l.level);
             angle.value = renderer.getAngle();
@@ -553,9 +576,91 @@ var createConfigMenu = () =>
 {
     let tmpIScale = renderer.initScale;
     let tmpFScale = renderer.figureScale;
+    let tmpCFC = renderer.cursorFocused;
     let tmpCX = renderer.camX;
     let tmpCY = renderer.camY;
+    let tmpFF = renderer.followFactor;
+    let tmpOLD = renderer.offlineDrawing;
     let tmpUpright = renderer.upright;
+    let tmpQD = renderer.quickDraw;
+    let tmpQB = renderer.quickBacktrack;
+    let tmpEXB = renderer.extendedBacktrack;
+
+    let CFCLabel = ui.createLatexLabel
+    ({
+        text: `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`,
+        row: 2,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
+    let camLabel = ui.createLatexLabel
+    ({
+        text: 'Camera centre (x, y): ',
+        row: 3,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER,
+        isVisible: !tmpCFC
+    });
+    let camGrid = ui.createGrid
+    ({
+        row: 3,
+        column: 1,
+        columnDefinitions: ['50*', '50*'],
+        isVisible: !tmpCFC,
+        children:
+        [
+            ui.createEntry
+            ({
+                text: tmpCX.toString(),
+                row: 0,
+                column: 0,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCX = Number(nt);
+                }
+            }),
+            ui.createEntry
+            ({
+                text: tmpCY.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCY = Number(nt);
+                }
+            })
+        ]
+    });
+    let FFLabel = ui.createLatexLabel
+    ({
+        text: 'Camera follow factor (0-1): ',
+        row: 3,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER,
+        isVisible: tmpCFC
+    });
+    let FFEntry = ui.createEntry
+    ({
+        text: tmpFF.toString(),
+        row: 3,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        isVisible: tmpCFC,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpFF = Number(nt);
+            tmpFF = Math.min(Math.max(tmpFF, 0), 1);
+        }
+    });
+    let EXBLabel = ui.createLatexLabel
+    ({
+        text: `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`,
+        row: 4,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
 
     let menu = ui.createPopup
     ({
@@ -607,55 +712,76 @@ var createConfigMenu = () =>
                                     tmpFScale = 1;
                             }
                         }),
+                        CFCLabel,
+                        ui.createSwitch
+                        ({
+                            isToggled: () => tmpCFC,
+                            row: 2,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
+                                    tmpCFC = !tmpCFC;
+                                    camLabel.isVisible = !tmpCFC;
+                                    camGrid.isVisible = !tmpCFC;
+                                    FFLabel.isVisible = tmpCFC;
+                                    FFEntry.isVisible = tmpCFC;
+                                    CFCLabel.text = `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`;
+                                }
+                            }
+                        }),
+                        camLabel,
+                        camGrid,
+                        FFLabel,
+                        FFEntry
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
                         ui.createLatexLabel
                         ({
-                            text: 'Camera centre (x, y): ',
-                            row: 2,
+                            text: 'Offline drawing: ',
+                            row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createGrid
+                        ui.createSwitch
                         ({
-                            row: 2,
+                            isToggled: () => tmpOLD,
+                            row: 0,
                             column: 1,
-                            columnDefinitions: ['50*', '50*'],
-                            children:
-                            [
-                                ui.createEntry
-                                ({
-                                    text: tmpCX.toString(),
-                                    row: 0,
-                                    column: 0,
-                                    horizontalTextAlignment: TextAlignment.END,
-                                    onTextChanged: (ot, nt) =>
-                                    {
-                                        tmpCX = Number(nt);
-                                    }
-                                }),
-                                ui.createEntry
-                                ({
-                                    text: tmpCY.toString(),
-                                    row: 0,
-                                    column: 1,
-                                    horizontalTextAlignment: TextAlignment.END,
-                                    onTextChanged: (ot, nt) =>
-                                    {
-                                        tmpCY = Number(nt);
-                                    }
-                                })
-                            ]
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
+                                    tmpOLD = !tmpOLD;
+                                }
+                            }
                         }),
                         ui.createLatexLabel
                         ({
                             text: 'Upright figure: ',
-                            row: 3,
+                            row: 1,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         ui.createSwitch
                         ({
                             isToggled: () => tmpUpright,
-                            row: 3,
+                            row: 1,
                             column: 1,
                             horizontalOptions: LayoutOptions.END,
                             onTouched: (e) =>
@@ -667,6 +793,67 @@ var createConfigMenu = () =>
                                 }
                             }
                         }),
+                        ui.createLatexLabel
+                        ({
+                            text: 'Quickdraw straight lines: ',
+                            row: 2,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createSwitch
+                        ({
+                            isToggled: () => tmpQD,
+                            row: 2,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
+                                    tmpQD = !tmpQD;
+                                }
+                            }
+                        }),
+                        ui.createLatexLabel
+                        ({
+                            text: 'Quick backtrack: ',
+                            row: 3,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createSwitch
+                        ({
+                            isToggled: () => tmpQB,
+                            row: 3,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
+                                    tmpQB = !tmpQB;
+                                }
+                            }
+                        }),
+                        EXBLabel,
+                        ui.createSwitch
+                        ({
+                            isToggled: () => tmpEXB,
+                            row: 4,
+                            column: 1,
+                            horizontalOptions: LayoutOptions.END,
+                            onTouched: (e) =>
+                            {
+                                if(e.type == TouchType.PRESSED)
+                                {
+                                    Sound.playClick();
+                                    tmpEXB = !tmpEXB;
+                                    EXBLabel.text = `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`;
+                                }
+                            }
+                        })
                     ]
                 }),
                 ui.createBox
@@ -680,7 +867,7 @@ var createConfigMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.configure(tmpIScale, tmpFScale, tmpCX, tmpCY, tmpUpright);
+                        renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpFF, tmpOLD, tmpUpright, tmpQD, tmpQB, tmpEXB);
                         menu.hide();
                     }
                 })
@@ -699,7 +886,7 @@ var createSystemMenu = () =>
     {
         tmpRules.push(`${key}=${value}`);
     }
-    for(let i = 0; i < 8; ++i)
+    for(let i = 0; i < maxRules; ++i)
         if(tmpRules[i] === undefined)
             tmpRules[i] = '';
 
@@ -914,7 +1101,7 @@ var createManualMenu = () =>
                                 if('config' in manualPages[page])
                                 {
                                     let a = manualPages[page].config;
-                                    renderer.configure(a[0], a[1], a[2], a[3], a[4]);
+                                    renderer.configureStaticCamera(a[0], a[1], a[2], a[3], a[4]);
                                 }
                                 menu.hide();
                             }
@@ -1144,24 +1331,36 @@ var getEquationOverlay = () =>
     return result;
 }
 
-var getInternalState = () => `${time} ${renderer.toString()}`;
+var getInternalState = () => `${time} ${renderer.toString()} ${renderer.system.toString()}`;
 
 var setInternalState = (stateStr) =>
 {
     let values = stateStr.split(' ');
     time = parseBigNumber(values[0]);
-    // axiom = values[6];
-    // turnAngle = values[7];
+    // axiom = values[12];
+    // turnAngle = values[13];
     let tmpRules = [];
-    for(let i = 0; i < 8; ++i)
+    for(let i = 0; i < maxRules; ++i)
     {
-        if(values[8 + i] !== undefined)
-            tmpRules[i] = values[8 + i];
+        if(values[14 + i] !== undefined)
+            tmpRules[i] = values[14 + i];
         else
             tmpRules[i] = '';
     }
-    let system = new LSystem(values[6], tmpRules, values[7]);
-    renderer = new Renderer(system, Number(values[1]), Number(values[2]), Number(values[3]), Number(values[4]), Boolean(Number(values[5])));
+    let system = new LSystem(values[12], tmpRules, values[13]);
+    renderer = new Renderer(system,
+        Number(values[1]),
+        Number(values[2]),
+        Boolean(Number(values[3])),
+        Number(values[4]),
+        Number(values[5]),
+        Number(values[6]),
+        Boolean(Number(values[7])),
+        Boolean(Number(values[8])),
+        Boolean(Number(values[9])),
+        Boolean(Number(values[10])),
+        Boolean(Number(values[11]))
+    );
 }
 
 var canResetStage = () => true;
@@ -1172,11 +1371,6 @@ var getTertiaryEquation = () => renderer.getStateString();
 
 var get3DGraphPoint = () => renderer.getCursor();
 
-var get3DGraphTranslation = () =>
-{
-    let newCamera = renderer.centre() * followFactor + lastCamera * (1 - followFactor);
-    lastCamera = newCamera;
-    return newCamera;
-}
+var get3DGraphTranslation = () => renderer.getCamera();
 
 init();
