@@ -479,11 +479,38 @@ var createMenuButton = (menuFunc, name, height) =>
     return frame;
 }
 
+var createVariableWithMenuButton = (variable, menuFunc, name, height) =>
+{
+    let frame = ui.createFrame
+    ({
+        heightRequest: height,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: () => variable.getDescription(),
+            verticalOptions: LayoutOptions.CENTER,
+            textColor: Color.TEXT
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                let menu = menuFunc();
+                menu.show();
+            }
+        },
+        borderColor: Color.TEXT_MEDIUM
+    });
+    return frame;
+}
+
 var getUpgradeListDelegate = () =>
 {
     let height = ui.screenHeight * 0.055;
 
-    let lvlButton = createVariableButton(l, height);
+    let lvlButton = createVariableWithMenuButton(l, createSequenceMenu, 'View sequence', height);
     lvlButton.row = 0;
     lvlButton.column = 0;
     let tsButton = createVariableButton(ts, height);
@@ -499,9 +526,9 @@ var getUpgradeListDelegate = () =>
     let manualButton = createMenuButton(createManualMenu, 'Manual', height);
     manualButton.row = 1;
     manualButton.column = 0;
-    let expButton = createMenuButton(createSequenceMenu, 'View sequence', height);
-    expButton.row = 1;
-    expButton.column = 1;
+    // let expButton = createMenuButton(createSequenceMenu, 'View sequence', height);
+    // expButton.row = 1;
+    // expButton.column = 1;
 
     let stack = ui.createScrollView
     ({
@@ -562,8 +589,7 @@ var getUpgradeListDelegate = () =>
                     [
                         sysButton,
                         cfgButton,
-                        manualButton,
-                        expButton
+                        manualButton
                     ]
                 })
             ]
@@ -1103,7 +1129,7 @@ var createSequenceMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: 'View Sequence',
+        title: `Sequence (Lv. ${renderer.lvl})`,
         content: ui.createStackLayout
         ({
             children:
