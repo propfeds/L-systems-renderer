@@ -576,17 +576,32 @@ var getUpgradeListDelegate = () =>
 var createConfigMenu = () =>
 {
     let tmpIScale = renderer.initScale;
+    let iScaleEntry = ui.createEntry
+    ({
+        text: tmpIScale.toString(),
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpIScale = Number(nt);
+        }
+    });
     let tmpFScale = renderer.figureScale;
+    let fScaleEntry = ui.createEntry
+    ({
+        text: tmpFScale.toString(),
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpFScale = Number(nt);
+            if(tmpFScale == 0)
+                tmpFScale = 1;
+        }
+    });
     let tmpCFC = renderer.cursorFocused;
-    let tmpCX = renderer.camX;
-    let tmpCY = renderer.camY;
-    let tmpFF = renderer.followFactor;
-    let tmpOLD = renderer.offlineDrawing;
-    let tmpUpright = renderer.upright;
-    let tmpQD = renderer.quickDraw;
-    let tmpQB = renderer.quickBacktrack;
-    let tmpEXB = renderer.extendedBacktrack;
-
     let CFCLabel = ui.createLatexLabel
     ({
         text: `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`,
@@ -594,6 +609,28 @@ var createConfigMenu = () =>
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
+    let CFCSwitch = ui.createSwitch
+    ({
+        isToggled: () => tmpCFC,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                tmpCFC = !tmpCFC;
+                camLabel.isVisible = !tmpCFC;
+                camGrid.isVisible = !tmpCFC;
+                FFLabel.isVisible = tmpCFC;
+                FFEntry.isVisible = tmpCFC;
+                CFCLabel.text = `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`;
+            }
+        }
+    });
+    let tmpCX = renderer.camX;
+    let tmpCY = renderer.camY;
     let camLabel = ui.createLatexLabel
     ({
         text: 'Camera centre (x, y): ',
@@ -634,6 +671,7 @@ var createConfigMenu = () =>
             })
         ]
     });
+    let tmpFF = renderer.followFactor;
     let FFLabel = ui.createLatexLabel
     ({
         text: 'Camera follow factor (0-1): ',
@@ -655,12 +693,93 @@ var createConfigMenu = () =>
             tmpFF = Math.min(Math.max(tmpFF, 0), 1);
         }
     });
+    let tmpOD = renderer.offlineDrawing;
+    let ODSwitch = ui.createSwitch
+    ({
+        isToggled: () => tmpOD,
+        row: 0,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                tmpOD = !tmpOD;
+            }
+        }
+    });
+    let tmpUpright = renderer.upright;
+    let uprightSwitch = ui.createSwitch
+    ({
+        isToggled: () => tmpUpright,
+        row: 1,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                tmpUpright = !tmpUpright;
+            }
+        }
+    });
+    let tmpQD = renderer.quickDraw;
+    let QDSwitch = ui.createSwitch
+    ({
+        isToggled: () => tmpQD,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                tmpQD = !tmpQD;
+            }
+        }
+    });
+    let tmpQB = renderer.quickBacktrack;
+    let QBSwitch = ui.createSwitch
+    ({
+        isToggled: () => tmpQB,
+        row: 3,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                tmpQB = !tmpQB;
+            }
+        }
+    });
+    let tmpEXB = renderer.extendedBacktrack;
     let EXBLabel = ui.createLatexLabel
     ({
         text: `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`,
         row: 4,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
+    });
+    let EXBSwitch = ui.createSwitch
+    ({
+        isToggled: () => tmpEXB,
+        row: 4,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                Sound.playClick();
+                tmpEXB = !tmpEXB;
+                EXBLabel.text = `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`;
+            }
+        }
     });
 
     let menu = ui.createPopup
@@ -682,17 +801,7 @@ var createConfigMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createEntry
-                        ({
-                            text: tmpIScale.toString(),
-                            row: 0,
-                            column: 1,
-                            horizontalTextAlignment: TextAlignment.END,
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpIScale = Number(nt);
-                            }
-                        }),
+                        iScaleEntry,
                         ui.createLatexLabel
                         ({
                             text: 'Figure scale per level: ',
@@ -700,40 +809,9 @@ var createConfigMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createEntry
-                        ({
-                            text: tmpFScale.toString(),
-                            row: 1,
-                            column: 1,
-                            horizontalTextAlignment: TextAlignment.END,
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpFScale = Number(nt);
-                                if(tmpFScale == 0)
-                                    tmpFScale = 1;
-                            }
-                        }),
+                        fScaleEntry,
                         CFCLabel,
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpCFC,
-                            row: 2,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpCFC = !tmpCFC;
-                                    camLabel.isVisible = !tmpCFC;
-                                    camGrid.isVisible = !tmpCFC;
-                                    FFLabel.isVisible = tmpCFC;
-                                    FFEntry.isVisible = tmpCFC;
-                                    CFCLabel.text = `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`;
-                                }
-                            }
-                        }),
+                        CFCSwitch,
                         camLabel,
                         camGrid,
                         FFLabel,
@@ -757,21 +835,7 @@ var createConfigMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpOLD,
-                            row: 0,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpOLD = !tmpOLD;
-                                }
-                            }
-                        }),
+                        ODSwitch,
                         ui.createLatexLabel
                         ({
                             text: 'Upright figure: ',
@@ -779,21 +843,7 @@ var createConfigMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpUpright,
-                            row: 1,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpUpright = !tmpUpright;
-                                }
-                            }
-                        }),
+                        uprightSwitch,
                         ui.createLatexLabel
                         ({
                             text: 'Quickdraw straight lines: ',
@@ -801,21 +851,7 @@ var createConfigMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpQD,
-                            row: 2,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpQD = !tmpQD;
-                                }
-                            }
-                        }),
+                        QDSwitch,
                         ui.createLatexLabel
                         ({
                             text: 'Quick backtrack: ',
@@ -823,38 +859,9 @@ var createConfigMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpQB,
-                            row: 3,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpQB = !tmpQB;
-                                }
-                            }
-                        }),
+                        QBSwitch,
                         EXBLabel,
-                        ui.createSwitch
-                        ({
-                            isToggled: () => tmpEXB,
-                            row: 4,
-                            column: 1,
-                            horizontalOptions: LayoutOptions.END,
-                            onTouched: (e) =>
-                            {
-                                if(e.type == TouchType.PRESSED)
-                                {
-                                    Sound.playClick();
-                                    tmpEXB = !tmpEXB;
-                                    EXBLabel.text = `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`;
-                                }
-                            }
-                        })
+                        EXBSwitch
                     ]
                 }),
                 ui.createBox
@@ -868,7 +875,7 @@ var createConfigMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpFF, tmpOLD, tmpUpright, tmpQD, tmpQB, tmpEXB);
+                        renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpFF, tmpOD, tmpUpright, tmpQD, tmpQB, tmpEXB);
                         menu.hide();
                     }
                 })
@@ -881,15 +888,48 @@ var createConfigMenu = () =>
 var createSystemMenu = () =>
 {
     let tmpAxiom = renderer.system.axiom;
+    let axiomEntry = ui.createEntry
+    ({
+        text: tmpAxiom,
+        row: 0,
+        column: 1,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAxiom = nt;
+        }
+    });
     let tmpAngle = renderer.system.turnAngle;
+    let angleEntry = ui.createEntry
+    ({
+        text: tmpAngle.toString(),
+        row: 0,
+        column: 3,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAngle = Number(nt);
+        }
+    });
     let tmpRules = [];
     for(let [key, value] of renderer.system.rules)
     {
         tmpRules.push(`${key}=${value}`);
     }
+    let ruleEntries = [];
     for(let i = 0; i < maxRules; ++i)
+    {
         if(tmpRules[i] === undefined)
             tmpRules[i] = '';
+        ruleEntries[i] = ui.createEntry
+        ({
+            text: tmpRules[i],
+            onTextChanged: (ot, nt) =>
+            {
+                tmpRules[i] = nt;
+            }
+        });
+    }
+        
 
     let menu = ui.createPopup
     ({
@@ -910,16 +950,7 @@ var createSystemMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createEntry
-                        ({
-                            text: tmpAxiom,
-                            row: 0,
-                            column: 1,
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpAxiom = nt;
-                            }
-                        }),
+                        axiomEntry,
                         ui.createLatexLabel
                         ({
                             text: 'Turning angle (°): ',
@@ -927,17 +958,7 @@ var createSystemMenu = () =>
                             column: 2,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        ui.createEntry
-                        ({
-                            text: tmpAngle.toString(),
-                            row: 0,
-                            column: 3,
-                            horizontalTextAlignment: TextAlignment.END,
-                            onTextChanged: (ot, nt) =>
-                            {
-                                tmpAngle = Number(nt);
-                            }
-                        }),
+                        angleEntry,
                     ]
                 }),
                 ui.createLatexLabel
@@ -946,70 +967,14 @@ var createSystemMenu = () =>
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createEntry
-                ({
-                    text: tmpRules[0],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[0] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[1],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[1] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[2],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[2] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[3],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[3] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[4],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[4] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[5],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[5] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[6],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[6] = nt;
-                    }
-                }),
-                ui.createEntry
-                ({
-                    text: tmpRules[7],
-                    onTextChanged: (ot, nt) =>
-                    {
-                        tmpRules[7] = nt;
-                    }
-                }),
+                ruleEntries[0],
+                ruleEntries[1],
+                ruleEntries[2],
+                ruleEntries[3],
+                ruleEntries[4],
+                ruleEntries[5],
+                ruleEntries[6],
+                ruleEntries[7],
                 ui.createBox
                 ({
                     heightRequest: 1,
