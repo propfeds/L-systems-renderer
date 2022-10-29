@@ -16,7 +16,7 @@ delivered to the raw code page of this theory. Copy this page's URL.
 Then, access the custom theory panel within the game (unlocked after finishing
 it) then enter the picking menu. Press the plus symbol and paste the URL in.
 
-## Screenshots
+## Screenshots (old)
 
 ![ss1](screenshots/screenshot_19.jpg "Screenshot 1")
 

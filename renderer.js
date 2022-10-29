@@ -12,7 +12,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole array of (eight!) production rules\n- Two camera mode: fixed (scaled) and cursor-focused\n- Stroke options';
 var authors = 'propfeds#5988';
-var version = 'v0.15 WIP';
+var version = 'v0.15';
 
 class LSystem
 {
