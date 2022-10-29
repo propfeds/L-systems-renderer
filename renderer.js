@@ -454,8 +454,6 @@ var createPlusButton = (variable, height) =>
 
 var createMenuButton = (menuFunc, name, height) =>
 {
-    let menu = menuFunc();
-
     let frame = ui.createFrame
     ({
         heightRequest: height,
@@ -472,6 +470,7 @@ var createMenuButton = (menuFunc, name, height) =>
             if(e.type == TouchType.PRESSED)
             {
                 Sound.playClick();
+                let menu = menuFunc();
                 menu.show();
             }
         },
