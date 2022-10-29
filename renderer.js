@@ -1129,14 +1129,14 @@ var createSequenceMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: `Sequence (Lv. ${renderer.lvl})`,
+        title: `Sequence (Level: ${renderer.lvl})`,
         content: ui.createStackLayout
         ({
             children:
             [
                 ui.createScrollView
                 ({
-                    content: ui.createLatexLabel
+                    content: ui.createEntry
                     ({
                         text: tmpSeq
                     })
