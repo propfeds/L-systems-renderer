@@ -12,7 +12,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole array of (eight!) production rules\n- Two camera mode: fixed (scaled) and cursor-focused\n- Stroke options';
 var authors = 'propfeds#5988';
-var version = 'v0.15';
+var version = 'v0.16 WIP';
 
 class LSystem
 {
@@ -265,8 +265,6 @@ var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
-
-var maxRules = 8;
 
 var time = 0;
 var gameOffline = false;
@@ -941,7 +939,7 @@ var createSystemMenu = () =>
         tmpRules.push(`${key}=${value}`);
     }
     let ruleEntries = [];
-    for(let i = 0; i < maxRules; ++i)
+    for(let i = 0; i < tmpRules.length; ++i)
     {
         if(tmpRules[i] === undefined)
             tmpRules[i] = '';
@@ -954,7 +952,31 @@ var createSystemMenu = () =>
             }
         });
     }
-        
+    let ruleStack = ui.createStackLayout
+    ({
+        children: ruleEntries
+    });
+    let addRuleButton = ui.createButton
+    ({
+        text: 'Add',
+        row: 0,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = ruleEntries.length;
+            ruleEntries.push(ui.createEntry
+            ({
+                text: '',
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpRules[i] = nt;
+                }
+            }));
+            ruleStack.children = ruleEntries;
+        }
+    });
 
     let menu = ui.createPopup
     ({
@@ -986,20 +1008,25 @@ var createSystemMenu = () =>
                         angleEntry,
                     ]
                 }),
-                ui.createLatexLabel
+                ui.createGrid
                 ({
-                    text: 'Production rules: ',
-                    verticalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 6)
+                    columnDefinitions: ['75*', '25*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Production rules: ',
+                            verticalOptions: LayoutOptions.CENTER,
+                            margin: new Thickness(0, 6)
+                        }),
+                        addRuleButton
+                    ]
                 }),
-                ruleEntries[0],
-                ruleEntries[1],
-                ruleEntries[2],
-                ruleEntries[3],
-                ruleEntries[4],
-                ruleEntries[5],
-                ruleEntries[6],
-                ruleEntries[7],
+                ui.createScrollView
+                ({
+                    heightRequest: ui.screenHeight * 0.2,
+                    content: ruleStack
+                }),
                 ui.createBox
                 ({
                     heightRequest: 1,
@@ -1183,12 +1210,17 @@ var setInternalState = (stateStr) =>
     // axiom = values[12];
     // turnAngle = values[13];
     let tmpRules = [];
-    for(let i = 0; i < maxRules; ++i)
+    for(let i = 0; i < 256; ++i)
     {
-        if(values[14 + i] !== undefined)
-            tmpRules[i] = values[14 + i];
+        if(values.length > 14 + i)
+        {
+            if(values[14 + i] !== undefined)
+                tmpRules[i] = values[14 + i];
+            else
+                tmpRules[i] = '';
+        }
         else
-            tmpRules[i] = '';
+            break;
     }
     let system = new LSystem(values[12], tmpRules, values[13]);
     renderer = new Renderer(system,
