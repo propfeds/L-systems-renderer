@@ -10,7 +10,7 @@ import { Color } from '../api/ui/properties/Color';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole array of (eight!) production rules\n- Two camera mode: fixed (scaled) and cursor-focused\n- Stroke options';
+var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole army of production rules!\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options';
 var authors = 'propfeds#5988';
 var version = 'v0.16 WIP';
 
@@ -278,7 +278,7 @@ var manualPages =
     },
     {
         title: 'Constructing an L-system',
-        contents: 'The L-system menu provides the tools for constructon with 8 whole production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nOriginally, F is used to forward, but any letter should work (lower-case letters don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
+        contents: 'The L-system menu provides the tools for constructon with infinite production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nTraditionally, F is used to mean forward, but any letter should work (lower-case letters in the official grammar don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
     },
     {
         title: 'Configuring your L-system',
