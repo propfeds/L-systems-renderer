@@ -1165,8 +1165,7 @@ var createSequenceMenu = () =>
                 ({
                     content: ui.createEntry
                     ({
-                        text: tmpSeq,
-                        isReadOnly: true
+                        text: tmpSeq
                     })
                 }),
                 ui.createBox
