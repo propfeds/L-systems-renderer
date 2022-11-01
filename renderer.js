@@ -16,7 +16,7 @@ var version = 'v0.16 WIP';
 
 class LSystem
 {
-    constructor(axiom, rules, turnAngle = 30)
+    constructor(axiom, rules, turnAngle = 30, seed = 0)
     {
         this.axiom = axiom;
         this.rules = new Map();
@@ -29,6 +29,7 @@ class LSystem
             }
         }
         this.turnAngle = turnAngle;
+        this.seed = seed;
     }
 
     derive(state)
@@ -46,7 +47,7 @@ class LSystem
 
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed}`;
         for(let [key, value] of this.rules)
         {
             result += ` ${key}=${value}`;
@@ -1201,40 +1202,40 @@ var getEquationOverlay = () =>
     return result;
 }
 
-var getInternalState = () => `${time} ${renderer.toString()} ${renderer.system.toString()}`;
+var getInternalState = () => `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
 
 var setInternalState = (stateStr) =>
 {
-    let values = stateStr.split(' ');
+    let values = stateStr.split('\n');
     time = parseBigNumber(values[0]);
-    // axiom = values[12];
-    // turnAngle = values[13];
+
+    let systemValues = values[2].split(' ');
     let tmpRules = [];
     for(let i = 0; i < 256; ++i)
     {
-        if(values.length > 14 + i)
+        if(systemValues.length > 3 + i)
         {
-            if(values[14 + i] !== undefined)
-                tmpRules[i] = values[14 + i];
-            else
-                tmpRules[i] = '';
+            if(systemValues[3 + i] !== undefined)
+                tmpRules.push(systemValues[3 + i]);
         }
         else
             break;
     }
-    let system = new LSystem(values[12], tmpRules, values[13]);
+    let system = new LSystem(systemValues[0], tmpRules, systemValues[1], systemValues[2]);
+
+    let rendererValues = values[1].split(' ');
     renderer = new Renderer(system,
-        Number(values[1]),
-        Number(values[2]),
-        Boolean(Number(values[3])),
-        Number(values[4]),
-        Number(values[5]),
-        Number(values[6]),
-        Boolean(Number(values[7])),
-        Boolean(Number(values[8])),
-        Boolean(Number(values[9])),
-        Boolean(Number(values[10])),
-        Boolean(Number(values[11]))
+        Number(rendererValues[0]),
+        Number(rendererValues[1]),
+        Boolean(Number(rendererValues[2])),
+        Number(rendererValues[3]),
+        Number(rendererValues[4]),
+        Number(rendererValues[5]),
+        Boolean(Number(rendererValues[6])),
+        Boolean(Number(rendererValues[7])),
+        Boolean(Number(rendererValues[8])),
+        Boolean(Number(rendererValues[9])),
+        Boolean(Number(rendererValues[10]))
     );
 }
 
