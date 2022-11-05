@@ -65,6 +65,7 @@ class LSystem
         {
             if(rules[i] !== '')
             {
+                // log(rules[i]);
                 let rs = rules[i].split('=');
                 for(let i = 0; i < 2; ++i)
                     rs[i] = rs[i].trim();
@@ -82,7 +83,7 @@ class LSystem
         }
         this.turnAngle = turnAngle;
         this.seed = seed;
-        this.random = LCG(this.seed);
+        this.random = new LCG(this.seed);
     }
 
     derive(state)
@@ -106,7 +107,7 @@ class LSystem
     setSeed(seed)
     {
         this.seed = seed;
-        this.random = LCG(this.seed);
+        this.random = new LCG(this.seed);
     }
 
     toString()
@@ -215,6 +216,7 @@ class Renderer
     {
         this.system.setSeed(seed);
         this.update(this.lvl, true);
+        this.reset();
     }
 
     turnLeft()
@@ -338,8 +340,10 @@ var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
 var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
 var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
 
+var globalSeed = new LCG();
 var time = 0;
 var gameOffline = false;
 var backtrackList = ['+-', '+-[]'];
@@ -387,6 +391,11 @@ var manualPages =
         contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\n\n\nScale: 2, sqrt(2)\n\nCamera centre: (0, 0)',
         system: dragon,
         config: [2, Math.sqrt(2), 0, 0, false]
+    },
+    {
+        title: 'Example: Stochastic weed',
+        contents: 'A random shape every time it rolls!\n\nAxiom: F\n\nF→FF\n\nX→F-[[X]+X]+F[+FX]-X,\n\n →F+[[X]-X]-F[-FX]+X',
+        system: stocWeed
     }
 ];
 
@@ -1365,7 +1374,7 @@ var canResetStage = () => true;
 
 var getResetStageMessage = () => 'You are about to reroll the system\'s seed.\n(Currently, only adds 1 to the seed)'
 
-var resetStage = () => renderer.rerollSeed(renderer.system.seed + 1);
+var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 
 var getTertiaryEquation = () => renderer.getStateString();
 
