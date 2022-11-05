@@ -44,9 +44,9 @@ class LSystem
         }
         return result;
     }
-    rerollSeed()
+    rerollSeed(seed)
     {
-        ++this.seed;
+        this.seed = seed;
     }
 
     toString()
@@ -1271,7 +1271,7 @@ var setInternalState = (stateStr) =>
         else
             break;
     }
-    let system = new LSystem(systemValues[0], tmpRules, systemValues[1], systemValues[2]);
+    let system = new LSystem(systemValues[0], tmpRules, Number(systemValues[1]), Number(systemValues[2]));
 
     let rendererValues = values[1].split(' ');
     renderer = new Renderer(system,
@@ -1293,7 +1293,7 @@ var canResetStage = () => true;
 
 var getResetStageMessage = () => 'You are about to reroll the system\'s seed.\n(Currently, only adds 1 to the seed)'
 
-var resetStage = () => renderer.system.rerollSeed();
+var resetStage = () => renderer.system.rerollSeed(renderer.system.seed + 1);
 
 var getTertiaryEquation = () => renderer.getStateString();
 
