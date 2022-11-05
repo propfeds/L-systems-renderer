@@ -14,6 +14,47 @@ var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole arm
 var authors = 'propfeds#5988';
 var version = 'v0.16 WIP';
 
+class LCG
+{
+    constructor(seed = 0)
+    {
+        this.m = 0x80000000; // 2**31;
+        this.a = 1103515245;
+        this.c = 12345;
+    
+        this.state = seed;
+    }
+
+    nextInt()
+    {
+        this.state = (this.a * this.state + this.c) % this.m;
+        return this.state;
+    }
+    nextFloat(includeEnd = false)
+    {
+        if(includeEnd)
+        {
+            // [0, 1]
+            return this.nextInt() / (this.m - 1);
+        }
+        else
+        {
+            // [0, 1)
+            return this.nextInt() / this.m;
+        }
+    }
+    nextRange(start, end)
+    {
+        // [start, end)
+        let size = end - start;
+        return start + Math.floor(this.nextFloat() * size);
+    }
+    choice(array)
+    {
+        return array[this.nextRange(0, array.length)];
+    }
+}
+
 class LSystem
 {
     constructor(axiom, rules, turnAngle = 30, seed = 0)
@@ -41,6 +82,7 @@ class LSystem
         }
         this.turnAngle = turnAngle;
         this.seed = seed;
+        this.random = LCG(this.seed);
     }
 
     derive(state)
@@ -49,15 +91,22 @@ class LSystem
         for(let i = 0; i < state.length; ++i)
         {
             if(this.rules.has(state[i]))
-                result += this.rules.get(state[i]);
+            {
+                let rder = this.rules.get(state[i]);
+                if(typeof rder === 'string')
+                    result += rder;
+                else
+                    result += rder[this.random.nextRange(0, rder.length)];
+            }
             else
                 result += state[i];
         }
         return result;
     }
-    rerollSeed(seed)
+    setSeed(seed)
     {
         this.seed = seed;
+        this.random = LCG(this.seed);
     }
 
     toString()
@@ -101,10 +150,11 @@ class Renderer
         this.update(0);
     }
 
-    update(level)
+    update(level, seedChanged = false)
     {
+        let start = seedChanged ? 0 : this.levels.length;
         this.lvl = level;
-        for(let i = this.levels.length; i <= level; ++i)
+        for(let i = start; i <= level; ++i)
         {
             if(i == 0)
                 this.levels[i] = `[${this.system.axiom}]`;
@@ -160,6 +210,11 @@ class Renderer
         this.update(0);
         this.reset();
         l.level = 0;
+    }
+    rerollSeed(seed)
+    {
+        this.system.setSeed(seed);
+        this.update(this.lvl, true);
     }
 
     turnLeft()
@@ -1310,7 +1365,7 @@ var canResetStage = () => true;
 
 var getResetStageMessage = () => 'You are about to reroll the system\'s seed.\n(Currently, only adds 1 to the seed)'
 
-var resetStage = () => renderer.system.rerollSeed(renderer.system.seed + 1);
+var resetStage = () => renderer.rerollSeed(renderer.system.seed + 1);
 
 var getTertiaryEquation = () => renderer.getStateString();
 
