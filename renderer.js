@@ -939,43 +939,13 @@ var createSystemMenu = () =>
     {
         tmpRules.push(`${key}=${value}`);
     }
-    let ruleEntries = [];
-    for(let i = 0; i < tmpRules.length; ++i)
-    {
-        if(tmpRules[i] === undefined)
-            tmpRules[i] = '';
-        ruleEntries[i] = ui.createEntry
-        ({
-            text: tmpRules[i],
-            onTextChanged: (ot, nt) =>
-            {
-                tmpRules[i] = nt;
-            }
-        });
-    }
-    let ruleStack = ui.createStackLayout
+    let ruleEntry = ui.createEntry
     ({
-        children: ruleEntries
-    });
-    let addRuleButton = ui.createButton
-    ({
-        text: 'Add',
-        row: 0,
-        column: 1,
-        horizontalOptions: LayoutOptions.END,
-        onClicked: () =>
+        text: tmpRules.join('\n'),
+        verticalTextAlignment: TextAlignment.START,
+        onTextChanged: (ot, nt) =>
         {
-            Sound.playClick();
-            let i = ruleEntries.length;
-            ruleEntries.push(ui.createEntry
-            ({
-                text: '',
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpRules[i] = nt;
-                }
-            }));
-            ruleStack.children = ruleEntries;
+            tmpRules = nt.split('\n');
         }
     });
     let tmpSeed = renderer.system.seed;
@@ -1032,13 +1002,13 @@ var createSystemMenu = () =>
                             verticalOptions: LayoutOptions.CENTER,
                             margin: new Thickness(0, 6)
                         }),
-                        addRuleButton
+                        // addRuleButton
                     ]
                 }),
                 ui.createScrollView
                 ({
-                    // heightRequest: ui.screenHeight * 0.2,
-                    content: ruleStack
+                    heightRequest: ui.screenHeight * 0.15,
+                    content: ruleEntry
                 }),
                 ui.createGrid
                 ({
