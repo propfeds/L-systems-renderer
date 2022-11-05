@@ -10,13 +10,54 @@ import { Color } from '../api/ui/properties/Color';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole array of (eight!) production rules\n- Two camera mode: fixed (scaled) and cursor-focused\n- Stroke options';
+var description = 'A renderer of L-systems.\n\nFeatures:\n- Supports a whole army of production rules!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.15';
+var version = 'v0.16';
+
+class LCG
+{
+    constructor(seed = 0)
+    {
+        this.m = 0x80000000; // 2**31;
+        this.a = 1103515245;
+        this.c = 12345;
+    
+        this.state = seed;
+    }
+
+    nextInt()
+    {
+        this.state = (this.a * this.state + this.c) % this.m;
+        return this.state;
+    }
+    nextFloat(includeEnd = false)
+    {
+        if(includeEnd)
+        {
+            // [0, 1]
+            return this.nextInt() / (this.m - 1);
+        }
+        else
+        {
+            // [0, 1)
+            return this.nextInt() / this.m;
+        }
+    }
+    nextRange(start, end)
+    {
+        // [start, end)
+        let size = end - start;
+        return start + Math.floor(this.nextFloat() * size);
+    }
+    choice(array)
+    {
+        return array[this.nextRange(0, array.length)];
+    }
+}
 
 class LSystem
 {
-    constructor(axiom, rules, turnAngle = 30)
+    constructor(axiom, rules, turnAngle = 30, seed = 0)
     {
         this.axiom = axiom;
         this.rules = new Map();
@@ -24,11 +65,25 @@ class LSystem
         {
             if(rules[i] !== '')
             {
+                // log(rules[i]);
                 let rs = rules[i].split('=');
-                this.rules.set(rs[0], rs[1]);
+                for(let i = 0; i < 2; ++i)
+                    rs[i] = rs[i].trim();
+
+                let rder = rs[1].split(',');
+                if(rder.length == 1)
+                    this.rules.set(rs[0], rs[1]);
+                else
+                {
+                    for(let i = 0; i < rder; ++i)
+                        rder[i] = rder[i].trim();
+                    this.rules.set(rs[0], rder);
+                }
             }
         }
         this.turnAngle = turnAngle;
+        this.seed = seed;
+        this.random = new LCG(this.seed);
     }
 
     derive(state)
@@ -37,19 +92,33 @@ class LSystem
         for(let i = 0; i < state.length; ++i)
         {
             if(this.rules.has(state[i]))
-                result += this.rules.get(state[i]);
+            {
+                let rder = this.rules.get(state[i]);
+                if(typeof rder === 'string')
+                    result += rder;
+                else
+                    result += rder[this.random.nextRange(0, rder.length)];
+            }
             else
                 result += state[i];
         }
         return result;
     }
+    setSeed(seed)
+    {
+        this.seed = seed;
+        this.random = new LCG(this.seed);
+    }
 
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed}`;
         for(let [key, value] of this.rules)
         {
-            result += ` ${key}=${value}`;
+            if(typeof value === 'string')
+                result += ` ${key}=${value}`;
+            else
+                result += ` ${key}=${value.join(',')}`;
         }
         return result;
     }
@@ -82,10 +151,11 @@ class Renderer
         this.update(0);
     }
 
-    update(level)
+    update(level, seedChanged = false)
     {
+        let start = seedChanged ? 0 : this.levels.length;
         this.lvl = level;
-        for(let i = this.levels.length; i <= level; ++i)
+        for(let i = start; i <= level; ++i)
         {
             if(i == 0)
                 this.levels[i] = `[${this.system.axiom}]`;
@@ -141,6 +211,12 @@ class Renderer
         this.update(0);
         this.reset();
         l.level = 0;
+    }
+    rerollSeed(seed)
+    {
+        this.system.setSeed(seed);
+        this.update(this.lvl, true);
+        this.reset();
     }
 
     turnLeft()
@@ -264,10 +340,10 @@ var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
 var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
+var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
 var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
 
-var maxRules = 8;
-
+var globalSeed = new LCG();
 var time = 0;
 var gameOffline = false;
 var backtrackList = ['+-', '+-[]'];
@@ -276,11 +352,11 @@ var manualPages =
 [
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is used to model plants and draw fractal figures.\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to draw\n\n+, -: turns cursor left/right by an angle\n\n[, ]: allows for branches, by queueing cursor positions on a stack'
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is used to model plants and draw fractal figures.\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to draw\n\n+ -: turns cursor left/right by an angle\n\n[ ]: allows for branches, by queueing cursor positions on a stack\n\n, : separates between possible derivations'
     },
     {
         title: 'Constructing an L-system',
-        contents: 'The L-system menu provides the tools for constructon with 8 whole production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation)\n\nOriginally, F is used to forward, but any letter should work (lower-case letters don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
+        contents: 'The L-system menu provides the tools for constructon with infinite production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation 0),(derivation 1),...\n\nOne out of multiple derivations on one line will be randomly chosen when deriving.\n\n\n\nTraditionally, F is used to mean forward, but any letter should work (lower-case letters in the official grammar don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
     },
     {
         title: 'Configuring your L-system',
@@ -315,6 +391,11 @@ var manualPages =
         contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\n\n\nScale: 2, sqrt(2)\n\nCamera centre: (0, 0)',
         system: dragon,
         config: [2, Math.sqrt(2), 0, 0, false]
+    },
+    {
+        title: 'Example: Stochastic weed',
+        contents: 'A random shape every time it rolls!\n\nAxiom: F\n\nF→FF\n\nX→F-[[X]+X]+F[+FX]-X,\n\n →F+[[X]-X]-F[-FX]+X',
+        system: stocWeed
     }
 ];
 
@@ -322,7 +403,7 @@ var init = () =>
 {
     angle = theory.createCurrency('°', '\\degree');
     progress = theory.createCurrency('%');
-    // l
+    // l (Level)
     {
         let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
@@ -332,7 +413,6 @@ var init = () =>
         l.canBeRefunded = (_) => true;
     }
     // ts (Tickspeed)
-    // Starts with 0, then goes to 1 and beyond?
     {
         let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
@@ -938,10 +1018,13 @@ var createSystemMenu = () =>
     let tmpRules = [];
     for(let [key, value] of renderer.system.rules)
     {
-        tmpRules.push(`${key}=${value}`);
+        if(typeof value === 'string')
+            tmpRules.push(`${key}=${value}`);
+        else
+            tmpRules.push(`${key}=${value.join(',')}`);
     }
     let ruleEntries = [];
-    for(let i = 0; i < maxRules; ++i)
+    for(let i = 0; i < tmpRules.length; ++i)
     {
         if(tmpRules[i] === undefined)
             tmpRules[i] = '';
@@ -954,7 +1037,43 @@ var createSystemMenu = () =>
             }
         });
     }
-        
+    let ruleStack = ui.createStackLayout
+    ({
+        children: ruleEntries
+    });
+    let addRuleButton = ui.createButton
+    ({
+        text: 'Add',
+        row: 0,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = ruleEntries.length;
+            ruleEntries.push(ui.createEntry
+            ({
+                text: '',
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpRules[i] = nt;
+                }
+            }));
+            ruleStack.children = ruleEntries;
+        }
+    });
+    let tmpSeed = renderer.system.seed;
+    let seedEntry = ui.createEntry
+    ({
+        text: tmpSeed.toString(),
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSeed = Number(nt);
+        }
+    });
 
     let menu = ui.createPopup
     ({
@@ -986,20 +1105,40 @@ var createSystemMenu = () =>
                         angleEntry,
                     ]
                 }),
-                ui.createLatexLabel
+                ui.createGrid
                 ({
-                    text: 'Production rules: ',
-                    verticalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 6)
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Production rules: ',
+                            verticalOptions: LayoutOptions.CENTER,
+                            margin: new Thickness(0, 6)
+                        }),
+                        addRuleButton
+                    ]
                 }),
-                ruleEntries[0],
-                ruleEntries[1],
-                ruleEntries[2],
-                ruleEntries[3],
-                ruleEntries[4],
-                ruleEntries[5],
-                ruleEntries[6],
-                ruleEntries[7],
+                ui.createScrollView
+                ({
+                    // heightRequest: ui.screenHeight * 0.2,
+                    content: ruleStack
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Seed (for stochastic systems): ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        seedEntry
+                    ]
+                }),
                 ui.createBox
                 ({
                     heightRequest: 1,
@@ -1011,7 +1150,7 @@ var createSystemMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle));
+                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle, tmpSeed));
                         menu.hide();
                     }
                 })
@@ -1026,7 +1165,8 @@ var createManualMenu = () =>
     let pageTitle = ui.createLatexLabel
     ({
         text: manualPages[page].title,
-        horizontalOptions: LayoutOptions.CENTER
+        horizontalOptions: LayoutOptions.CENTER,
+        verticalOptions: LayoutOptions.CENTER
     });
     let pageContents = ui.createLatexLabel
     ({
@@ -1058,7 +1198,7 @@ var createManualMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    columnDefinitions: ['35*', '30*', '35*'],
+                    columnDefinitions: ['30*', '30*', '30*'],
                     children:
                     [
                         ui.createButton
@@ -1125,21 +1265,40 @@ var createManualMenu = () =>
 
 var createSequenceMenu = () =>
 {
-    let tmpSeq = renderer.levels[renderer.lvl];
+    let tmpLvls = [];
+    for(let i = 0; i < renderer.levels.length; ++i)
+    {
+        tmpLvls.push(ui.createLatexLabel
+        ({
+            text: `Level ${i}: `,
+            row: i,
+            column: 0,
+            verticalOptions: LayoutOptions.CENTER
+        }));
+        tmpLvls.push(ui.createEntry
+        ({
+            text: renderer.levels[i].slice(1, -1),
+            row: i,
+            column: 1
+        }));
+    }
+    let seqGrid = ui.createGrid
+    ({
+        columnDefinitions: ['20*', '80*'],
+        children: tmpLvls
+    });
 
     let menu = ui.createPopup
     ({
-        title: `Sequence (Level: ${renderer.lvl})`,
+        title: `Sequence Levels`,
         content: ui.createStackLayout
         ({
             children:
             [
                 ui.createScrollView
                 ({
-                    content: ui.createEntry
-                    ({
-                        text: tmpSeq
-                    })
+                    // heightRequest: ui.screenHeight * 0.3,
+                    content: seqGrid
                 }),
                 ui.createBox
                 ({
@@ -1174,41 +1333,48 @@ var getEquationOverlay = () =>
     return result;
 }
 
-var getInternalState = () => `${time} ${renderer.toString()} ${renderer.system.toString()}`;
+var getInternalState = () => `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
 
 var setInternalState = (stateStr) =>
 {
-    let values = stateStr.split(' ');
+    let values = stateStr.split('\n');
     time = parseBigNumber(values[0]);
-    // axiom = values[12];
-    // turnAngle = values[13];
+
+    let systemValues = values[2].split(' ');
     let tmpRules = [];
-    for(let i = 0; i < maxRules; ++i)
+    for(let i = 0; i < 256; ++i)
     {
-        if(values[14 + i] !== undefined)
-            tmpRules[i] = values[14 + i];
+        if(systemValues.length > 3 + i)
+        {
+            if(systemValues[3 + i] !== undefined)
+                tmpRules.push(systemValues[3 + i]);
+        }
         else
-            tmpRules[i] = '';
+            break;
     }
-    let system = new LSystem(values[12], tmpRules, values[13]);
+    let system = new LSystem(systemValues[0], tmpRules, Number(systemValues[1]), Number(systemValues[2]));
+
+    let rendererValues = values[1].split(' ');
     renderer = new Renderer(system,
-        Number(values[1]),
-        Number(values[2]),
-        Boolean(Number(values[3])),
-        Number(values[4]),
-        Number(values[5]),
-        Number(values[6]),
-        Boolean(Number(values[7])),
-        Boolean(Number(values[8])),
-        Boolean(Number(values[9])),
-        Boolean(Number(values[10])),
-        Boolean(Number(values[11]))
+        Number(rendererValues[0]),
+        Number(rendererValues[1]),
+        Boolean(Number(rendererValues[2])),
+        Number(rendererValues[3]),
+        Number(rendererValues[4]),
+        Number(rendererValues[5]),
+        Boolean(Number(rendererValues[6])),
+        Boolean(Number(rendererValues[7])),
+        Boolean(Number(rendererValues[8])),
+        Boolean(Number(rendererValues[9])),
+        Boolean(Number(rendererValues[10]))
     );
 }
 
 var canResetStage = () => true;
 
-var resetStage = () => renderer.reset();
+var getResetStageMessage = () => 'You are about to reroll the system\'s seed.\n(Currently, only adds 1 to the seed)'
+
+var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 
 var getTertiaryEquation = () => renderer.getStateString();
 
