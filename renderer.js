@@ -978,6 +978,18 @@ var createSystemMenu = () =>
             ruleStack.children = ruleEntries;
         }
     });
+    let tmpSeed = renderer.system.seed;
+    let seedEntry = ui.createEntry
+    ({
+        text: tmpSeed.toString(),
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSeed = Number(nt);
+        }
+    });
 
     let menu = ui.createPopup
     ({
@@ -1025,8 +1037,23 @@ var createSystemMenu = () =>
                 }),
                 ui.createScrollView
                 ({
-                    heightRequest: ui.screenHeight * 0.2,
+                    // heightRequest: ui.screenHeight * 0.2,
                     content: ruleStack
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['60*', '40*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Seed (stochastic systems): ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        seedEntry
+                    ]
                 }),
                 ui.createBox
                 ({
@@ -1186,6 +1213,7 @@ var createSequenceMenu = () =>
             [
                 ui.createScrollView
                 ({
+                    // heightRequest: ui.screenHeight * 0.3,
                     content: seqGrid
                 }),
                 ui.createBox
