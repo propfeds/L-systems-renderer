@@ -1087,7 +1087,7 @@ var createManualMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    columnDefinitions: ['35*', '30*', '35*'],
+                    columnDefinitions: ['30*', '30*', '30*'],
                     children:
                     [
                         ui.createButton
