@@ -321,7 +321,7 @@ var init = () =>
 {
     angle = theory.createCurrency('°', '\\degree');
     progress = theory.createCurrency('%');
-    // l
+    // l (Level)
     {
         let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
@@ -331,7 +331,6 @@ var init = () =>
         l.canBeRefunded = (_) => true;
     }
     // ts (Tickspeed)
-    // Starts with 0, then goes to 1 and beyond?
     {
         let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
