@@ -54,7 +54,10 @@ class LSystem
         let result = `${this.axiom} ${this.turnAngle} ${this.seed}`;
         for(let [key, value] of this.rules)
         {
-            result += ` ${key}=${value}`;
+            if(typeof value === 'string')
+                result += ` ${key}=${value}`;
+            else
+                result += ` ${key}=${value.join(',')}`;
         }
         return result;
     }
@@ -940,7 +943,10 @@ var createSystemMenu = () =>
     let tmpRules = [];
     for(let [key, value] of renderer.system.rules)
     {
-        tmpRules.push(`${key}=${value}`);
+        if(typeof value === 'string')
+            tmpRules.push(`${key}=${value}`);
+        else
+            tmpRules.push(`${key}=${value.join(',')}`);
     }
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
