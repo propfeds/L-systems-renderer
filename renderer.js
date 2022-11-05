@@ -25,7 +25,18 @@ class LSystem
             if(rules[i] !== '')
             {
                 let rs = rules[i].split('=');
-                this.rules.set(rs[0], rs[1]);
+                for(let i = 0; i < 2; ++i)
+                    rs[i] = rs[i].trim();
+
+                let rder = rs[1].split(',');
+                if(rder.length == 1)
+                    this.rules.set(rs[0], rs[1]);
+                else
+                {
+                    for(let i = 0; i < rder; ++i)
+                        rder[i] = rder[i].trim();
+                    this.rules.set(rs[0], rder);
+                }
             }
         }
         this.turnAngle = turnAngle;
