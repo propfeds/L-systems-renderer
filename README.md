@@ -18,7 +18,7 @@ delivered to the raw code page of this theory. Copy that page's URL.
 Then, access the custom theory panel within the game (unlocked after finishing
 it) then enter the picking menu. Press the plus symbol and paste the URL in.
 
-As of 0.15, a theory reset is required due to internal state changes.
+As of 0.15, a theory reset is required due to internal state format changes.
 
 ## Screenshots (0.14)
 
