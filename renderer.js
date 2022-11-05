@@ -1054,7 +1054,8 @@ var createManualMenu = () =>
     let pageTitle = ui.createLatexLabel
     ({
         text: manualPages[page].title,
-        horizontalOptions: LayoutOptions.CENTER
+        horizontalOptions: LayoutOptions.CENTER,
+        verticalOptions: LayoutOptions.CENTER
     });
     let pageContents = ui.createLatexLabel
     ({
@@ -1153,21 +1154,39 @@ var createManualMenu = () =>
 
 var createSequenceMenu = () =>
 {
-    let tmpSeq = renderer.levels[renderer.lvl];
+    let tmpLvls = [];
+    for(let i = 0; i < renderer.levels.length; ++i)
+    {
+        tmpLvls.push(ui.createLatexLabel
+        ({
+            text: `Level ${i}: `,
+            row: i,
+            column: 0,
+            verticalOptions: LayoutOptions.CENTER
+        }));
+        tmpLvls.push(ui.createEntry
+        ({
+            text: renderer.levels[i].slice(1, -1),
+            row: i,
+            column: 1
+        }));
+    }
+    let seqGrid = ui.createGrid
+    ({
+        columnDefinitions: ['20*', '80*'],
+        children: tmpLvls
+    });
 
     let menu = ui.createPopup
     ({
-        title: `Sequence (Level: ${renderer.lvl})`,
+        title: `Sequence Levels`,
         content: ui.createStackLayout
         ({
             children:
             [
                 ui.createScrollView
                 ({
-                    content: ui.createEntry
-                    ({
-                        text: tmpSeq
-                    })
+                    content: seqGrid
                 }),
                 ui.createBox
                 ({
