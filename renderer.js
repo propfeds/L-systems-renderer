@@ -44,6 +44,10 @@ class LSystem
         }
         return result;
     }
+    rerollSeed()
+    {
+        ++this.seed;
+    }
 
     toString()
     {
@@ -1046,7 +1050,7 @@ var createSystemMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: 'Seed (stochastic systems): ',
+                            text: 'Seed (for stochastic systems): ',
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -1287,7 +1291,9 @@ var setInternalState = (stateStr) =>
 
 var canResetStage = () => true;
 
-var resetStage = () => renderer.reset();
+var getResetStageMessage = () => 'You are about to reroll the system\'s seed.\n(Currently, only adds 1 to the seed)'
+
+var resetStage = () => renderer.system.rerollSeed();
 
 var getTertiaryEquation = () => renderer.getStateString();
 
