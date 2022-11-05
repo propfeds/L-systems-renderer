@@ -1023,7 +1023,7 @@ var createSystemMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    columnDefinitions: ['75*', '25*'],
+                    columnDefinitions: ['70*', '30*'],
                     children:
                     [
                         ui.createLatexLabel
@@ -1042,7 +1042,7 @@ var createSystemMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    columnDefinitions: ['60*', '40*'],
+                    columnDefinitions: ['70*', '30*'],
                     children:
                     [
                         ui.createLatexLabel
@@ -1066,7 +1066,7 @@ var createSystemMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle));
+                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle, tmpSeed));
                         menu.hide();
                     }
                 })
