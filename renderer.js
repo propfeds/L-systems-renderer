@@ -22,7 +22,7 @@ class LCG
         this.a = 1103515245;
         this.c = 12345;
     
-        this.state = seed;
+        this.state = seed % this.m;
     }
 
     nextInt()
@@ -343,7 +343,7 @@ var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
 var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
 
-var globalSeed = new LCG();
+var globalSeed = new LCG(Date.now());
 var time = 0;
 var gameOffline = false;
 var backtrackList = ['+-', '+-[]'];
@@ -1372,7 +1372,7 @@ var setInternalState = (stateStr) =>
 
 var canResetStage = () => true;
 
-var getResetStageMessage = () => 'You are about to reroll the system\'s seed.\n(Currently, only adds 1 to the seed)'
+var getResetStageMessage = () => 'You are about to reroll the system\'s seed.';
 
 var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 
