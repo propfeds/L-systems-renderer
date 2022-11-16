@@ -10,9 +10,9 @@ import { Color } from '../api/ui/properties/Color';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Supports a whole army of production rules!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
+var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.16';
+var version = 'v0.17';
 
 class LCG
 {
@@ -65,7 +65,6 @@ class LSystem
         {
             if(rules[i] !== '')
             {
-                // log(rules[i]);
                 let rs = rules[i].split('=');
                 for(let i = 0; i < 2; ++i)
                     rs[i] = rs[i].trim();
@@ -343,6 +342,7 @@ var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
 var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
 
+var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
 var time = 0;
 var gameOffline = false;
@@ -559,7 +559,7 @@ var createMenuButton = (menuFunc, name, height) =>
     return frame;
 }
 
-var createVariableWithMenuButton = (variable, menuFunc, name, height) =>
+var createVariableButtonWithMenu = (variable, menuFunc, height) =>
 {
     let frame = ui.createFrame
     ({
@@ -590,7 +590,7 @@ var getUpgradeListDelegate = () =>
 {
     let height = ui.screenHeight * 0.055;
 
-    let lvlButton = createVariableWithMenuButton(l, createSequenceMenu, 'View sequence', height);
+    let lvlButton = createVariableButtonWithMenu(l, createSequenceMenu, height);
     lvlButton.row = 0;
     lvlButton.column = 0;
     let tsButton = createVariableButton(ts, height);
@@ -603,12 +603,12 @@ var getUpgradeListDelegate = () =>
     let cfgButton = createMenuButton(createConfigMenu, 'Renderer menu', height);
     cfgButton.row = 0;
     cfgButton.column = 1;
+    let expButton = createMenuButton(createSaveMenu, 'Save/load menu', height);
+    expButton.row = 1;
+    expButton.column = 0;
     let manualButton = createMenuButton(createManualMenu, 'Manual', height);
     manualButton.row = 1;
-    manualButton.column = 0;
-    // let expButton = createMenuButton(createSequenceMenu, 'View sequence', height);
-    // expButton.row = 1;
-    // expButton.column = 1;
+    manualButton.column = 1;
 
     let stack = ui.createScrollView
     ({
@@ -669,6 +669,7 @@ var getUpgradeListDelegate = () =>
                     [
                         sysButton,
                         cfgButton,
+                        expButton,
                         manualButton
                     ]
                 })
@@ -1046,7 +1047,6 @@ var createSystemMenu = () =>
         text: 'Add',
         row: 0,
         column: 1,
-        horizontalOptions: LayoutOptions.END,
         onClicked: () =>
         {
             Sound.playClick();
@@ -1154,6 +1154,325 @@ var createSystemMenu = () =>
                         menu.hide();
                     }
                 })
+            ]
+        })
+    })
+    return menu;
+}
+
+var createNamingMenu = (title, values, systemGrid) =>
+{
+    let tmpName = title;
+    let nameEntry = ui.createEntry
+    ({
+        text: tmpName,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpName = nt;
+        }
+    });
+    let menu = ui.createPopup
+    ({
+        title: 'Name System',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                nameEntry,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: 'Save',
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        while(savedSystems.has(tmpName))
+                            tmpName += ' (copy)';
+                        savedSystems.set(tmpName, values);
+                        // let saveMenu = createSaveMenu();
+                        // saveMenu.show();
+                        menu.hide();
+                    }
+                })
+            ]
+        }),
+        // onDisappearing: () =>
+        // {
+        //     let saveMenu = createSaveMenu();
+        //     saveMenu.show();
+        // }
+    });
+    return menu;
+}
+
+var createViewMenu = (title, systemGrid) =>
+{
+    values = savedSystems.get(title);
+
+    let systemValues = values.split(' ');
+
+    let menu;
+    let tmpAxiom = systemValues[0];
+    let tmpAngle = Number(systemValues[1]);
+    let tmpRules = systemValues.slice(3);
+
+    let ruleEntries = [];
+    for(let i = 0; i < tmpRules.length; ++i)
+    {
+        if(tmpRules[i] === undefined)
+            tmpRules[i] = '';
+        ruleEntries[i] = ui.createEntry
+        ({
+            text: tmpRules[i]
+        });
+    }
+    let ruleStack = ui.createStackLayout
+    ({
+        children: ruleEntries
+    });
+    let tmpSeed = Number(systemValues[2]);
+
+    menu = ui.createPopup
+    ({
+        title: title,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['20*', '30*', '30*', '20*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Axiom: ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createEntry
+                        ({
+                            text: tmpAxiom,
+                            row: 0,
+                            column: 1
+                        }),
+                        ui.createLatexLabel
+                        ({
+                            text: 'Turning angle (°): ',
+                            row: 0,
+                            column: 2,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createEntry
+                        ({
+                            text: tmpAngle.toString(),
+                            row: 0,
+                            column: 3,
+                            horizontalTextAlignment: TextAlignment.END
+                        }),
+                    ]
+                }),
+                ui.createLatexLabel
+                ({
+                    text: 'Production rules: ',
+                    verticalOptions: LayoutOptions.CENTER,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createScrollView
+                ({
+                    content: ruleStack
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Seed (for stochastic systems): ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createEntry
+                        ({
+                            text: tmpSeed.toString(),
+                            row: 0,
+                            column: 1,
+                            horizontalTextAlignment: TextAlignment.END
+                        })
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: 'Apply',
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle, tmpSeed));
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: 'Delete',
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                savedSystems.delete(title);
+                                menu.hide();
+                            }
+                        })
+                    ]
+                })
+            ]
+        }),
+        // onDisappearing: () =>
+        // {
+        //     let saveMenu = createSaveMenu();
+        //     saveMenu.show();
+        // }
+    })
+    return menu;
+}
+
+var createSaveMenu = () =>
+{
+    let menu;
+    let getSystemGrid = () =>
+    {
+        let children = [];
+        let i = 0;
+        for(let [key, value] of savedSystems)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: key,
+                row: i,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }));
+            let btn = createViewButton(key);
+            btn.row = i;
+            btn.column = 1;
+            children.push(btn);
+            ++i;
+        }
+        return children;
+    };
+    let createViewButton = (title) =>
+    {
+        let btn = ui.createButton
+        ({
+            text: 'View',
+            row: 0,
+            column: 1,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                let viewMenu = createViewMenu(title, systemGrid);
+                viewMenu.onDisappearing = () =>
+                {
+                    systemGrid.children = getSystemGrid();
+                };
+                viewMenu.show();
+            }
+        });
+        return btn;
+    };
+    let systemGrid = ui.createGrid
+    ({
+        columnDefinitions: ['70*', '30*'],
+        children: getSystemGrid() 
+    });
+
+    menu = ui.createPopup
+    ({
+        title: 'Save/Load Menu',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Current system: ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createButton
+                        ({
+                            text: 'Save',
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let namingMenu = createNamingMenu('Untitled L-system', renderer.system.toString(), systemGrid);
+                                namingMenu.onDisappearing = () =>
+                                {
+                                    systemGrid.children = getSystemGrid();
+                                };
+                                namingMenu.show();
+                                // menu.hide();
+                            }
+                        })
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createLatexLabel
+                ({
+                    text: 'Saved systems: ',
+                    verticalOptions: LayoutOptions.CENTER,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createScrollView
+                ({
+                    // heightRequest: ui.screenHeight * 0.25,
+                    content: systemGrid
+                }),
+                // ui.createBox
+                // ({
+                //     heightRequest: 1,
+                //     margin: new Thickness(0, 6)
+                // }),
+                // ui.createButton
+                // ({
+                //     text: 'Close',
+                //     onClicked: () =>
+                //     {
+                //         Sound.playClick();
+                //         menu.hide();
+                //     }
+                // })
             ]
         })
     })
@@ -1333,7 +1652,15 @@ var getEquationOverlay = () =>
     return result;
 }
 
-var getInternalState = () => `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
+var getInternalState = () =>
+{
+    let result = `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
+    for(let [key, value] of savedSystems)
+    {
+        result += `\n${key}\n${value}`;
+    }
+    return result;
+}
 
 var setInternalState = (stateStr) =>
 {
@@ -1341,18 +1668,7 @@ var setInternalState = (stateStr) =>
     time = parseBigNumber(values[0]);
 
     let systemValues = values[2].split(' ');
-    let tmpRules = [];
-    for(let i = 0; i < 256; ++i)
-    {
-        if(systemValues.length > 3 + i)
-        {
-            if(systemValues[3 + i] !== undefined)
-                tmpRules.push(systemValues[3 + i]);
-        }
-        else
-            break;
-    }
-    let system = new LSystem(systemValues[0], tmpRules, Number(systemValues[1]), Number(systemValues[2]));
+    let system = new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]));
 
     let rendererValues = values[1].split(' ');
     renderer = new Renderer(system,
@@ -1368,6 +1684,9 @@ var setInternalState = (stateStr) =>
         Boolean(Number(rendererValues[9])),
         Boolean(Number(rendererValues[10]))
     );
+    
+    for(let i = 3; i + 1 < values.length; i += 2)
+        savedSystems.set(values[i], values[i + 1]);
 }
 
 var canResetStage = () => true;
