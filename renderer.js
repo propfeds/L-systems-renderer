@@ -12,7 +12,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Supports a whole army of production rules!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.16';
+var version = 'v0.17 WIP';
 
 class LCG
 {
@@ -343,6 +343,7 @@ var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
 var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
 
+var savedSystems = [];
 var globalSeed = new LCG(Date.now());
 var time = 0;
 var gameOffline = false;
@@ -1333,7 +1334,15 @@ var getEquationOverlay = () =>
     return result;
 }
 
-var getInternalState = () => `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
+var getInternalState = () =>
+{
+    let result = `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
+    for(let i = 0; i < savedSystems.length; ++i)
+    {
+        result += `\n${savedSystems[i].title}\n${savedSystems[i].system.toString()}`;
+    }
+    return result;
+}
 
 var setInternalState = (stateStr) =>
 {
@@ -1341,18 +1350,7 @@ var setInternalState = (stateStr) =>
     time = parseBigNumber(values[0]);
 
     let systemValues = values[2].split(' ');
-    let tmpRules = [];
-    for(let i = 0; i < 256; ++i)
-    {
-        if(systemValues.length > 3 + i)
-        {
-            if(systemValues[3 + i] !== undefined)
-                tmpRules.push(systemValues[3 + i]);
-        }
-        else
-            break;
-    }
-    let system = new LSystem(systemValues[0], tmpRules, Number(systemValues[1]), Number(systemValues[2]));
+    let system = new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]));
 
     let rendererValues = values[1].split(' ');
     renderer = new Renderer(system,
@@ -1368,6 +1366,16 @@ var setInternalState = (stateStr) =>
         Boolean(Number(rendererValues[9])),
         Boolean(Number(rendererValues[10]))
     );
+    
+    for(let i = 3; i + 1 < values.length; i += 2)
+    {
+        let systemValues = values[i + 1].split(' ');
+        savedSystems.push
+        ({
+            title: values[i],
+            system: new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]))
+        });
+    }
 }
 
 var canResetStage = () => true;
