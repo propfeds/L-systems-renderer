@@ -4,13 +4,13 @@ L-systems renderer in Exponential Idle.
 
 ## Features
 
-- Supports a whole army of production rules
+- Can store a whole army of systems!
 - Two camera mode: fixed (scaled) and cursor-focused
 - Stroke options
 
 ## Installation
 
-Current version: 0.16
+Current version: 0.17
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to the raw code page of this theory. Copy that page's URL.

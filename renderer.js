@@ -10,9 +10,9 @@ import { Color } from '../api/ui/properties/Color';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Supports a whole army of production rules!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
+var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.17 WIP';
+var version = 'v0.17';
 
 class LCG
 {
