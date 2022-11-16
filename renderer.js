@@ -1160,7 +1160,7 @@ var createSystemMenu = () =>
     return menu;
 }
 
-var createNamingMenu = (title, system, systemGrid) =>
+var createNamingMenu = (title, values, systemGrid) =>
 {
     let tmpName = title;
     let nameEntry = ui.createEntry
@@ -1192,7 +1192,7 @@ var createNamingMenu = (title, system, systemGrid) =>
                         Sound.playClick();
                         while(savedSystems.has(tmpName))
                             tmpName += ' (copy)';
-                        savedSystems.set(tmpName, system);
+                        savedSystems.set(tmpName, values);
                         // let saveMenu = createSaveMenu();
                         // saveMenu.show();
                         menu.hide();
@@ -1209,24 +1209,17 @@ var createNamingMenu = (title, system, systemGrid) =>
     return menu;
 }
 
-var createViewMenu = (title, systemGrid, saved = true) =>
+var createViewMenu = (title, systemGrid) =>
 {
-    if(saved)
-        system = savedSystems.get(title);
-    else
-        system = renderer.system;
+    values = savedSystems.get(title);
+
+    let systemValues = values.split(' ');
 
     let menu;
-    let tmpAxiom = system.axiom;
-    let tmpAngle = system.turnAngle;
-    let tmpRules = [];
-    for(let [key, value] of system.rules)
-    {
-        if(typeof value === 'string')
-            tmpRules.push(`${key}=${value}`);
-        else
-            tmpRules.push(`${key}=${value.join(',')}`);
-    }
+    let tmpAxiom = systemValues[0];
+    let tmpAngle = Number(systemValues[1]);
+    let tmpRules = systemValues.slice(3);
+
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
@@ -1241,59 +1234,7 @@ var createViewMenu = (title, systemGrid, saved = true) =>
     ({
         children: ruleEntries
     });
-    let tmpSeed = system.seed;
-
-    let btnGrid = ui.createGrid({});
-    if(saved)
-    {
-        btnGrid.columnDefinitions = ['50*', '50*'];
-        let applyButton = ui.createButton
-        ({
-            text: 'Apply',
-            row: 0,
-            column: 0,
-            onClicked: () =>
-            {
-                Sound.playClick();
-                renderer.applySystem(system);
-                menu.hide();
-            }
-        });
-        let delButton = ui.createButton
-        ({
-            text: 'Delete',
-            row: 0,
-            column: 1,
-            onClicked: () =>
-            {
-                Sound.playClick();
-                savedSystems.delete(title);
-                menu.hide();
-            }
-        })
-        btnGrid.children = [applyButton, delButton];
-    }
-    else
-    {
-        btnGrid.children =
-        [
-            ui.createButton
-            ({
-                text: 'Save',
-                onClicked: () =>
-                {
-                    Sound.playClick();
-                    let namingMenu = createNamingMenu(title, system);
-                    namingMenu.onDisappearing = () =>
-                    {
-                        systemGrid.children = getSystemGrid();
-                    };
-                    namingMenu.show();
-                    // menu.hide();
-                }
-            })
-        ];
-    }
+    let tmpSeed = Number(systemValues[2]);
 
     menu = ui.createPopup
     ({
@@ -1372,7 +1313,37 @@ var createViewMenu = (title, systemGrid, saved = true) =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                btnGrid
+                ui.createGrid
+                ({
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: 'Apply',
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle, tmpSeed));
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: 'Delete',
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                savedSystems.delete(title);
+                                menu.hide();
+                            }
+                        })
+                    ]
+                })
             ]
         }),
         // onDisappearing: () =>
@@ -1408,7 +1379,7 @@ var createSaveMenu = () =>
         }
         return children;
     };
-    let createViewButton = (title, saved = true) =>
+    let createViewButton = (title) =>
     {
         let btn = ui.createButton
         ({
@@ -1461,7 +1432,7 @@ var createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let namingMenu = createNamingMenu('Untitled L-system', renderer.system, systemGrid);
+                                let namingMenu = createNamingMenu('Untitled L-system', renderer.system.toString(), systemGrid);
                                 namingMenu.onDisappearing = () =>
                                 {
                                     systemGrid.children = getSystemGrid();
@@ -1686,7 +1657,7 @@ var getInternalState = () =>
     let result = `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
-        result += `\n${key}\n${value.toString()}`;
+        result += `\n${key}\n${value}`;
     }
     return result;
 }
@@ -1715,12 +1686,7 @@ var setInternalState = (stateStr) =>
     );
     
     for(let i = 3; i + 1 < values.length; i += 2)
-    {
-        let systemValues = values[i + 1].split(' ');
-        savedSystems.set(values[i],
-            new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]))
-        );
-    }
+        savedSystems.set(values[i], values[i + 1]);
 }
 
 var canResetStage = () => true;
