@@ -1160,7 +1160,7 @@ var createSystemMenu = () =>
     return menu;
 }
 
-var createNamingMenu = (title, system) =>
+var createNamingMenu = (title, system, systemGrid) =>
 {
     let tmpName = title;
     let nameEntry = ui.createEntry
@@ -1193,8 +1193,8 @@ var createNamingMenu = (title, system) =>
                         while(savedSystems.has(tmpName))
                             tmpName += ' (copy)';
                         savedSystems.set(tmpName, system);
-                        let saveMenu = createSaveMenu();
-                        saveMenu.show();
+                        // let saveMenu = createSaveMenu();
+                        // saveMenu.show();
                         menu.hide();
                     }
                 })
@@ -1209,7 +1209,7 @@ var createNamingMenu = (title, system) =>
     return menu;
 }
 
-var createViewMenu = (title, saved = true) =>
+var createViewMenu = (title, systemGrid, saved = true) =>
 {
     if(saved)
         system = savedSystems.get(title);
@@ -1284,8 +1284,12 @@ var createViewMenu = (title, saved = true) =>
                 {
                     Sound.playClick();
                     let namingMenu = createNamingMenu(title, system);
+                    namingMenu.onDisappearing = () =>
+                    {
+                        systemGrid.children = getSystemGrid();
+                    };
                     namingMenu.show();
-                    menu.hide();
+                    // menu.hide();
                 }
             })
         ];
@@ -1371,11 +1375,11 @@ var createViewMenu = (title, saved = true) =>
                 btnGrid
             ]
         }),
-        onDisappearing: () =>
-        {
-            let saveMenu = createSaveMenu();
-            saveMenu.show();
-        }
+        // onDisappearing: () =>
+        // {
+        //     let saveMenu = createSaveMenu();
+        //     saveMenu.show();
+        // }
     })
     return menu;
 }
@@ -1414,13 +1418,12 @@ var createSaveMenu = () =>
             onClicked: () =>
             {
                 Sound.playClick();
-                let viewMenu = createViewMenu(title);
-                // viewMenu.onDisappearing = () =>
-                // {
-                //     systemGrid.children = getSystemGrid();
-                // };
+                let viewMenu = createViewMenu(title, systemGrid);
+                viewMenu.onDisappearing = () =>
+                {
+                    systemGrid.children = getSystemGrid();
+                };
                 viewMenu.show();
-                menu.hide();
             }
         });
         return btn;
@@ -1458,9 +1461,13 @@ var createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let namingMenu = createNamingMenu('Untitled L-system', renderer.system);
+                                let namingMenu = createNamingMenu('Untitled L-system', renderer.system, systemGrid);
+                                namingMenu.onDisappearing = () =>
+                                {
+                                    systemGrid.children = getSystemGrid();
+                                };
                                 namingMenu.show();
-                                menu.hide();
+                                // menu.hide();
                             }
                         })
                     ]
