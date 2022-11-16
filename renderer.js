@@ -1256,8 +1256,6 @@ var createViewMenu = (title, saved = true) =>
             {
                 Sound.playClick();
                 renderer.applySystem(system);
-                let saveMenu = createSaveMenu();
-                saveMenu.show();
                 menu.hide();
             }
         });
@@ -1270,8 +1268,6 @@ var createViewMenu = (title, saved = true) =>
             {
                 Sound.playClick();
                 savedSystems.delete(title);
-                let saveMenu = createSaveMenu();
-                saveMenu.show();
                 menu.hide();
             }
         })
@@ -1375,11 +1371,11 @@ var createViewMenu = (title, saved = true) =>
                 btnGrid
             ]
         }),
-        // onDisappearing: () =>
-        // {
-        //     let saveMenu = createSaveMenu();
-        //     saveMenu.show();
-        // }
+        onDisappearing: () =>
+        {
+            let saveMenu = createSaveMenu();
+            saveMenu.show();
+        }
     })
     return menu;
 }
