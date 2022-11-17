@@ -20,12 +20,10 @@ it) then enter the picking menu. Press the plus symbol and paste the URL in.
 
 As of 0.15, a theory reset is required due to internal state format changes.
 
-## Screenshots (0.14)
+## Screenshots
 
-![ss1](screenshots/screenshot_19.jpg "Screenshot 1")
+![ss1](screenshots/screenshot_20.jpg "Screenshot 1")
 
-![ss2](screenshots/screenshot_17.jpg "Screenshot 2")
+![ss2](screenshots/screenshot_22.jpg "Screenshot 2")
 
-![ss3](screenshots/screenshot_16.jpg "Screenshot 3")
-
-![ss4](screenshots/screenshot_14.jpg "Screenshot 4")
+![ss3](screenshots/screenshot_21.jpg "Screenshot 3")
