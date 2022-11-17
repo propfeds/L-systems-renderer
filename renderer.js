@@ -7,12 +7,13 @@ import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { Color } from '../api/ui/properties/Color';
+import { StackOrientation } from '../api/ui/properties/StackOrientation';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.17';
+var version = 'v0.17.1';
 
 class LCG
 {
