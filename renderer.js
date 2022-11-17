@@ -153,14 +153,23 @@ class Renderer
     update(level, seedChanged = false)
     {
         let start = seedChanged ? 0 : this.levels.length;
-        this.lvl = level;
+        let charCount = 0;
         for(let i = start; i <= level; ++i)
         {
             if(i == 0)
                 this.levels[i] = `[${this.system.axiom}]`;
             else
                 this.levels[i] = this.system.derive(this.levels[i - 1]);
+            
+            // Threshold to prevent maximum statements error
+            charCount += this.levels[i].length;
+            if(charCount >= 25000)
+            {
+                this.lvl = i;
+                return;
+            }
         }
+        this.lvl = level;
     }
     reset()
     {
@@ -603,7 +612,7 @@ var getUpgradeListDelegate = () =>
     let cfgButton = createMenuButton(createConfigMenu, 'Renderer menu', height);
     cfgButton.row = 0;
     cfgButton.column = 1;
-    let expButton = createMenuButton(createSaveMenu, 'Save/load menu', height);
+    let expButton = createMenuButton(createSaveMenu, 'Save/load', height);
     expButton.row = 1;
     expButton.column = 0;
     let manualButton = createMenuButton(createManualMenu, 'Manual', height);
@@ -1047,6 +1056,7 @@ var createSystemMenu = () =>
         text: 'Add',
         row: 0,
         column: 1,
+        // heightRequest: 40,
         onClicked: () =>
         {
             Sound.playClick();
@@ -1082,62 +1092,67 @@ var createSystemMenu = () =>
         ({
             children:
             [
-                ui.createGrid
-                ({
-                    columnDefinitions: ['20*', '30*', '30*', '20*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Axiom: ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        axiomEntry,
-                        ui.createLatexLabel
-                        ({
-                            text: 'Turning angle (°): ',
-                            row: 0,
-                            column: 2,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        angleEntry,
-                    ]
-                }),
-                ui.createGrid
-                ({
-                    columnDefinitions: ['70*', '30*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Production rules: ',
-                            verticalOptions: LayoutOptions.CENTER,
-                            margin: new Thickness(0, 6)
-                        }),
-                        addRuleButton
-                    ]
-                }),
                 ui.createScrollView
                 ({
-                    // heightRequest: ui.screenHeight * 0.2,
-                    content: ruleStack
-                }),
-                ui.createGrid
-                ({
-                    columnDefinitions: ['70*', '30*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Seed (for stochastic systems): ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        seedEntry
-                    ]
+                    content: ui.createStackLayout
+                    ({
+                        children:
+                        [
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['20*', '30*', '30*', '20*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Axiom: ',
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    axiomEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Turning angle (°): ',
+                                        row: 0,
+                                        column: 2,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    angleEntry,
+                                ]
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Production rules: ',
+                                        verticalOptions: LayoutOptions.CENTER,
+                                        margin: new Thickness(0, 6)
+                                    }),
+                                    addRuleButton
+                                ]
+                            }),
+                            ruleStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Seed (for stochastic systems): ',
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    seedEntry
+                                ]
+                            })
+                        ]
+                    })
                 }),
                 ui.createBox
                 ({
@@ -1230,10 +1245,6 @@ var createViewMenu = (title, systemGrid) =>
             text: tmpRules[i]
         });
     }
-    let ruleStack = ui.createStackLayout
-    ({
-        children: ruleEntries
-    });
     let tmpSeed = Number(systemValues[2]);
 
     menu = ui.createPopup
@@ -1243,70 +1254,79 @@ var createViewMenu = (title, systemGrid) =>
         ({
             children:
             [
-                ui.createGrid
-                ({
-                    columnDefinitions: ['20*', '30*', '30*', '20*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Axiom: ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createEntry
-                        ({
-                            text: tmpAxiom,
-                            row: 0,
-                            column: 1
-                        }),
-                        ui.createLatexLabel
-                        ({
-                            text: 'Turning angle (°): ',
-                            row: 0,
-                            column: 2,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createEntry
-                        ({
-                            text: tmpAngle.toString(),
-                            row: 0,
-                            column: 3,
-                            horizontalTextAlignment: TextAlignment.END
-                        }),
-                    ]
-                }),
-                ui.createLatexLabel
-                ({
-                    text: 'Production rules: ',
-                    verticalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 6)
-                }),
                 ui.createScrollView
                 ({
-                    content: ruleStack
-                }),
-                ui.createGrid
-                ({
-                    columnDefinitions: ['70*', '30*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Seed (for stochastic systems): ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ui.createEntry
-                        ({
-                            text: tmpSeed.toString(),
-                            row: 0,
-                            column: 1,
-                            horizontalTextAlignment: TextAlignment.END
-                        })
-                    ]
+                    content: ui.createStackLayout
+                    ({
+                        children:
+                        [
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['20*', '30*', '30*', '20*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Axiom: ',
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    ui.createEntry
+                                    ({
+                                        text: tmpAxiom,
+                                        row: 0,
+                                        column: 1
+                                    }),
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Turning angle (°): ',
+                                        row: 0,
+                                        column: 2,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    ui.createEntry
+                                    ({
+                                        text: tmpAngle.toString(),
+                                        row: 0,
+                                        column: 3,
+                                        horizontalTextAlignment: TextAlignment.END
+                                    }),
+                                ]
+                            }),
+                            ui.createLatexLabel
+                            ({
+                                text: 'Production rules: ',
+                                verticalOptions: LayoutOptions.CENTER,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createStackLayout
+                            ({
+                                children: ruleEntries
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Seed (for stochastic systems): ',
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    ui.createEntry
+                                    ({
+                                        text: tmpSeed.toString(),
+                                        row: 0,
+                                        column: 1,
+                                        horizontalTextAlignment: TextAlignment.END
+                                    })
+                                ]
+                            })
+                        ]
+                    })
                 }),
                 ui.createBox
                 ({
@@ -1345,7 +1365,8 @@ var createViewMenu = (title, systemGrid) =>
                     ]
                 })
             ]
-        }),
+        })
+        
         // onDisappearing: () =>
         // {
         //     let saveMenu = createSaveMenu();
@@ -1386,6 +1407,7 @@ var createSaveMenu = () =>
             text: 'View',
             row: 0,
             column: 1,
+            // heightRequest: 40,
             onClicked: () =>
             {
                 Sound.playClick();
@@ -1429,6 +1451,7 @@ var createSaveMenu = () =>
                             text: 'Save',
                             row: 0,
                             column: 1,
+                            // heightRequest: 40,
                             onClicked: () =>
                             {
                                 Sound.playClick();
@@ -1458,7 +1481,7 @@ var createSaveMenu = () =>
                 ({
                     // heightRequest: ui.screenHeight * 0.25,
                     content: systemGrid
-                }),
+                })
                 // ui.createBox
                 // ({
                 //     heightRequest: 1,
