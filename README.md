@@ -22,8 +22,8 @@ As of 0.15, a theory reset is required due to internal state format changes.
 
 ## Screenshots
 
-![ss1](screenshots/screenshot_20.jpg "Screenshot 1")
+![ss1](screenshots/20.jpg "Screenshot 1")
 
-![ss2](screenshots/screenshot_22.jpg "Screenshot 2")
+![ss2](screenshots/22.jpg "Screenshot 2")
 
-![ss3](screenshots/screenshot_21.jpg "Screenshot 3")
+![ss3](screenshots/21.jpg "Screenshot 3")
