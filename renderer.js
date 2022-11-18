@@ -1,4 +1,4 @@
-import { FreeCost } from '../api/Costs';
+import { ConstantCost, FreeCost } from '../api/Costs';
 import { theory } from '../api/Theory';
 import { ui } from '../api/ui/UI';
 import { Utils } from '../api/Utils';
@@ -8,6 +8,7 @@ import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { Color } from '../api/ui/properties/Color';
 import { StackOrientation } from '../api/ui/properties/StackOrientation';
+import { TouchType } from '../api/ui/properties/TouchType';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
@@ -460,6 +461,8 @@ var tick = (elapsedTime, multiplier) =>
         {
             renderer.draw(l.level);
             angle.value = renderer.getAngle();
+            if(angle.value < 0)
+                angle.value += 360;
             progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
@@ -481,14 +484,14 @@ var createVariableButton = (variable, height) =>
             verticalOptions: LayoutOptions.CENTER,
             textColor: Color.TEXT_MEDIUM
         }),
-        borderColor: Color.BORDER
+        borderColor: Color.TRANSPARENT
     });
     return frame;
 }
 
-var createMinusButton = (variable, height, enableQuickbuy = false) =>
+var createMinusButton = (variable, height) =>
 {
-    let bc = () => variable.level > 0 ? Color.MINIGAME_TILE_BORDER : Color.MINIGAME_TILE_DARK;
+    let bc = () => variable.level > 0 ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let frame = ui.createFrame
     ({
         column: 0,
@@ -504,15 +507,25 @@ var createMinusButton = (variable, height, enableQuickbuy = false) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED)
             {
                 frame.borderColor = bc;
                 Sound.playClick();
                 variable.refund(1);
             }
-            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            else if(e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = bc;
+                Sound.playClick();
+                variable.refund(-1);
+            }
+            else if(e.type == TouchType.PRESSED)
             {
                 frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = bc;
             }
         },
         borderColor: bc
@@ -520,9 +533,9 @@ var createMinusButton = (variable, height, enableQuickbuy = false) =>
     return frame;
 }
 
-var createPlusButton = (variable, height, enableQuickbuy = false) =>
+var createPlusButton = (variable, height, quickbuyAmount = 10) =>
 {
-    let bc = () => variable.level < variable.maxLevel ? Color.MINIGAME_TILE_BORDER : Color.MINIGAME_TILE_DARK;
+    let bc = () => variable.level < variable.maxLevel ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let frame = ui.createFrame
     ({
         column: 1,
@@ -538,15 +551,26 @@ var createPlusButton = (variable, height, enableQuickbuy = false) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED)
             {
                 frame.borderColor = bc;
                 Sound.playClick();
                 variable.buy(1);
             }
-            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            else if(e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = bc;
+                Sound.playClick();
+                for(let i = 0; i < quickbuyAmount; ++i)
+                    variable.buy(1);
+            }
+            else if(e.type == TouchType.PRESSED)
             {
                 frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = bc;
             }
         },
         borderColor: bc
@@ -576,9 +600,13 @@ var createMenuButton = (menuFunc, name, height) =>
                 let menu = menuFunc();
                 menu.show();
             }
-            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            else if(e.type == TouchType.PRESSED)
             {
                 frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
             }
         },
         borderColor: Color.MINIGAME_TILE_BORDER
@@ -609,9 +637,13 @@ var createVariableButtonWithMenu = (variable, menuFunc, height) =>
                 let menu = menuFunc();
                 menu.show();
             }
-            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            else if(e.type == TouchType.PRESSED)
             {
                 frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
             }
         },
         borderColor: Color.MINIGAME_TILE_BORDER
