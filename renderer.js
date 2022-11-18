@@ -440,7 +440,7 @@ var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
 {
-    if(ts.level.isZero)
+    if(ts.level == 0)
         return;
     
     let timeLimit = 1 / ts.level;
