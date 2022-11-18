@@ -13,7 +13,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.17.1';
+var version = 'v0.17.2';
 
 class LCG
 {
@@ -481,13 +481,14 @@ var createVariableButton = (variable, height) =>
             verticalOptions: LayoutOptions.CENTER,
             textColor: Color.TEXT_MEDIUM
         }),
-        borderColor: Color.TEXT_DARK
+        borderColor: Color.BORDER
     });
     return frame;
 }
 
-var createMinusButton = (variable, height) =>
+var createMinusButton = (variable, height, enableQuickbuy = false) =>
 {
+    let bc = () => variable.level > 0 ? Color.MINIGAME_TILE_BORDER : Color.MINIGAME_TILE_DARK;
     let frame = ui.createFrame
     ({
         column: 0,
@@ -503,19 +504,25 @@ var createMinusButton = (variable, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
+                frame.borderColor = bc;
                 Sound.playClick();
                 variable.refund(1);
             }
+            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = Color.BORDER;
+            }
         },
-        borderColor: () => variable.level > 0 ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+        borderColor: bc
     });
     return frame;
 }
 
-var createPlusButton = (variable, height) =>
+var createPlusButton = (variable, height, enableQuickbuy = false) =>
 {
+    let bc = () => variable.level < variable.maxLevel ? Color.MINIGAME_TILE_BORDER : Color.MINIGAME_TILE_DARK;
     let frame = ui.createFrame
     ({
         column: 1,
@@ -531,13 +538,18 @@ var createPlusButton = (variable, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
+                frame.borderColor = bc;
                 Sound.playClick();
                 variable.buy(1);
             }
+            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = Color.BORDER;
+            }
         },
-        borderColor: () => variable.level < variable.maxLevel ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+        borderColor: bc
     });
     return frame;
 }
@@ -557,18 +569,24 @@ var createMenuButton = (menuFunc, name, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
+                frame.borderColor = MINIGAME_TILE_BORDER;
                 Sound.playClick();
                 let menu = menuFunc();
                 menu.show();
             }
+            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = Color.BORDER;
+            }
         },
-        borderColor: Color.TEXT_MEDIUM
+        borderColor: Color.MINIGAME_TILE_BORDER
     });
     return frame;
 }
 
+// For example: The level variable button opens the sequence menu
 var createVariableButtonWithMenu = (variable, menuFunc, height) =>
 {
     let frame = ui.createFrame
@@ -584,14 +602,19 @@ var createVariableButtonWithMenu = (variable, menuFunc, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
+                frame.borderColor = MINIGAME_TILE_BORDER;
                 Sound.playClick();
                 let menu = menuFunc();
                 menu.show();
             }
+            else if(e.type == TouchType.PRESSED || e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = Color.BORDER;
+            }
         },
-        borderColor: Color.TEXT_MEDIUM
+        borderColor: Color.MINIGAME_TILE_BORDER
     });
     return frame;
 }
