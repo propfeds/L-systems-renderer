@@ -14,7 +14,7 @@ var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.17.3';
+var version = 'v0.17.4';
 
 class LCG
 {
@@ -970,81 +970,90 @@ var createConfigMenu = () =>
         ({
             children:
             [
-                ui.createGrid
+                ui.createScrollView
                 ({
-                    columnDefinitions: ['70*', '30*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Initial scale: ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        iScaleEntry,
-                        ui.createLatexLabel
-                        ({
-                            text: 'Figure scale per level: ',
-                            row: 1,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        fScaleEntry,
-                        CFCLabel,
-                        CFCSwitch,
-                        camLabel,
-                        camGrid,
-                        FFLabel,
-                        FFEntry
-                    ]
-                }),
-                ui.createBox
-                ({
-                    heightRequest: 1,
-                    margin: new Thickness(0, 6)
-                }),
-                ui.createGrid
-                ({
-                    rowDefinitions: [40, 40, 40, 40, 40],
-                    columnDefinitions: ['70*', '30*'],
-                    children:
-                    [
-                        ui.createLatexLabel
-                        ({
-                            text: 'Offline drawing: ',
-                            row: 0,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        ODSwitch,
-                        ui.createLatexLabel
-                        ({
-                            text: 'Upright figure: ',
-                            row: 1,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        uprightSwitch,
-                        ui.createLatexLabel
-                        ({
-                            text: 'Quickdraw straight lines: ',
-                            row: 2,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        QDSwitch,
-                        ui.createLatexLabel
-                        ({
-                            text: 'Quick backtrack: ',
-                            row: 3,
-                            column: 0,
-                            verticalOptions: LayoutOptions.CENTER
-                        }),
-                        QBSwitch,
-                        EXBLabel,
-                        EXBSwitch
-                    ]
+                    content: ui.createStackLayout
+                    ({
+                        children:
+                        [
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Initial scale: ',
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    iScaleEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Figure scale per level: ',
+                                        row: 1,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    fScaleEntry,
+                                    CFCLabel,
+                                    CFCSwitch,
+                                    camLabel,
+                                    camGrid,
+                                    FFLabel,
+                                    FFEntry
+                                ]
+                            }),
+                            ui.createBox
+                            ({
+                                heightRequest: 1,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createGrid
+                            ({
+                                rowDefinitions: [40, 40, 40, 40, 40],
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Offline drawing: ',
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    ODSwitch,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Upright figure: ',
+                                        row: 1,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    uprightSwitch,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Quickdraw straight lines: ',
+                                        row: 2,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    QDSwitch,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Quick backtrack: ',
+                                        row: 3,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    QBSwitch,
+                                    EXBLabel,
+                                    EXBSwitch
+                                ]
+                            })
+                        ]
+                    })
                 }),
                 ui.createBox
                 ({
