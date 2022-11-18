@@ -127,7 +127,7 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, followFactor = 0.4, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, extendedBacktrack = false)
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, extendedBacktrack = false)
     {
         this.system = system;
         this.initScale = initScale;
@@ -351,7 +351,7 @@ var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
-var renderer = new Renderer(arrow, 1, 2, false, 1, 0, 0.4, false, false, false, false, false);
+var renderer = new Renderer(arrow, camX = 1);
 
 var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
