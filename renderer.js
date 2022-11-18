@@ -316,7 +316,7 @@ class Renderer
     }
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${this.levels[this.lvl].length}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx - 1}/${this.levels[this.lvl].length - 2}\\end{matrix}`;
     }
     getCursor()
     {
