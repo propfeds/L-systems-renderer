@@ -1006,6 +1006,7 @@ var createConfigMenu = () =>
                 }),
                 ui.createGrid
                 ({
+                    rowDefinitions: [40, 40, 40, 40, 40],
                     columnDefinitions: ['70*', '30*'],
                     children:
                     [
