@@ -12,9 +12,9 @@ import { TouchType } from '../api/ui/properties/TouchType';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
+var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.18, renderer configuration will be messed up due to internal state format changes. Reset not required.\nAs of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.17.4';
+var version = 'v0.18 WIP';
 
 class LCG
 {
@@ -127,14 +127,13 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, extendedBacktrack = false)
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, extendedBacktrack = false)
     {
         this.system = system;
         this.initScale = initScale;
         this.figureScale = figureScale;
         this.cursorFocused = cursorFocused;
-        this.camX = camX;
-        this.camY = camY;
+        this.camera = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
         this.offlineDrawing = offlineDrawing;
         this.upright = upright;
@@ -143,6 +142,7 @@ class Renderer
         this.extendedBacktrack = extendedBacktrack;
 
         this.state = new Vector3(0, 0, 0);
+        this.ori = new Vector3(0, 0, 0);
         this.levels = [];
         this.lvl = -1;
         this.stack = [];
@@ -176,21 +176,21 @@ class Renderer
     reset()
     {
         this.state = new Vector3(0, 0, 0);
+        this.ori = new Vector3(0, 0, 0);
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    configure(initScale, figureScale, cursorFocused, camX, camY, followFactor, offlineDrawing, upright, quickDraw, quickBacktrack, extendedBacktrack)
+    configure(initScale, figureScale, cursorFocused, camX, camY, camZ, followFactor, offlineDrawing, upright, quickDraw, quickBacktrack, extendedBacktrack)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright) || (quickDraw != this.quickDraw) || (quickBacktrack != this.quickBacktrack) || (extendedBacktrack != this.extendedBacktrack);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
         this.cursorFocused = cursorFocused;
-        this.camX = camX;
-        this.camY = camY;
+        this.camera = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
         this.offlineDrawing = offlineDrawing;
         this.upright = upright;
@@ -201,14 +201,13 @@ class Renderer
         if(requireReset)
             this.reset();
     }
-    configureStaticCamera(initScale, figureScale, camX, camY, upright)
+    configureStaticCamera(initScale, figureScale, camX, camY, camZ, upright)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
-        this.camX = camX;
-        this.camY = camY;
+        this.camera = new Vector3(camX, camY, camZ);
         this.upright = upright;
 
         if(requireReset)
@@ -228,42 +227,27 @@ class Renderer
         this.update(this.lvl, true);
         this.reset();
     }
-
-    turnLeft()
+    turn(dx = 0, dy = 0, dz = 0)
     {
-        this.state = new Vector3(this.state.x, this.state.y, this.state.z + 1);
-    }
-    turnRight()
-    {
-        this.state = new Vector3(this.state.x, this.state.y, this.state.z - 1);
+        this.ori.x += dx;
+        this.ori.y += dy;
+        this.ori.z += dz;
     }
     forward()
     {
-        this.state = new Vector3(
-            this.state.x + Math.cos(this.system.turnAngle * this.state.z * Math.PI / 180),
-            this.state.y + Math.sin(this.system.turnAngle * this.state.z * Math.PI / 180),
-            this.state.z
-        );
-    }
-    centre()
-    {
-        if(this.cursorFocused)
-            return -this.getCursor(this.lvl);
-        else
-        {
-            if(this.upright)
-                return new Vector3(
-                    this.camY / this.initScale,
-                    this.camX / this.initScale,
-                    0
-                );
-            else
-                return new Vector3(
-                    -this.camX / this.initScale,
-                    this.camY / this.initScale,
-                    0
-                );
-        }
+        // Alpha, Beta and Ygamma, representing yaw, pitch and roll
+        let a = this.system.turnAngle * this.ori.z * Math.PI / 180;
+        let b = this.system.turnAngle * this.ori.y * Math.PI / 180;
+        // let y = this.system.turnAngle * this.ori.x * Math.PI / 180;
+        // How cruel is this world that we don't actually need gamma, and I
+        // wasted a fucking millenium trying to figure out why the equations
+        // do not contain the roll (gamma). It is because the roll only spins
+        // the vector head, and does not change the direction.
+
+        let dx = Math.cos(a) * Math.cos(b);
+        let dy = Math.sin(a) * Math.cos(b);
+        let dz = -Math.sin(b);
+        this.state += new Vector3(dx, dy, dz);
     }
 
     draw(level)
@@ -277,14 +261,32 @@ class Renderer
         {
             switch(this.levels[this.lvl][i])
             {
-                case '+': this.turnLeft(); break;
-                case '-': this.turnRight(); break;
+                case '+':
+                    this.turn(0, 0, 1);
+                    break;
+                case '-':
+                    this.turn(0, 0, -1);
+                    break;
+                case '&':
+                    this.turn(0, 1, 0);
+                    break;
+                case '^':
+                    this.turn(0, -1, 0);
+                    break;
+                case '\\':
+                    this.turn(1, 0, 0);
+                    break;
+                case '/':
+                    this.turn(-1, 0, 0);
+                    break;
                 case '[':
                     this.idStack.push(this.stack.length);
-                    this.stack.push(this.state);
+                    this.stack.push([this.state, this.ori]);
                     break;
                 case ']':
-                    this.state = this.stack.pop();
+                    let t = this.stack.pop();
+                    this.state = t[0];
+                    this.ori = t[1];
                     if(this.stack.length == this.idStack[this.idStack.length - 1])
                     {
                         this.idStack.pop();
@@ -295,7 +297,7 @@ class Renderer
                     return;
                 default:
                     if(!this.quickBacktrack || backtrackList[this.extendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]))
-                        this.stack.push(this.state);
+                        this.stack.push([this.state, this.ori]);
                     this.forward();
                     this.idx = i + 1;
                     if(this.quickDraw)
@@ -306,9 +308,14 @@ class Renderer
         }
     }
 
-    getAngle()
+    getAngles()
     {
-        return this.state.z * this.system.turnAngle % 360;
+        // Alpha, Beta and Ygamma, representing yawn, stretch and roll
+        let result = this.ori * this.system.turnAngle;
+        result.x %= 360;
+        result.y %= 360;
+        result.z %= 360;
+        return result;
     }
     getProgress()
     {
@@ -316,30 +323,42 @@ class Renderer
     }
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx - 1}/${this.levels[this.lvl].length - 2}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&i=${this.idx - 1}/${this.levels[this.lvl].length - 2}\\end{matrix}`;
+    }
+    getCentre()
+    {
+        if(this.cursorFocused)
+            return -this.getCursor(this.lvl);
+        else
+        {
+            if(this.upright)
+                return new Vector3(this.camera.y, this.camera.x, -this.camera.z) / this.initScale;
+            else
+                return new Vector3(-this.camera.x, this.camera.y, -this.camera.z) / this.initScale;
+        }
     }
     getCursor()
     {
         let coords = this.state / (this.initScale * this.figureScale ** this.lvl);
         if(this.upright)
-            return new Vector3(coords.y, -coords.x, 0);
+            return new Vector3(-coords.y, -coords.x, coords.z);
         else
-            return new Vector3(coords.x, coords.y, 0);
+            return new Vector3(coords.x, -coords.y, coords.z);
     }
     getCamera()
     {
         if(this.cursorFocused)
         {
-            let newCamera = this.centre() * this.followFactor + this.lastCamera * (1 - this.followFactor);
+            let newCamera = this.getCentre() * this.followFactor + this.lastCamera * (1 - this.followFactor);
             this.lastCamera = newCamera;
             return newCamera;
         }
         else
-            return this.centre();
+            return this.getCentre();
     }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camX} ${this.camY} ${this.followFactor} ${this.offlineDrawing? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack? 1 : 0} ${this.extendedBacktrack? 1 : 0}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack? 1 : 0} ${this.extendedBacktrack? 1 : 0}`;
     }
 }
 
@@ -351,7 +370,7 @@ var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
-var renderer = new Renderer(arrow, camX = 1);
+var renderer = new Renderer(arrow, 1, 2, false, 1);
 
 var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
@@ -375,37 +394,37 @@ var manualPages =
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nTurning angle: changes the angle of +, -.\n\nFigure scale: zooms the figure out by a multiplier each level.\n\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\n\nUpright figure: rotates figure by 90 degrees.\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nTurning angle: changes the angle of +, -.\n\nFigure scale: zooms the figure out by a multiplier each level.\n\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\n\nUpright figure: rotates figure by 90 degrees (counter-clockwise) around the z-axis.\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
     },
     {
         title: 'Example: Arrow weed',
-        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
+        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0, 0)',
         system: arrow,
-        config: [1, 2, 1, 0, false]
+        config: [1, 2, 1, 0, 0, false]
     },
     {
         title: 'Example: Cultivar FF',
-        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: 15°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
+        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: 15°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0, 0)',
         system: cultivarFF,
-        config: [1, 2, 1, 0, true]
+        config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FXF',
-        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X\n\nTurning angle: 27°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?)',
+        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X\n\nTurning angle: 27°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?, 0)',
         system: cultivarFXF,
-        config: [1.5, 2, 0.25, 0.75, false]
+        config: [1.5, 2, 0.25, 0.75, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF',
-        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X\n\nTurning angle: 22.5°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?)',
+        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X\n\nTurning angle: 22.5°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?, 0)',
         system: cultivarXEXF,
-        config: [1, 3, 0.75, -0.25, true]
+        config: [1, 3, 0.75, -0.25, 0, true]
     },
     {
         title: 'Example: Dragon curve',
-        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\n\n\nScale: 2, sqrt(2)\n\nCamera centre: (0, 0)',
+        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\n\n\nScale: 2, sqrt(2)\n\nCamera centre: (0, 0, 0)',
         system: dragon,
-        config: [2, Math.sqrt(2), 0, 0, false]
+        config: [2, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
@@ -416,13 +435,18 @@ var manualPages =
 
 var init = () =>
 {
-    angle = theory.createCurrency('°', '\\degree');
+    // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
+    // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
+    // roll = theory.createCurrency('° (roll)', '\\degree_x');
+    yaw = theory.createCurrency('°', '\\degree_z');
+    pitch = theory.createCurrency('°', '\\degree_y');
+    roll = theory.createCurrency('°', '\\degree_x');
     progress = theory.createCurrency('%');
     // l (Level)
     {
         let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
-        l = theory.createUpgrade(0, angle, new FreeCost);
+        l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.canBeRefunded = (_) => true;
@@ -431,7 +455,7 @@ var init = () =>
     {
         let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
-        ts = theory.createUpgrade(1, angle, new FreeCost);
+        ts = theory.createUpgrade(1, progress, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
         ts.maxLevel = 10;
@@ -465,9 +489,10 @@ var tick = (elapsedTime, multiplier) =>
         if(!gameOffline || renderer.offlineDrawing)
         {
             renderer.draw(l.level);
-            angle.value = renderer.getAngle();
-            if(angle.value < 0)
-                angle.value += 360;
+            let angles = renderer.getAngles();
+            yaw.value = angles.z;
+            pitch.value = angles.y;
+            roll.value = angles.x;
             progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
@@ -805,11 +830,12 @@ var createConfigMenu = () =>
             }
         }
     });
-    let tmpCX = renderer.camX;
-    let tmpCY = renderer.camY;
+    let tmpCX = renderer.camera.x;
+    let tmpCY = renderer.camera.y;
+    let tmpCZ = renderer.camera.z;
     let camLabel = ui.createLatexLabel
     ({
-        text: 'Camera centre (x, y): ',
+        text: 'Camera centre (x, y, z): ',
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER,
@@ -819,7 +845,7 @@ var createConfigMenu = () =>
     ({
         row: 3,
         column: 1,
-        columnDefinitions: ['50*', '50*'],
+        columnDefinitions: ['30*', '30*', '30*'],
         isVisible: !tmpCFC,
         children:
         [
@@ -843,6 +869,17 @@ var createConfigMenu = () =>
                 onTextChanged: (ot, nt) =>
                 {
                     tmpCY = Number(nt);
+                }
+            }),
+            ui.createEntry
+            ({
+                text: tmpCZ.toString(),
+                row: 0,
+                column: 2,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCZ = Number(nt);
                 }
             })
         ]
@@ -1650,7 +1687,7 @@ var createManualMenu = () =>
                                 if('config' in manualPages[page])
                                 {
                                     let a = manualPages[page].config;
-                                    renderer.configureStaticCamera(a[0], a[1], a[2], a[3], a[4]);
+                                    renderer.configureStaticCamera(a[0], a[1], a[2], a[3], a[4], a[5]);
                                 }
                                 menu.hide();
                             }
@@ -1770,19 +1807,32 @@ var setInternalState = (stateStr) =>
     let system = new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]));
 
     let rendererValues = values[1].split(' ');
-    renderer = new Renderer(system,
-        Number(rendererValues[0]),
-        Number(rendererValues[1]),
-        Boolean(Number(rendererValues[2])),
-        Number(rendererValues[3]),
-        Number(rendererValues[4]),
-        Number(rendererValues[5]),
-        Boolean(Number(rendererValues[6])),
-        Boolean(Number(rendererValues[7])),
-        Boolean(Number(rendererValues[8])),
-        Boolean(Number(rendererValues[9])),
-        Boolean(Number(rendererValues[10]))
-    );
+    if(rendererValues.length > 0)
+        rendererValues[0] = Number(rendererValues[0]);
+    if(rendererValues.length > 1)
+        rendererValues[1] = Number(rendererValues[1]);
+    if(rendererValues.length > 2)
+        rendererValues[2] = Boolean(Number(rendererValues[2]));
+    if(rendererValues.length > 3)
+        rendererValues[3] = Number(rendererValues[3]);
+    if(rendererValues.length > 4)
+        rendererValues[4] = Number(rendererValues[4]);
+    if(rendererValues.length > 5)
+        rendererValues[5] = Number(rendererValues[5]);
+    if(rendererValues.length > 6)
+        rendererValues[6] = Number(rendererValues[6]);
+    if(rendererValues.length > 7)
+        rendererValues[7] = Boolean(Number(rendererValues[7]));
+    if(rendererValues.length > 8)
+        rendererValues[8] = Boolean(Number(rendererValues[8]));
+    if(rendererValues.length > 9)
+        rendererValues[9] = Boolean(Number(rendererValues[9]));
+    if(rendererValues.length > 10)
+        rendererValues[10] = Boolean(Number(rendererValues[10]));
+    if(rendererValues.length > 11)
+        rendererValues[11] = Boolean(Number(rendererValues[11]));
+
+    renderer = new Renderer(system, ...rendererValues);
     
     for(let i = 3; i + 1 < values.length; i += 2)
         savedSystems.set(values[i], values[i + 1]);

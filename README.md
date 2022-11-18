@@ -10,7 +10,7 @@ L-systems renderer in Exponential Idle.
 
 ## Installation
 
-Current version: 0.17.4
+Current version: 0.18
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to the raw code page of this theory. Copy that page's URL.
