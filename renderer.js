@@ -571,7 +571,7 @@ var createMenuButton = (menuFunc, name, height) =>
         {
             if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
-                frame.borderColor = MINIGAME_TILE_BORDER;
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
                 let menu = menuFunc();
                 menu.show();
@@ -604,7 +604,7 @@ var createVariableButtonWithMenu = (variable, menuFunc, height) =>
         {
             if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
-                frame.borderColor = MINIGAME_TILE_BORDER;
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
                 let menu = menuFunc();
                 menu.show();
