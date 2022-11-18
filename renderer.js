@@ -786,16 +786,17 @@ var createConfigMenu = () =>
     });
     let CFCSwitch = ui.createSwitch
     ({
-        isToggled: () => tmpCFC,
+        isToggled: tmpCFC,
         row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpCFC = !tmpCFC;
+                CFCSwitch.isToggled = tmpCFC;
                 camLabel.isVisible = !tmpCFC;
                 camGrid.isVisible = !tmpCFC;
                 FFLabel.isVisible = tmpCFC;
@@ -871,64 +872,68 @@ var createConfigMenu = () =>
     let tmpOD = renderer.offlineDrawing;
     let ODSwitch = ui.createSwitch
     ({
-        isToggled: () => tmpOD,
+        isToggled: tmpOD,
         row: 0,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpOD = !tmpOD;
+                ODSwitch.isToggled = tmpOD;
             }
         }
     });
     let tmpUpright = renderer.upright;
     let uprightSwitch = ui.createSwitch
     ({
-        isToggled: () => tmpUpright,
+        isToggled: tmpUpright,
         row: 1,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpUpright = !tmpUpright;
+                uprightSwitch.isToggled = tmpUpright;
             }
         }
     });
     let tmpQD = renderer.quickDraw;
     let QDSwitch = ui.createSwitch
     ({
-        isToggled: () => tmpQD,
+        isToggled: tmpQD,
         row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpQD = !tmpQD;
+                QDSwitch.isToggled = tmpQD;
             }
         }
     });
     let tmpQB = renderer.quickBacktrack;
     let QBSwitch = ui.createSwitch
     ({
-        isToggled: () => tmpQB,
+        isToggled: tmpQB,
         row: 3,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpQB = !tmpQB;
+                QBSwitch.isToggled = tmpQB;
             }
         }
     });
@@ -942,16 +947,17 @@ var createConfigMenu = () =>
     });
     let EXBSwitch = ui.createSwitch
     ({
-        isToggled: () => tmpEXB,
+        isToggled: tmpEXB,
         row: 4,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpEXB = !tmpEXB;
+                EXBSwitch.isToggled = tmpEXB;
                 EXBLabel.text = `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`;
             }
         }
@@ -1000,6 +1006,7 @@ var createConfigMenu = () =>
                 }),
                 ui.createGrid
                 ({
+                    rowDefinitions: [40, 40, 40, 40, 40],
                     columnDefinitions: ['70*', '30*'],
                     children:
                     [
