@@ -436,9 +436,9 @@ var init = () =>
     // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
     // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
     // roll = theory.createCurrency('° (roll)', '\\degree_x');
-    yaw = theory.createCurrency('°', '\\degree_z');
-    pitch = theory.createCurrency('°', '\\degree_y');
-    roll = theory.createCurrency('°', '\\degree_x');
+    yaw = theory.createCurrency('° (yaw)', '\\degree_z');
+    pitch = theory.createCurrency('° (pitch)', '\\degree_y');
+    // roll = theory.createCurrency('°x', '\\degree_x');
     progress = theory.createCurrency('%');
     // l (Level)
     {
@@ -490,7 +490,7 @@ var tick = (elapsedTime, multiplier) =>
             let angles = renderer.getAngles();
             yaw.value = angles.z;
             pitch.value = angles.y;
-            roll.value = angles.x;
+            // roll.value = angles.x;
             progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
