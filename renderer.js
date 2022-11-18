@@ -1,4 +1,4 @@
-import { ConstantCost, FreeCost } from '../api/Costs';
+import { FreeCost } from '../api/Costs';
 import { theory } from '../api/Theory';
 import { ui } from '../api/ui/UI';
 import { Utils } from '../api/Utils';
@@ -7,9 +7,7 @@ import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { Color } from '../api/ui/properties/Color';
-import { StackOrientation } from '../api/ui/properties/StackOrientation';
 import { TouchType } from '../api/ui/properties/TouchType';
-import { FontFamily } from '../api/ui/properties/FontFamily';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
@@ -128,7 +126,7 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, extendedBacktrack = false)
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/[]')
     {
         this.system = system;
         this.initScale = initScale;
@@ -140,7 +138,7 @@ class Renderer
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
-        this.extendedBacktrack = extendedBacktrack;
+        this.backtrackList = backtrackList;
 
         this.state = new Vector3(0, 0, 0);
         this.ori = new Vector3(0, 0, 0);
@@ -184,9 +182,9 @@ class Renderer
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    configure(initScale, figureScale, cursorFocused, camX, camY, camZ, followFactor, offlineDrawing, upright, quickDraw, quickBacktrack, extendedBacktrack)
+    configure(initScale, figureScale, cursorFocused, camX, camY, camZ, followFactor, offlineDrawing, upright, quickDraw, quickBacktrack, backtrackList)
     {
-        let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright) || (quickDraw != this.quickDraw) || (quickBacktrack != this.quickBacktrack) || (extendedBacktrack != this.extendedBacktrack);
+        let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright) || (quickDraw != this.quickDraw) || (quickBacktrack != this.quickBacktrack) || (backtrackList != this.backtrackList);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
@@ -197,7 +195,7 @@ class Renderer
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
-        this.extendedBacktrack = extendedBacktrack;
+        this.backtrackList = backtrackList;
 
         if(requireReset)
             this.reset();
@@ -295,7 +293,7 @@ class Renderer
                     }
                     return;
                 default:
-                    let breakAhead = backtrackList[this.extendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]);
+                    let breakAhead = this.backtrackList.includes(this.levels[this.lvl][i + 1]);
                     if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
                     this.forward();
@@ -358,7 +356,7 @@ class Renderer
     }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing ? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.extendedBacktrack ? 1 : 0}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing ? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
 
@@ -376,7 +374,6 @@ var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
 var time = 0;
 var gameOffline = false;
-var backtrackList = ['[]', '+-&^\\/[]'];
 var page = 0;
 var manualPages =
 [
@@ -974,30 +971,22 @@ var createConfigMenu = () =>
             }
         }
     });
-    let tmpEXB = renderer.extendedBacktrack;
-    let EXBLabel = ui.createLabel
+    let tmpEXB = renderer.backtrackList;
+    let EXBLabel = ui.createLatexLabel
     ({
-        text: `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`,
+        text: 'Backtrack list: ',
         row: 4,
         column: 0,
-        fontSize: 16,
         verticalOptions: LayoutOptions.CENTER
     });
-    let EXBSwitch = ui.createSwitch
+    let EXBEntry = ui.createEntry
     ({
-        isToggled: tmpEXB,
+        text: tmpEXB,
         row: 4,
         column: 1,
-        horizontalOptions: LayoutOptions.END,
-        onTouched: (e) =>
+        onTextChanged: (ot, nt) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
-            {
-                Sound.playClick();
-                tmpEXB = !tmpEXB;
-                EXBSwitch.isToggled = tmpEXB;
-                EXBLabel.text = `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`;
-            }
+            tmpEXB = nt;
         }
     });
 
@@ -1050,7 +1039,7 @@ var createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                rowDefinitions: [40, 40, 40, 40, 40],
+                                // rowDefinitions: [40, 40, 40, 40, 40],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -1087,7 +1076,7 @@ var createConfigMenu = () =>
                                     }),
                                     QBSwitch,
                                     EXBLabel,
-                                    EXBSwitch
+                                    EXBEntry
                                 ]
                             })
                         ]
@@ -1832,8 +1821,6 @@ var setInternalState = (stateStr) =>
         rendererValues[9] = Boolean(Number(rendererValues[9]));
     if(rendererValues.length > 10)
         rendererValues[10] = Boolean(Number(rendererValues[10]));
-    if(rendererValues.length > 11)
-        rendererValues[11] = Boolean(Number(rendererValues[11]));
 
     renderer = new Renderer(system, ...rendererValues);
     
