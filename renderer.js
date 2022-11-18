@@ -432,6 +432,7 @@ var init = () =>
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
+        ts.boughtOrRefunded = (_) => time = 0;
     }
 }
 
@@ -466,8 +467,7 @@ var tick = (elapsedTime, multiplier) =>
             progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
-
-        time = 0;
+        time -= timeLimit;
     }
 }
 
