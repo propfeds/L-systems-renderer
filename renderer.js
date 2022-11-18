@@ -356,7 +356,7 @@ class Renderer
     }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack? 1 : 0} ${this.extendedBacktrack? 1 : 0}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing ? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.extendedBacktrack ? 1 : 0}`;
     }
 }
 
@@ -1101,7 +1101,7 @@ var createConfigMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpFF, tmpOD, tmpUpright, tmpQD, tmpQB, tmpEXB);
+                        renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpOD, tmpUpright, tmpQD, tmpQB, tmpEXB);
                         menu.hide();
                     }
                 })
