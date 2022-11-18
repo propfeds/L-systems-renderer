@@ -229,9 +229,7 @@ class Renderer
     }
     turn(dx = 0, dy = 0, dz = 0)
     {
-        this.ori.x += dx;
-        this.ori.y += dy;
-        this.ori.z += dz;
+        this.ori += new Vector3(dx, dy, dz);
     }
     forward()
     {
