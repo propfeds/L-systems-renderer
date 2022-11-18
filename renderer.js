@@ -1,4 +1,4 @@
-import { FreeCost } from '../api/Costs';
+import { ConstantCost, FreeCost } from '../api/Costs';
 import { theory } from '../api/Theory';
 import { ui } from '../api/ui/UI';
 import { Utils } from '../api/Utils';
@@ -8,12 +8,13 @@ import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { Color } from '../api/ui/properties/Color';
 import { StackOrientation } from '../api/ui/properties/StackOrientation';
+import { TouchType } from '../api/ui/properties/TouchType';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.15, a theory reset is required due to internal state format changes.';
 var authors = 'propfeds#5988';
-var version = 'v0.17.1';
+var version = 'v0.17.2';
 
 class LCG
 {
@@ -315,7 +316,7 @@ class Renderer
     }
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx}/${this.levels[this.lvl].length}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&a=${this.state.z},&i=${this.idx - 1}/${this.levels[this.lvl].length - 2}\\end{matrix}`;
     }
     getCursor()
     {
@@ -361,20 +362,24 @@ var page = 0;
 var manualPages =
 [
     {
-        title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is used to model plants and draw fractal figures.\n\nAxiom: the starting sequence\n\nRules: how each symbol in the sequence is derived after each level\n\nAny letter: moves cursor forward to draw\n\n+ -: turns cursor left/right by an angle\n\n[ ]: allows for branches, by queueing cursor positions on a stack\n\n, : separates between possible derivations'
+        title: 'The Main Screen',
+        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec).\n\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
     },
     {
-        title: 'Constructing an L-system',
-        contents: 'The L-system menu provides the tools for constructon with infinite production rules!\n\nEach rule is written in the form of:\n\n(symbol)=(derivation 0),(derivation 1),...\n\nOne out of multiple derivations on one line will be randomly chosen when deriving.\n\n\n\nTraditionally, F is used to mean forward, but any letter should work (lower-case letters in the official grammar don\'t draw a line, but that is impossible for this theory).\n\nBrackets work in a stack mechanism, so for each production rule, every [ has to be followed by a ].'
+        title: 'A Primer on L-systems',
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\n\n\nSyntax:\n\nAxiom: the starting sequence.\n\nRules: how each symbol in the sequence is derived per level.\n\nEach rule is written in the form of:\n\n(symbol)=(derivation(s))\n\nAny letter: moves cursor forward to draw.\n\n+ -: turns cursor left/right by an angle.\n\n[ ]: allows for branches, by queueing cursor positions on a stack.\n\n, : separates between derivations (for stochastic systems).'
+    },
+    {
+        title: 'Tips on Constructing an L-system',
+        contents: 'Each letter can be used to mean different things, such as drawing a flower, emulating growth stages, alternating between patterns, etc. Traditionally, F is used to mean forward, and X to create new branches; but beyond that, the sky is the limit!\n\nBrackets work in a stack mechanism, therefore every [ has to be properly followed by a ] in the same production rule.\n\nTo create a stochastic system, simply list several derivations in the same rule, separated by a , (comma). One of those derivations will be randomly selected per symbol whenever the system is derived.\n\nGenerally, to keep a degree of uniformity in the system, it is advised for the derivations to be similar in shape.'
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system.\n\nTurning angle: changes the angle of +, -\n\nFigure scale: zooms the figure out by a multiplier each level\n\nCamera centre: sets camera position for level 0 (follows figure scale, and is based on non-upright logic)\n\nUpright figure: rotates figure by 90 degrees\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nTurning angle: changes the angle of +, -.\n\nFigure scale: zooms the figure out by a multiplier each level.\n\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\n\nUpright figure: rotates figure by 90 degrees.\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
     },
     {
         title: 'Example: Arrow weed',
-        contents: 'The default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
+        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0)',
         system: arrow,
         config: [1, 2, 1, 0, false]
     },
@@ -431,6 +436,7 @@ var init = () =>
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
+        ts.boughtOrRefunded = (_) => time = 0;
     }
 }
 
@@ -438,7 +444,7 @@ var alwaysShowRefundButtons = () => true;
 
 var tick = (elapsedTime, multiplier) =>
 {
-    if(ts.level.isZero)
+    if(ts.level == 0)
         return;
     
     let timeLimit = 1 / ts.level;
@@ -460,11 +466,12 @@ var tick = (elapsedTime, multiplier) =>
         {
             renderer.draw(l.level);
             angle.value = renderer.getAngle();
+            if(angle.value < 0)
+                angle.value += 360;
             progress.value = renderer.getProgress();        
             theory.invalidateTertiaryEquation();
         }
-
-        time = 0;
+        time -= timeLimit;
     }
 }
 
@@ -481,13 +488,14 @@ var createVariableButton = (variable, height) =>
             verticalOptions: LayoutOptions.CENTER,
             textColor: Color.TEXT_MEDIUM
         }),
-        borderColor: Color.TEXT_DARK
+        borderColor: Color.TRANSPARENT
     });
     return frame;
 }
 
 var createMinusButton = (variable, height) =>
 {
+    let bc = () => variable.level > 0 ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let frame = ui.createFrame
     ({
         column: 0,
@@ -503,19 +511,35 @@ var createMinusButton = (variable, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED)
             {
+                frame.borderColor = bc;
                 Sound.playClick();
                 variable.refund(1);
             }
+            else if(e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = bc;
+                Sound.playClick();
+                variable.refund(-1);
+            }
+            else if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = bc;
+            }
         },
-        borderColor: () => variable.level > 0 ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+        borderColor: bc
     });
     return frame;
 }
 
-var createPlusButton = (variable, height) =>
+var createPlusButton = (variable, height, quickbuyAmount = 10) =>
 {
+    let bc = () => variable.level < variable.maxLevel ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let frame = ui.createFrame
     ({
         column: 1,
@@ -531,13 +555,29 @@ var createPlusButton = (variable, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED)
             {
+                frame.borderColor = bc;
                 Sound.playClick();
                 variable.buy(1);
             }
+            else if(e.type == TouchType.LONGPRESS)
+            {
+                frame.borderColor = bc;
+                Sound.playClick();
+                for(let i = 0; i < quickbuyAmount; ++i)
+                    variable.buy(1);
+            }
+            else if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = bc;
+            }
         },
-        borderColor: () => variable.level < variable.maxLevel ? Color.TEXT_MEDIUM : Color.TEXT_DARK
+        borderColor: bc
     });
     return frame;
 }
@@ -557,18 +597,28 @@ var createMenuButton = (menuFunc, name, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
                 let menu = menuFunc();
                 menu.show();
             }
+            else if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
+            }
         },
-        borderColor: Color.TEXT_MEDIUM
+        borderColor: Color.MINIGAME_TILE_BORDER
     });
     return frame;
 }
 
+// For example: The level variable button opens the sequence menu
 var createVariableButtonWithMenu = (variable, menuFunc, height) =>
 {
     let frame = ui.createFrame
@@ -584,14 +634,23 @@ var createVariableButtonWithMenu = (variable, menuFunc, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.PRESSED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
                 let menu = menuFunc();
                 menu.show();
             }
+            else if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.BORDER;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
+            }
         },
-        borderColor: Color.TEXT_MEDIUM
+        borderColor: Color.MINIGAME_TILE_BORDER
     });
     return frame;
 }
@@ -1633,7 +1692,7 @@ var createSequenceMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: `Sequence Levels`,
+        title: `Sequences Menu`,
         content: ui.createStackLayout
         ({
             children:
