@@ -9,6 +9,7 @@ import { Thickness } from '../api/ui/properties/Thickness';
 import { Color } from '../api/ui/properties/Color';
 import { StackOrientation } from '../api/ui/properties/StackOrientation';
 import { TouchType } from '../api/ui/properties/TouchType';
+import { FontFamily } from '../api/ui/properties/FontFamily';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
@@ -294,11 +295,12 @@ class Renderer
                     }
                     return;
                 default:
-                    if(!this.quickBacktrack || backtrackList[this.extendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]))
+                    let breakAhead = backtrackList[this.extendedBacktrack ? 1 : 0].includes(this.levels[this.lvl][i + 1]);
+                    if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
                     this.forward();
                     this.idx = i + 1;
-                    if(this.quickDraw)
+                    if(this.quickDraw && !breakAhead)
                         break;
                     else
                         return;
@@ -374,59 +376,59 @@ var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
 var time = 0;
 var gameOffline = false;
-var backtrackList = ['+-', '+-[]'];
+var backtrackList = ['[]', '+-&^\\/[]'];
 var page = 0;
 var manualPages =
 [
     {
         title: 'The Main Screen',
-        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec).\n\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
+        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec).\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
     },
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\n\n\nSyntax:\n\nAxiom: the starting sequence.\n\nRules: how each symbol in the sequence is derived per level.\n\nEach rule is written in the form of:\n\n(symbol)=(derivation(s))\n\nAny letter: moves cursor forward to draw.\n\n+ -: turns cursor left/right by an angle.\n\n[ ]: allows for branches, by queueing cursor positions on a stack.\n\n, : separates between derivations (for stochastic systems).'
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor counter/clockwise on the z-axis (yaw) by an angle.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n[ ]: allows for branches, by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
     },
     {
         title: 'Tips on Constructing an L-system',
-        contents: 'Each letter can be used to mean different things, such as drawing a flower, emulating growth stages, alternating between patterns, etc. Traditionally, F is used to mean forward, and X to create new branches; but beyond that, the sky is the limit!\n\nBrackets work in a stack mechanism, therefore every [ has to be properly followed by a ] in the same production rule.\n\nTo create a stochastic system, simply list several derivations in the same rule, separated by a , (comma). One of those derivations will be randomly selected per symbol whenever the system is derived.\n\nGenerally, to keep a degree of uniformity in the system, it is advised for the derivations to be similar in shape.'
+        contents: 'Each letter can be used to mean different things, such as drawing a flower, emulating growth stages, alternating between patterns, etc.\nTraditionally, F is used to mean forward, and X to create new branches; but beyond that, the sky is the limit!\n\nBrackets work in a stack mechanism, therefore every [ has to be properly followed by a ] in the same production rule.\n\nTo create a stochastic system, simply list several derivations in the same rule, separated by a , (comma). One of those derivations will be randomly selected per symbol whenever the system is derived.\nGenerally, to keep a degree of uniformity in the system, it is advised for the derivations to be similar in shape.'
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nTurning angle: changes the angle of +, -.\n\nFigure scale: zooms the figure out by a multiplier each level.\n\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\n\nUpright figure: rotates figure by 90 degrees (counter-clockwise) around the z-axis.\n\nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
+        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nInitial scale: zooms out by this much for every figure.\nFigure scale: zooms the figure out by a multiplier per level.\n\nCamera mode: toggles between static and cursor-focused.\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\nCamera follow factor: changes how quickly the camera chases the cursor.\n\nOffline drawing: when enabled, no longer resets the graph while tabbed out.\nUpright figure: rotates figure by 90 degrees counter-clockwise around the z-axis.\nQuickdraw: \nNote: figure scale and camera centre needs to be experimented manually for each individual L-system.'
     },
     {
         title: 'Example: Arrow weed',
-        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\n\nF→FF\n\nX→F[+X][-X]FX\n\nTurning angle: 30°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0, 0)',
+        contents: 'Meet the default system. It tastes like mint.\nAxiom: X\nF→FF\nX→F[+X][-X]FX\nTurning angle: 30°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
     },
     {
         title: 'Example: Cultivar FF',
-        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\n\nF→FF\n\nX→F-[[X]+X]+F[-X]-X\n\nTurning angle: 15°\n\n\n\nScale: 1, 2\n\nCamera centre: (1, 0, 0)',
+        contents: 'Represents a common source of carbohydrates.\nAxiom: X\nF→FF\nX→F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
         system: cultivarFF,
         config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FXF',
-        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\n\nF→F[+F]XF\n\nX→F-[[X]+X]+F[-FX]-X\n\nTurning angle: 27°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?, 0)',
+        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\nAxiom: X\nF→F[+F]XF\nX→F-[[X]+X]+F[-FX]-X\nTurning angle: 27°\n\nScale: ?, ?\nCamera centre: (?, ?, 0)',
         system: cultivarFXF,
         config: [1.5, 2, 0.25, 0.75, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF',
-        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\n\nE→XEXF-\n\nF→FX+[E]X\n\nX→F-[X+[X[++E]F]]+F[X+FX]-X\n\nTurning angle: 22.5°\n\n\n\nScale: ?, ?\n\nCamera centre: (?, ?, 0)',
+        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\nAxiom: X\nE→XEXF-\nF→FX+[E]X\nX→F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°\n\nScale: ?, ?\nCamera centre: (?, ?, 0)',
         system: cultivarXEXF,
         config: [1, 3, 0.75, -0.25, 0, true]
     },
     {
         title: 'Example: Dragon curve',
-        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\n\nY→-FX-Y\n\nX→X+YF+\n\nTurning angle: 90°\n\n\n\nScale: 2, sqrt(2)\n\nCamera centre: (0, 0, 0)',
+        contents: 'Also known as the Heighway dragon.\nAxiom: FX\nY→-FX-Y\nX→X+YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)',
         system: dragon,
         config: [2, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
-        contents: 'A random shape every time it rolls!\n\nAxiom: F\n\nF→FF\n\nX→F-[[X]+X]+F[+FX]-X,\n\n →F+[[X]-X]-F[-FX]+X',
+        contents: 'A random shape every time it rolls!\nAxiom: F\nF→FF\nX→F-[[X]+X]+F[+FX]-X,\n →F+[[X]-X]-F[-FX]+X',
         system: stocWeed
     }
 ];
@@ -973,11 +975,12 @@ var createConfigMenu = () =>
         }
     });
     let tmpEXB = renderer.extendedBacktrack;
-    let EXBLabel = ui.createLatexLabel
+    let EXBLabel = ui.createLabel
     ({
         text: `Backtrack list: ${backtrackList[tmpEXB ? 1 : 0]}`,
         row: 4,
         column: 0,
+        fontSize: 16,
         verticalOptions: LayoutOptions.CENTER
     });
     let EXBSwitch = ui.createSwitch
@@ -1621,8 +1624,10 @@ var createManualMenu = () =>
         horizontalOptions: LayoutOptions.CENTER,
         verticalOptions: LayoutOptions.CENTER
     });
-    let pageContents = ui.createLatexLabel
+    let pageContents = ui.createLabel
     ({
+        // fontFamily: FontFamily.CMU_REGULAR,
+        fontSize: 16,
         text: manualPages[page].contents
     });
 
