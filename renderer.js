@@ -234,18 +234,25 @@ class Renderer
     }
     forward()
     {
-        // Alpha, Beta and Ygamma, representing yaw, pitch and roll
-        let a = this.system.turnAngle * this.ori.z * Math.PI / 180;
+        // Alpha, Beta and Ygamma, representing roll, pitch and yaw
+        let a = this.system.turnAngle * this.ori.x * Math.PI / 180;
         let b = this.system.turnAngle * this.ori.y * Math.PI / 180;
-        let g = this.system.turnAngle * this.ori.x * Math.PI / 180;
-        // How cruel is this world that we don't actually need gamma, and I
-        // wasted a fucking millenium trying to figure out why the equations
-        // do not contain the roll (gamma). It is because the roll only spins
-        // the vector head, and does not change the direction.
+        let g = this.system.turnAngle * this.ori.z * Math.PI / 180;
+        // How cruel is this world that we actually need gamma, and I wasted
+        // a fucking millenium trying to figure out why the equations did not
+        // contain the roll (gamma). So, the way it actually works is that yaw
+        // should be applied first, not last.
 
-        let dx = Math.cos(a) * Math.cos(b);
-        let dy = Math.sin(a) * Math.cos(b);
-        let dz = -Math.sin(b);
+        // xyz rotation
+        let dx = Math.cos(b) * Math.cos(g);
+        let dy = Math.cos(a) * Math.sin(g) + Math.cos(g) * Math.sin(a) * Math.sin(b);
+        let dz = Math.sin(a) * Math.sin(g) - Math.cos(a) * Math.cos(g) * Math.sin(b);
+
+        // yxz
+        // let dx = Math.cos(a) * Math.cos(g) + Math.sin(a) * Math.sin(b) * Math.sin(g);
+        // let dy = Math.cos(b) * Math.sin(g);
+        // let dz = Math.cos(a) * Math.sin(b) * Math.sin(g) - Math.cos(g) * Math.sin(a);
+
         this.state += new Vector3(dx, dy, dz);
     }
 
@@ -458,13 +465,13 @@ var init = () =>
 {
     yaw = theory.createCurrency('° (yaw)', '\\degree_z');
     pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-    // roll = theory.createCurrency('° (roll)', '\\degree_x');
-    progress = theory.createCurrency('%');
+    roll = theory.createCurrency('° (roll)', '\\degree_x');
+    // progress = theory.createCurrency('%');
     // l (Level)
     {
         let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
-        l = theory.createUpgrade(0, progress, new FreeCost);
+        l = theory.createUpgrade(0, yaw, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.canBeRefunded = (_) => true;
@@ -473,7 +480,7 @@ var init = () =>
     {
         let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
-        ts = theory.createUpgrade(1, progress, new FreeCost);
+        ts = theory.createUpgrade(1, pitch, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
         ts.maxLevel = 10;
@@ -510,8 +517,9 @@ var tick = (elapsedTime, multiplier) =>
             let angles = renderer.getAngles();
             yaw.value = angles.z;
             pitch.value = angles.y;
-            // roll.value = angles.x;
-            progress.value = renderer.getProgress();        
+            roll.value = angles.x;
+
+            // progress.value = renderer.getProgress();
             theory.invalidateTertiaryEquation();
         }
         time -= timeLimit;
