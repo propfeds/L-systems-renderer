@@ -401,7 +401,7 @@ var manualPages =
 [
     {
         title: 'The Main Screen',
-        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec).\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
+        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec). Lower tickspeed increases drawing accuracy.\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
     },
     {
         title: 'A Primer on L-systems',
