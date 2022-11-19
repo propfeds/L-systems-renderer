@@ -237,7 +237,7 @@ class Renderer
         // Alpha, Beta and Ygamma, representing yaw, pitch and roll
         let a = this.system.turnAngle * this.ori.z * Math.PI / 180;
         let b = this.system.turnAngle * this.ori.y * Math.PI / 180;
-        // let y = this.system.turnAngle * this.ori.x * Math.PI / 180;
+        let g = this.system.turnAngle * this.ori.x * Math.PI / 180;
         // How cruel is this world that we don't actually need gamma, and I
         // wasted a fucking millenium trying to figure out why the equations
         // do not contain the roll (gamma). It is because the roll only spins
@@ -325,11 +325,11 @@ class Renderer
     }
     getProgress()
     {
-        return this.idx * 100 / (this.levels[this.lvl].length - 1);
+        return Math.max(this.idx - 1, 0) * 100 / (this.levels[this.lvl].length - 2);
     }
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&i=${this.idx - 1}/${this.levels[this.lvl].length - 2}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&i=${Math.max(this.idx - 1, 0)}/${this.levels[this.lvl].length - 2}&(${getCoordString(this.getProgress())}\\%)\\end{matrix}`;
     }
     getCentre()
     {
