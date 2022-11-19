@@ -221,6 +221,7 @@ class Renderer
         this.system = system;
         this.levels = [];
         l.level = 0;
+        this.update(0);
     }
     rerollSeed(seed)
     {
