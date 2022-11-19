@@ -11,7 +11,7 @@ import { TouchType } from '../api/ui/properties/TouchType';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.18, renderer configuration will be messed up due to internal state format changes. Reset not required.\nAs of 0.15, a theory reset is required due to internal state format changes.';
+var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.18, renderer configuration will be messed up due to internal state format changes.';
 var authors = 'propfeds#5988';
 var version = 'v0.18 WIP';
 
@@ -368,6 +368,9 @@ var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
 var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
 var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
+var luckyFlower = new LSystem('A', ['A=I[L]B,I[L]A,I[L][R]B,IF', 'B=I[R]A,I[R]B,I[L][R]A,IF', 'L=---I,--I,----I', 'R=+++I,++I,++++I', 'F=[---[I+I]--I+I][+++[I-I]++I-I]I'], 12);
+var blackboard = new LSystem('F', ['F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]', 'M=Z-M', 'N=Z+N', 'O=Z&O', 'P=Z^P', 'Y=Z-ZY+', 'Z=ZZ'], 8);
+
 var renderer = new Renderer(arrow, 1, 2, false, 1);
 
 var savedSystems = new Map();
@@ -395,50 +398,59 @@ var manualPages =
     },
     {
         title: 'Example: Arrow weed',
-        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\nF→FF\nX→F[+X][-X]FX\nTurning angle: 30°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
+        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\nF=FF\nX=F[+X][-X]FX\nTurning angle: 30°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
     },
     {
-        title: 'Example: Cultivar FF',
-        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\nF→FF\nX→F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
-        system: cultivarFF,
-        config: [1, 2, 1, 0, 0, true]
-    },
-    {
-        title: 'Example: Cultivar FXF',
-        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\nF→F[+F]XF\nX→F-[[X]+X]+F[-FX]-X\nTurning angle: 27°\n\nScale: ?, ?\nCamera centre: (?, ?, 0)',
-        system: cultivarFXF,
-        config: [1.5, 2, 0.25, 0.75, 0, false]
-    },
-    {
-        title: 'Example: Cultivar XEXF',
-        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\nE→XEXF-\nF→FX+[E]X\nX→F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°\n\nScale: ?, ?\nCamera centre: (?, ?, 0)',
-        system: cultivarXEXF,
-        config: [1, 3, 0.75, -0.25, 0, true]
-    },
-    {
         title: 'Example: Dragon curve',
-        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\nY→-FX-Y\nX→X+YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)',
+        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\nY=-FX-Y\nX=X+YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)',
         system: dragon,
         config: [2, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
-        contents: 'It generates a random shape every time it rolls!\n\nAxiom: F\nF→FF\nX→F-[[X]+X]+F[+FX]-X,\n       F+[[X]-X]-F[-FX]+X',
+        contents: 'It generates a random shape every time it rolls!\n\nAxiom: F\nF=FF\nX=F-[[X]+X]+F[+FX]-X,\n     F+[[X]-X]-F[-FX]+X\nTurning angle: 22.5°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
         system: stocWeed,
         config: [1, 2, 1, 0, 0, true]
+    },
+    {
+        title: 'Example: Lucky flower',
+        contents: 'How tall can it grow until it sprouts a flower? Reroll to find out!\n\nAxiom: A\nA=I[L]B,\n     I[L]A,\n     I[L][R]B,\n     IF\nB=I[R]A,\n     I[R]B,\n     I[L][R]A,\n     IF\nL=---I,\n     --I,\n     ----I\nR=+++I,\n     ++I,\n     ++++I\nF=[---[I+I]--I+I][+++[I-I]++I-I]I\nTurning angle: 12°',
+        system: luckyFlower,
+        config: [3, 1.1, 2, 0, 0, true]
+    },
+    {
+        title: 'Example: Blackboard tree (3D)',
+        contents: 'A blackboard tree (Alstonia scholaris) when it\'s still tiny.\n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z+N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 2\nCamera centre: (1.5, 0, 0)',
+        system: blackboard,
+        config: [2, 2, 1.5, 0, 0, true]
+    },
+    {
+        title: 'Example: Cultivar FF (Botched)',
+        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\nF=FF\nX=F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
+        system: cultivarFF,
+        config: [1, 2, 1, 0, 0, true]
+    },
+    {
+        title: 'Example: Cultivar FXF (Botched)',
+        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 27°',
+        system: cultivarFXF,
+        config: [1.5, 2, 0.25, 0.75, 0, false]
+    },
+    {
+        title: 'Example: Cultivar XEXF (Botched)',
+        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\nE=XEXF-\nF=FX+[E]X\nX=F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°',
+        system: cultivarXEXF,
+        config: [1, 3, 0.75, -0.25, 0, true]
     }
 ];
 
 var init = () =>
 {
-    // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
-    // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-    // roll = theory.createCurrency('° (roll)', '\\degree_x');
     yaw = theory.createCurrency('° (yaw)', '\\degree_z');
     pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-    // roll = theory.createCurrency('°x', '\\degree_x');
+    // roll = theory.createCurrency('° (roll)', '\\degree_x');
     progress = theory.createCurrency('%');
     // l (Level)
     {
