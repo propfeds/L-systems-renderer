@@ -62,11 +62,18 @@ class LSystem
     {
         this.axiom = axiom;
         this.rules = new Map();
+        this.ignoreList = '';
         for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
             {
                 let rs = rules[i].split('=');
+                if(rs.length < 2)
+                {
+                    if(i == 0)
+                        this.ignoreList = rs[0];
+                    continue;
+                }
                 for(let i = 0; i < 2; ++i)
                     rs[i] = rs[i].trim();
 
@@ -112,7 +119,7 @@ class LSystem
 
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${this.ignoreList}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -316,6 +323,8 @@ class Renderer
                     }
                     return;
                 default:
+                    if(this.system.ignoreList.includes(this.levels[this.lvl][i]))
+                        break;
                     let breakAhead = this.backtrackList.includes(this.levels[this.lvl][i + 1]);
                     if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
@@ -1190,6 +1199,7 @@ var createSystemMenu = () =>
         }
     });
     let tmpRules = [];
+    tmpRules.push(renderer.system.ignoreList);
     for(let [key, value] of renderer.system.rules)
     {
         if(typeof value === 'string')
@@ -1198,18 +1208,16 @@ var createSystemMenu = () =>
             tmpRules.push(`${key}=${value.join(',')}`);
     }
     let ruleEntries = [];
-    for(let i = 0; i < tmpRules.length; ++i)
+    for(let i = 1; i < tmpRules.length; ++i)
     {
-        if(tmpRules[i] === undefined)
-            tmpRules[i] = '';
-        ruleEntries[i] = ui.createEntry
+        ruleEntries.push(ui.createEntry
         ({
             text: tmpRules[i],
             onTextChanged: (ot, nt) =>
             {
                 tmpRules[i] = nt;
             }
-        });
+        }));
     }
     let ruleStack = ui.createStackLayout
     ({
@@ -1230,17 +1238,28 @@ var createSystemMenu = () =>
                 text: '',
                 onTextChanged: (ot, nt) =>
                 {
-                    tmpRules[i] = nt;
+                    tmpRules[i + 1] = nt;
                 }
             }));
             ruleStack.children = ruleEntries;
+        }
+    });
+    let ignoreEntry = ui.createEntry
+    ({
+        text: tmpRules[0],
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpRules[0] = nt;
         }
     });
     let tmpSeed = renderer.system.seed;
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
-        row: 0,
+        row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -1307,8 +1326,16 @@ var createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Seed (for stochastic systems): ',
+                                        text: 'Ignored symbols: ',
                                         row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    ignoreEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Seed (for stochastic systems): ',
+                                        row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -1400,14 +1427,12 @@ var createViewMenu = (title, systemGrid) =>
     let tmpRules = systemValues.slice(3);
 
     let ruleEntries = [];
-    for(let i = 0; i < tmpRules.length; ++i)
+    for(let i = 1; i < tmpRules.length; ++i)
     {
-        if(tmpRules[i] === undefined)
-            tmpRules[i] = '';
-        ruleEntries[i] = ui.createEntry
+        ruleEntries.push(ui.createEntry
         ({
             text: tmpRules[i]
-        });
+        }));
     }
     let tmpSeed = Number(systemValues[2]);
 
@@ -1475,15 +1500,29 @@ var createViewMenu = (title, systemGrid) =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Seed (for stochastic systems): ',
+                                        text: 'Ignored symbols: ',
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     ui.createEntry
                                     ({
-                                        text: tmpSeed.toString(),
+                                        text: tmpRules[0],
                                         row: 0,
+                                        column: 1,
+                                        horizontalTextAlignment: TextAlignment.END
+                                    }),
+                                    ui.createLatexLabel
+                                    ({
+                                        text: 'Seed (for stochastic systems): ',
+                                        row: 1,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    ui.createEntry
+                                    ({
+                                        text: tmpSeed.toString(),
+                                        row: 1,
                                         column: 1,
                                         horizontalTextAlignment: TextAlignment.END
                                     })
