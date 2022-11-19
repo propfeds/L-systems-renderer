@@ -1125,16 +1125,39 @@ var createConfigMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createButton
+                ui.createGrid
                 ({
-                    text: 'Save',
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpOD, tmpUpright, tmpQD, tmpQB, tmpEXB);
-                        menu.hide();
-                    }
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: 'Save',
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpOD, tmpUpright, tmpQD, tmpQB, tmpEXB);
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: 'Reset to Defaults',
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let currentSystem = renderer.system;
+                                renderer = new Renderer(currentSystem);
+                                menu.hide();
+                            }
+                        })
+                    ]
                 })
+                
             ]
         })
     })
