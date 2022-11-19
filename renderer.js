@@ -126,7 +126,7 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/[]')
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]')
     {
         this.system = system;
         this.initScale = initScale;
@@ -142,6 +142,7 @@ class Renderer
 
         this.state = new Vector3(0, 0, 0);
         this.ori = new Vector3(0, 0, 0);
+        this.reverse = false;
         this.levels = [];
         this.lvl = -1;
         this.stack = [];
@@ -149,7 +150,6 @@ class Renderer
         this.idx = 0;
         this.firstPoint = true;
         this.lastCamera = new Vector3(0, 0, 0);
-        this.update(0);
     }
 
     update(level, seedChanged = false)
@@ -172,11 +172,13 @@ class Renderer
             }
         }
         this.lvl = level;
+        this.reset();
     }
     reset()
     {
         this.state = new Vector3(0, 0, 0);
         this.ori = new Vector3(0, 0, 0);
+        this.reverse = false;
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
@@ -218,15 +220,12 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
-        this.update(0);
-        this.reset();
         l.level = 0;
     }
     rerollSeed(seed)
     {
         this.system.setSeed(seed);
         this.update(this.lvl, true);
-        this.reset();
     }
     turn(dx = 0, dy = 0, dz = 0)
     {
@@ -253,14 +252,16 @@ class Renderer
         // let dy = Math.cos(b) * Math.sin(g);
         // let dz = Math.cos(a) * Math.sin(b) * Math.sin(g) - Math.cos(g) * Math.sin(a);
 
-        this.state += new Vector3(dx, dy, dz);
+        if(this.reverse)
+            this.state -= new Vector3(dx, dy, dz);
+        else
+            this.state += new Vector3(dx, dy, dz);
     }
 
     draw(level)
     {
         if(this.lvl != level)
-            this.reset();
-        this.update(level);
+            this.update(level);
 
         if(this.firstPoint)
         {
@@ -290,6 +291,9 @@ class Renderer
                     break;
                 case '/':
                     this.turn(-1, 0, 0);
+                    break;
+                case '|':
+                    this.reverse = !this.reverse;
                     break;
                 case '[':
                     this.idStack.push(this.stack.length);
@@ -401,7 +405,7 @@ var manualPages =
     },
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor counter/clockwise on the z-axis (yaw) by an angle.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor counter/clockwise on the z-axis (yaw) by an angle.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
     },
     {
         title: 'Tips on Constructing an L-system',
@@ -475,7 +479,7 @@ var init = () =>
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.canBeRefunded = (_) => true;
-        // l.boughtOrRefunded = (_) => renderer.draw(l.level);
+        l.boughtOrRefunded = (_) => renderer.update(l.level);
     }
     // ts (Tickspeed)
     {
