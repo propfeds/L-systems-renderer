@@ -157,6 +157,7 @@ class Renderer
         this.idx = 0;
         this.firstPoint = true;
         this.lastCamera = new Vector3(0, 0, 0);
+        this.update(0);
     }
 
     update(level, seedChanged = false)
@@ -250,12 +251,15 @@ class Renderer
         // contain the roll (gamma). So, the way it actually works is that yaw
         // should be applied first, not last.
 
+        // Okay, remember that xyz rotations do not work here. Each and every
+        // single rotation should be preserved in order, not accumulated
+
         // xyz rotation
         let dx = Math.cos(b) * Math.cos(g);
         let dy = Math.cos(a) * Math.sin(g) + Math.cos(g) * Math.sin(a) * Math.sin(b);
         let dz = Math.sin(a) * Math.sin(g) - Math.cos(a) * Math.cos(g) * Math.sin(b);
 
-        // yxz
+        // yxz rotation
         // let dx = Math.cos(a) * Math.cos(g) + Math.sin(a) * Math.sin(b) * Math.sin(g);
         // let dy = Math.cos(b) * Math.sin(g);
         // let dz = Math.cos(a) * Math.sin(b) * Math.sin(g) - Math.cos(g) * Math.sin(a);
@@ -392,7 +396,7 @@ class Renderer
     }
 }
 
-var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : (x < 100 ? 2 : 1)) : (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
+var getCoordString = (x) => x.toFixed(x >= -0.01 ? (x < 10 ? 3 : (x < 100 ? 2 : 1)) : (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
