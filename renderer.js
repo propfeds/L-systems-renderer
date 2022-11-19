@@ -475,7 +475,7 @@ var init = () =>
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
         l.canBeRefunded = (_) => true;
-        l.boughtOrRefunded = (_) => renderer.draw(l.level);
+        // l.boughtOrRefunded = (_) => renderer.draw(l.level);
     }
     // ts (Tickspeed)
     {
