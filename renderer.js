@@ -147,6 +147,7 @@ class Renderer
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
+        this.firstPoint = true;
         this.lastCamera = new Vector3(0, 0, 0);
         this.update(0);
     }
@@ -179,6 +180,7 @@ class Renderer
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
+        this.firstPoint = true;
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
@@ -252,6 +254,12 @@ class Renderer
         if(this.lvl != level)
             this.reset();
         this.update(level);
+
+        if(this.firstPoint)
+        {
+            this.firstPoint = false;
+            return;
+        }
 
         let i;
         for(i = this.idx; i < this.levels[this.lvl].length; ++i)
