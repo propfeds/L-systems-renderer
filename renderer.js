@@ -308,7 +308,10 @@ class Renderer
                         this.idStack.pop();
                         this.idx = i + 1;
                         if(this.idx >= this.levels[this.lvl].length)
+                        {
                             this.idx = 0;
+                            this.reverse = false;
+                        }
                     }
                     return;
                 default:
@@ -379,7 +382,7 @@ class Renderer
     }
 }
 
-var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : 2) : (x <= -10 ? 1 : 2));
+var getCoordString = (x) => x.toFixed(x >= 0 ? (x < 10 ? 3 : (x < 100 ? 2 : 1)) : (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
