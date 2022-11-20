@@ -613,7 +613,7 @@ var manualPages =
         title: 'Example: Fern (3D)',
         contents: 'Source: https://observablehq.com/@kelleyvanevert/3d-l-systems\n\nAxiom: FFFA\nA=[++++++++++++++FC]B^+B[--------------FD]B+BA\nC=[---------FF][+++++++++FF]B&&+C\nD=[---------FF][+++++++++FF]B&&-D\nTurning angle: 4°',
         system: new LSystem('FFFA',['A=[++++++++++++++FC]B^+B[--------------FD]B+BA', 'C=[---------FF][+++++++++FF]B&&+C', 'D=[---------FF][+++++++++FF]B&&-D'], 4),
-        config: [2, 1.4, 2, 0, 0, true]
+        config: [3, 1.4, 2, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FF (Botched)',
