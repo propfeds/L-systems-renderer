@@ -563,7 +563,7 @@ var manualPages =
 [
     {
         title: 'The Main Screen',
-        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec). Lower tickspeed increases drawing accuracy.\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
+        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec, which produces less accurate lines).\nPressing the Tickspeed button will toggle between tick delay and tickspeed mode.\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
     },
     {
         title: 'A Primer on L-systems',
@@ -680,7 +680,7 @@ var init = () =>
         ts = theory.createUpgrade(1, pitch, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
-        ts.maxLevel = tickDelayMode ? 0x7FFFFFFF : 10;
+        ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
         ts.boughtOrRefunded = (_) => time = 0;
     }
@@ -736,7 +736,7 @@ var tick = (elapsedTime, multiplier) =>
             theory.invalidateTertiaryEquation();
         }
         if(tickDelayMode)
-            time -= ts.level;
+            time = 0;
         else
             time -= 1 / ts.level;
     }
@@ -937,9 +937,6 @@ var getUpgradeListDelegate = () =>
     let toggleTDM = () =>
     {
         tickDelayMode = !tickDelayMode;
-        if(!tickDelayMode)
-            ts.level = Math.min(ts.level, 10);
-        ts.maxLevel = tickDelayMode ? 0x7FFFFFFF : 10;
     }
     let tsButton = createClickableVariableButton(ts, toggleTDM, height);
     tsButton.row = 1;
@@ -2114,12 +2111,7 @@ var setInternalState = (stateStr) =>
     if(worldValues.length > 4)
         altCurrencies = Boolean(Number(worldValues[4]));
     if(worldValues.length > 5)
-    {
         tickDelayMode = Boolean(Number(worldValues[5]));
-        if(!tickDelayMode)
-            ts.level = Math.min(ts.level, 10);
-        ts.maxLevel = tickDelayMode ? 0x7FFFFFFF : 10;
-    }
 
     let systemValues = values[2].split(' ');
     let system = new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]));
