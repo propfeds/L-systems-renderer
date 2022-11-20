@@ -11,26 +11,76 @@ import { TouchType } from '../api/ui/properties/TouchType';
 
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
-var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.18, renderer configuration will be messed up due to internal state format changes.';
-var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé: for providing help with quaternion maths';
-var version = 'v0.18 WIP';
+var description = 'An educational tool that lets you draw various fractal ' +
+                  'figures and plants.\n\nFeatures:\n- Can store a whole ' +
+                  'army of systems!\n- Stochastic (randomised) systems\n' +
+                  '- Switch between camera modes: fixed (scaled) and cursor-' +
+                  'focused\n- Stroke options\n\nWarning: As of 0.18, the '+
+                  'renderer\'s configuration will be messed up due to format ' +
+                  'changes to the internal state.';
+var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
+              'providing help with quaternions';
+var version = 'v0.18.b1';
 
+/*
+Disclaimer: The consensus around L-system's grammar is generally not much
+consistent. Therefore, the symbols used here may mean different things in
+different implementations. One such example is that \ and / may be swapped; or
+that + would turn the cursor clockwise instead of counter (as implemented here).
+Another example would be that < and > are used instead of \ and /.
+
+The maths used in this theory do not resemble any sort of correctness either,
+particularly referencing the horrible butchery of quaternions.
+*/
+
+/**
+ * Represents a linear congruential generator.
+ */
 class LCG
 {
+    /**
+     * @constructor
+     * @param {number} [seed] (default: 0) the starting seed for the generator.
+     */
     constructor(seed = 0)
     {
+        /**
+         * @type {number} the mod of this realm.
+         * @public but not really.
+         */
         this.m = 0x80000000; // 2**31;
+        /**
+         * @type {number} some constant
+         * @public but shouldn't be.
+         */
         this.a = 1103515245;
+        /**
+         * @type {number} some other constant.
+         * @public please leave me pretty be.
+         */
         this.c = 12345;
-    
+        /**
+         * @type {number} the LCG's current state.
+         * @public honestly.
+         */
         this.state = seed % this.m;
     }
 
+    /**
+     * Returns a random integer within [0, 2^31).
+     * @returns {number} the next integer in the generator.
+     */
     nextInt()
     {
         this.state = (this.a * this.state + this.c) % this.m;
         return this.state;
     }
+    /**
+     * Returns a random floating point number within [0, 1] or [0, 1).
+     * @param {boolean} [includeEnd] (default: false) whether to include the
+     * number 1 in the range.
+     * @returns {number} the floating point, corresponding to the next integer.
+     */
     nextFloat(includeEnd = false)
     {
         if(includeEnd)
@@ -44,51 +94,121 @@ class LCG
             return this.nextInt() / this.m;
         }
     }
+    /**
+     * Returns a random integer within a range of [start, end).
+     * @param {number} start the range's lower bound.
+     * @param {number} end the range's upper bound, plus 1.
+     * @returns {number} the integer.
+     */
     nextRange(start, end)
     {
         // [start, end)
         let size = end - start;
         return start + Math.floor(this.nextFloat() * size);
     }
+    /**
+     * Returns a random element from an array.
+     * @param {array} array the array.
+     * @returns the element.
+     */
     choice(array)
     {
         return array[this.nextRange(0, array.length)];
     }
 }
 
+/**
+ * Represents a quaternion.
+ */
 class Quaternion
 {
+    /**
+     * @constructor
+     * @param {number} w (default: 1) the real component.
+     * @param {number} x (default: 0) the imaginary i component.
+     * @param {number} y (default: 0) the imaginary j component.
+     * @param {number} z (default: 0) the imaginary k component.
+     */
     constructor(w = 1, x = 0, y = 0, z = 0)
     {
+        /**
+         * @type {number} the real component.
+         * @public
+         */
         this.w = w;
+        /**
+         * @type {number} the imaginary i component.
+         * @public
+         */
         this.x = x;
+        /**
+         * @type {number} the imaginary j component.
+         * @public
+         */
         this.y = y;
+        /**
+         * @type {number} the imaginary k component.
+         * @public
+         */
         this.z = z;
     }
 
+    /**
+     * Computes the sum of the current quaternion with another. Does not modify
+     * the original quaternion.
+     * @param {Quaternion} quat this other quaternion.
+     * @returns {Quaternion} the sum.
+     */
     add(quat)
     {
-        return new Quaternion(this.w + quat.w, this.x + quat.x, this.y + quat.y, this.z + quat.z);
-        
+        return new Quaternion(
+            this.w + quat.w,
+            this.x + quat.x,
+            this.y + quat.y,
+            this.z + quat.z
+        );
     }
+    /**
+     * Computes the product of the current quaternion with another. Does not
+     * modify the original quaternion.
+     * @param {Quaternion} quat this other quaternion.
+     * @returns {Quaternion} the product.
+     */
     mul(quat)
     {
-        let t0 = this.w * quat.w - this.x * quat.x - this.y * quat.y - this.z * quat.z;
-        let t1 = this.w * quat.x + this.x * quat.w + this.y * quat.z - this.z * quat.y;
-        let t2 = this.w * quat.y - this.x * quat.z + this.y * quat.w + this.z * quat.x;
-        let t3 = this.w * quat.z + this.x * quat.y - this.y * quat.x + this.z * quat.w;
+        let t0 = this.w * quat.w - this.x * quat.x
+               - this.y * quat.y - this.z * quat.z;
+        let t1 = this.w * quat.x + this.x * quat.w
+               + this.y * quat.z - this.z * quat.y;
+        let t2 = this.w * quat.y - this.x * quat.z
+               + this.y * quat.w + this.z * quat.x;
+        let t3 = this.w * quat.z + this.x * quat.y
+               - this.y * quat.x + this.z * quat.w;
         return new Quaternion(t0, t1, t2, t3);
     }
+    /**
+     * Computes the negation of a quaternion. The negation also acts as the
+     * inverse if the quaternion's norm is 1, which is the case with rotation
+     * quaternions.
+     * @returns {Quaternion} the negation.
+     */
     neg()
     {
         return new Quaternion(this.w, -this.x, -this.y, -this.z);
     }
+    /**
+     * Returns a rotation vector from the quaternion.
+     * @returns {Vector3} the rotation vector.
+     */
     getRotVector()
     {
         let r = this.neg().mul(xAxisQuat).mul(this);
         return new Vector3(r.x, r.y, r.z);
     }
-
+    /**
+     * Returns the quaternion's string representation.
+     * @returns {string} the string.
+     */
     toString()
     {
         return `${this.w} + ${this.x}i + ${this.y}j + ${this.z}k`;
@@ -128,9 +248,9 @@ class LSystem
             }
         }
         this.turnAngle = turnAngle;
-        let halfAngle = this.turnAngle * Math.PI / 360;
-        let s = Math.sin(halfAngle);
-        let c = Math.cos(halfAngle);
+        this.halfAngle = this.turnAngle * Math.PI / 360;
+        let s = Math.sin(this.halfAngle);
+        let c = Math.cos(this.halfAngle);
         this.rotations = new Map();
         this.rotations.set('+', new Quaternion(c, 0, 0, -s));
         this.rotations.set('-', new Quaternion(c, 0, 0, s));
@@ -365,19 +485,6 @@ class Renderer
             }
         }
     }
-
-    getAngles()
-    {
-        return this.ori;
-    }
-    getProgress()
-    {
-        return Math.max(this.idx - 1, 0) * 100 / (this.levels[this.lvl].length - 2);
-    }
-    getStateString()
-    {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&i=${Math.max(this.idx - 1, 0)}/${this.levels[this.lvl].length - 2}&(${getCoordString(this.getProgress())}\\%)\\end{matrix}`;
-    }
     getCentre()
     {
         if(this.cursorFocused)
@@ -409,6 +516,26 @@ class Renderer
         else
             return this.getCentre();
     }
+    getAngles()
+    {
+        return this.ori;
+    }
+    getProgress()
+    {
+        return Math.max(this.idx - 1, 0) * 100 / (this.levels[this.lvl].length - 2);
+    }
+    getProgressString()
+    {
+        return `i=${Math.max(this.idx - 1, 0)}/${this.levels[this.lvl].length - 2}&(${getCoordString(this.getProgress())}\\%)`;
+    }
+    getStateString()
+    {
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.getProgressString()}\\end{matrix}`;
+    }
+    getOriString()
+    {
+        return `\\begin{matrix}q=${this.ori.toString()},&${this.getProgressString()}\\end{matrix}`;
+    }
     toString()
     {
         return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing ? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
@@ -420,6 +547,8 @@ var getCoordString = (x) => x.toFixed(x >= -0.01 ? (x < 10 ? 3 : (x < 100 ? 2 : 
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var renderer = new Renderer(arrow, 1, 2, false, 1);
+
+var altCurrencies = true;
 
 var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
@@ -508,12 +637,21 @@ var manualPages =
 
 var init = () =>
 {
-    // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
-    // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-    // roll = theory.createCurrency('° (roll)', '\\degree_x');
-    roll = theory.createCurrency('i', '\\degree_x');
-    pitch = theory.createCurrency('j', '\\degree_y');
-    yaw = theory.createCurrency('k', '\\degree_z');
+    if(altCurrencies)
+    {
+        roll = theory.createCurrency(' = x');
+        pitch = theory.createCurrency(' = y');
+        yaw = theory.createCurrency(' = z');
+    }
+    else
+    {
+        // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
+        // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
+        // roll = theory.createCurrency('° (roll)', '\\degree_x');
+        roll = theory.createCurrency('i');
+        pitch = theory.createCurrency('j');
+        yaw = theory.createCurrency('k');
+    }
     // progress = theory.createCurrency('%');
 
     // l (Level)
@@ -564,11 +702,19 @@ var tick = (elapsedTime, multiplier) =>
         if(!gameOffline || renderer.offlineDrawing)
         {
             renderer.draw(l.level);
-            let angles = renderer.getAngles();
-            yaw.value = angles.z;
-            pitch.value = angles.y;
-            roll.value = angles.x;
-
+            if(altCurrencies)
+            {
+                roll.value = renderer.state.x;
+                pitch.value = renderer.state.y;
+                yaw.value = renderer.state.z;
+            }
+            else
+            {
+                let angles = renderer.getAngles();
+                yaw.value = angles.z;
+                pitch.value = angles.y;
+                roll.value = angles.x;
+            }
             // progress.value = renderer.getProgress();
             theory.invalidateTertiaryEquation();
         }
@@ -1966,7 +2112,12 @@ var getResetStageMessage = () => 'You are about to reroll the system\'s seed.';
 
 var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 
-var getTertiaryEquation = () => renderer.getStateString();
+var getTertiaryEquation = () =>
+{
+    if(altCurrencies)
+        return renderer.getOriString();
+    renderer.getStateString();
+}
 
 var get3DGraphPoint = () => renderer.getCursor();
 
