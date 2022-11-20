@@ -211,7 +211,7 @@ class Quaternion
      */
     toString()
     {
-        return `${this.w} + ${this.x}i + ${this.y}j + ${this.z}k`;
+        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + ${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
     }
 }
 
