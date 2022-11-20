@@ -22,8 +22,12 @@ paste the URL in.
 
 ## Screenshots
 
-![ss1](screenshots/20.jpg "Screenshot 1")
+![ss1](screenshots/23.jpg "Hilbert curve")
 
-![ss2](screenshots/22.jpg "Screenshot 2")
+![ss2](screenshots/24.jpg "Fern")
 
-![ss3](screenshots/21.jpg "Screenshot 3")
+![ss3](screenshots/29.jpg "Manual")
+
+![ss3](screenshots/25.jpg "Lucky flower")
+
+![ss3](screenshots/28.jpg "Storage")
