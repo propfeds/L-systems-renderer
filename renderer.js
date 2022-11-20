@@ -12,7 +12,7 @@ import { TouchType } from '../api/ui/properties/TouchType';
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal figures and plants.\n\nFeatures:\n- Can store a whole army of systems!\n- Stochastic (randomised) systems\n- Two camera modes: fixed (scaled) and cursor-focused\n- Stroke options\n\nWarning: As of 0.18, renderer configuration will be messed up due to internal state format changes.';
-var authors = 'propfeds#5988';
+var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé: for providing help with quaternion maths';
 var version = 'v0.18 WIP';
 
 class LCG
@@ -74,9 +74,9 @@ class Quaternion
     mul(quat)
     {
         let t0 = this.w * quat.w - this.x * quat.x - this.y * quat.y - this.z * quat.z;
-        let t1 = this.w * quat.x + this.x * quat.w - this.y * quat.z + this.z * quat.y;
-        let t2 = this.w * quat.y + this.x * quat.z + this.y * quat.w - this.z * quat.x;
-        let t3 = this.w * quat.z - this.x * quat.y + this.y * quat.x + this.z * quat.w;
+        let t1 = this.w * quat.x + this.x * quat.w + this.y * quat.z - this.z * quat.y;
+        let t2 = this.w * quat.y - this.x * quat.z + this.y * quat.w + this.z * quat.x;
+        let t3 = this.w * quat.z + this.x * quat.y - this.y * quat.x + this.z * quat.w;
         return new Quaternion(t0, t1, t2, t3);
     }
     neg()
@@ -85,7 +85,7 @@ class Quaternion
     }
     getRotVector()
     {
-        let r = this.mul(new Quaternion(0, 1, 0, 0)).mul(this.neg());
+        let r = this.mul(xAxisQuat).mul(this.neg());
         return new Vector3(r.x, r.y, r.z);
     }
 
@@ -334,22 +334,22 @@ class Renderer
             switch(this.levels[this.lvl][i])
             {
                 case '+':
-                    this.ori = this.ori.mul(this.system.rotations.get('+'));
+                    this.ori = this.system.rotations.get('+').mul(this.ori);
                     break;
                 case '-':
-                    this.ori = this.ori.mul(this.system.rotations.get('-'));
+                    this.ori = this.system.rotations.get('-').mul(this.ori);
                     break;
                 case '&':
-                    this.ori = this.ori.mul(this.system.rotations.get('&'));
+                    this.ori = this.system.rotations.get('&').mul(this.ori);
                     break;
                 case '^':
-                    this.ori = this.ori.mul(this.system.rotations.get('^'));
+                    this.ori = this.system.rotations.get('^').mul(this.ori);
                     break;
                 case '\\':
-                    this.ori = this.ori.mul(this.system.rotations.get('\\'));
+                    this.ori = this.system.rotations.get('\\').mul(this.ori);
                     break;
                 case '/':
-                    this.ori = this.ori.mul(this.system.rotations.get('/'));
+                    this.ori = this.system.rotations.get('/').mul(this.ori);
                     break;
                 case '|':
                     this.reverse = !this.reverse;
@@ -444,18 +444,10 @@ class Renderer
     }
 }
 
+var xAxisQuat = new Quaternion(0, 1, 0, 0);
 var getCoordString = (x) => x.toFixed(x >= -0.01 ? (x < 10 ? 3 : (x < 100 ? 2 : 1)) : (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
-var cultivarFF = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15);
-var cultivarFXF = new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27);
-var cultivarXEXF = new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5);
-var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
-var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
-var luckyFlower = new LSystem('A', ['A=I[L]B,I[L]A,I[L][R]B,IF', 'B=I[R]A,I[R]B,I[L][R]A,IF', 'L=---I,--I,----I', 'R=+++I,++I,++++I', 'F=[---[I+I]--I+I][+++[I-I]++I-I]I'], 12);
-var blackboard = new LSystem('F', ['F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]', 'M=Z-M', 'N=Z+N', 'O=Z&O', 'P=Z^P', 'Y=Z-ZY+', 'Z=ZZ'], 8);
-var hilbert = new LSystem('X', ['X', 'X=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/'], 90);
-
 var renderer = new Renderer(arrow, 1, 2, false, 1);
 
 var savedSystems = new Map();
@@ -490,49 +482,55 @@ var manualPages =
     {
         title: 'Example: Dragon curve',
         contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\nY=-FX-Y\nX=X+YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)',
-        system: dragon,
+        system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: [2, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
         contents: 'It generates a random shape every time it rolls!\n\nAxiom: F\nF=FF\nX=F-[[X]+X]+F[+FX]-X,\n     F+[[X]-X]-F[-FX]+X\nTurning angle: 22.5°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
-        system: stocWeed,
+        system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5),
         config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Lucky flower',
         contents: 'How tall can it grow until it sprouts a flower? Reroll to find out!\n\nAxiom: A\nA=I[L]B,\n     I[L]A,\n     I[L][R]B,\n     IF\nB=I[R]A,\n     I[R]B,\n     I[L][R]A,\n     IF\nL=---I,\n     --I,\n     ----I\nR=+++I,\n     ++I,\n     ++++I\nF=[---[I+I]--I+I][+++[I-I]++I-I]I\nTurning angle: 12°',
-        system: luckyFlower,
+        system: new LSystem('A', ['A=I[L]B,I[L]A,I[L][R]B,IF', 'B=I[R]A,I[R]B,I[L][R]A,IF', 'L=---I,--I,----I', 'R=+++I,++I,++++I', 'F=[---[I+I]--I+I][+++[I-I]++I-I]I'], 12),
         config: [3, 1.1, 2, 0, 0, true]
     },
     {
         title: 'Example: Blackboard tree (3D)',
         contents: 'A blackboard tree (Alstonia scholaris) when it\'s still tiny.\n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z+N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 2\nCamera centre: (1.5, 0, 0)',
-        system: blackboard,
+        system: new LSystem('F', ['F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]', 'M=Z-M', 'N=Z+N', 'O=Z&O', 'P=Z^P', 'Y=Z-ZY+', 'Z=ZZ'], 8),
         config: [2, 2, 1.5, 0, 0, true]
     },
     {
         title: 'Example: Hilbert curve (3D)',
         contents: 'If you set to high tickspeed, it look like brainz.\n\nAxiom: X\nX=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/\nTurning angle: 90°\nIgnore: X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)',
-        system: hilbert,
+        system: new LSystem('X', ['X', 'X=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/'], 90),
         config: [1, 2, 0.5, -0.5, -0.5, false]
+    },
+    {
+        title: 'Example: Fern (3D)',
+        contents: 'Source: https://observablehq.com/@kelleyvanevert/3d-l-systems\n\nAxiom: FFFA\nA=[++++++++++++++FC]B^+B[--------------FD]B+BA\nC=[---------FF][+++++++++FF]B&&+C\nD=[---------FF][+++++++++FF]B&&-D\nTurning angle: 4°',
+        system: new LSystem('FFFA',['A=[++++++++++++++FC]B^+B[--------------FD]B+BA', 'C=[---------FF][+++++++++FF]B&&+C', 'D=[---------FF][+++++++++FF]B&&-D'], 4),
+        config: [2, 1.4, 2, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FF (Botched)',
         contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\nF=FF\nX=F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
-        system: cultivarFF,
+        system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FXF (Botched)',
         contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 27°',
-        system: cultivarFXF,
+        system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: [1.5, 2, 0.25, 0.75, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF (Botched)',
         contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\nE=XEXF-\nF=FX+[E]X\nX=F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°',
-        system: cultivarXEXF,
+        system: new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5),
         config: [1, 3, 0.75, -0.25, 0, true]
     }
 ];
