@@ -9,6 +9,19 @@ import { Thickness } from '../api/ui/properties/Thickness';
 import { Color } from '../api/ui/properties/Color';
 import { TouchType } from '../api/ui/properties/TouchType';
 
+/*
+Disclaimer: The consensus around L-system's grammar is generally not much
+consistent. Therefore, the symbols used here may mean different things in
+different implementations. One such example is that \ and / may be swapped; or
+that + would turn the cursor clockwise instead of counter (as implemented here).
+Another example would be that < and > are used instead of \ and /.
+
+The maths used in this theory do not resemble any sort of correctness either,
+particularly referencing the horrible butchery of quaternions.
+
+(c) 2022 Temple of Pan (R) (TM) All rights reversed.
+*/
+
 var id = 'L_systems_renderer';
 var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal ' +
@@ -20,18 +33,14 @@ var description = 'An educational tool that lets you draw various fractal ' +
                   'changes to the internal state.';
 var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
               'providing help with quaternions';
-var version = 'v0.18.b1';
-
-/*
-Disclaimer: The consensus around L-system's grammar is generally not much
-consistent. Therefore, the symbols used here may mean different things in
-different implementations. One such example is that \ and / may be swapped; or
-that + would turn the cursor clockwise instead of counter (as implemented here).
-Another example would be that < and > are used instead of \ and /.
-
-The maths used in this theory do not resemble any sort of correctness either,
-particularly referencing the horrible butchery of quaternions.
-*/
+var versionStr = 'v0.18.b1';
+var version = 0.18;
+var time = 0;
+var page = 0;
+// var offlineDrawing = false;
+var gameIsOffline = false;
+var altCurrencies = true;
+var tickDelayMode = true;
 
 /**
  * Represents a linear congruential generator.
@@ -548,13 +557,8 @@ var getCoordString = (x) => x.toFixed(x >= -0.01 ? (x < 10 ? 3 : (x < 100 ? 2 : 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var renderer = new Renderer(arrow, 1, 2, false, 1);
 
-var altCurrencies = true;
-
 var savedSystems = new Map();
 var globalSeed = new LCG(Date.now());
-var time = 0;
-var gameOffline = false;
-var page = 0;
 var manualPages =
 [
     {
@@ -666,12 +670,17 @@ var init = () =>
     }
     // ts (Tickspeed)
     {
-        let getDesc = (level) => `\\text{Tickspeed: }${level.toString()}/sec`;
+        let getDesc = (level) =>
+        {
+            if(tickDelayMode)
+                return `\\text{Tick delay: }${(level / 10).toString()}\\text{ sec}`;
+            return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
+        }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, pitch, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
-        ts.maxLevel = 10;
+        ts.maxLevel = tickDelayMode ? 0x7FFFFFFF : 10;
         ts.canBeRefunded = (_) => true;
         ts.boughtOrRefunded = (_) => time = 0;
     }
@@ -679,27 +688,35 @@ var init = () =>
 
 var alwaysShowRefundButtons = () => true;
 
+var timeCheck = (elapsedTime) =>
+{
+    if(tickDelayMode)
+    {
+        time += 1;
+        return time >= ts.level;
+    }
+    time += elapsedTime;
+    return time >= 1 / ts.level - 1e-8
+}
+
 var tick = (elapsedTime, multiplier) =>
 {
     if(ts.level == 0)
         return;
-    
-    let timeLimit = 1 / ts.level;
-    time += elapsedTime;
 
-    if(time >= timeLimit - 1e-8)
+    if(timeCheck(elapsedTime))
     {
         if(game.isCalculatingOfflineProgress)
-            gameOffline = true;
-        else if(gameOffline)
+            gameIsOffline = true;
+        else if(gameIsOffline)
         {
             // Probably triggers only once when reloading
             if(!renderer.offlineDrawing)
                 renderer.reset();
-            gameOffline = false;
+            gameIsOffline = false;
         }
 
-        if(!gameOffline || renderer.offlineDrawing)
+        if(!gameIsOffline || renderer.offlineDrawing)
         {
             renderer.draw(l.level);
             if(altCurrencies)
@@ -718,7 +735,10 @@ var tick = (elapsedTime, multiplier) =>
             // progress.value = renderer.getProgress();
             theory.invalidateTertiaryEquation();
         }
-        time -= timeLimit;
+        if(tickDelayMode)
+            time -= ts.level;
+        else
+            time -= 1 / ts.level;
     }
 }
 
@@ -866,7 +886,7 @@ var createMenuButton = (menuFunc, name, height) =>
 }
 
 // For example: The level variable button opens the sequence menu
-var createVariableButtonWithMenu = (variable, menuFunc, height) =>
+var createClickableVariableButton = (variable, callback, height) =>
 {
     let frame = ui.createFrame
     ({
@@ -883,10 +903,9 @@ var createVariableButtonWithMenu = (variable, menuFunc, height) =>
         {
             if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
             {
-                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
-                let menu = menuFunc();
-                menu.show();
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
+                callback();
             }
             else if(e.type == TouchType.PRESSED)
             {
@@ -906,10 +925,23 @@ var getUpgradeListDelegate = () =>
 {
     let height = ui.screenHeight * 0.055;
 
-    let lvlButton = createVariableButtonWithMenu(l, createSequenceMenu, height);
+    let openSeqMenu = () =>
+    {
+        let menu = createSequenceMenu();
+        menu.show();
+    }
+    let lvlButton = createClickableVariableButton(l, openSeqMenu, height);
     lvlButton.row = 0;
     lvlButton.column = 0;
-    let tsButton = createVariableButton(ts, height);
+
+    let toggleTDM = () =>
+    {
+        tickDelayMode = !tickDelayMode;
+        if(!tickDelayMode)
+            ts.level = Math.min(ts.level, 10);
+        ts.maxLevel = tickDelayMode ? 0x7FFFFFFF : 10;
+    }
+    let tsButton = createClickableVariableButton(ts, toggleTDM, height);
     tsButton.row = 1;
     tsButton.column = 0;
 
@@ -2049,7 +2081,7 @@ var getEquationOverlay = () =>
 {
     let result = ui.createLatexLabel
     ({
-        text: version,
+        text: versionStr,
         displacementX: 6,
         displacementY: 4,
         fontSize: 9,
@@ -2060,7 +2092,8 @@ var getEquationOverlay = () =>
 
 var getInternalState = () =>
 {
-    let result = `${time}\n${renderer.toString()}\n${renderer.system.toString()}`;
+    let result = `${version} ${time} ${page} ${renderer.offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
+    result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
         result += `\n${key}\n${value}`;
@@ -2071,7 +2104,22 @@ var getInternalState = () =>
 var setInternalState = (stateStr) =>
 {
     let values = stateStr.split('\n');
-    time = parseBigNumber(values[0]);
+
+    let worldValues = values[0].split(' ');
+    if(worldValues.length > 1)
+        time = parseBigNumber(worldValues[1]);
+    if(worldValues.length > 2)
+        page = Number(worldValues[2]);
+    // Offline Drawing
+    if(worldValues.length > 4)
+        altCurrencies = Boolean(Number(worldValues[4]));
+    if(worldValues.length > 5)
+    {
+        tickDelayMode = Boolean(Number(worldValues[5]));
+        if(!tickDelayMode)
+            ts.level = Math.min(ts.level, 10);
+        ts.maxLevel = tickDelayMode ? 0x7FFFFFFF : 10;
+    }
 
     let systemValues = values[2].split(' ');
     let system = new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]));

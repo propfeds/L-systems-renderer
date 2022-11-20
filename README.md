@@ -6,7 +6,7 @@ L-systems renderer in Exponential Idle.
 
 - Supports 3D drawing
 - Can store a whole army of systems!
-- Two camera mode: fixed (scaled) and cursor-focused
+- Two camera modes: fixed (scaled) and cursor-focused
 - Stroke options
 
 ## Installation
