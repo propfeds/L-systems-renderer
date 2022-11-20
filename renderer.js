@@ -85,7 +85,7 @@ class Quaternion
     }
     getRotVector()
     {
-        let r = this.mul(xAxisQuat).mul(this.neg());
+        let r = this.neg().mul(xAxisQuat).mul(this);
         return new Vector3(r.x, r.y, r.z);
     }
 
@@ -132,12 +132,12 @@ class LSystem
         let s = Math.sin(halfAngle);
         let c = Math.cos(halfAngle);
         this.rotations = new Map();
-        this.rotations.set('+', new Quaternion(c, 0, 0, s));
-        this.rotations.set('-', new Quaternion(c, 0, 0, -s));
-        this.rotations.set('&', new Quaternion(c, 0, s, 0));
-        this.rotations.set('^', new Quaternion(c, 0, -s, 0));
-        this.rotations.set('\\', new Quaternion(c, s, 0, 0));
-        this.rotations.set('/', new Quaternion(c, -s, 0, 0));
+        this.rotations.set('+', new Quaternion(c, 0, 0, -s));
+        this.rotations.set('-', new Quaternion(c, 0, 0, s));
+        this.rotations.set('&', new Quaternion(c, 0, -s, 0));
+        this.rotations.set('^', new Quaternion(c, 0, s, 0));
+        this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
+        this.rotations.set('/', new Quaternion(c, s, 0, 0));
 
         this.seed = seed;
         this.random = new LCG(this.seed);
@@ -288,29 +288,6 @@ class Renderer
     }
     forward()
     {
-        // Alpha, Beta and Ygamma, representing roll, pitch and yaw
-        // let a = this.system.turnAngle * this.ori.x * Math.PI / 180;
-        // let b = this.system.turnAngle * this.ori.y * Math.PI / 180;
-        // let g = this.system.turnAngle * this.ori.z * Math.PI / 180;
-        // How cruel is this world that we actually need gamma, and I wasted
-        // a fucking millenium trying to figure out why the equations did not
-        // contain the roll (gamma). So, the way it actually works is that yaw
-        // should be applied first, not last.
-
-        // Okay, remember that xyz rotations do not work here. Each and every
-        // single rotation should be preserved in order, not accumulated.
-        // In short, they are non-commutative. Time to quaternion.
-
-        // xyz rotation
-        // let dx = Math.cos(b) * Math.cos(g);
-        // let dy = Math.cos(a) * Math.sin(g) + Math.cos(g) * Math.sin(a) * Math.sin(b);
-        // let dz = Math.sin(a) * Math.sin(g) - Math.cos(a) * Math.cos(g) * Math.sin(b);
-
-        // yxz rotation
-        // let dx = Math.cos(a) * Math.cos(g) + Math.sin(a) * Math.sin(b) * Math.sin(g);
-        // let dy = Math.cos(b) * Math.sin(g);
-        // let dz = Math.cos(a) * Math.sin(b) * Math.sin(g) - Math.cos(g) * Math.sin(a);
-
         if(this.reverse)
             this.state -= this.ori.getRotVector();
         else
@@ -391,12 +368,6 @@ class Renderer
 
     getAngles()
     {
-        // Alpha, Beta and Ygamma, representing yawn, stretch and roll
-        // let result = this.ori * this.system.turnAngle;
-        // result.x %= 360;
-        // result.y %= 360;
-        // result.z %= 360;
-        // return result;
         return this.ori;
     }
     getProgress()
@@ -463,7 +434,7 @@ var manualPages =
     },
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor on the z-axis (yaw).\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor on the z-axis (yaw), counter-/clockwise respectively.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
     },
     {
         title: 'Tips on Constructing an L-system',
@@ -505,9 +476,9 @@ var manualPages =
     },
     {
         title: 'Example: Hilbert curve (3D)',
-        contents: 'If you set to high tickspeed, it look like brainz.\n\nAxiom: X\nX=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/\nTurning angle: 90°\nIgnore: X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)',
-        system: new LSystem('X', ['X', 'X=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/'], 90),
-        config: [1, 2, 0.5, -0.5, -0.5, false]
+        contents: 'If you set to high tickspeed, it look like brainz.\n\nAxiom: X\nX=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\\nTurning angle: 90°\nIgnore: X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)',
+        system: new LSystem('X', ['X', 'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'], 90),
+        config: [1, 2, 0.5, 0.5, 0.5, false]
     },
     {
         title: 'Example: Fern (3D)',
