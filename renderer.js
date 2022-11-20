@@ -56,6 +56,45 @@ class LCG
     }
 }
 
+class Quaternion
+{
+    constructor(w = 1, x = 0, y = 0, z = 0)
+    {
+        this.w = w;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    add(quat)
+    {
+        return new Quaternion(this.w + quat.w, this.x + quat.x, this.y + quat.y, this.z + quat.z);
+        
+    }
+    mul(quat)
+    {
+        let t0 = this.w * quat.w - this.x * quat.x - this.y * quat.y - this.z * quat.z;
+        let t1 = this.w * quat.x + this.x * quat.w - this.y * quat.z + this.z * quat.y;
+        let t2 = this.w * quat.y + this.x * quat.z + this.y * quat.w - this.z * quat.x;
+        let t3 = this.w * quat.z - this.x * quat.y + this.y * quat.x + this.z * quat.w;
+        return new Quaternion(t0, t1, t2, t3);
+    }
+    neg()
+    {
+        return new Quaternion(this.w, -this.x, -this.y, -this.z);
+    }
+    getRotVector()
+    {
+        let r = this.mul(new Quaternion(0, 1, 0, 0)).mul(this.neg());
+        return new Vector3(r.x, r.y, r.z);
+    }
+
+    toString()
+    {
+        return `${this.w} + ${this.x}i + ${this.y}j + ${this.z}k`;
+    }
+}
+
 class LSystem
 {
     constructor(axiom, rules, turnAngle = 30, seed = 0)
@@ -89,6 +128,17 @@ class LSystem
             }
         }
         this.turnAngle = turnAngle;
+        let halfAngle = this.turnAngle * Math.PI / 360;
+        let s = Math.sin(halfAngle);
+        let c = Math.cos(halfAngle);
+        this.rotations = new Map();
+        this.rotations.set('+', new Quaternion(c, 0, 0, s));
+        this.rotations.set('-', new Quaternion(c, 0, 0, -s));
+        this.rotations.set('&', new Quaternion(c, 0, s, 0));
+        this.rotations.set('^', new Quaternion(c, 0, -s, 0));
+        this.rotations.set('\\', new Quaternion(c, s, 0, 0));
+        this.rotations.set('/', new Quaternion(c, -s, 0, 0));
+
         this.seed = seed;
         this.random = new LCG(this.seed);
     }
@@ -148,7 +198,7 @@ class Renderer
         this.backtrackList = backtrackList;
 
         this.state = new Vector3(0, 0, 0);
-        this.ori = new Vector3(0, 0, 0);
+        this.ori = new Quaternion();
         this.reverse = false;
         this.levels = [];
         this.lvl = -1;
@@ -185,7 +235,7 @@ class Renderer
     reset()
     {
         this.state = new Vector3(0, 0, 0);
-        this.ori = new Vector3(0, 0, 0);
+        this.ori = new Quaternion();
         this.reverse = false;
         this.stack = [];
         this.idStack = [];
@@ -236,28 +286,25 @@ class Renderer
         this.system.setSeed(seed);
         this.update(this.lvl, true);
     }
-    turn(dx = 0, dy = 0, dz = 0)
-    {
-        this.ori += new Vector3(dx, dy, dz);
-    }
     forward()
     {
         // Alpha, Beta and Ygamma, representing roll, pitch and yaw
-        let a = this.system.turnAngle * this.ori.x * Math.PI / 180;
-        let b = this.system.turnAngle * this.ori.y * Math.PI / 180;
-        let g = this.system.turnAngle * this.ori.z * Math.PI / 180;
+        // let a = this.system.turnAngle * this.ori.x * Math.PI / 180;
+        // let b = this.system.turnAngle * this.ori.y * Math.PI / 180;
+        // let g = this.system.turnAngle * this.ori.z * Math.PI / 180;
         // How cruel is this world that we actually need gamma, and I wasted
         // a fucking millenium trying to figure out why the equations did not
         // contain the roll (gamma). So, the way it actually works is that yaw
         // should be applied first, not last.
 
         // Okay, remember that xyz rotations do not work here. Each and every
-        // single rotation should be preserved in order, not accumulated
+        // single rotation should be preserved in order, not accumulated.
+        // In short, they are non-commutative. Time to quaternion.
 
         // xyz rotation
-        let dx = Math.cos(b) * Math.cos(g);
-        let dy = Math.cos(a) * Math.sin(g) + Math.cos(g) * Math.sin(a) * Math.sin(b);
-        let dz = Math.sin(a) * Math.sin(g) - Math.cos(a) * Math.cos(g) * Math.sin(b);
+        // let dx = Math.cos(b) * Math.cos(g);
+        // let dy = Math.cos(a) * Math.sin(g) + Math.cos(g) * Math.sin(a) * Math.sin(b);
+        // let dz = Math.sin(a) * Math.sin(g) - Math.cos(a) * Math.cos(g) * Math.sin(b);
 
         // yxz rotation
         // let dx = Math.cos(a) * Math.cos(g) + Math.sin(a) * Math.sin(b) * Math.sin(g);
@@ -265,9 +312,9 @@ class Renderer
         // let dz = Math.cos(a) * Math.sin(b) * Math.sin(g) - Math.cos(g) * Math.sin(a);
 
         if(this.reverse)
-            this.state -= new Vector3(dx, dy, dz);
+            this.state -= this.ori.getRotVector();
         else
-            this.state += new Vector3(dx, dy, dz);
+            this.state += this.ori.getRotVector();
     }
 
     draw(level)
@@ -287,22 +334,22 @@ class Renderer
             switch(this.levels[this.lvl][i])
             {
                 case '+':
-                    this.turn(0, 0, 1);
+                    this.ori = this.ori.mul(this.system.rotations.get('+'));
                     break;
                 case '-':
-                    this.turn(0, 0, -1);
+                    this.ori = this.ori.mul(this.system.rotations.get('-'));
                     break;
                 case '&':
-                    this.turn(0, 1, 0);
+                    this.ori = this.ori.mul(this.system.rotations.get('&'));
                     break;
                 case '^':
-                    this.turn(0, -1, 0);
+                    this.ori = this.ori.mul(this.system.rotations.get('^'));
                     break;
                 case '\\':
-                    this.turn(1, 0, 0);
+                    this.ori = this.ori.mul(this.system.rotations.get('\\'));
                     break;
                 case '/':
-                    this.turn(-1, 0, 0);
+                    this.ori = this.ori.mul(this.system.rotations.get('/'));
                     break;
                 case '|':
                     this.reverse = !this.reverse;
@@ -345,11 +392,12 @@ class Renderer
     getAngles()
     {
         // Alpha, Beta and Ygamma, representing yawn, stretch and roll
-        let result = this.ori * this.system.turnAngle;
-        result.x %= 360;
-        result.y %= 360;
-        result.z %= 360;
-        return result;
+        // let result = this.ori * this.system.turnAngle;
+        // result.x %= 360;
+        // result.y %= 360;
+        // result.z %= 360;
+        // return result;
+        return this.ori;
     }
     getProgress()
     {
@@ -406,6 +454,7 @@ var dragon = new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90);
 var stocWeed = new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5);
 var luckyFlower = new LSystem('A', ['A=I[L]B,I[L]A,I[L][R]B,IF', 'B=I[R]A,I[R]B,I[L][R]A,IF', 'L=---I,--I,----I', 'R=+++I,++I,++++I', 'F=[---[I+I]--I+I][+++[I-I]++I-I]I'], 12);
 var blackboard = new LSystem('F', ['F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]', 'M=Z-M', 'N=Z+N', 'O=Z&O', 'P=Z^P', 'Y=Z-ZY+', 'Z=ZZ'], 8);
+var hilbert = new LSystem('X', ['X', 'X=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/'], 90);
 
 var renderer = new Renderer(arrow, 1, 2, false, 1);
 
@@ -422,7 +471,7 @@ var manualPages =
     },
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor counter/clockwise on the z-axis (yaw) by an angle.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
+        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor on the z-axis (yaw).\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
     },
     {
         title: 'Tips on Constructing an L-system',
@@ -463,6 +512,12 @@ var manualPages =
         config: [2, 2, 1.5, 0, 0, true]
     },
     {
+        title: 'Example: Hilbert curve (3D)',
+        contents: 'If you set to high tickspeed, it look like brainz.\n\nAxiom: X\nX=^\\XF^\\XFX-F^//XFX&F+//XFX-F/X-/\nTurning angle: 90°\nIgnore: X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)',
+        system: hilbert,
+        config: [1, 2, 0.5, -0.5, -0.5, false]
+    },
+    {
         title: 'Example: Cultivar FF (Botched)',
         contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\nF=FF\nX=F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
         system: cultivarFF,
@@ -484,10 +539,14 @@ var manualPages =
 
 var init = () =>
 {
-    yaw = theory.createCurrency('° (yaw)', '\\degree_z');
-    pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-    roll = theory.createCurrency('° (roll)', '\\degree_x');
+    // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
+    // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
+    // roll = theory.createCurrency('° (roll)', '\\degree_x');
+    roll = theory.createCurrency('i', '\\degree_x');
+    pitch = theory.createCurrency('j', '\\degree_y');
+    yaw = theory.createCurrency('k', '\\degree_z');
     // progress = theory.createCurrency('%');
+
     // l (Level)
     {
         let getDesc = (level) => `\\text{Level: }${level.toString()}`;
