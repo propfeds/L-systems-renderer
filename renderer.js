@@ -630,7 +630,7 @@ var manualPages =
         title: 'Example: Cultivar FXF (Botched)',
         contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 27°',
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
-        config: [1.5, 2, 0.15, 0.5, 0, false]
+        config: [1.5, 2, 0.15, -0.5, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF (Botched)',
