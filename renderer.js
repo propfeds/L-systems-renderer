@@ -39,8 +39,8 @@ var description = 'An educational tool that lets you draw various fractal ' +
                   'changes to the internal state.';
 var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
               'providing help with quaternions';
-var versionStr = 'v0.18';
-var version = 0.18;
+var versionStr = 'v0.18.1';
+var version = 0.181;
 var time = 0;
 var page = 0;
 // var offlineDrawing = false;
@@ -600,13 +600,13 @@ var manualPages =
         title: 'Example: Lucky flower',
         contents: 'How tall can it grow until it sprouts a flower? Reroll to find out!\n\nAxiom: A\nA=I[L]B,\n     I[L]A,\n     I[L][R]B,\n     IF\nB=I[R]A,\n     I[R]B,\n     I[L][R]A,\n     IF\nL=---I,\n     --I,\n     ----I\nR=+++I,\n     ++I,\n     ++++I\nF=[---[I+I]--I+I][+++[I-I]++I-I]I\nTurning angle: 12°',
         system: new LSystem('A', ['A=I[L]B,I[L]A,I[L][R]B,IF', 'B=I[R]A,I[R]B,I[L][R]A,IF', 'L=---I,--I,----I', 'R=+++I,++I,++++I', 'F=[---[I+I]--I+I][+++[I-I]++I-I]I'], 12),
-        config: [3, 1.1, 2, 0, 0, true]
+        config: [3, 1.1, 0.7, 0, 0, true]
     },
     {
         title: 'Example: Blackboard tree (3D)',
         contents: 'A blackboard tree (Alstonia scholaris) when it\'s still tiny.\n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z+N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 2\nCamera centre: (1.5, 0, 0)',
         system: new LSystem('F', ['F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]', 'M=Z-M', 'N=Z+N', 'O=Z&O', 'P=Z^P', 'Y=Z-ZY+', 'Z=ZZ'], 8),
-        config: [2, 2, 1.5, 0, 0, true]
+        config: [2, 2, 0.6, 0, 0, true]
     },
     {
         title: 'Example: Hilbert curve (3D)',
@@ -618,7 +618,7 @@ var manualPages =
         title: 'Example: Fern (3D)',
         contents: 'Source: https://observablehq.com/@kelleyvanevert/3d-l-systems\n\nAxiom: FFFA\nA=[++++++++++++++FC]B^+B[--------------FD]B+BA\nC=[---------FF][+++++++++FF]B&&+C\nD=[---------FF][+++++++++FF]B&&-D\nTurning angle: 4°',
         system: new LSystem('FFFA',['A=[++++++++++++++FC]B^+B[--------------FD]B+BA', 'C=[---------FF][+++++++++FF]B&&+C', 'D=[---------FF][+++++++++FF]B&&-D'], 4),
-        config: [3, 1.4, 2, 0, 0, true]
+        config: [3, 1.3, 0.6, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FF (Botched)',
@@ -630,7 +630,7 @@ var manualPages =
         title: 'Example: Cultivar FXF (Botched)',
         contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 27°',
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
-        config: [1.5, 2, 0.25, 0.75, 0, false]
+        config: [1.5, 2, 0.15, 0.5, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF (Botched)',
