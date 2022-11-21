@@ -17,7 +17,13 @@ that + would turn the cursor clockwise instead of counter (as implemented here).
 Another example would be that < and > are used instead of \ and /.
 
 The maths used in this theory do not resemble any sort of correctness either,
-particularly referencing the horrible butchery of quaternions.
+particularly referencing the horrible butchery of quaternions, and all the
+camera rotation slander in the world. In this theory, the vector is initially
+heading in the X-axis, unlike the Y-axis which is way more common in common
+implementations of any kind. I'm just a unit circle kind of person.
+
+If the X is half of a laughing face, then the Y represents my waifu Ms. Y, and
+the Z stands for Zombies.
 
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
@@ -498,21 +504,16 @@ class Renderer
     {
         if(this.cursorFocused)
             return -this.getCursor(this.lvl);
-        else
-        {
-            if(this.upright)
-                return new Vector3(this.camera.y, this.camera.x, -this.camera.z) / this.initScale;
-            else
-                return new Vector3(-this.camera.x, this.camera.y, -this.camera.z) / this.initScale;
-        }
+        if(this.upright)
+            return new Vector3(this.camera.y, this.camera.x, -this.camera.z);
+        return new Vector3(-this.camera.x, this.camera.y, -this.camera.z);
     }
     getCursor()
     {
         let coords = this.state / (this.initScale * this.figureScale ** this.lvl);
         if(this.upright)
             return new Vector3(-coords.y, -coords.x, coords.z);
-        else
-            return new Vector3(coords.x, -coords.y, coords.z);
+        return new Vector3(coords.x, -coords.y, coords.z);
     }
     getCamera()
     {
