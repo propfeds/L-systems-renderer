@@ -1765,6 +1765,7 @@ var createViewMenu = (title, systemGrid) =>
                 }),
                 ui.createGrid
                 ({
+                    minimumHeightRequest: 64,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
