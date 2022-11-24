@@ -39,8 +39,8 @@ var description = 'An educational tool that lets you draw various fractal ' +
                   'changes to the internal state.';
 var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
               'providing help with quaternions';
-var versionStr = 'v0.18.1';
-var version = 0.181;
+var versionStr = 'v0.18.2';
+var version = 0.182;
 var time = 0;
 var page = 0;
 // var offlineDrawing = false;
