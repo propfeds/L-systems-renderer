@@ -43,7 +43,7 @@ var versionStr = 'v0.18.2';
 var version = 0.182;
 var time = 0;
 var page = 0;
-// var offlineDrawing = false;
+var offlineDrawing = true;
 var gameIsOffline = false;
 var altCurrencies = true;
 var tickDelayMode = true;
@@ -318,7 +318,7 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, offlineDrawing = false, upright = false, quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]')
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0, upright = false, quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]')
     {
         this.system = system;
         this.initScale = initScale;
@@ -326,7 +326,7 @@ class Renderer
         this.cursorFocused = cursorFocused;
         this.camera = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
-        this.offlineDrawing = offlineDrawing;
+        this.loopMode = loopMode;
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
@@ -379,7 +379,7 @@ class Renderer
         theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    configure(initScale, figureScale, cursorFocused, camX, camY, camZ, followFactor, offlineDrawing, upright, quickDraw, quickBacktrack, backtrackList)
+    configure(initScale, figureScale, cursorFocused, camX, camY, camZ, followFactor, loopMode, upright, quickDraw, quickBacktrack, backtrackList)
     {
         let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright) || (quickDraw != this.quickDraw) || (quickBacktrack != this.quickBacktrack) || (backtrackList != this.backtrackList);
 
@@ -388,7 +388,7 @@ class Renderer
         this.cursorFocused = cursorFocused;
         this.camera = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
-        this.offlineDrawing = offlineDrawing;
+        this.loopMode = loopMode;
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
@@ -548,7 +548,7 @@ class Renderer
     }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.offlineDrawing ? 1 : 0} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
 
@@ -712,12 +712,12 @@ var tick = (elapsedTime, multiplier) =>
         else if(gameIsOffline)
         {
             // Probably triggers only once when reloading
-            if(!renderer.offlineDrawing)
+            if(!offlineDrawing)
                 renderer.reset();
             gameIsOffline = false;
         }
 
-        if(!gameIsOffline || renderer.offlineDrawing)
+        if(!gameIsOffline || offlineDrawing)
         {
             renderer.draw(l.level);
             if(altCurrencies)
@@ -1181,7 +1181,7 @@ var createConfigMenu = () =>
             tmpFF = Math.min(Math.max(tmpFF, 0), 1);
         }
     });
-    let tmpOD = renderer.offlineDrawing;
+    let tmpOD = renderer.loopMode;
     let ODSwitch = ui.createSwitch
     ({
         isToggled: tmpOD,
@@ -1323,7 +1323,7 @@ var createConfigMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Offline drawing: ',
+                                        text: 'Looping: ',
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2162,7 +2162,7 @@ var createSequenceMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${renderer.offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -2205,7 +2205,7 @@ var setInternalState = (stateStr) =>
     if(rendererValues.length > 6)
         rendererValues[6] = Number(rendererValues[6]);
     if(rendererValues.length > 7)
-        rendererValues[7] = Boolean(Number(rendererValues[7]));
+        rendererValues[7] = Number(rendererValues[7]);
     if(rendererValues.length > 8)
         rendererValues[8] = Boolean(Number(rendererValues[8]));
     if(rendererValues.length > 9)
