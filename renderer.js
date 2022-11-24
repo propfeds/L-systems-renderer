@@ -743,6 +743,19 @@ var tick = (elapsedTime, multiplier) =>
     }
 }
 
+var getEquationOverlay = () =>
+{
+    let result = ui.createLatexLabel
+    ({
+        text: versionStr,
+        displacementX: 6,
+        displacementY: 4,
+        fontSize: 9,
+        textColor: Color.TEXT_MEDIUM
+    });
+    return result;
+}
+
 var createVariableButton = (variable, height) =>
 {
     let frame = ui.createFrame
@@ -1583,7 +1596,7 @@ var createSystemMenu = () =>
     return menu;
 }
 
-var createNamingMenu = (title, values, systemGrid) =>
+var createNamingMenu = (title, values) =>
 {
     let tmpName = title;
     let nameEntry = ui.createEntry
@@ -1632,7 +1645,48 @@ var createNamingMenu = (title, values, systemGrid) =>
     return menu;
 }
 
-var createViewMenu = (title, systemGrid) =>
+var createClipboardMenu = (values) =>
+{
+    let tmpSys = values;
+    let sysEntry = ui.createEntry
+    ({
+        text: tmpSys,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSys = nt;
+        }
+    });
+    let menu = ui.createPopup
+    ({
+        title: 'Clipboard Menu',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                sysEntry,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: 'Construct',
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let systemValues = tmpSys.split(' ');
+                        renderer.applySystem(new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2])));
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+var createViewMenu = (title) =>
 {
     values = savedSystems.get(title);
 
@@ -1867,7 +1921,7 @@ var createSaveMenu = () =>
             [
                 ui.createGrid
                 ({
-                    columnDefinitions: ['70*', '30*'],
+                    columnDefinitions: ['40*', '30*', '30*'],
                     children:
                     [
                         ui.createLatexLabel
@@ -1879,9 +1933,20 @@ var createSaveMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Save',
+                            text: 'Clipboard',
                             row: 0,
                             column: 1,
+                            onClicked: () =>
+                            {
+                                let clipMenu = createClipboardMenu(renderer.system.toString());
+                                clipMenu.show();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: 'Save',
+                            row: 0,
+                            column: 2,
                             // heightRequest: 40,
                             onClicked: () =>
                             {
@@ -2093,19 +2158,6 @@ var createSequenceMenu = () =>
         })
     });
     return menu;
-}
-
-var getEquationOverlay = () =>
-{
-    let result = ui.createLatexLabel
-    ({
-        text: versionStr,
-        displacementX: 6,
-        displacementY: 4,
-        fontSize: 9,
-        textColor: Color.TEXT_MEDIUM
-    });
-    return result;
 }
 
 var getInternalState = () =>
