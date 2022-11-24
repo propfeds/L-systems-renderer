@@ -1111,8 +1111,7 @@ var createConfigMenu = () =>
                 text: 'Centre (x, y, z): ',
                 row: 0,
                 column: 0,
-                verticalOptions: LayoutOptions.CENTER,
-                isVisible: !tmpCFC
+                verticalOptions: LayoutOptions.CENTER
             }),
             ui.createEntry
             ({
