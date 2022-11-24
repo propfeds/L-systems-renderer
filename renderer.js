@@ -1467,7 +1467,6 @@ var createSystemMenu = () =>
         text: tmpRules[0],
         row: 0,
         column: 1,
-        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpRules[0] = nt;
@@ -1645,12 +1644,23 @@ var createViewMenu = (title, systemGrid) =>
     let tmpRules = systemValues.slice(3);
 
     let ruleEntries = [];
-    for(let i = 1; i < tmpRules.length; ++i)
+    for(let i = 0; i < tmpRules.length; ++i)
     {
-        ruleEntries.push(ui.createEntry
-        ({
-            text: tmpRules[i]
-        }));
+        if(i == 0)
+        {
+            let rs = tmpRules[i].split('=');
+            if(rs.length >= 2)
+            {
+                tmpRules.unshift('');
+            }
+        }
+        else
+        {
+            ruleEntries.push(ui.createEntry
+            ({
+                text: tmpRules[i]
+            }));
+        }
     }
     let tmpSeed = Number(systemValues[2]);
 
@@ -1727,8 +1737,7 @@ var createViewMenu = (title, systemGrid) =>
                                     ({
                                         text: tmpRules[0],
                                         row: 0,
-                                        column: 1,
-                                        horizontalTextAlignment: TextAlignment.END
+                                        column: 1
                                     }),
                                     ui.createLatexLabel
                                     ({
