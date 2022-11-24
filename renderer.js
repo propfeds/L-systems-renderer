@@ -1183,7 +1183,7 @@ var createConfigMenu = () =>
     let tmpOD = renderer.loopMode;
     let ODSwitch = ui.createSwitch
     ({
-        isToggled: tmpOD,
+        isToggled: Boolean(tmpOD),
         row: 0,
         column: 1,
         horizontalOptions: LayoutOptions.END,
@@ -2020,15 +2020,19 @@ var createManualMenu = () =>
             children:
             [
                 pageTitle,
-                ui.createBox
+                // ui.createBox
+                // ({
+                //     heightRequest: 1,
+                //     margin: new Thickness(0, 6)
+                // }),
+                ui.createFrame
                 ({
-                    heightRequest: 1,
-                    margin: new Thickness(0, 6)
-                }),
-                ui.createScrollView
-                ({
+                    padding: new Thickness(6, 6),
                     heightRequest: ui.screenHeight * 0.3,
-                    content: pageContents
+                    content: ui.createScrollView
+                    ({
+                        content: pageContents
+                    })
                 }),
                 ui.createBox
                 ({
