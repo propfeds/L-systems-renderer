@@ -576,7 +576,7 @@ var manualPages =
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nInitial scale: zooms out by this much for every figure.\nFigure scale: zooms the figure out by a multiplier per level.\n\nCamera mode: toggles between static and cursor-focused.\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\nCamera follow factor: changes how quickly the camera chases the cursor.\n(Note: figure scale and camera centre needs to be experimented manually for each individual L-system.)\n\nOffline drawing: when enabled, no longer resets the graph while tabbed out.\nUpright figure: rotates figure by 90 degrees counter-clockwise around the z-axis.\n\nQuickdraw: skips over consecutive straight lines.\nQuick backtrack: similarly, but on the way back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.'
+        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nInitial scale: zooms out by this much for every figure.\nFigure scale: zooms the figure out by a multiplier per level.\n\nCamera mode: toggles between static and cursor-focused.\nCentre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\nCamera follow factor: changes how quickly the camera chases the cursor.\n(Note: figure scale and camera centre needs to be experimented manually for each individual L-system.)\n\nOffline drawing: when enabled, no longer resets the graph while tabbed out.\nUpright x-axis: rotates figure by 90 degrees counter-clockwise around the z-axis.\n\nQuickdraw: skips over consecutive straight lines.\nQuick backtrack: similarly, but on the way back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.'
     },
     {
         title: 'Example: Arrow weed',
@@ -1085,38 +1085,48 @@ var createConfigMenu = () =>
     let tmpCX = renderer.camera.x;
     let tmpCY = renderer.camera.y;
     let tmpCZ = renderer.camera.z;
-    let camLabel = ui.createLatexLabel
+    let camLabel = ui.createGrid
     ({
-        text: 'Camera centre (x, y, z): ',
         row: 3,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER,
-        isVisible: !tmpCFC
-    });
-    let camGrid = ui.createGrid
-    ({
-        row: 3,
-        column: 1,
-        columnDefinitions: ['30*', '30*', '30*'],
+        columnDefinitions: ['55*', '15*'],
         isVisible: !tmpCFC,
         children:
         [
+            ui.createLatexLabel
+            ({
+                text: 'Centre (x, y, z): ',
+                row: 0,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER,
+                isVisible: !tmpCFC
+            }),
             ui.createEntry
             ({
                 text: tmpCX.toString(),
                 row: 0,
-                column: 0,
+                column: 1,
                 horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
                     tmpCX = Number(nt);
                 }
-            }),
+            })
+        ]
+    });
+    let camGrid = ui.createGrid
+    ({
+        row: 3,
+        column: 1,
+        columnDefinitions: ['50*', '50*'],
+        isVisible: !tmpCFC,
+        children:
+        [
             ui.createEntry
             ({
                 text: tmpCY.toString(),
                 row: 0,
-                column: 1,
+                column: 0,
                 horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
@@ -1127,7 +1137,7 @@ var createConfigMenu = () =>
             ({
                 text: tmpCZ.toString(),
                 row: 0,
-                column: 2,
+                column: 1,
                 horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
@@ -1139,7 +1149,7 @@ var createConfigMenu = () =>
     let tmpFF = renderer.followFactor;
     let FFLabel = ui.createLatexLabel
     ({
-        text: 'Camera follow factor (0-1): ',
+        text: 'Follow factor (0-1): ',
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER,
@@ -1308,7 +1318,7 @@ var createConfigMenu = () =>
                                     ODSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Upright figure: ',
+                                        text: 'Upright x-axis: ',
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
