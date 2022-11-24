@@ -39,8 +39,8 @@ var description = 'An educational tool that lets you draw various fractal ' +
                   'changes to the internal state.';
 var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
               'providing help with quaternions';
-var versionStr = 'v0.18.1';
-var version = 0.181;
+var versionStr = 'v0.18.2';
+var version = 0.182;
 var time = 0;
 var page = 0;
 // var offlineDrawing = false;
@@ -576,7 +576,7 @@ var manualPages =
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nInitial scale: zooms out by this much for every figure.\nFigure scale: zooms the figure out by a multiplier per level.\n\nCamera mode: toggles between static and cursor-focused.\nCamera centre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\nCamera follow factor: changes how quickly the camera chases the cursor.\n(Note: figure scale and camera centre needs to be experimented manually for each individual L-system.)\n\nOffline drawing: when enabled, no longer resets the graph while tabbed out.\nUpright figure: rotates figure by 90 degrees counter-clockwise around the z-axis.\n\nQuickdraw: skips over consecutive straight lines.\nQuick backtrack: similarly, but on the way back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.'
+        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nInitial scale: zooms out by this much for every figure.\nFigure scale: zooms the figure out by a multiplier per level.\n\nCamera mode: toggles between static and cursor-focused.\nCentre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\nCamera follow factor: changes how quickly the camera chases the cursor.\n(Note: figure scale and camera centre needs to be experimented manually for each individual L-system.)\n\nOffline drawing: when enabled, no longer resets the graph while tabbed out.\nUpright x-axis: rotates figure by 90 degrees counter-clockwise around the z-axis.\n\nQuickdraw: skips over consecutive straight lines.\nQuick backtrack: similarly, but on the way back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.'
     },
     {
         title: 'Example: Arrow weed',
@@ -741,6 +741,19 @@ var tick = (elapsedTime, multiplier) =>
         else
             time -= 1 / ts.level;
     }
+}
+
+var getEquationOverlay = () =>
+{
+    let result = ui.createLatexLabel
+    ({
+        text: versionStr,
+        displacementX: 6,
+        displacementY: 4,
+        fontSize: 9,
+        textColor: Color.TEXT_MEDIUM
+    });
+    return result;
 }
 
 var createVariableButton = (variable, height) =>
@@ -1085,38 +1098,48 @@ var createConfigMenu = () =>
     let tmpCX = renderer.camera.x;
     let tmpCY = renderer.camera.y;
     let tmpCZ = renderer.camera.z;
-    let camLabel = ui.createLatexLabel
+    let camLabel = ui.createGrid
     ({
-        text: 'Camera centre (x, y, z): ',
         row: 3,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER,
-        isVisible: !tmpCFC
-    });
-    let camGrid = ui.createGrid
-    ({
-        row: 3,
-        column: 1,
-        columnDefinitions: ['30*', '30*', '30*'],
+        columnDefinitions: ['55*', '15*'],
         isVisible: !tmpCFC,
         children:
         [
+            ui.createLatexLabel
+            ({
+                text: 'Centre (x, y, z): ',
+                row: 0,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER,
+                isVisible: !tmpCFC
+            }),
             ui.createEntry
             ({
                 text: tmpCX.toString(),
                 row: 0,
-                column: 0,
+                column: 1,
                 horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
                     tmpCX = Number(nt);
                 }
-            }),
+            })
+        ]
+    });
+    let camGrid = ui.createGrid
+    ({
+        row: 3,
+        column: 1,
+        columnDefinitions: ['50*', '50*'],
+        isVisible: !tmpCFC,
+        children:
+        [
             ui.createEntry
             ({
                 text: tmpCY.toString(),
                 row: 0,
-                column: 1,
+                column: 0,
                 horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
@@ -1127,7 +1150,7 @@ var createConfigMenu = () =>
             ({
                 text: tmpCZ.toString(),
                 row: 0,
-                column: 2,
+                column: 1,
                 horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
@@ -1139,7 +1162,7 @@ var createConfigMenu = () =>
     let tmpFF = renderer.followFactor;
     let FFLabel = ui.createLatexLabel
     ({
-        text: 'Camera follow factor (0-1): ',
+        text: 'Follow factor (0-1): ',
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER,
@@ -1308,7 +1331,7 @@ var createConfigMenu = () =>
                                     ODSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Upright figure: ',
+                                        text: 'Upright x-axis: ',
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -1457,7 +1480,6 @@ var createSystemMenu = () =>
         text: tmpRules[0],
         row: 0,
         column: 1,
-        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpRules[0] = nt;
@@ -1574,7 +1596,7 @@ var createSystemMenu = () =>
     return menu;
 }
 
-var createNamingMenu = (title, values, systemGrid) =>
+var createNamingMenu = (title, values) =>
 {
     let tmpName = title;
     let nameEntry = ui.createEntry
@@ -1623,7 +1645,48 @@ var createNamingMenu = (title, values, systemGrid) =>
     return menu;
 }
 
-var createViewMenu = (title, systemGrid) =>
+var createClipboardMenu = (values) =>
+{
+    let tmpSys = values;
+    let sysEntry = ui.createEntry
+    ({
+        text: tmpSys,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSys = nt;
+        }
+    });
+    let menu = ui.createPopup
+    ({
+        title: 'Clipboard Menu',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                sysEntry,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: 'Construct',
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let systemValues = tmpSys.split(' ');
+                        renderer.applySystem(new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2])));
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+var createViewMenu = (title) =>
 {
     values = savedSystems.get(title);
 
@@ -1635,12 +1698,23 @@ var createViewMenu = (title, systemGrid) =>
     let tmpRules = systemValues.slice(3);
 
     let ruleEntries = [];
-    for(let i = 1; i < tmpRules.length; ++i)
+    for(let i = 0; i < tmpRules.length; ++i)
     {
-        ruleEntries.push(ui.createEntry
-        ({
-            text: tmpRules[i]
-        }));
+        if(i == 0)
+        {
+            let rs = tmpRules[i].split('=');
+            if(rs.length >= 2)
+            {
+                tmpRules.unshift('');
+            }
+        }
+        else
+        {
+            ruleEntries.push(ui.createEntry
+            ({
+                text: tmpRules[i]
+            }));
+        }
     }
     let tmpSeed = Number(systemValues[2]);
 
@@ -1717,8 +1791,7 @@ var createViewMenu = (title, systemGrid) =>
                                     ({
                                         text: tmpRules[0],
                                         row: 0,
-                                        column: 1,
-                                        horizontalTextAlignment: TextAlignment.END
+                                        column: 1
                                     }),
                                     ui.createLatexLabel
                                     ({
@@ -1746,6 +1819,7 @@ var createViewMenu = (title, systemGrid) =>
                 }),
                 ui.createGrid
                 ({
+                    minimumHeightRequest: 64,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -1847,7 +1921,7 @@ var createSaveMenu = () =>
             [
                 ui.createGrid
                 ({
-                    columnDefinitions: ['70*', '30*'],
+                    columnDefinitions: ['40*', '30*', '30*'],
                     children:
                     [
                         ui.createLatexLabel
@@ -1859,9 +1933,20 @@ var createSaveMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Save',
+                            text: 'Clipboard',
                             row: 0,
                             column: 1,
+                            onClicked: () =>
+                            {
+                                let clipMenu = createClipboardMenu(renderer.system.toString());
+                                clipMenu.show();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: 'Save',
+                            row: 0,
+                            column: 2,
                             // heightRequest: 40,
                             onClicked: () =>
                             {
@@ -2073,19 +2158,6 @@ var createSequenceMenu = () =>
         })
     });
     return menu;
-}
-
-var getEquationOverlay = () =>
-{
-    let result = ui.createLatexLabel
-    ({
-        text: versionStr,
-        displacementX: 6,
-        displacementY: 4,
-        fontSize: 9,
-        textColor: Color.TEXT_MEDIUM
-    });
-    return result;
 }
 
 var getInternalState = () =>
