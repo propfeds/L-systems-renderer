@@ -601,108 +601,132 @@ var manualPages =
 [
     {
         title: 'The Main Screen',
-        contents: `The main screen consists of the renderer and its controls.
-        \n\nLevel: the system's level. Pressing + or - will derive/revert the 
-        system respectively. Pressing the Level button will reveal all levels 
-        of the system.
-        \n\nTickspeed: controls the renderer's drawing speed (up to 10 lines/
-        sec, which produces less accurate lines).
-        \nPressing the Tickspeed button will toggle between Tick delay and 
-        Tickspeed modes.
-        \n(Tip: holding + or - will buy/refund a variable in bulk.)
-        \n\nReroll: located on the top right. Pressing this button will reroll the system's seed (for stochastic systems).`
+        contents: 
+`The main screen consists of the renderer and its controls.
+
+Level: the system's level. Pressing + or - will derive/revert the system ` +
+`respectively. Pressing the Level button will reveal all levels of the system.
+
+Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
+`produces less accurate lines).
+Pressing the Tickspeed button will toggle between Tick delay and Tickspeed ` +
+`modes.
+(Tip: holding + or - will buy/refund a variable in bulk.)
+
+Reroll: located on the top right. Pressing this button will reroll the ` +
+`system's seed (for stochastic systems).`
     },
     {
         title: 'A Primer on L-systems',
-        contents: `Developed in 1968 by biologist Aristid Lindenmayer, an 
-        L-system is a formal grammar that describes the growth of a sequence 
-        (string). It is often used to model plants and draw fractal figures.
-        \n\nTerms:
-        \nAxiom: the starting sequence.
-        \nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}
-        \n\nSymbols:
-        \nAny letter: moves cursor forward to draw.
-        \n+ -: rotates cursor on the z-axis (yaw), counter-/clockwise 
-        respectively.
-        \n& ^: rotates cursor on the y-axis (pitch).
-        \n\\ /: rotates cursor on the x-axis (roll).
-        \n|: reverses cursor direction.
-        \n[ ]: allows for branches by queueing cursor positions on a stack.
-        \n, : separates between derivations (for stochastic systems).`
+        contents:
+`Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
+`grammar that describes the growth of a sequence (string). It is often used ` +
+`to model plants and draw fractal figures.
+
+Terms:
+Axiom: the starting sequence.
+Rules: how each symbol in the sequence is derived per level. Each rule is ` +
+`written in the form of: {symbol}={derivation(s)}
+
+Symbols:
+Any letter: moves cursor forward to draw.
++ -: rotates cursor on the z-axis (yaw), counter-/clockwise respectively.
+& ^: rotates cursor on the y-axis (pitch).
+\\ /: rotates cursor on the x-axis (roll).
+|: reverses cursor direction.
+[ ]: allows for branches by queueing cursor positions on a stack.
+, : separates between derivations (for stochastic systems).`
     },
     {
         title: 'Tips on Constructing an L-system',
-        contents: `Although traditionally F is used to go forward, each letter 
-        can be used to mean different things, such as drawing a flower, 
-        emulating growth stages, alternating between patterns, etc.
-        \n\nFor some simple systems, a symbol (often X) is used to resemble the 
-        fractal's shape.
-        \n\nBrackets work in a stack mechanism, therefore every [ has to be 
-        properly followed by a ] in the same production rule.
-        \n\nTo create a stochastic system, simply list several derivations in 
-        the same rule, separated by a , (comma). One of those derivations will 
-        be randomly selected per symbol whenever the system is derived.
-        \nGenerally, to keep a degree of uniformity in the system, it is 
-        advised for the derivations to be similar in shape.`
+        contents: 
+`Although traditionally F is used to go forward, each letter can be used to ` +
+`mean different things, such as drawing a flower, emulating growth stages, ` +
+`alternating between patterns, etc.
+
+For some simple systems, a symbol (often X) is used to resemble the ` +
+`fractal's shape.
+
+Brackets work in a stack mechanism, therefore every [ has to be properly ` +
+`followed by a ] in the same production rule.
+
+To create a stochastic system, simply list several derivations in the same ` +
+`rule, separated by a , (comma). One of those derivations will be randomly ` +
+`selected per symbol whenever the system is derived.
+Generally, to keep a degree of uniformity in the system, it is advised for ` +
+`the derivations to be similar in shape.`
     },
     {
         title: 'Configuring your L-system',
-        contents: `Configure the visual representation of your L-system with 
-        the renderer menu.
-        \n\nInitial scale: zooms out by this much for every figure.
-        \nFigure scale: zooms the figure out by a multiplier per level.
-        \n\nCamera mode: toggles between static and cursor-focused.
-        \nCentre: sets camera position for level 0 (this follows figure scale, 
-        and is based on non-upright coordinates).
-        \nCamera follow factor: changes how quickly the camera chases the 
-        cursor.
-        \n(Note: figure scale and camera centre needs to be experimented 
-        manually for each individual L-system.)
-        \n\nLooping mode: Level repeats a single level, while Playlist draws 
-        levels consecutively.
-        \nUpright x-axis: rotates figure by 90 degrees counter-clockwise around 
-        the z-axis.
-        \n\nQuickdraw: skips over consecutive straight lines.
-        \nQuick backtrack: similarly, but on the way back.
-        \nBacktrack list: sets stopping symbols for quickdraw/backtrack.`
+        contents:
+`Configure the visual representation of your L-system with the renderer menu.
+
+Initial scale: zooms out by this much for every figure.
+Figure scale: zooms the figure out by a multiplier per level.
+
+Camera mode: toggles between static and cursor-focused.
+Centre: sets camera position for level 0 (this follows figure scale, and is ` +
+`based on non-upright coordinates).
+Camera follow factor: changes how quickly the camera chases the cursor.
+(Note: figure scale and camera centre needs to be experimented manually for ` +
+`each individual L-system.)
+
+Looping mode: Level mode repeats a single level, while the Playlist mode ` +
+`draws levels consecutively.
+Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
+`z-axis.
+
+Quickdraw: skips over consecutive straight lines.
+Quick backtrack: similarly, but on the way back.
+Backtrack list: sets stopping symbols for quickdraw/backtrack.`
     },
     {
         title: 'Example: Arrow weed',
-        contents: `Meet the default system. It tastes like mint.
-        \n\nAxiom: X
-        \nF=FF
-        \nX=F[+X][-X]FX
-        \nTurning angle: 30°
-        \n\nApplies static camera:
-        \nScale: 1, 2
-        \nCentre: (1, 0, 0)`,
+        contents:
+`Meet the default system. It tastes like mint.
+
+Axiom: X
+F=FF
+X=F[+X][-X]FX
+Turning angle: 30°
+
+Applies static camera:
+Scale: 1, 2
+Centre: (1, 0, 0)`,
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
     },
     {
         title: 'Example: Dragon curve',
-        contents: `Also known as the Heighway dragon.
-        \n\nAxiom: FX
-        \nY=-FX-Y
-        \nX=X+YF+
-        \nTurning angle: 90°
-        \n\nApplies static camera:
-        \nScale: 4, sqrt(2)
-        \nCentre: (0, 0, 0)`,
+        contents:
+`Also known as the Heighway dragon.
+
+Axiom: FX
+Y=-FX-Y
+X=X+YF+
+Turning angle: 90°
+
+Applies static camera:
+Scale: 4, sqrt(2)
+Centre: (0, 0, 0)`,
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: [4, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
-        contents: `It generates a random shape every time it rolls!
-        \n\nAxiom: X
-        \nF=FF
-        \nX=F-[[X]+X]+F[+FX]-X,
-        \n     F+[[X]-X]-F[-FX]+X
-        \nTurning angle: 22.5°
-        \n\nApplies static camera:
-        \nScale: 1, 2
-        \nCamera centre: (1, 0, 0)`,
+        contents:
+`It generates a random shape every time it rolls!
+
+Axiom: X
+F=FF
+X=F-[[X]+X]+F[+FX]-X,
+     F+[[X]-X]-F[-FX]+X
+Turning angle: 22.5°
+
+Applies static camera:
+Scale: 1, 2
+Centre: (1, 0, 0)
+Upright`,
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
@@ -711,26 +735,31 @@ var manualPages =
     },
     {
         title: 'Example: Lucky flower',
-        contents: `How tall can it grow until it sprouts a flower? Reroll to 
-        find out!
-        \n\nAxiom: A
-        \nA=I[L]B,
-        \n     I[L]A,
-        \n     I[L][R]B,
-        \n     IF
-        \nB=I[R]A,
-        \n     I[R]B,
-        \n     I[L][R]A,
-        \n     IF
-        \nL=---I,
-        \n     --I,
-        \n     ----I
-        \nR=+++I,
-        \n     ++I,
-        \n     ++++I
-        \nF=[---[I+I]--I+I][+++[I-I]++I-I]I
-        \nTurning angle: 12°
-        \n\nApplies a mathematically unproven static camera configuration.`,
+        contents:
+`How tall can it grow until it sprouts a flower? Reroll to find out!
+
+Axiom: A
+A=I[L]B,
+     I[L]A,
+     I[L][R]B,
+     IF
+B=I[R]A,
+     I[R]B,
+     I[L][R]A,
+     IF
+L=---I,
+     --I,
+     ----I
+R=+++I,
+     ++I,
+     ++++I
+F=[---[I+I]--I+I][+++[I-I]++I-I]I
+Turning angle: 12°
+
+Applies static camera:
+Scale: 6, 1
+Centre: (0.7, 0, 0)
+Upright`,
         system: new LSystem('A', [
             'A=I[L]B,I[L]A,I[L][R]B,IF',
             'B=I[R]A,I[R]B,I[L][R]A,IF',
@@ -738,14 +767,27 @@ var manualPages =
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
         ], 12),
-        config: [6, 1, 0.6, 0, 0, true]
+        config: [6, 1, 0.7, 0, 0, true]
     },
     {
         title: 'Example: Blackboard tree (3D)',
-        contents: `A blackboard tree (Alstonia scholaris) when it's still tiny.
-        \n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z
-        +N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 
-        2\nCamera centre: (1.5, 0, 0)`,
+        contents:
+`A blackboard tree (Alstonia scholaris) when it's still tiny.
+
+Axiom: F
+F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]
+M=Z-M
+N=Z+N
+O=Z&O
+P=Z^P
+Y=Z-ZY+
+Z=ZZ
+Turning angle: 8°
+
+Applies static camera:
+Scale: 2, 2
+Centre: (1.5, 0, 0)
+Upright`,
         system: new LSystem('F', [
             'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
             'M=Z-M',
@@ -759,9 +801,17 @@ var manualPages =
     },
     {
         title: 'Example: Hilbert curve (3D)',
-        contents: `If you set to high tickspeed, it look like brainz.\n\nAxiom: 
-        X\nX=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\\nTurning angle: 90°\nIgnore: 
-        X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)`,
+        contents:
+`If you set to high tickspeed, it look like brainz.
+
+Axiom: X
+X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
+Turning angle: 90°
+Ignore: X
+
+Applies static camera:
+Scale: 1, 2
+Centre: (0.5, -0.5, -0.5)`,
         system: new LSystem('X', [
             'X',
             'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
@@ -770,10 +820,19 @@ var manualPages =
     },
     {
         title: 'Example: Fern (3D)',
-        contents: `Source: https://observablehq.com/@kelleyvanevert/
-        3d-l-systems\n\nAxiom: FFFA\nA=[++++++++++++++FC]B^+B[--------------FD]B
-        +BA\nC=[---------FF][+++++++++FF]B&&+C\nD=[---------FF][+++++++++FF]B&&
-        -D\nTurning angle: 4°`,
+        contents:
+`Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
+
+Axiom: FFFA
+A=[++++++++++++++FC]B^+B[--------------FD]B+BA
+C=[---------FF][+++++++++FF]B&&+C
+D=[---------FF][+++++++++FF]B&&-D
+Turning angle: 4°
+
+Applies static camera: (mathematically unproven)
+Scale: 3, 1.3
+Centre: (0.6, 0, 0)
+Upright`,
         system: new LSystem('FFFA', [
             'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
             'C=[---------FF][+++++++++FF]B&&+C',
@@ -783,28 +842,56 @@ var manualPages =
     },
     {
         title: 'Example: Cultivar FF (Botched)',
-        contents: `Represents a common source of carbohydrates.\n\nAxiom: 
-        X\nF=FF\nX=F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera 
-        centre: (1, 0, 0)`,
+        contents:
+`Represents a common source of carbohydrates.
+
+Axiom: X
+F=FF
+X=F-[[X]+X]+F[-X]-X
+Turning angle: 15°
+
+Applies static camera:
+Scale: 1, 2
+Centre: (1, 0, 0)
+Upright`,
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FXF (Botched)',
-        contents: `Commonly called the Cyclone, cultivar FXF resembles a coil 
-        of barbed wire. Legends have it, once a snake moult has weathered 
-        enough, a new life is born unto the tattered husk, and from there, it 
-        stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 
-        27°`,
+        contents:
+`Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
+`Legends have it, once a snake moult has weathered enough, a new life is ` +
+`born unto the tattered husk, and from there, it stretches.
+
+Axiom: X
+F=F[+F]XF
+X=F-[[X]+X]+F[-FX]-X
+Turning angle: 27°
+
+Applies static camera: (mathematically unproven)
+Scale: 1.5, 2
+Centre: (0.15, -0.5, 0)`,
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: [1.5, 2, 0.15, -0.5, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF (Botched)',
-        contents: `Bearing the shape of a thistle, cultivar XEXF embodies the 
-        strength and resilience of nature against the harsh logarithm drop-off. 
-        It also smells really, really good.\n\nAxiom: X\nE=XEXF-\nF=FX+[E]
-        X\nX=F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°`,
+        contents:
+`Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
+`resilience of nature against the harsh logarithm drop-off. It also smells ` +
+`really, really good.
+
+Axiom: X
+E=XEXF-
+F=FX+[E]X
+X=F-[X+[X[++E]F]]+F[X+FX]-X
+Turning angle: 22.5°
+
+Applies static camera: (mathematically unproven)
+Scale: 1, 3
+Centre: (0,75, -0,25, 0)
+Upright`,
         system: new LSystem('X', [
             'E=XEXF-',
             'F=FX+[E]X',
@@ -849,8 +936,8 @@ var init = () =>
         let getDesc = (level) =>
         {
             if(tickDelayMode)
-                return `\\text{Tick delay: }${(level / 10).toString()}
-                \\text{ sec}`;
+                return `\\text{Tick delay: }${(level / 10).toString()}` +
+                `\\text{ sec}`;
             return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
         }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
@@ -2229,8 +2316,8 @@ var createManualMenu = () =>
                                 {
                                     Sound.playClick();
                                     --page;
-                                    menu.title = `Manual (${page + 1}/
-                                    ${manualPages.length})`;
+                                    menu.title = `Manual (${page + 1}/` +
+                                    `${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
@@ -2267,8 +2354,8 @@ var createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
-                                    menu.title = `Manual (${page + 1}/
-                                    ${manualPages.length})`;
+                                    menu.title = `Manual (${page + 1}/` +
+                                    `${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
@@ -2310,7 +2397,7 @@ var createSequenceMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: `Sequences Menu`,
+        title: 'Sequences Menu',
         content: ui.createStackLayout
         ({
             children:
