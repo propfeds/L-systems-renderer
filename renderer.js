@@ -347,6 +347,7 @@ class Renderer
 
     update(level, seedChanged = false)
     {
+        let loop = this.loopMode == 2 && level > this.lvl;
         let start = seedChanged ? 0 : this.levels.length;
         let charCount = 0;
         for(let i = start; i <= level; ++i)
@@ -365,7 +366,8 @@ class Renderer
             }
         }
         this.lvl = level;
-        this.reset();
+        if(!loop)
+            this.reset();
     }
     reset()
     {
@@ -471,6 +473,10 @@ class Renderer
                     this.stack.push([this.state, this.ori]);
                     break;
                 case ']':
+                    if(this.loopMode == 0 && this.stack.length == 1)
+                    {
+                        return;
+                    }
                     let t = this.stack.pop();
                     this.state = t[0];
                     this.ori = t[1];
@@ -481,6 +487,8 @@ class Renderer
                         if(this.idx >= this.levels[this.lvl].length)
                         {
                             this.idx = 0;
+                            if(this.loopMode == 2)
+                                l.buy(1);
                             this.reverse = false;
                         }
                     }
@@ -1185,7 +1193,7 @@ var createConfigMenu = () =>
     let loopModes = ['Off', 'Level', 'Playlist'];
     let ODLabel = ui.createLatexLabel
     ({
-        text: `Loop mode: ${loopModes[tmpOD]}`,
+        text: `Looping mode: ${loopModes[tmpOD]}`,
         row: 0,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -1202,7 +1210,7 @@ var createConfigMenu = () =>
         onValueChanged: () =>
         {
             tmpOD = Math.round(ODSlider.value);
-            ODLabel.text = `Loop mode: ${loopModes[tmpOD]}`;
+            ODLabel.text = `Looping mode: ${loopModes[tmpOD]}`;
         },
         onDragCompleted: () =>
         {
