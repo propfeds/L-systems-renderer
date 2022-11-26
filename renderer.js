@@ -226,8 +226,8 @@ class Quaternion
      */
     toString()
     {
-        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + 
-        ${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
+        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + ` +
+        `${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
     }
 }
 
@@ -305,8 +305,8 @@ class LSystem
 
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} 
-        ${this.ignoreList}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ` +
+        `${this.ignoreList}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -352,7 +352,7 @@ class Renderer
 
     update(level, seedChanged = false)
     {
-        let clearGraph = this.loopMode != 2 && level <= this.lvl;
+        let clearGraph = this.loopMode != 2 || level <= this.lvl;
         let start = seedChanged ? 0 : this.levels.length;
         let charCount = 0;
         for(let i = start; i <= level; ++i)
@@ -562,28 +562,28 @@ class Renderer
     }
     getProgressString()
     {
-        return `i=${Math.max(this.idx - 1, 0)}/
-        ${this.levels[this.lvl].length - 2}&
-        (${getCoordString(this.getProgress())}\\%)`;
+        return `i=${Math.max(this.idx - 1, 0)}/` +
+        `${this.levels[this.lvl].length - 2}&` +
+        `(${getCoordString(this.getProgress())}\\%)`;
     }
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=
-        ${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&
-        ${this.getProgressString()}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=` +
+        `${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&` +
+        `${this.getProgressString()}\\end{matrix}`;
     }
     getOriString()
     {
-        return `\\begin{matrix}q=${this.ori.toString()},&
-        ${this.getProgressString()}\\end{matrix}`;
+        return `\\begin{matrix}q=${this.ori.toString()},&` +
+        `${this.getProgressString()}\\end{matrix}`;
     }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} 
-        ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} 
-        ${this.camera.z} ${this.followFactor} ${this.loopMode} 
-        ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} 
-        ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
+        return`${this.initScale} ${this.figureScale} ` +
+        `${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ` +
+        `${this.camera.z} ${this.followFactor} ${this.loopMode} ` +
+        `${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ` +
+        `${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
 
@@ -602,36 +602,43 @@ var manualPages =
     {
         title: 'The Main Screen',
         contents: `The main screen consists of the renderer and its controls.
-        \n\nLevel: the system\'s level. Pressing + or - will derive/revert the 
+        \n\nLevel: the system's level. Pressing + or - will derive/revert the 
         system respectively. Pressing the Level button will reveal all levels 
-        of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up 
-        to 10 lines/sec, which produces less accurate lines).\nPressing the 
-        Tickspeed button will toggle between tick delay and tickspeed mode.\n
-        (Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: 
-        located on the top right. Pressing this button will reroll the 
-        system\'s seed (for stochastic systems).`
+        of the system.
+        \n\nTickspeed: controls the renderer's drawing speed (up to 10 lines/
+        sec, which produces less accurate lines).
+        \nPressing the Tickspeed button will toggle between Tick delay and 
+        Tickspeed modes.
+        \n(Tip: holding + or - will buy/refund a variable in bulk.)
+        \n\nReroll: located on the top right. Pressing this button will reroll the system's seed (for stochastic systems).`
     },
     {
         title: 'A Primer on L-systems',
         contents: `Developed in 1968 by biologist Aristid Lindenmayer, an 
         L-system is a formal grammar that describes the growth of a sequence 
         (string). It is often used to model plants and draw fractal figures.
-        \n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in 
-        the sequence is derived per level. Each rule is written in the form of: 
-        {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward 
-        to draw.\n+ -: rotates cursor on the z-axis (yaw), counter-/clockwise 
-        respectively.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: 
-        rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]
-        : allows for branches by queueing cursor positions on a stack.\n, : 
-        separates between derivations (for stochastic systems).`
+        \n\nTerms:
+        \nAxiom: the starting sequence.
+        \nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}
+        \n\nSymbols:
+        \nAny letter: moves cursor forward to draw.
+        \n+ -: rotates cursor on the z-axis (yaw), counter-/clockwise 
+        respectively.
+        \n& ^: rotates cursor on the y-axis (pitch).
+        \n\\ /: rotates cursor on the x-axis (roll).
+        \n|: reverses cursor direction.
+        \n[ ]: allows for branches by queueing cursor positions on a stack.
+        \n, : separates between derivations (for stochastic systems).`
     },
     {
         title: 'Tips on Constructing an L-system',
-        contents: `Each letter can be used to mean different things, such as 
-        drawing a flower, emulating growth stages, alternating between 
-        patterns, etc.\nTraditionally, F is used to mean forward, and X to 
-        create new branches.\n\nBrackets work in a stack mechanism, therefore 
-        every [ has to be properly followed by a ] in the same production rule.
+        contents: `Although traditionally F is used to go forward, each letter 
+        can be used to mean different things, such as drawing a flower, 
+        emulating growth stages, alternating between patterns, etc.
+        \n\nFor some simple systems, a symbol (often X) is used to resemble the 
+        fractal's shape.
+        \n\nBrackets work in a stack mechanism, therefore every [ has to be 
+        properly followed by a ] in the same production rule.
         \n\nTo create a stochastic system, simply list several derivations in 
         the same rule, separated by a , (comma). One of those derivations will 
         be randomly selected per symbol whenever the system is derived.
@@ -641,40 +648,61 @@ var manualPages =
     {
         title: 'Configuring your L-system',
         contents: `Configure the visual representation of your L-system with 
-        the renderer menu.\n\nInitial scale: zooms out by this much for every 
-        figure.\nFigure scale: zooms the figure out by a multiplier per level.
-        \n\nCamera mode: toggles between static and cursor-focused.\nCentre: 
-        sets camera position for level 0 (this follows figure scale, and is 
-        based on non-upright coordinates).\nCamera follow factor: changes how 
-        quickly the camera chases the cursor.\n(Note: figure scale and camera 
-        centre needs to be experimented manually for each individual L-system.)
-        \n\nOffline drawing: when enabled, no longer resets the graph while 
-        tabbed out.\nUpright x-axis: rotates figure by 90 degrees 
-        counter-clockwise around the z-axis.\n\nQuickdraw: skips over 
-        consecutive straight lines.\nQuick backtrack: similarly, but on the way 
-        back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.`
+        the renderer menu.
+        \n\nInitial scale: zooms out by this much for every figure.
+        \nFigure scale: zooms the figure out by a multiplier per level.
+        \n\nCamera mode: toggles between static and cursor-focused.
+        \nCentre: sets camera position for level 0 (this follows figure scale, 
+        and is based on non-upright coordinates).
+        \nCamera follow factor: changes how quickly the camera chases the 
+        cursor.
+        \n(Note: figure scale and camera centre needs to be experimented 
+        manually for each individual L-system.)
+        \n\nLooping mode: Level repeats a single level, while Playlist draws 
+        levels consecutively.
+        \nUpright x-axis: rotates figure by 90 degrees counter-clockwise around 
+        the z-axis.
+        \n\nQuickdraw: skips over consecutive straight lines.
+        \nQuick backtrack: similarly, but on the way back.
+        \nBacktrack list: sets stopping symbols for quickdraw/backtrack.`
     },
     {
         title: 'Example: Arrow weed',
-        contents: `Meet the default system. It tastes like mint.\n\nAxiom: 
-        X\nF=FF\nX=F[+X][-X]FX\nTurning angle: 30°\n\nScale: 1, 2\nCamera 
-        centre: (1, 0, 0)`,
+        contents: `Meet the default system. It tastes like mint.
+        \n\nAxiom: X
+        \nF=FF
+        \nX=F[+X][-X]FX
+        \nTurning angle: 30°
+        \n\nApplies static camera:
+        \nScale: 1, 2
+        \nCentre: (1, 0, 0)`,
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
     },
     {
         title: 'Example: Dragon curve',
-        contents: `Also known as the Heighway dragon.\n\nAxiom: FX\nY=-FX-Y\nX=X
-        +YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)
-        `,
+        contents: `Also known as the Heighway dragon.
+        \n\nAxiom: FX
+        \nY=-FX-Y
+        \nX=X+YF+
+        \nTurning angle: 90°
+        \n\nApplies static camera:
+        \nScale: 4, sqrt(2)
+        \nCentre: (0, 0, 0)`,
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
-        config: [2, Math.sqrt(2), 0, 0, 0, false]
+        config: [4, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
-        contents: `It generates a random shape every time it rolls!\n\nAxiom: 
-        F\nF=FF\nX=F-[[X]+X]+F[+FX]-X,\n     F+[[X]-X]-F[-FX]+X\nTurning angle: 
-        22.5°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)`,
+        contents: `It generates a random shape every time it rolls!
+        \n\nAxiom: X
+        \nF=FF
+        \nX=F-[[X]+X]+F[+FX]-X,
+        \n     F+[[X]-X]-F[-FX]+X
+        \nTurning angle: 22.5°
+        \n\nApplies static camera:
+        \nScale: 1, 2
+        \nCamera centre: (1, 0, 0)`,
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
@@ -684,10 +712,25 @@ var manualPages =
     {
         title: 'Example: Lucky flower',
         contents: `How tall can it grow until it sprouts a flower? Reroll to 
-        find out!\n\nAxiom: A\nA=I[L]B,\n     I[L]A,\n     I[L][R]B,\n     
-        IF\nB=I[R]A,\n     I[R]B,\n     I[L][R]A,\n     IF\nL=---I,\n     --I,
-        \n     ----I\nR=+++I,\n     ++I,\n     ++++I\nF=[---[I+I]--I+I][+++[I-I]
-        ++I-I]I\nTurning angle: 12°`,
+        find out!
+        \n\nAxiom: A
+        \nA=I[L]B,
+        \n     I[L]A,
+        \n     I[L][R]B,
+        \n     IF
+        \nB=I[R]A,
+        \n     I[R]B,
+        \n     I[L][R]A,
+        \n     IF
+        \nL=---I,
+        \n     --I,
+        \n     ----I
+        \nR=+++I,
+        \n     ++I,
+        \n     ++++I
+        \nF=[---[I+I]--I+I][+++[I-I]++I-I]I
+        \nTurning angle: 12°
+        \n\nApplies a mathematically unproven static camera configuration.`,
         system: new LSystem('A', [
             'A=I[L]B,I[L]A,I[L][R]B,IF',
             'B=I[R]A,I[R]B,I[L][R]A,IF',
@@ -695,11 +738,11 @@ var manualPages =
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
         ], 12),
-        config: [3, 1.1, 0.7, 0, 0, true]
+        config: [6, 1, 0.6, 0, 0, true]
     },
     {
         title: 'Example: Blackboard tree (3D)',
-        contents: `A blackboard tree (Alstonia scholaris) when it\'s still tiny.
+        contents: `A blackboard tree (Alstonia scholaris) when it's still tiny.
         \n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z
         +N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 
         2\nCamera centre: (1.5, 0, 0)`,
@@ -2299,8 +2342,8 @@ var createSequenceMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} 
-    ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ` +
+    `${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -2318,7 +2361,8 @@ var setInternalState = (stateStr) =>
         time = parseBigNumber(worldValues[1]);
     if(worldValues.length > 2)
         page = Number(worldValues[2]);
-    // Offline Drawing
+    if(worldValues.length > 3)
+        offlineDrawing = Boolean(Number(worldValues[3]));
     if(worldValues.length > 4)
         altCurrencies = Boolean(Number(worldValues[4]));
     if(worldValues.length > 5)
