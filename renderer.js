@@ -1350,22 +1350,6 @@ var createConfigMenu = () =>
             ODSlider.value = tmpOD;
         }
     });
-    // let ODSwitch = ui.createSwitch
-    // ({
-    //     isToggled: Boolean(tmpOD),
-    //     row: 0,
-    //     column: 1,
-    //     horizontalOptions: LayoutOptions.END,
-    //     onTouched: (e) =>
-    //     {
-    //         if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
-    //         {
-    //             Sound.playClick();
-    //             tmpOD = !tmpOD;
-    //             ODSwitch.isToggled = tmpOD;
-    //         }
-    //     }
-    // });
     let tmpUpright = renderer.upright;
     let uprightSwitch = ui.createSwitch
     ({
@@ -1375,7 +1359,8 @@ var createConfigMenu = () =>
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpUpright = !tmpUpright;
@@ -1392,7 +1377,8 @@ var createConfigMenu = () =>
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpQD = !tmpQD;
@@ -1409,7 +1395,8 @@ var createConfigMenu = () =>
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpQB = !tmpQB;
@@ -1540,7 +1527,9 @@ var createConfigMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.configure(tmpIScale, tmpFScale, tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpOD, tmpUpright, tmpQD, tmpQB, tmpEXB);
+                                renderer.configure(tmpIScale, tmpFScale,
+                                    tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpOD,
+                                    tmpUpright, tmpQD, tmpQB, tmpEXB);
                                 menu.hide();
                             }
                         }),
@@ -1748,7 +1737,8 @@ var createSystemMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle, tmpSeed));
+                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules,
+                            tmpAngle, tmpSeed));
                         menu.hide();
                     }
                 })
@@ -1791,18 +1781,11 @@ var createNamingMenu = (title, values) =>
                         while(savedSystems.has(tmpName))
                             tmpName += ' (copy)';
                         savedSystems.set(tmpName, values);
-                        // let saveMenu = createSaveMenu();
-                        // saveMenu.show();
                         menu.hide();
                     }
                 })
             ]
-        }),
-        // onDisappearing: () =>
-        // {
-        //     let saveMenu = createSaveMenu();
-        //     saveMenu.show();
-        // }
+        })
     });
     return menu;
 }
@@ -1838,7 +1821,9 @@ var createClipboardMenu = (values) =>
                     {
                         Sound.playClick();
                         let systemValues = tmpSys.split(' ');
-                        renderer.applySystem(new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2])));
+                        renderer.applySystem(new LSystem(systemValues[0],
+                            systemValues.slice(3), Number(systemValues[1]),
+                            Number(systemValues[2])));
                         menu.hide();
                     }
                 })
@@ -1923,7 +1908,8 @@ var createViewMenu = (title) =>
                                         text: tmpAngle.toString(),
                                         row: 0,
                                         column: 3,
-                                        horizontalTextAlignment: TextAlignment.END
+                                        horizontalTextAlignment:
+                                        TextAlignment.END
                                     }),
                                 ]
                             }),
@@ -1967,7 +1953,8 @@ var createViewMenu = (title) =>
                                         text: tmpSeed.toString(),
                                         row: 1,
                                         column: 1,
-                                        horizontalTextAlignment: TextAlignment.END
+                                        horizontalTextAlignment:
+                                        TextAlignment.END
                                     })
                                 ]
                             })
@@ -1993,7 +1980,8 @@ var createViewMenu = (title) =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.applySystem(new LSystem(tmpAxiom, tmpRules, tmpAngle, tmpSeed));
+                                renderer.applySystem(new LSystem(tmpAxiom,
+                                    tmpRules, tmpAngle, tmpSeed));
                                 menu.hide();
                             }
                         }),
@@ -2013,12 +2001,6 @@ var createViewMenu = (title) =>
                 })
             ]
         })
-        
-        // onDisappearing: () =>
-        // {
-        //     let saveMenu = createSaveMenu();
-        //     saveMenu.show();
-        // }
     })
     return menu;
 }
@@ -2100,7 +2082,8 @@ var createSaveMenu = () =>
                             column: 1,
                             onClicked: () =>
                             {
-                                let clipMenu = createClipboardMenu(renderer.system.toString());
+                                let clipMenu = createClipboardMenu(
+                                    renderer.system.toString());
                                 clipMenu.show();
                             }
                         }),
@@ -2113,7 +2096,9 @@ var createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let namingMenu = createNamingMenu('Untitled L-system', renderer.system.toString(), systemGrid);
+                                let namingMenu = createNamingMenu(
+                                    'Untitled L-system',
+                                    renderer.system.toString(), systemGrid);
                                 namingMenu.onDisappearing = () =>
                                 {
                                     systemGrid.children = getSystemGrid();
@@ -2140,20 +2125,6 @@ var createSaveMenu = () =>
                     // heightRequest: ui.screenHeight * 0.25,
                     content: systemGrid
                 })
-                // ui.createBox
-                // ({
-                //     heightRequest: 1,
-                //     margin: new Thickness(0, 6)
-                // }),
-                // ui.createButton
-                // ({
-                //     text: 'Close',
-                //     onClicked: () =>
-                //     {
-                //         Sound.playClick();
-                //         menu.hide();
-                //     }
-                // })
             ]
         })
     })
@@ -2184,11 +2155,6 @@ var createManualMenu = () =>
             children:
             [
                 pageTitle,
-                // ui.createBox
-                // ({
-                //     heightRequest: 1,
-                //     margin: new Thickness(0, 6)
-                // }),
                 ui.createFrame
                 ({
                     padding: new Thickness(6, 6),
@@ -2220,9 +2186,11 @@ var createManualMenu = () =>
                                 {
                                     Sound.playClick();
                                     --page;
-                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
+                                    menu.title = `Manual (${page + 1}/
+                                    ${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
-                                    pageContents.text = manualPages[page].contents;
+                                    pageContents.text =
+                                    manualPages[page].contents;
                                 }
                             }
                         }),
@@ -2239,7 +2207,7 @@ var createManualMenu = () =>
                                 if('config' in manualPages[page])
                                 {
                                     let a = manualPages[page].config;
-                                    renderer.configureStaticCamera(a[0], a[1], a[2], a[3], a[4], a[5]);
+                                    renderer.configureStaticCamera(...a);
                                 }
                                 menu.hide();
                             }
@@ -2256,9 +2224,11 @@ var createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
-                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
+                                    menu.title = `Manual (${page + 1}/
+                                    ${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
-                                    pageContents.text = manualPages[page].contents;
+                                    pageContents.text =
+                                    manualPages[page].contents;
                                 }
                             }
                         })
@@ -2329,7 +2299,8 @@ var createSequenceMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} 
+    ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -2354,7 +2325,8 @@ var setInternalState = (stateStr) =>
         tickDelayMode = Boolean(Number(worldValues[5]));
 
     let systemValues = values[2].split(' ');
-    let system = new LSystem(systemValues[0], systemValues.slice(3), Number(systemValues[1]), Number(systemValues[2]));
+    let system = new LSystem(systemValues[0], systemValues.slice(3),
+    Number(systemValues[1]), Number(systemValues[2]));
 
     let rendererValues = values[1].split(' ');
     if(rendererValues.length > 0)
