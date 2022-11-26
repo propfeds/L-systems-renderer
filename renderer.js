@@ -1067,9 +1067,10 @@ var createConfigMenu = () =>
         }
     });
     let tmpCFC = renderer.cursorFocused;
+    let camModes = ['Static', 'Cursor-focused'];
     let CFCLabel = ui.createLatexLabel
     ({
-        text: `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`,
+        text: `Camera mode: ${camModes[Number(tmpCFC)]}`,
         row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -1091,7 +1092,7 @@ var createConfigMenu = () =>
                 camGrid.isVisible = !tmpCFC;
                 FFLabel.isVisible = tmpCFC;
                 FFEntry.isVisible = tmpCFC;
-                CFCLabel.text = `Camera mode: ${tmpCFC ? 'Cursor-focused' : 'Static'}`;
+                CFCLabel.text = `Camera mode: ${camModes[Number(tmpCFC)]}`;
             }
         }
     });
@@ -1181,22 +1182,50 @@ var createConfigMenu = () =>
         }
     });
     let tmpOD = renderer.loopMode;
-    let ODSwitch = ui.createSwitch
+    let loopModes = ['Off', 'Level', 'Playlist'];
+    let ODLabel = ui.createLatexLabel
     ({
-        isToggled: Boolean(tmpOD),
+        text: `Loop mode: ${loopModes[tmpOD]}`,
+        row: 0,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
+    let ODSlider = ui.createSlider
+    ({
         row: 0,
         column: 1,
-        horizontalOptions: LayoutOptions.END,
-        onTouched: (e) =>
+        minimum: 0,
+        maximum: 2,
+        value: tmpOD,
+        // minimumTrackColor: Color.MINIGAME_TILE_BORDER,
+        // maximumTrackColor: Color.BORDER,
+        onValueChanged: () =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
-            {
-                Sound.playClick();
-                tmpOD = !tmpOD;
-                ODSwitch.isToggled = tmpOD;
-            }
+            tmpOD = Math.round(ODSlider.value);
+            ODLabel.text = `Loop mode: ${loopModes[tmpOD]}`;
+        },
+        onDragCompleted: () =>
+        {
+            Sound.playClick();
+            ODSlider.value = tmpOD;
         }
     });
+    // let ODSwitch = ui.createSwitch
+    // ({
+    //     isToggled: Boolean(tmpOD),
+    //     row: 0,
+    //     column: 1,
+    //     horizontalOptions: LayoutOptions.END,
+    //     onTouched: (e) =>
+    //     {
+    //         if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+    //         {
+    //             Sound.playClick();
+    //             tmpOD = !tmpOD;
+    //             ODSwitch.isToggled = tmpOD;
+    //         }
+    //     }
+    // });
     let tmpUpright = renderer.upright;
     let uprightSwitch = ui.createSwitch
     ({
@@ -1320,14 +1349,8 @@ var createConfigMenu = () =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
-                                    ui.createLatexLabel
-                                    ({
-                                        text: 'Loop mode: ',
-                                        row: 0,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
-                                    ODSwitch,
+                                    ODLabel,
+                                    ODSlider,
                                     ui.createLatexLabel
                                     ({
                                         text: 'Upright x-axis: ',
