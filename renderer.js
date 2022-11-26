@@ -191,14 +191,14 @@ class Quaternion
      */
     mul(quat)
     {
-        let t0 = this.w * quat.w - this.x * quat.x
-               - this.y * quat.y - this.z * quat.z;
-        let t1 = this.w * quat.x + this.x * quat.w
-               + this.y * quat.z - this.z * quat.y;
-        let t2 = this.w * quat.y - this.x * quat.z
-               + this.y * quat.w + this.z * quat.x;
-        let t3 = this.w * quat.z + this.x * quat.y
-               - this.y * quat.x + this.z * quat.w;
+        let t0 = this.w * quat.w - this.x * quat.x -
+        this.y * quat.y - this.z * quat.z;
+        let t1 = this.w * quat.x + this.x * quat.w +
+        this.y * quat.z - this.z * quat.y;
+        let t2 = this.w * quat.y - this.x * quat.z +
+        this.y * quat.w + this.z * quat.x;
+        let t3 = this.w * quat.z + this.x * quat.y -
+        this.y * quat.x + this.z * quat.w;
         return new Quaternion(t0, t1, t2, t3);
     }
     /**
@@ -226,7 +226,8 @@ class Quaternion
      */
     toString()
     {
-        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + ${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
+        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + 
+        ${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
     }
 }
 
@@ -304,7 +305,8 @@ class LSystem
 
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${this.ignoreList}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} 
+        ${this.ignoreList}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -318,7 +320,10 @@ class LSystem
 
 class Renderer
 {
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false, camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0, upright = false, quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]')
+    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false,
+        camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
+        upright = false, quickDraw = false, quickBacktrack = false,
+        backtrackList = '+-&^\\/|[]')
     {
         this.system = system;
         this.initScale = initScale;
@@ -347,7 +352,7 @@ class Renderer
 
     update(level, seedChanged = false)
     {
-        let loop = this.loopMode == 2 && level > this.lvl;
+        let clearGraph = this.loopMode != 2 && level <= this.lvl;
         let start = seedChanged ? 0 : this.levels.length;
         let charCount = 0;
         for(let i = start; i <= level; ++i)
@@ -366,10 +371,9 @@ class Renderer
             }
         }
         this.lvl = level;
-        if(!loop)
-            this.reset();
+        this.reset(clearGraph);
     }
-    reset()
+    reset(clearGraph = true)
     {
         this.state = new Vector3(0, 0, 0);
         this.ori = new Quaternion();
@@ -378,12 +382,19 @@ class Renderer
         this.idStack = [];
         this.idx = 0;
         this.firstPoint = true;
-        theory.clearGraph();
+        if(clearGraph)
+            theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
-    configure(initScale, figureScale, cursorFocused, camX, camY, camZ, followFactor, loopMode, upright, quickDraw, quickBacktrack, backtrackList)
+    configure(initScale, figureScale, cursorFocused, camX, camY, camZ,
+        followFactor, loopMode, upright, quickDraw, quickBacktrack,
+        backtrackList)
     {
-        let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright) || (quickDraw != this.quickDraw) || (quickBacktrack != this.quickBacktrack) || (backtrackList != this.backtrackList);
+        let requireReset = (initScale != this.initScale) ||
+        (figureScale != this.figureScale) || (upright != this.upright) ||
+        (quickDraw != this.quickDraw) ||
+        (quickBacktrack != this.quickBacktrack) ||
+        (backtrackList != this.backtrackList);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
@@ -401,7 +412,8 @@ class Renderer
     }
     configureStaticCamera(initScale, figureScale, camX, camY, camZ, upright)
     {
-        let requireReset = (initScale != this.initScale) || (figureScale != this.figureScale) || (upright != this.upright);
+        let requireReset = (initScale != this.initScale) ||
+        (figureScale != this.figureScale) || (upright != this.upright);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
@@ -480,7 +492,8 @@ class Renderer
                     let t = this.stack.pop();
                     this.state = t[0];
                     this.ori = t[1];
-                    if(this.stack.length == this.idStack[this.idStack.length - 1])
+                    if(this.stack.length ==
+                        this.idStack[this.idStack.length - 1])
                     {
                         this.idStack.pop();
                         this.idx = i + 1;
@@ -494,9 +507,11 @@ class Renderer
                     }
                     return;
                 default:
-                    if(this.system.ignoreList.includes(this.levels[this.lvl][i]))
+                    if(this.system.ignoreList.includes(
+                        this.levels[this.lvl][i]))
                         break;
-                    let breakAhead = this.backtrackList.includes(this.levels[this.lvl][i + 1]);
+                    let breakAhead = this.backtrackList.includes(
+                        this.levels[this.lvl][i + 1]);
                     if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
                     this.forward();
@@ -518,7 +533,8 @@ class Renderer
     }
     getCursor()
     {
-        let coords = this.state / (this.initScale * this.figureScale ** this.lvl);
+        let coords = this.state / (this.initScale * this.figureScale **
+            this.lvl);
         if(this.upright)
             return new Vector3(-coords.y, -coords.x, coords.z);
         return new Vector3(coords.x, -coords.y, coords.z);
@@ -527,7 +543,8 @@ class Renderer
     {
         if(this.cursorFocused)
         {
-            let newCamera = this.getCentre() * this.followFactor + this.lastCamera * (1 - this.followFactor);
+            let newCamera = this.getCentre() * this.followFactor +
+            this.lastCamera * (1 - this.followFactor);
             this.lastCamera = newCamera;
             return newCamera;
         }
@@ -540,28 +557,40 @@ class Renderer
     }
     getProgress()
     {
-        return Math.max(this.idx - 1, 0) * 100 / (this.levels[this.lvl].length - 2);
+        return Math.max(this.idx - 1, 0) * 100 /
+        (this.levels[this.lvl].length - 2);
     }
     getProgressString()
     {
-        return `i=${Math.max(this.idx - 1, 0)}/${this.levels[this.lvl].length - 2}&(${getCoordString(this.getProgress())}\\%)`;
+        return `i=${Math.max(this.idx - 1, 0)}/
+        ${this.levels[this.lvl].length - 2}&
+        (${getCoordString(this.getProgress())}\\%)`;
     }
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.getProgressString()}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=
+        ${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&
+        ${this.getProgressString()}\\end{matrix}`;
     }
     getOriString()
     {
-        return `\\begin{matrix}q=${this.ori.toString()},&${this.getProgressString()}\\end{matrix}`;
+        return `\\begin{matrix}q=${this.ori.toString()},&
+        ${this.getProgressString()}\\end{matrix}`;
     }
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
+        return`${this.initScale} ${this.figureScale} 
+        ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} 
+        ${this.camera.z} ${this.followFactor} ${this.loopMode} 
+        ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} 
+        ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
 
 var xAxisQuat = new Quaternion(0, 1, 0, 0);
-var getCoordString = (x) => x.toFixed(x >= -0.01 ? (x < 10 ? 3 : (x < 100 ? 2 : 1)) : (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
+var getCoordString = (x) => x.toFixed(x >= -0.01 ?
+    (x < 10 ? 3 : (x < 100 ? 2 : 1)) :
+    (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var renderer = new Renderer(arrow, 1, 2, false, 1);
@@ -572,78 +601,172 @@ var manualPages =
 [
     {
         title: 'The Main Screen',
-        contents: 'The main screen consists of the renderer and its controls.\n\nLevel: the system\'s level. Pressing + or - will derive/revert the system respectively. Pressing the Level button will reveal all levels of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up to 10 lines/sec, which produces less accurate lines).\nPressing the Tickspeed button will toggle between tick delay and tickspeed mode.\n(Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: located on the top right. Pressing this button will reroll the system\'s seed (for stochastic systems).'
+        contents: `The main screen consists of the renderer and its controls.
+        \n\nLevel: the system\'s level. Pressing + or - will derive/revert the 
+        system respectively. Pressing the Level button will reveal all levels 
+        of the system.\n\nTickspeed: controls the renderer\'s drawing speed (up 
+        to 10 lines/sec, which produces less accurate lines).\nPressing the 
+        Tickspeed button will toggle between tick delay and tickspeed mode.\n
+        (Tip: holding + or - will buy/refund a variable in bulk.)\n\nReroll: 
+        located on the top right. Pressing this button will reroll the 
+        system\'s seed (for stochastic systems).`
     },
     {
         title: 'A Primer on L-systems',
-        contents: 'Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal grammar that describes the growth of a sequence (string). It is often used to model plants and draw fractal figures.\n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in the sequence is derived per level. Each rule is written in the form of: {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward to draw.\n+ -: rotates cursor on the z-axis (yaw), counter-/clockwise respectively.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]: allows for branches by queueing cursor positions on a stack.\n, : separates between derivations (for stochastic systems).'
+        contents: `Developed in 1968 by biologist Aristid Lindenmayer, an 
+        L-system is a formal grammar that describes the growth of a sequence 
+        (string). It is often used to model plants and draw fractal figures.
+        \n\nTerms:\nAxiom: the starting sequence.\nRules: how each symbol in 
+        the sequence is derived per level. Each rule is written in the form of: 
+        {symbol}={derivation(s)}\n\nSymbols:\nAny letter: moves cursor forward 
+        to draw.\n+ -: rotates cursor on the z-axis (yaw), counter-/clockwise 
+        respectively.\n& ^: rotates cursor on the y-axis (pitch).\n\\ /: 
+        rotates cursor on the x-axis (roll).\n|: reverses cursor direction.\n[ ]
+        : allows for branches by queueing cursor positions on a stack.\n, : 
+        separates between derivations (for stochastic systems).`
     },
     {
         title: 'Tips on Constructing an L-system',
-        contents: 'Each letter can be used to mean different things, such as drawing a flower, emulating growth stages, alternating between patterns, etc.\nTraditionally, F is used to mean forward, and X to create new branches.\n\nBrackets work in a stack mechanism, therefore every [ has to be properly followed by a ] in the same production rule.\n\nTo create a stochastic system, simply list several derivations in the same rule, separated by a , (comma). One of those derivations will be randomly selected per symbol whenever the system is derived.\nGenerally, to keep a degree of uniformity in the system, it is advised for the derivations to be similar in shape.'
+        contents: `Each letter can be used to mean different things, such as 
+        drawing a flower, emulating growth stages, alternating between 
+        patterns, etc.\nTraditionally, F is used to mean forward, and X to 
+        create new branches.\n\nBrackets work in a stack mechanism, therefore 
+        every [ has to be properly followed by a ] in the same production rule.
+        \n\nTo create a stochastic system, simply list several derivations in 
+        the same rule, separated by a , (comma). One of those derivations will 
+        be randomly selected per symbol whenever the system is derived.
+        \nGenerally, to keep a degree of uniformity in the system, it is 
+        advised for the derivations to be similar in shape.`
     },
     {
         title: 'Configuring your L-system',
-        contents: 'Configure the visual representation of your L-system with the renderer menu.\n\nInitial scale: zooms out by this much for every figure.\nFigure scale: zooms the figure out by a multiplier per level.\n\nCamera mode: toggles between static and cursor-focused.\nCentre: sets camera position for level 0 (this follows figure scale, and is based on non-upright coordinates).\nCamera follow factor: changes how quickly the camera chases the cursor.\n(Note: figure scale and camera centre needs to be experimented manually for each individual L-system.)\n\nOffline drawing: when enabled, no longer resets the graph while tabbed out.\nUpright x-axis: rotates figure by 90 degrees counter-clockwise around the z-axis.\n\nQuickdraw: skips over consecutive straight lines.\nQuick backtrack: similarly, but on the way back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.'
+        contents: `Configure the visual representation of your L-system with 
+        the renderer menu.\n\nInitial scale: zooms out by this much for every 
+        figure.\nFigure scale: zooms the figure out by a multiplier per level.
+        \n\nCamera mode: toggles between static and cursor-focused.\nCentre: 
+        sets camera position for level 0 (this follows figure scale, and is 
+        based on non-upright coordinates).\nCamera follow factor: changes how 
+        quickly the camera chases the cursor.\n(Note: figure scale and camera 
+        centre needs to be experimented manually for each individual L-system.)
+        \n\nOffline drawing: when enabled, no longer resets the graph while 
+        tabbed out.\nUpright x-axis: rotates figure by 90 degrees 
+        counter-clockwise around the z-axis.\n\nQuickdraw: skips over 
+        consecutive straight lines.\nQuick backtrack: similarly, but on the way 
+        back.\nBacktrack list: sets stopping symbols for quickdraw/backtrack.`
     },
     {
         title: 'Example: Arrow weed',
-        contents: 'Meet the default system. It tastes like mint.\n\nAxiom: X\nF=FF\nX=F[+X][-X]FX\nTurning angle: 30°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
+        contents: `Meet the default system. It tastes like mint.\n\nAxiom: 
+        X\nF=FF\nX=F[+X][-X]FX\nTurning angle: 30°\n\nScale: 1, 2\nCamera 
+        centre: (1, 0, 0)`,
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
     },
     {
         title: 'Example: Dragon curve',
-        contents: 'Also known as the Heighway dragon.\n\nAxiom: FX\nY=-FX-Y\nX=X+YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)',
+        contents: `Also known as the Heighway dragon.\n\nAxiom: FX\nY=-FX-Y\nX=X
+        +YF+\nTurning angle: 90°\n\nScale: 2, sqrt(2)\nCamera centre: (0, 0, 0)
+        `,
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: [2, Math.sqrt(2), 0, 0, 0, false]
     },
     {
         title: 'Example: Stochastic weed',
-        contents: 'It generates a random shape every time it rolls!\n\nAxiom: F\nF=FF\nX=F-[[X]+X]+F[+FX]-X,\n     F+[[X]-X]-F[-FX]+X\nTurning angle: 22.5°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
-        system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'], 22.5),
+        contents: `It generates a random shape every time it rolls!\n\nAxiom: 
+        F\nF=FF\nX=F-[[X]+X]+F[+FX]-X,\n     F+[[X]-X]-F[-FX]+X\nTurning angle: 
+        22.5°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)`,
+        system: new LSystem('X', [
+            'F=FF',
+            'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
+        ], 22.5),
         config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Lucky flower',
-        contents: 'How tall can it grow until it sprouts a flower? Reroll to find out!\n\nAxiom: A\nA=I[L]B,\n     I[L]A,\n     I[L][R]B,\n     IF\nB=I[R]A,\n     I[R]B,\n     I[L][R]A,\n     IF\nL=---I,\n     --I,\n     ----I\nR=+++I,\n     ++I,\n     ++++I\nF=[---[I+I]--I+I][+++[I-I]++I-I]I\nTurning angle: 12°',
-        system: new LSystem('A', ['A=I[L]B,I[L]A,I[L][R]B,IF', 'B=I[R]A,I[R]B,I[L][R]A,IF', 'L=---I,--I,----I', 'R=+++I,++I,++++I', 'F=[---[I+I]--I+I][+++[I-I]++I-I]I'], 12),
+        contents: `How tall can it grow until it sprouts a flower? Reroll to 
+        find out!\n\nAxiom: A\nA=I[L]B,\n     I[L]A,\n     I[L][R]B,\n     
+        IF\nB=I[R]A,\n     I[R]B,\n     I[L][R]A,\n     IF\nL=---I,\n     --I,
+        \n     ----I\nR=+++I,\n     ++I,\n     ++++I\nF=[---[I+I]--I+I][+++[I-I]
+        ++I-I]I\nTurning angle: 12°`,
+        system: new LSystem('A', [
+            'A=I[L]B,I[L]A,I[L][R]B,IF',
+            'B=I[R]A,I[R]B,I[L][R]A,IF',
+            'L=---I,--I,----I',
+            'R=+++I,++I,++++I',
+            'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
+        ], 12),
         config: [3, 1.1, 0.7, 0, 0, true]
     },
     {
         title: 'Example: Blackboard tree (3D)',
-        contents: 'A blackboard tree (Alstonia scholaris) when it\'s still tiny.\n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z+N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 2\nCamera centre: (1.5, 0, 0)',
-        system: new LSystem('F', ['F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]', 'M=Z-M', 'N=Z+N', 'O=Z&O', 'P=Z^P', 'Y=Z-ZY+', 'Z=ZZ'], 8),
+        contents: `A blackboard tree (Alstonia scholaris) when it\'s still tiny.
+        \n\nAxiom: F\nF=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]\nM=Z-M\nN=Z
+        +N\nO=Z&O\nP=Z^P\nY=Z-ZY+\nZ=ZZ\nTurning angle: 8°\n\nScale: 2, 
+        2\nCamera centre: (1.5, 0, 0)`,
+        system: new LSystem('F', [
+            'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
+            'M=Z-M',
+            'N=Z+N',
+            'O=Z&O',
+            'P=Z^P',
+            'Y=Z-ZY+',
+            'Z=ZZ'
+        ], 8),
         config: [2, 2, 0.6, 0, 0, true]
     },
     {
         title: 'Example: Hilbert curve (3D)',
-        contents: 'If you set to high tickspeed, it look like brainz.\n\nAxiom: X\nX=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\\nTurning angle: 90°\nIgnore: X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)',
-        system: new LSystem('X', ['X', 'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'], 90),
+        contents: `If you set to high tickspeed, it look like brainz.\n\nAxiom: 
+        X\nX=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\\nTurning angle: 90°\nIgnore: 
+        X\n\nScale: 1, 2\nCamera centre: (0.5, -0.5, -0.5)`,
+        system: new LSystem('X', [
+            'X',
+            'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
+        ], 90),
         config: [1, 2, 0.5, 0.5, 0.5, false]
     },
     {
         title: 'Example: Fern (3D)',
-        contents: 'Source: https://observablehq.com/@kelleyvanevert/3d-l-systems\n\nAxiom: FFFA\nA=[++++++++++++++FC]B^+B[--------------FD]B+BA\nC=[---------FF][+++++++++FF]B&&+C\nD=[---------FF][+++++++++FF]B&&-D\nTurning angle: 4°',
-        system: new LSystem('FFFA',['A=[++++++++++++++FC]B^+B[--------------FD]B+BA', 'C=[---------FF][+++++++++FF]B&&+C', 'D=[---------FF][+++++++++FF]B&&-D'], 4),
+        contents: `Source: https://observablehq.com/@kelleyvanevert/
+        3d-l-systems\n\nAxiom: FFFA\nA=[++++++++++++++FC]B^+B[--------------FD]B
+        +BA\nC=[---------FF][+++++++++FF]B&&+C\nD=[---------FF][+++++++++FF]B&&
+        -D\nTurning angle: 4°`,
+        system: new LSystem('FFFA', [
+            'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
+            'C=[---------FF][+++++++++FF]B&&+C',
+            'D=[---------FF][+++++++++FF]B&&-D'
+        ], 4),
         config: [3, 1.3, 0.6, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FF (Botched)',
-        contents: 'Represents a common source of carbohydrates.\n\nAxiom: X\nF=FF\nX=F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera centre: (1, 0, 0)',
+        contents: `Represents a common source of carbohydrates.\n\nAxiom: 
+        X\nF=FF\nX=F-[[X]+X]+F[-X]-X\nTurning angle: 15°\n\nScale: 1, 2\nCamera 
+        centre: (1, 0, 0)`,
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: [1, 2, 1, 0, 0, true]
     },
     {
         title: 'Example: Cultivar FXF (Botched)',
-        contents: 'Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. Legends have it, once a snake moult has weathered enough, a new life is born unto the tattered husk, and from there, it stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 27°',
+        contents: `Commonly called the Cyclone, cultivar FXF resembles a coil 
+        of barbed wire. Legends have it, once a snake moult has weathered 
+        enough, a new life is born unto the tattered husk, and from there, it 
+        stretches.\n\nAxiom: X\nF=F[+F]XF\nX=F-[[X]+X]+F[-FX]-X\nTurning angle: 
+        27°`,
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: [1.5, 2, 0.15, -0.5, 0, false]
     },
     {
         title: 'Example: Cultivar XEXF (Botched)',
-        contents: 'Bearing the shape of a thistle, cultivar XEXF embodies the strength and resilience of nature against the harsh logarithm drop-off. It also smells really, really good.\n\nAxiom: X\nE=XEXF-\nF=FX+[E]X\nX=F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°',
-        system: new LSystem('X', ['E=XEXF-', 'F=FX+[E]X', 'X=F-[X+[X[++E]F]]+F[X+FX]-X'], 22.5),
+        contents: `Bearing the shape of a thistle, cultivar XEXF embodies the 
+        strength and resilience of nature against the harsh logarithm drop-off. 
+        It also smells really, really good.\n\nAxiom: X\nE=XEXF-\nF=FX+[E]
+        X\nX=F-[X+[X[++E]F]]+F[X+FX]-X\nTurning angle: 22.5°`,
+        system: new LSystem('X', [
+            'E=XEXF-',
+            'F=FX+[E]X',
+            'X=F-[X+[X[++E]F]]+F[X+FX]-X'
+        ], 22.5),
         config: [1, 3, 0.75, -0.25, 0, true]
     }
 ];
@@ -673,7 +796,8 @@ var init = () =>
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, yaw, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
-        l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level), getInfo(l.level + amount));
+        l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level),
+        getInfo(l.level + amount));
         l.canBeRefunded = (_) => true;
         l.boughtOrRefunded = (_) => renderer.update(l.level);
     }
@@ -682,13 +806,15 @@ var init = () =>
         let getDesc = (level) =>
         {
             if(tickDelayMode)
-                return `\\text{Tick delay: }${(level / 10).toString()}\\text{ sec}`;
+                return `\\text{Tick delay: }${(level / 10).toString()}
+                \\text{ sec}`;
             return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
         }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, pitch, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
-        ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level), getInfo(ts.level + amount));
+        ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level),
+        getInfo(ts.level + amount));
         ts.maxLevel = 10;
         ts.canBeRefunded = (_) => true;
         ts.boughtOrRefunded = (_) => time = 0;
@@ -784,7 +910,8 @@ var createVariableButton = (variable, height) =>
 
 var createMinusButton = (variable, height) =>
 {
-    let bc = () => variable.level > 0 ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
+    let bc = () => variable.level > 0 ?
+    Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let frame = ui.createFrame
     ({
         column: 0,
@@ -828,7 +955,8 @@ var createMinusButton = (variable, height) =>
 
 var createPlusButton = (variable, height, quickbuyAmount = 10) =>
 {
-    let bc = () => variable.level < variable.maxLevel ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
+    let bc = () => variable.level < variable.maxLevel ?
+    Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let frame = ui.createFrame
     ({
         column: 1,
@@ -840,7 +968,8 @@ var createPlusButton = (variable, height, quickbuyAmount = 10) =>
             text: '+',
             horizontalOptions: LayoutOptions.CENTER,
             verticalOptions: LayoutOptions.CENTER,
-            textColor: () => variable.level < variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM
+            textColor: () => variable.level < variable.maxLevel ?
+            Color.TEXT : Color.TEXT_MEDIUM
         }),
         onTouched: (e) =>
         {
@@ -886,7 +1015,8 @@ var createMenuButton = (menuFunc, name, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
             {
                 frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
@@ -923,7 +1053,8 @@ var createClickableVariableButton = (variable, callback, height) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 frame.borderColor = Color.MINIGAME_TILE_BORDER;
@@ -1091,7 +1222,8 @@ var createConfigMenu = () =>
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED || e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpCFC = !tmpCFC;
