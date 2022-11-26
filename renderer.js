@@ -1,12 +1,12 @@
 import { FreeCost } from '../api/Costs';
 import { theory } from '../api/Theory';
-import { ui } from '../api/ui/UI';
 import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
+import { ui } from '../api/ui/UI';
+import { Color } from '../api/ui/properties/Color';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
-import { Color } from '../api/ui/properties/Color';
 import { TouchType } from '../api/ui/properties/TouchType';
 
 /*
@@ -22,8 +22,8 @@ camera rotation slander in the world. In this theory, the vector is initially
 heading in the X-axis, unlike the Y-axis which is way more common in common
 implementations of any kind. I'm just a unit circle kind of person.
 
-If the X is half of a laughing face, then the Y represents my waifu Ms. Y, and
-the Z stands for Zombies.
+If the X is the eyes of a laughing face, then the Y represents my waifu Ms. Y,
+and the Z stands for Zombies.
 
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
@@ -123,7 +123,7 @@ class LCG
     }
     /**
      * Returns a random element from an array.
-     * @param {array} array the array.
+     * @param {any[]} array the array.
      * @returns the element.
      */
     choice(array)
@@ -133,7 +133,7 @@ class LCG
 }
 
 /**
- * Represents a quaternion.
+ * Represents one hell of a quaternion.
  */
 class Quaternion
 {
@@ -231,12 +231,34 @@ class Quaternion
     }
 }
 
+/**
+ * Represents an L-system.
+ */
 class LSystem
 {
+    /**
+     * @constructor
+     * @param {string} axiom the starting sequence.
+     * @param {string[]} rules the production rules.
+     * @param {number} turnAngle (default: 30) the turning angle (in degrees).
+     * @param {number} seed (default: 0) the seed (for stochastic systems).
+     */
     constructor(axiom, rules, turnAngle = 30, seed = 0)
     {
+        /**
+         * @type {string} the starting sequence.
+         * @public
+         */
         this.axiom = axiom;
+        /**
+         * @type {string[]} the production rules.
+         * @public
+         */
         this.rules = new Map();
+        /**
+         * @type {string} a list of symbols ignored by the renderer.
+         * @public
+         */
         this.ignoreList = '';
         for(let i = 0; i < rules.length; ++i)
         {
@@ -263,10 +285,23 @@ class LSystem
                 }
             }
         }
+        /**
+         * @type {number} the turning angle (in degrees).
+         * @public
+         */
         this.turnAngle = turnAngle;
+        /**
+         * @type {number} half the turning angle (in radians).
+         * @public
+         */
         this.halfAngle = this.turnAngle * Math.PI / 360;
         let s = Math.sin(this.halfAngle);
         let c = Math.cos(this.halfAngle);
+        /**
+         * @type {Map<string, Quaternion>} a map of rotation quaternions for
+         * quicker calculations.
+         * @public but shouldn't be.
+         */
         this.rotations = new Map();
         this.rotations.set('+', new Quaternion(c, 0, 0, -s));
         this.rotations.set('-', new Quaternion(c, 0, 0, s));
@@ -275,7 +310,15 @@ class LSystem
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
 
+        /**
+         * @type {number} the seed (for stochastic systems).
+         * @public
+         */
         this.seed = seed;
+        /**
+         * @type {LCG} the LCG used for random number generation.
+         * @public not sure, ask Itsuki.
+         */
         this.random = new LCG(this.seed);
     }
 
