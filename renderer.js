@@ -309,7 +309,6 @@ class LSystem
         this.rotations.set('^', new Quaternion(c, 0, s, 0));
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
-
         /**
          * @type {number} the seed (for stochastic systems).
          * @public
@@ -322,6 +321,11 @@ class LSystem
         this.random = new LCG(this.seed);
     }
 
+    /**
+     * Derive a sequence from the input string.
+     * @param {string} state the input string.
+     * @returns {string} the derivation.
+     */
     derive(state)
     {
         let result = '';
@@ -340,12 +344,19 @@ class LSystem
         }
         return result;
     }
+    /**
+     * Sets the system's seed.
+     * @param {number} seed the seed.
+     */
     setSeed(seed)
     {
         this.seed = seed;
         this.random = new LCG(this.seed);
     }
-
+    /**
+     * Returns the system's string representation.
+     * @returns {string} the string.
+     */
     toString()
     {
         let result = `${this.axiom} ${this.turnAngle} ${this.seed} ` +
@@ -361,8 +372,32 @@ class LSystem
     }
 }
 
+/**
+ * The renderer handles all logic for drawing the L-system.
+ */
 class Renderer
 {
+    /**
+     * @constructor
+     * @param {LSystem} system the L-system to be handled.
+     * @param {number} initScale (default: 1; non-zero) the initial scale.
+     * @param {number} figureScale (default: 2; non-zero) the per-level scale.
+     * @param {boolean} cursorFocused (default: false) the camera mode.
+     * @param {number} camX (default: 0) the camera's x-axis centre.
+     * @param {number} camY (default: 0) the camera's y-axis centre.
+     * @param {number} camZ (default: 0) the camera's z-axis centre.
+     * @param {number} followFactor (default: 0.15) the camera's
+     * cursor-following speed.
+     * @param {number} loopMode (default: 0) the renderer's looping mode.
+     * @param {boolean} upright (default: false) whether to rotate the system
+     * around the z-axis by 90 degrees.
+     * @param {boolean} quickDraw (default: false) whether to skip through
+     * straight lines on the way forward.
+     * @param {boolean} quickBacktrack (default: false) whether to skip through
+     * straight lines on the way backward.
+     * @param {string} backtrackList (default: '+-&^\\/|[]') a list of symbols
+     * to act as stoppers for backtracking.
+     */
     constructor(system, initScale = 1, figureScale = 2, cursorFocused = false,
         camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
         upright = false, quickDraw = false, quickBacktrack = false,
@@ -370,10 +405,15 @@ class Renderer
     {
         this.system = system;
         this.initScale = initScale;
+        if(this.initScale == 0)
+            this.initScale = 1;
         this.figureScale = figureScale;
+        if(this.figureScale == 0)
+            this.figureScale = 1;
         this.cursorFocused = cursorFocused;
         this.camera = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
+        this.followFactor = Math.min(Math.max(this.followFactor, 0), 1);
         this.loopMode = loopMode;
         this.upright = upright;
         this.quickDraw = quickDraw;
@@ -1374,8 +1414,6 @@ var createConfigMenu = () =>
         onTextChanged: (ot, nt) =>
         {
             tmpFScale = Number(nt);
-            if(tmpFScale == 0)
-                tmpFScale = 1;
         }
     });
     let tmpCFC = renderer.cursorFocused;
@@ -1491,7 +1529,6 @@ var createConfigMenu = () =>
         onTextChanged: (ot, nt) =>
         {
             tmpFF = Number(nt);
-            tmpFF = Math.min(Math.max(tmpFF, 0), 1);
         }
     });
     let tmpOD = renderer.loopMode;
