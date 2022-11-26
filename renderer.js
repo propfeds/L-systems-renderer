@@ -39,7 +39,7 @@ var description = 'An educational tool that lets you draw various fractal ' +
                   'changes to the internal state.';
 var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
               'providing help with quaternions';
-var versionStr = 'v0.18.2';
+var versionStr = 'v0.19 WIP';
 var version = 0.182;
 var time = 0;
 var page = 0;
@@ -1322,7 +1322,7 @@ var createConfigMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Looping: ',
+                                        text: 'Loop mode: ',
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -1824,7 +1824,7 @@ var createViewMenu = (title) =>
                     [
                         ui.createButton
                         ({
-                            text: 'Apply',
+                            text: 'Construct',
                             row: 0,
                             column: 0,
                             onClicked: () =>
@@ -2001,6 +2001,7 @@ var createManualMenu = () =>
 {
     let pageTitle = ui.createLatexLabel
     ({
+        // padding: new Thickness(0, 0),
         text: manualPages[page].title,
         horizontalOptions: LayoutOptions.CENTER,
         verticalOptions: LayoutOptions.CENTER
@@ -2064,7 +2065,7 @@ var createManualMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Apply',
+                            text: 'Construct',
                             row: 0,
                             column: 1,
                             isVisible: () => 'system' in manualPages[page],
