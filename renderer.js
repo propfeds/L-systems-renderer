@@ -836,8 +836,10 @@ class Renderer
     getProgressString()
     {
         return `i=${Math.max(this.idx - 1, 0)}/` +
-        `${this.levels[this.lvl].length - 2}&` +
-        `(${getCoordString(this.getProgressPercent())}\\%)`;
+        `${this.levels[this.lvl].length - 2}`;
+        // return `i=${Math.max(this.idx - 1, 0)}/` +
+        // `${this.levels[this.lvl].length - 2}&` +
+        // `(${getCoordString(this.getProgressPercent())}\\%)`;
     }
     /**
      * Returns the cursor's position as a string.
