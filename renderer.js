@@ -1047,7 +1047,7 @@ Turning angle: 12°
 
 Applies static camera:
 Scale: 6, 1
-Centre: (0.7, 0, 0)
+Centre: (1, 0, 0)
 Upright`,
         system: new LSystem('A', [
             'A=I[L]B,I[L]A,I[L][R]B,IF',
@@ -1056,7 +1056,7 @@ Upright`,
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
         ], 12),
-        config: [6, 1, 0.7, 0, 0, true]
+        config: [6, 1, 1, 0, 0, true]
     },
     {
         title: 'Example: Blackboard tree (3D)',
@@ -1240,6 +1240,13 @@ var init = () =>
         ts.canBeRefunded = (_) => true;
         ts.boughtOrRefunded = (_) => time = 0;
     }
+
+    theory.createSecretAchievement(0, undefined,
+        'Watching Grass Grow',
+        'Let the renderer draw a 5-minute long figure or playlist.',
+        'Be patient.',
+        () => min.value > 4.6
+    );
 }
 
 var alwaysShowRefundButtons = () => true;
@@ -1259,10 +1266,6 @@ var tick = (elapsedTime, multiplier) =>
 {
     if(ts.level == 0)
         return;
-
-    renderer.tick(elapsedTime);
-    let msTime = renderer.getElapsedTime();
-    min.value = msTime[0] + msTime[1] / 100;
 
     if(timeCheck(elapsedTime))
     {
@@ -1300,6 +1303,10 @@ var tick = (elapsedTime, multiplier) =>
         else
             time -= 1 / ts.level;
     }
+    
+    renderer.tick(elapsedTime);
+    let msTime = renderer.getElapsedTime();
+    min.value = msTime[0] + msTime[1] / 100;
 }
 
 var getEquationOverlay = () =>
