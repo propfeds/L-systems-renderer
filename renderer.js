@@ -386,9 +386,10 @@ class Renderer
      * @param {number} camX (default: 0) the camera's x-axis centre.
      * @param {number} camY (default: 0) the camera's y-axis centre.
      * @param {number} camZ (default: 0) the camera's z-axis centre.
-     * @param {number} followFactor (default: 0.15) the camera's
-     * cursor-following speed.
-     * @param {number} loopMode (default: 0) the renderer's looping mode.
+     * @param {number} followFactor (default: 0.15; between 0 and 1) the
+     * camera's cursor-following speed.
+     * @param {number} loopMode (default: 0; between 0 and 2) the renderer's
+     * looping mode.
      * @param {boolean} upright (default: false) whether to rotate the system
      * around the z-axis by 90 degrees.
      * @param {boolean} quickDraw (default: false) whether to skip through
@@ -403,36 +404,122 @@ class Renderer
         upright = false, quickDraw = false, quickBacktrack = false,
         backtrackList = '+-&^\\/|[]')
     {
+        /**
+         * @type {LSystem} the L-system being handled.
+         * @public
+         */
         this.system = system;
-        this.initScale = initScale;
-        if(this.initScale == 0)
-            this.initScale = 1;
-        this.figureScale = figureScale;
-        if(this.figureScale == 0)
-            this.figureScale = 1;
+        /**
+         * @type {number} the initial scale.
+         * @public
+         */
+        this.initScale = initScale == 0 ? 1 : initScale;
+        /**
+         * @type {number} the per-level scale.
+         * @public
+         */
+        this.figureScale = figureScale == 0 ? 1 : figureScale;
+        /**
+         * @type {boolean} the camera mode.
+         * @public
+         */
         this.cursorFocused = cursorFocused;
+        /**
+         * @type {Vector3} the camera's coordinates.
+         * @public
+         */
         this.camera = new Vector3(camX, camY, camZ);
-        this.followFactor = followFactor;
-        this.followFactor = Math.min(Math.max(this.followFactor, 0), 1);
-        this.loopMode = loopMode;
+        /**
+         * @type {number} the follow factor.
+         * @public
+         */
+        this.followFactor = Math.min(Math.max(followFactor, 0), 1);
+        /**
+         * @type {number} the looping mode.
+         * @public
+         */
+        this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 2));
+        /**
+         * @type {boolean} the x-axis' orientation.
+         * @public
+         */
         this.upright = upright;
+        /**
+         * @type {boolean} whether to skip through straight lines on the way
+         * forward.
+         * @public
+         */
         this.quickDraw = quickDraw;
+        /**
+         * @type {boolean} whether to skip through straight lines on the way
+         * back.
+         * @public
+         */
         this.quickBacktrack = quickBacktrack;
+        /**
+         * @type {string} a list of symbols to act as stoppers for backtracking.
+         * @public
+         */
         this.backtrackList = backtrackList;
-
+        /**
+         * @type {Vector3} the cursor's position.
+         * @public but shouldn't be.
+         */
         this.state = new Vector3(0, 0, 0);
+        /**
+         * @type {Quaternion} the cursor's orientation.
+         * @public stay away from me.
+         */
         this.ori = new Quaternion();
+        /**
+         * @type {boolean} whether the cursor's orientation is reversed.
+         * @public please leave this be.
+         */
         this.reverse = false;
+        /**
+         * @type {string[]} stores the system's every level.
+         * @public don't touch me.
+         */
         this.levels = [];
+        /**
+         * @type {number} the current level (updates after buying the variable).
+         * @public don't modify this please.
+         */
         this.lvl = -1;
+        /**
+         * @type {[Vector3, Quaternion][]} stores cursor states for brackets.
+         * @public no.
+         */
         this.stack = [];
+        /**
+         * @type {number[]} stores the indices of the stack.
+         * @public don't touch this.
+         */
         this.idStack = [];
+        /**
+         * @type {number} the current index of the sequence.
+         * @public don't know.
+         */
         this.idx = 0;
+        /**
+         * @type {boolean} whether to return the initial cursor state.
+         * @public didn't tell you so.
+         */
         this.firstPoint = true;
+        /**
+         * @type {Vector3} the last tick's camera position.
+         * @public no hold.
+         */
         this.lastCamera = new Vector3(0, 0, 0);
         this.update(0);
     }
 
+    /**
+     * Updates the renderer's level.
+     * @param {number} level the target level.
+     * @param {boolean} seedChanged (default: false) whether the seed has
+     * changed.
+     */
     update(level, seedChanged = false)
     {
         let clearGraph = this.loopMode != 2 || level <= this.lvl;
@@ -456,6 +543,10 @@ class Renderer
         this.lvl = level;
         this.reset(clearGraph);
     }
+    /**
+     * Resets the renderer.
+     * @param {boolean} clearGraph whether to clear the graph.
+     */
     reset(clearGraph = true)
     {
         this.state = new Vector3(0, 0, 0);
@@ -469,6 +560,25 @@ class Renderer
             theory.clearGraph();
         theory.invalidateTertiaryEquation();
     }
+    /**
+     * Configures every parameter of the renderer, except the system.
+     * @param {number} initScale the initial scale.
+     * @param {number} figureScale the per-level scale.
+     * @param {boolean} cursorFocused the camera mode.
+     * @param {number} camX the camera's x-axis centre.
+     * @param {number} camY the camera's y-axis centre.
+     * @param {number} camZ the camera's z-axis centre.
+     * @param {number} followFactor the camera's cursor-following speed.
+     * @param {number} loopMode the renderer's looping mode.
+     * @param {boolean} upright whether to rotate the system around the z-axis
+     * by 90 degrees.
+     * @param {boolean} quickDraw whether to skip through straight lines on the
+     * way forward.
+     * @param {boolean} quickBacktrack whether to skip through straight lines
+     * on the way backward.
+     * @param {string} backtrackList a list of symbols to act as stoppers for
+     * backtracking.
+     */
     configure(initScale, figureScale, cursorFocused, camX, camY, camZ,
         followFactor, loopMode, upright, quickDraw, quickBacktrack,
         backtrackList)
@@ -493,6 +603,16 @@ class Renderer
         if(requireReset)
             this.reset();
     }
+    /**
+     * Configures only the parameters related to the static camera mode.
+     * @param {number} initScale the initial scale.
+     * @param {number} figureScale the per-level scale.
+     * @param {number} camX the camera's x-axis centre.
+     * @param {number} camY the camera's y-axis centre.
+     * @param {number} camZ the camera's z-axis centre.
+     * @param {boolean} upright whether to rotate the system around the z-axis
+     * by 90 degrees.
+     */
     configureStaticCamera(initScale, figureScale, camX, camY, camZ, upright)
     {
         let requireReset = (initScale != this.initScale) ||
@@ -506,6 +626,10 @@ class Renderer
         if(requireReset)
             this.reset();
     }
+    /**
+     * Applies a new L-system to the renderer.
+     * @param {LSystem} system the new system.
+     */
     applySystem(system)
     {
         this.system = system;
@@ -513,11 +637,18 @@ class Renderer
         l.level = 0;
         this.update(0);
     }
+    /**
+     * Rerolls the seed of the current system, according to the global LCG.
+     * @param {number} seed the seed.
+     */
     rerollSeed(seed)
     {
         this.system.setSeed(seed);
         this.update(this.lvl, true);
     }
+    /**
+     * Moves the cursor forward.
+     */
     forward()
     {
         if(this.reverse)
@@ -525,7 +656,10 @@ class Renderer
         else
             this.state += this.ori.getRotVector();
     }
-
+    /**
+     * Computes the next cursor position internally.
+     * @param {number} level the level to be drawn.
+     */
     draw(level)
     {
         if(this.lvl != level)
@@ -606,6 +740,10 @@ class Renderer
             }
         }
     }
+    /**
+     * Returns the camera centre's coordinates.
+     * @returns {Vector3} the coordinates.
+     */
     getCentre()
     {
         if(this.cursorFocused)
@@ -614,6 +752,10 @@ class Renderer
             return new Vector3(this.camera.y, this.camera.x, -this.camera.z);
         return new Vector3(-this.camera.x, this.camera.y, -this.camera.z);
     }
+    /**
+     * Returns the cursor's coordinates.
+     * @returns {Vector3} the coordinates.
+     */
     getCursor()
     {
         let coords = this.state / (this.initScale * this.figureScale **
@@ -622,6 +764,10 @@ class Renderer
             return new Vector3(-coords.y, -coords.x, coords.z);
         return new Vector3(coords.x, -coords.y, coords.z);
     }
+    /**
+     * Returns the camera's coordinates.
+     * @returns {Vector3} the coordinates.
+     */
     getCamera()
     {
         if(this.cursorFocused)
@@ -634,32 +780,56 @@ class Renderer
         else
             return this.getCentre();
     }
+    /**
+     * Returns the cursor's orientation.
+     * @returns {Quaternion} the orientation.
+     */
     getAngles()
     {
         return this.ori;
     }
+    /**
+     * Returns the current progress on this level.
+     * @returns {number} (between 0 and 100) the current progress.
+     */
     getProgress()
     {
         return Math.max(this.idx - 1, 0) * 100 /
         (this.levels[this.lvl].length - 2);
     }
+    /**
+     * Returns the current progress as a string.
+     * @returns {string} the string.
+     */
     getProgressString()
     {
         return `i=${Math.max(this.idx - 1, 0)}/` +
         `${this.levels[this.lvl].length - 2}&` +
         `(${getCoordString(this.getProgress())}\\%)`;
     }
+    /**
+     * Returns the cursor's position as a string.
+     * @returns {string} the string.
+     */
     getStateString()
     {
         return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=` +
         `${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&` +
         `${this.getProgressString()}\\end{matrix}`;
     }
+    /**
+     * Returns the cursor's orientation as a string.
+     * @returns {string} the string.
+     */
     getOriString()
     {
         return `\\begin{matrix}q=${this.ori.toString()},&` +
         `${this.getProgressString()}\\end{matrix}`;
     }
+    /**
+     * Returns the renderer's string representation.
+     * @returns {string} the string.
+     */
     toString()
     {
         return`${this.initScale} ${this.figureScale} ` +
@@ -670,7 +840,10 @@ class Renderer
     }
 }
 
-var xAxisQuat = new Quaternion(0, 1, 0, 0);
+/**
+ * Returns a string of a fixed decimal number, with a fairly uniform width.
+ * @returns {string} the string.
+ */
 var getCoordString = (x) => x.toFixed(x >= -0.01 ?
     (x < 10 ? 3 : (x < 100 ? 2 : 1)) :
     (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
@@ -678,8 +851,9 @@ var getCoordString = (x) => x.toFixed(x >= -0.01 ?
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var renderer = new Renderer(arrow, 1, 2, false, 1);
 
-var savedSystems = new Map();
+var xAxisQuat = new Quaternion(0, 1, 0, 0);
 var globalSeed = new LCG(Date.now());
+var savedSystems = new Map();
 var manualPages =
 [
     {
