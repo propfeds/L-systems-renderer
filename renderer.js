@@ -502,13 +502,13 @@ class Renderer
          */
         this.idx = 0;
         /**
-         * @type {boolean} whether to return the initial cursor state.
-         * @public didn't tell you so.
+         * @type {number} the elapsed time of a system.
+         * @public
          */
-        this.firstPoint = true;
+        this.elapsed = 0;
         /**
          * @type {Vector3} the last tick's camera position.
-         * @public no hold.
+         * @public didn't tell you so.
          */
         this.lastCamera = new Vector3(0, 0, 0);
         this.update(0);
@@ -555,9 +555,11 @@ class Renderer
         this.stack = [];
         this.idStack = [];
         this.idx = 0;
-        this.firstPoint = true;
         if(clearGraph)
+        {
+            this.elapsed = 0;
             theory.clearGraph();
+        }
         theory.invalidateTertiaryEquation();
     }
     /**
@@ -657,6 +659,16 @@ class Renderer
             this.state += this.ori.getRotVector();
     }
     /**
+     * Ticks the clock.
+     */
+    tick(dt)
+    {
+        if(this.loopMode == 0 && this.stack.length == 1)
+            return;
+        else
+            this.elapsed += dt;
+    }
+    /**
      * Computes the next cursor position internally.
      * @param {number} level the level to be drawn.
      */
@@ -665,11 +677,8 @@ class Renderer
         if(this.lvl != level)
             this.update(level);
 
-        if(this.firstPoint)
-        {
-            this.firstPoint = false;
+        if(this.elapsed == 0)
             return;
-        }
 
         let i;
         for(i = this.idx; i < this.levels[this.lvl].length; ++i)
@@ -719,6 +728,7 @@ class Renderer
                         this.idx = i + 1;
                         if(this.idx >= this.levels[this.lvl].length)
                         {
+                            this.elapsed = 0;
                             this.idx = 0;
                             if(this.loopMode == 2)
                                 l.buy(1);
@@ -792,10 +802,28 @@ class Renderer
         return this.ori;
     }
     /**
+     * Returns the elapsed time.
+     */
+    getElapsedTime()
+    {
+        return [
+            Math.floor(this.elapsed / 60),
+            this.elapsed % 60
+        ];
+    }
+    /**
+     * Returns the current progress on this level.
+     * @returns {number[]} the current progress in fractions.
+     */
+    getProgressFrac()
+    {
+        return [Math.max(this.idx - 1, 0), (this.levels[this.lvl].length - 2)];
+    }
+    /**
      * Returns the current progress on this level.
      * @returns {number} (between 0 and 100) the current progress.
      */
-    getProgress()
+    getProgressPercent()
     {
         return Math.max(this.idx - 1, 0) * 100 /
         (this.levels[this.lvl].length - 2);
@@ -808,7 +836,7 @@ class Renderer
     {
         return `i=${Math.max(this.idx - 1, 0)}/` +
         `${this.levels[this.lvl].length - 2}&` +
-        `(${getCoordString(this.getProgress())}\\%)`;
+        `(${getCoordString(this.getProgressPercent())}\\%)`;
     }
     /**
      * Returns the cursor's position as a string.
@@ -848,8 +876,8 @@ class Renderer
  * @returns {string} the string.
  */
 var getCoordString = (x) => x.toFixed(x >= -0.01 ?
-    (x < 10 ? 3 : (x < 100 ? 2 : 1)) :
-    (x <= -10 ? (x <= -100 ? 0 : 1) : 2));
+    (x <= 9.999 ? 3 : (x <= 99.99 ? 2 : 1)) :
+    (x < -9.99 ? (x < -99.9 ? 0 : 1) : 2));
 
 var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 var renderer = new Renderer(arrow, 1, 2, false, 1);
@@ -1163,28 +1191,30 @@ Upright`,
 
 var init = () =>
 {
-    if(altCurrencies)
-    {
-        roll = theory.createCurrency(' = x');
-        pitch = theory.createCurrency(' = y');
-        yaw = theory.createCurrency(' = z');
-    }
-    else
-    {
-        // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
-        // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-        // roll = theory.createCurrency('° (roll)', '\\degree_x');
-        roll = theory.createCurrency('i');
-        pitch = theory.createCurrency('j');
-        yaw = theory.createCurrency('k');
-    }
-    // progress = theory.createCurrency('%');
+    // if(altCurrencies)
+    // {
+    //     roll = theory.createCurrency(' = x');
+    //     pitch = theory.createCurrency(' = y');
+    //     yaw = theory.createCurrency(' = z');
+    // }
+    // else
+    // {
+    //     // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
+    //     // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
+    //     // roll = theory.createCurrency('° (roll)', '\\degree_x');
+    //     roll = theory.createCurrency('i');
+    //     pitch = theory.createCurrency('j');
+    //     yaw = theory.createCurrency('k');
+    // }
+    min = theory.createCurrency(' out of');
+    sec = theory.createCurrency(' chars');
+    progress = theory.createCurrency('%');
 
     // l (Level)
     {
         let getDesc = (level) => `\\text{Level: }${level.toString()}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
-        l = theory.createUpgrade(0, yaw, new FreeCost);
+        l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
         l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level),
         getInfo(l.level + amount));
@@ -1201,7 +1231,7 @@ var init = () =>
             return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
         }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
-        ts = theory.createUpgrade(1, pitch, new FreeCost);
+        ts = theory.createUpgrade(1, progress, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
         ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level),
         getInfo(ts.level + amount));
@@ -1229,6 +1259,11 @@ var tick = (elapsedTime, multiplier) =>
     if(ts.level == 0)
         return;
 
+    renderer.tick(elapsedTime);
+    let progFrac = renderer.getProgressFrac();
+    min.value = progFrac[0];
+    sec.value = progFrac[1];
+
     if(timeCheck(elapsedTime))
     {
         if(game.isCalculatingOfflineProgress)
@@ -1244,20 +1279,20 @@ var tick = (elapsedTime, multiplier) =>
         if(!gameIsOffline || offlineDrawing)
         {
             renderer.draw(l.level);
-            if(altCurrencies)
-            {
-                roll.value = renderer.state.x;
-                pitch.value = renderer.state.y;
-                yaw.value = renderer.state.z;
-            }
-            else
-            {
-                let angles = renderer.getAngles();
-                yaw.value = angles.z;
-                pitch.value = angles.y;
-                roll.value = angles.x;
-            }
-            // progress.value = renderer.getProgress();
+            // if(altCurrencies)
+            // {
+            //     roll.value = renderer.state.x;
+            //     pitch.value = renderer.state.y;
+            //     yaw.value = renderer.state.z;
+            // }
+            // else
+            // {
+            //     let angles = renderer.getAngles();
+            //     yaw.value = angles.z;
+            //     pitch.value = angles.y;
+            //     roll.value = angles.x;
+            // }
+            progress.value = renderer.getProgressPercent();
             theory.invalidateTertiaryEquation();
         }
         if(tickDelayMode)
@@ -1497,6 +1532,10 @@ var getUpgradeListDelegate = () =>
     let manualButton = createMenuButton(createManualMenu, 'Manual', height);
     manualButton.row = 1;
     manualButton.column = 1;
+    let worldButton = createMenuButton(createWorldMenu, 'Theory settings',
+    height);
+    worldButton.row = 2;
+    worldButton.column = 0;
 
     let stack = ui.createScrollView
     ({
@@ -1551,14 +1590,15 @@ var getUpgradeListDelegate = () =>
                     padding: new Thickness(0, 3),
                     columnSpacing: 3,
                     rowSpacing: 3,
-                    rowDefinitions: [height, height],
+                    rowDefinitions: [height, height, height],
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
                         sysButton,
                         cfgButton,
                         expButton,
-                        manualButton
+                        manualButton,
+                        worldButton
                     ]
                 })
             ]
@@ -1708,33 +1748,33 @@ var createConfigMenu = () =>
             tmpFF = Number(nt);
         }
     });
-    let tmpOD = renderer.loopMode;
+    let tmpLM = renderer.loopMode;
     let loopModes = ['Off', 'Level', 'Playlist'];
-    let ODLabel = ui.createLatexLabel
+    let LMLabel = ui.createLatexLabel
     ({
-        text: `Looping mode: ${loopModes[tmpOD]}`,
+        text: `Looping mode: ${loopModes[tmpLM]}`,
         row: 0,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
-    let ODSlider = ui.createSlider
+    let LMSlider = ui.createSlider
     ({
         row: 0,
         column: 1,
         minimum: 0,
         maximum: 2,
-        value: tmpOD,
+        value: tmpLM,
         // minimumTrackColor: Color.MINIGAME_TILE_BORDER,
         // maximumTrackColor: Color.BORDER,
         onValueChanged: () =>
         {
-            tmpOD = Math.round(ODSlider.value);
-            ODLabel.text = `Looping mode: ${loopModes[tmpOD]}`;
+            tmpLM = Math.round(LMSlider.value);
+            LMLabel.text = `Looping mode: ${loopModes[tmpLM]}`;
         },
         onDragCompleted: () =>
         {
             Sound.playClick();
-            ODSlider.value = tmpOD;
+            LMSlider.value = tmpLM;
         }
     });
     let tmpUpright = renderer.upright;
@@ -1863,8 +1903,8 @@ var createConfigMenu = () =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
-                                    ODLabel,
-                                    ODSlider,
+                                    LMLabel,
+                                    LMSlider,
                                     ui.createLatexLabel
                                     ({
                                         text: 'Upright x-axis: ',
@@ -1915,7 +1955,7 @@ var createConfigMenu = () =>
                             {
                                 Sound.playClick();
                                 renderer.configure(tmpIScale, tmpFScale,
-                                    tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpOD,
+                                    tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
                                     tmpUpright, tmpQD, tmpQB, tmpEXB);
                                 menu.hide();
                             }
@@ -2684,6 +2724,100 @@ var createSequenceMenu = () =>
     return menu;
 }
 
+var createWorldMenu = () =>
+{
+    let tmpOD = offlineDrawing;
+    let ODSwitch = ui.createSwitch
+    ({
+        isToggled: tmpOD,
+        row: 0,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpOD = !tmpOD;
+                ODSwitch.isToggled = tmpOD;
+            }
+        }
+    });
+    let tmpAC = altCurrencies;
+    let TEqModes = ['Coordinates', 'Orientation'];
+    let ACLabel = ui.createLatexLabel
+    ({
+        text: `Tertiary equation: ${TEqModes[Number(tmpAC)]}`,
+        row: 1,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
+    let ACSwitch = ui.createSwitch
+    ({
+        isToggled: tmpAC,
+        row: 1,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpAC = !tmpAC;
+                ACSwitch.isToggled = tmpAC;
+                ACLabel.text = `Tertiary equation: ${TEqModes[Number(tmpAC)]}`;
+            }
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: 'Theory Settings',
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: 'Offline drawing: ',
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ODSwitch,
+                        ACLabel,
+                        ACSwitch
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: 'Save',
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        offlineDrawing = tmpOD;
+                        altCurrencies = tmpAC;
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
 var getInternalState = () =>
 {
     let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ` +
@@ -2756,7 +2890,7 @@ var getTertiaryEquation = () =>
 {
     if(altCurrencies)
         return renderer.getOriString();
-    renderer.getStateString();
+    return renderer.getStateString();
 }
 
 var get3DGraphPoint = () => renderer.getCursor();
