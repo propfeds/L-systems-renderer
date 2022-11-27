@@ -702,8 +702,11 @@ class Renderer
                     this.stack.push([this.state, this.ori]);
                     break;
                 case ']':
+                    if(this.stack.length == 0)
+                        return;
                     if(this.loopMode == 0 && this.stack.length == 1)
                     {
+                        this.idx = i;
                         return;
                     }
                     let t = this.stack.pop();
