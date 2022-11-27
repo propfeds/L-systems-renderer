@@ -502,7 +502,7 @@ class Renderer
          */
         this.idx = 0;
         /**
-         * @type {number} the elapsed time of a system.
+         * @type {number} the elapsed time.
          * @public
          */
         this.elapsed = 0;
@@ -728,10 +728,11 @@ class Renderer
                         this.idx = i + 1;
                         if(this.idx >= this.levels[this.lvl].length)
                         {
-                            this.elapsed = 0;
                             this.idx = 0;
                             if(this.loopMode == 2)
                                 l.buy(1);
+                            else
+                                this.elapsed = 0;
                             this.reverse = false;
                         }
                     }
@@ -1206,8 +1207,8 @@ var init = () =>
     //     pitch = theory.createCurrency('j');
     //     yaw = theory.createCurrency('k');
     // }
-    min = theory.createCurrency(' out of');
-    sec = theory.createCurrency(' chars');
+    min = theory.createCurrency(' (elapsed)');
+    // sec = theory.createCurrency(' chars');
     progress = theory.createCurrency('%');
 
     // l (Level)
@@ -1260,9 +1261,8 @@ var tick = (elapsedTime, multiplier) =>
         return;
 
     renderer.tick(elapsedTime);
-    let progFrac = renderer.getProgressFrac();
-    min.value = progFrac[0];
-    sec.value = progFrac[1];
+    let msTime = renderer.getElapsedTime();
+    min.value = msTime[0] + msTime[1] / 100;
 
     if(timeCheck(elapsedTime))
     {
