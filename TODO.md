@@ -1,0 +1,35 @@
+# L-systems Renderer
+
+## 0.19: Spring Cleaning
+
+- Add more comments in the code
+- A more detailed README
+  + Showcases the power of tickspeed and stroke options
+  + Discusses limitations of the game
+  + Like a blog post, sort of
+  + Post to reddit `r/proceduralgeneration`, crosspost `r/lsystem`
+
+- Playlist queueing system, which will help with future endeavours
+  + Mode 0 doesn't do anything, mode 1 queues the same thing, mode 2 queues next
+- Add more systems to the manual (algae)
+- Saved systems can also store static camera configs like manual pages?
+  + Technically not possible currently
+  + Storing descriptions is also probably not possible
+  + Unless we have the power of version number
+- Move all strings to global scope for translations!
+- Slow string processing to avoid erroring
+
+- Version number: helps migrating settings
+- Theory pause button?
+
+## 0.20
+
+- Context sensitivity
+  + `b < a > c → aa`
+
+## Currently Impossible
+
+- Remove the add button, every rule is bunched into one field
+  + Entry.keyboard? (`Keyboard.TEXT`)
+  + https://andyp.dev/posts/xamarin-forms-essentials-keyboard-master-guide
+  + Which means, adding extra processing in view menu and system menu
