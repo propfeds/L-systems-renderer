@@ -8,6 +8,7 @@ import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
+import { ImageSource } from '../api/ui/properties/ImageSource';
 
 /*
 Disclaimer: The consensus around L-system's grammar is generally not much
@@ -1342,7 +1343,7 @@ var createVariableButton = (variable, height) =>
     return frame;
 }
 
-var createMinusButton = (variable, height) =>
+var createMinusButton = (variable, height, symbol = '-') =>
 {
     let bc = () => variable.level > 0 ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1354,7 +1355,7 @@ var createMinusButton = (variable, height) =>
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
         ({
-            text: '-',
+            text: symbol,
             horizontalOptions: LayoutOptions.CENTER,
             verticalOptions: LayoutOptions.CENTER,
             textColor: () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM
@@ -1387,7 +1388,7 @@ var createMinusButton = (variable, height) =>
     return frame;
 }
 
-var createPlusButton = (variable, height, quickbuyAmount = 10) =>
+var createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10) =>
 {
     let bc = () => variable.level < variable.maxLevel ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1399,7 +1400,7 @@ var createPlusButton = (variable, height, quickbuyAmount = 10) =>
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
         ({
-            text: '+',
+            text: symbol,
             horizontalOptions: LayoutOptions.CENTER,
             verticalOptions: LayoutOptions.CENTER,
             textColor: () => variable.level < variable.maxLevel ?
@@ -1570,7 +1571,7 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(l, height),
+                                createMinusButton(l, height, '–'),
                                 createPlusButton(l, height)
                             ]
                         }),
@@ -1583,7 +1584,7 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(ts, height),
+                                createMinusButton(ts, height, '–'),
                                 createPlusButton(ts, height)
                             ]
                         })
@@ -1775,6 +1776,7 @@ var createConfigMenu = () =>
         value: tmpLM,
         // minimumTrackColor: Color.MINIGAME_TILE_BORDER,
         // maximumTrackColor: Color.BORDER,
+        // thumbImageSource: ImageSource.UPGRADES,
         onValueChanged: () =>
         {
             tmpLM = Math.round(LMSlider.value);
