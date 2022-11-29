@@ -724,7 +724,7 @@ class Renderer
      * Computes the next cursor position internally.
      * @param {number} level the level to be drawn.
      */
-    draw(level)
+    draw(level, onlyUpdate = false)
     {
         /*
         I can guarantee that because the game runs on one thread, the renderer
@@ -734,6 +734,9 @@ class Renderer
             this.update(level);
 
         if(level > this.loaded + 1)
+            return;
+
+        if(onlyUpdate)
             return;
 
         if(this.elapsed == 0)
@@ -1319,6 +1322,9 @@ var alwaysShowRefundButtons = () => true;
 
 var timeCheck = (elapsedTime) =>
 {
+    if(ts.level == 0)
+        return false;
+
     if(tickDelayMode)
     {
         time += 1;
@@ -1330,9 +1336,6 @@ var timeCheck = (elapsedTime) =>
 
 var tick = (elapsedTime, multiplier) =>
 {
-    if(ts.level == 0)
-        return;
-
     if(timeCheck(elapsedTime))
     {
         if(game.isCalculatingOfflineProgress)
@@ -1346,33 +1349,25 @@ var tick = (elapsedTime, multiplier) =>
         }
 
         if(!gameIsOffline || offlineDrawing)
-        {
             renderer.draw(l.level);
-            // if(altCurrencies)
-            // {
-            //     roll.value = renderer.state.x;
-            //     pitch.value = renderer.state.y;
-            //     yaw.value = renderer.state.z;
-            // }
-            // else
-            // {
-            //     let angles = renderer.getAngles();
-            //     yaw.value = angles.z;
-            //     pitch.value = angles.y;
-            //     roll.value = angles.x;
-            // }
-            progress.value = renderer.getProgressPercent();
-            theory.invalidateTertiaryEquation();
-        }
+
         if(tickDelayMode)
             time = 0;
         else
             time -= 1 / ts.level;
     }
-    
-    renderer.tick(elapsedTime);
+    else
+    {
+        // Updates have to be at full speed
+        renderer.draw(l.level, true);
+    }
+
+    if(ts.level > 0)
+        renderer.tick(elapsedTime);
     let msTime = renderer.getElapsedTime();
     min.value = msTime[0] + msTime[1] / 100;
+    progress.value = renderer.getProgressPercent();
+    theory.invalidateTertiaryEquation();
 }
 
 var getEquationOverlay = () =>
