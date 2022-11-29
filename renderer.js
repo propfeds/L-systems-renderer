@@ -29,8 +29,8 @@ and the Z stands for Zombies.
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
 
-var id = 'L_systems_renderer_dynamic_update';
-var name = 'L-systems Renderer (Dynamic Update)';
+var id = 'L_systems_renderer';
+var name = 'L-systems Renderer';
 var description = 'An educational tool that lets you draw various fractal ' +
                   'figures and plants.\n\nFeatures:\n- Can store a whole ' +
                   'army of systems!\n- Stochastic (randomised) systems\n' +
@@ -532,11 +532,6 @@ class Renderer
          */
         this.lastCamera = new Vector3(0, 0, 0);
         /**
-         * @type {boolean} whether the renderer is ready to rumble.
-         * @public no.
-         */
-        this.ready = false;
-        /**
          * @type {number} the next index to update for the current level.
          * @public I told you so many times that you shouldn't access these.
          */
@@ -553,7 +548,13 @@ class Renderer
     update(level, seedChanged = false)
     {
         let clearGraph = this.loopMode != 2 || level < this.lvl || seedChanged;
-        this.lvl = level;
+
+        if(this.lvl != level)
+        {
+            this.reset(clearGraph);
+            this.lvl = level;
+        } 
+
         this.loadTarget = Math.max(level, this.loadTarget);
 
         let charCount = 0;
@@ -580,13 +581,6 @@ class Renderer
                 
                 this.nextDeriveIdx = ret.next;
                 charCount += ret.result;
-                
-                if(i == this.loadTarget)
-                    this.ready = true;
-                // return {
-                //     next: i,
-                //     result: result
-                // }
             }
             if(this.nextDeriveIdx == 0)
                 ++this.loaded;
@@ -688,7 +682,6 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
-        this.ready = false;
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = 0;
@@ -702,7 +695,6 @@ class Renderer
     rerollSeed(seed)
     {
         this.system.setSeed(seed);
-        this.ready = false;
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = this.lvl;
@@ -734,12 +726,15 @@ class Renderer
      */
     draw(level)
     {
-        if(this.loaded < level)
-        {
-            this.ready = false;
+        /*
+        I can guarantee that because the game runs on one thread, the renderer
+        would always load faster than it draws.
+        */
+        if(level > this.loaded)
             this.update(level);
+
+        if(level > this.loaded + 1)
             return;
-        }
 
         if(this.elapsed == 0)
             return;
