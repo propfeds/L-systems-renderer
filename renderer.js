@@ -717,8 +717,11 @@ class Renderer
     {
         if(this.loopMode == 0 && this.stack.length == 1)
             return;
-        else
-            this.elapsed += dt;
+        
+        if(this.lvl > this.loaded + 1)
+            return;
+
+        this.elapsed += dt;
     }
     /**
      * Computes the next cursor position internally.
