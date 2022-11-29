@@ -29,8 +29,8 @@ and the Z stands for Zombies.
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
 
-var id = 'L_systems_renderer';
-var name = 'L-systems Renderer';
+var id = 'L_systems_renderer_dynamic_update';
+var name = 'L-systems Renderer (Dynamic Update)';
 var description = 'An educational tool that lets you draw various fractal ' +
                   'figures and plants.\n\nFeatures:\n- Can store a whole ' +
                   'army of systems!\n- Stochastic (randomised) systems\n' +
@@ -48,6 +48,7 @@ var offlineDrawing = true;
 var gameIsOffline = false;
 var altCurrencies = true;
 var tickDelayMode = true;
+const MAX_CHARS_PER_TICK = 20000;
 
 /**
  * Represents a linear congruential generator.
@@ -56,7 +57,7 @@ class LCG
 {
     /**
      * @constructor
-     * @param {number} [seed] (default: 0) the starting seed for the generator.
+     * @param {number} seed (default: 0) the starting seed for the generator.
      */
     constructor(seed = 0)
     {
@@ -327,23 +328,33 @@ class LSystem
      * @param {string} state the input string.
      * @returns {string} the derivation.
      */
-    derive(state)
+    derive(sequence, start = 0)
     {
         let result = '';
-        for(let i = 0; i < state.length; ++i)
+        for(let i = start; i < sequence.length; ++i)
         {
-            if(this.rules.has(state[i]))
+            if(result.length > MAX_CHARS_PER_TICK)
             {
-                let rder = this.rules.get(state[i]);
+                return {
+                    next: i,
+                    result: result
+                };
+            }
+            if(this.rules.has(sequence[i]))
+            {
+                let rder = this.rules.get(sequence[i]);
                 if(typeof rder === 'string')
                     result += rder;
                 else
                     result += rder[this.random.nextRange(0, rder.length)];
             }
             else
-                result += state[i];
+                result += sequence[i];
         }
-        return result;
+        return {
+            next: 0,
+            result: result
+        };
     }
     /**
      * Sets the system's seed.
@@ -512,6 +523,16 @@ class Renderer
          * @public didn't tell you so.
          */
         this.lastCamera = new Vector3(0, 0, 0);
+        /**
+         * @type {boolean} whether the renderer is ready to rumble.
+         * @public no.
+         */
+        this.ready = false;
+        /**
+         * @type {number} the next index to update for the current level.
+         * @public I told you so many times that you shouldn't access these.
+         */
+        this.nextDeriveIdx = 0;
         this.update(0);
     }
 
@@ -523,19 +544,36 @@ class Renderer
      */
     update(level, seedChanged = false)
     {
-        let clearGraph = this.loopMode != 2 || level <= this.lvl;
-        let start = seedChanged ? 0 : this.levels.length;
+        let clearGraph = this.loopMode != 2 || level < this.lvl || seedChanged;
+        let start = seedChanged ? 0 : (this.nextDeriveIdx == 0 ?
+            this.lvl + 1 : this.lvl);
         let charCount = 0;
         for(let i = start; i <= level; ++i)
         {
             if(i == 0)
+            {
                 this.levels[i] = `[${this.system.axiom}]`;
+                charCount += this.levels[i].length;
+                this.nextDeriveIdx = 0;
+            }
             else
-                this.levels[i] = this.system.derive(this.levels[i - 1]);
-            
+            {
+                let ret = this.system.derive(this.levels[i - 1],
+                    this.nextDeriveIdx);
+                if(this.nextDeriveIdx == 0)
+                    this.levels[i] = ret.result;
+                else
+                    this.levels[i] += ret.result;
+                
+                this.nextDeriveIdx = ret.next;
+                charCount += ret.result;
+                // return {
+                //     next: i,
+                //     result: result
+                // }
+            }
             // Threshold to prevent maximum statements error
-            charCount += this.levels[i].length;
-            if(charCount >= 25000)
+            if(charCount > MAX_CHARS_PER_TICK)
             {
                 this.lvl = i;
                 return;
@@ -543,6 +581,7 @@ class Renderer
         }
         this.lvl = level;
         this.reset(clearGraph);
+        this.ready = true;
     }
     /**
      * Resets the renderer.
@@ -637,6 +676,8 @@ class Renderer
     {
         this.system = system;
         this.levels = [];
+        this.ready = false;
+        this.nextDeriveIdx = 0;
         l.level = 0;
         this.update(0);
     }
@@ -647,6 +688,8 @@ class Renderer
     rerollSeed(seed)
     {
         this.system.setSeed(seed);
+        this.ready = false;
+        this.nextDeriveIdx = 0;
         this.update(this.lvl, true);
     }
     /**
@@ -675,10 +718,21 @@ class Renderer
      */
     draw(level)
     {
+
         if(this.lvl != level)
+        {
+            this.ready = false;
             this.update(level);
+        }
+        else if(this.nextDeriveIdx != 0)
+        {
+            this.update(level);
+            return;
+        }
 
         if(this.elapsed == 0)
+            return;
+        if(!this.ready)
             return;
 
         let i;
@@ -1216,7 +1270,8 @@ var init = () =>
 
     // l (Level)
     {
-        let getDesc = (level) => `\\text{Level: }${level.toString()}`;
+        let getDesc = (level) => `\\text{Level: }${level.toString()}` + 
+        (renderer.loopMode == 2 ? '+' : '');
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
