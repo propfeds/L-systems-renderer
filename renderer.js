@@ -48,7 +48,7 @@ var offlineDrawing = true;
 var gameIsOffline = false;
 var altCurrencies = true;
 var tickDelayMode = true;
-const MAX_CHARS_PER_TICK = 20000;
+const MAX_CHARS_PER_TICK = 10000;
 
 /**
  * Represents a linear congruential generator.
@@ -228,8 +228,7 @@ class Quaternion
      */
     toString()
     {
-        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + ` +
-        `${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
+        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + ${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
     }
 }
 
@@ -371,8 +370,7 @@ class LSystem
      */
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ` +
-        `${this.ignoreList}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${this.ignoreList}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -499,6 +497,16 @@ class Renderer
          */
         this.lvl = -1;
         /**
+         * @type {number} the maximum level loaded.
+         * @public don't mothify this either.
+         */
+        this.loaded = -1;
+        /**
+         * @type {number} the load target.
+         * @public don't.
+         */
+        this.loadTarget = 0;
+        /**
          * @type {[Vector3, Quaternion][]} stores cursor states for brackets.
          * @public no.
          */
@@ -545,11 +553,16 @@ class Renderer
     update(level, seedChanged = false)
     {
         let clearGraph = this.loopMode != 2 || level < this.lvl || seedChanged;
-        let start = seedChanged ? 0 : (this.nextDeriveIdx == 0 ?
-            this.lvl + 1 : this.lvl);
+        this.lvl = level;
+        this.loadTarget = Math.max(level, this.loadTarget);
+
         let charCount = 0;
-        for(let i = start; i <= level; ++i)
+        for(let i = this.loaded + 1; i <= this.loadTarget; ++i)
         {
+            // Threshold to prevent maximum statements error
+            if(charCount > MAX_CHARS_PER_TICK)
+                return;
+
             if(i == 0)
             {
                 this.levels[i] = `[${this.system.axiom}]`;
@@ -567,21 +580,20 @@ class Renderer
                 
                 this.nextDeriveIdx = ret.next;
                 charCount += ret.result;
+                
+                if(i == this.loadTarget)
+                    this.ready = true;
                 // return {
                 //     next: i,
                 //     result: result
                 // }
             }
-            // Threshold to prevent maximum statements error
-            if(charCount > MAX_CHARS_PER_TICK)
-            {
-                this.lvl = i;
+            if(this.nextDeriveIdx == 0)
+                ++this.loaded;
+            else
                 return;
-            }
         }
-        this.lvl = level;
         this.reset(clearGraph);
-        this.ready = true;
     }
     /**
      * Resets the renderer.
@@ -678,6 +690,8 @@ class Renderer
         this.levels = [];
         this.ready = false;
         this.nextDeriveIdx = 0;
+        this.loaded = -1;
+        this.loadTarget = 0;
         l.level = 0;
         this.update(0);
     }
@@ -690,6 +704,8 @@ class Renderer
         this.system.setSeed(seed);
         this.ready = false;
         this.nextDeriveIdx = 0;
+        this.loaded = -1;
+        this.loadTarget = this.lvl;
         this.update(this.lvl, true);
     }
     /**
@@ -718,21 +734,14 @@ class Renderer
      */
     draw(level)
     {
-
-        if(this.lvl != level)
+        if(this.loaded < level)
         {
             this.ready = false;
-            this.update(level);
-        }
-        else if(this.nextDeriveIdx != 0)
-        {
             this.update(level);
             return;
         }
 
         if(this.elapsed == 0)
-            return;
-        if(!this.ready)
             return;
 
         let i;
@@ -881,6 +890,9 @@ class Renderer
      */
     getProgressPercent()
     {
+        if(typeof this.levels[this.lvl] == 'undefined')
+            return 0;
+
         return Math.max(this.idx - 1, 0) * 100 /
         (this.levels[this.lvl].length - 2);
     }
@@ -890,11 +902,15 @@ class Renderer
      */
     getProgressString()
     {
-        return `i=${Math.max(this.idx - 1, 0)}/` +
-        `${this.levels[this.lvl].length - 2}`;
-        // return `i=${Math.max(this.idx - 1, 0)}/` +
-        // `${this.levels[this.lvl].length - 2}&` +
-        // `(${getCoordString(this.getProgressPercent())}\\%)`;
+        return `i=${Math.max(this.idx - 1, 0)}/${this.levels[this.lvl].length - 2}`;
+    }
+    /**
+     * Returns a loading message.
+     * @returns {string} the string.
+     */
+    getLoadingString()
+    {
+        return `\\begin{matrix}Loading...&\\text{Lv. ${this.loaded + 1}}&(${this.levels[this.loaded + 1].length}/?)\\end{matrix}`;
     }
     /**
      * Returns the cursor's position as a string.
@@ -902,9 +918,10 @@ class Renderer
      */
     getStateString()
     {
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=` +
-        `${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&` +
-        `${this.getProgressString()}\\end{matrix}`;
+        if(typeof this.levels[this.lvl] == 'undefined')
+            return this.getLoadingString();
+
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.getProgressString()}\\end{matrix}`;
     }
     /**
      * Returns the cursor's orientation as a string.
@@ -912,8 +929,10 @@ class Renderer
      */
     getOriString()
     {
-        return `\\begin{matrix}q=${this.ori.toString()},&` +
-        `${this.getProgressString()}\\end{matrix}`;
+        if(typeof this.levels[this.lvl] == 'undefined')
+            return this.getLoadingString();
+
+        return `\\begin{matrix}q=${this.ori.toString()},&${this.getProgressString()}\\end{matrix}`;
     }
     /**
      * Returns the renderer's string representation.
@@ -921,11 +940,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ` +
-        `${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ` +
-        `${this.camera.z} ${this.followFactor} ${this.loopMode} ` +
-        `${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ` +
-        `${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
 
@@ -1270,8 +1285,7 @@ var init = () =>
 
     // l (Level)
     {
-        let getDesc = (level) => `\\text{Level: }${level.toString()}` + 
-        (renderer.loopMode == 2 ? '+' : '');
+        let getDesc = (level) => `\\text{Level: }${level.toString()} ${(renderer.loopMode == 2 ? '+' : '')}`;
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
@@ -1285,8 +1299,7 @@ var init = () =>
         let getDesc = (level) =>
         {
             if(tickDelayMode)
-                return `\\text{Tick delay: }${(level / 10).toString()}` +
-                `\\text{ sec}`;
+                return `\\text{Tick delay: }${(level / 10).toString()}\\text{ sec}`;
             return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
         }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
@@ -2679,8 +2692,7 @@ var createManualMenu = () =>
                                 {
                                     Sound.playClick();
                                     --page;
-                                    menu.title = `Manual (${page + 1}/` +
-                                    `${manualPages.length})`;
+                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
@@ -2717,8 +2729,7 @@ var createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
-                                    menu.title = `Manual (${page + 1}/` +
-                                    `${manualPages.length})`;
+                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
@@ -2886,8 +2897,7 @@ var createWorldMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ` +
-    `${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
