@@ -44,7 +44,7 @@ var versionStr = 'v0.19 WIP';
 var version = 0.182;
 var time = 0;
 var page = 0;
-var offlineDrawing = true;
+var offlineDrawing = false;
 var gameIsOffline = false;
 var altCurrencies = true;
 var tickDelayMode = true;
@@ -715,7 +715,7 @@ class Renderer
      */
     tick(dt)
     {
-        if(this.loopMode == 0 && this.stack.length == 1)
+        if(this.loopMode == 0 && this.idx >= this.levels[this.lvl].length)
             return;
         
         if(this.lvl > this.loaded + 1)
@@ -744,6 +744,21 @@ class Renderer
 
         if(this.elapsed == 0)
             return;
+
+        if(this.idx >= this.levels[this.lvl].length)
+        {
+            switch(this.loopMode)
+            {
+                case 2:
+                    l.buy(1);
+                    break;
+                case 1:
+                    this.reset(false);
+                    break;
+                case 0:
+                    return;
+            }
+        }
 
         let i;
         for(i = this.idx; i < this.levels[this.lvl].length; ++i)
@@ -778,36 +793,23 @@ class Renderer
                 case ']':
                     if(this.stack.length == 0)
                         return;
-                    if(this.loopMode == 0 && this.stack.length == 1)
-                    {
-                        this.idx = i;
-                        return;
-                    }
+
                     let t = this.stack.pop();
                     this.state = t[0];
                     this.ori = t[1];
                     if(this.stack.length ==
-                        this.idStack[this.idStack.length - 1])
+                    this.idStack[this.idStack.length - 1])
                     {
                         this.idStack.pop();
                         this.idx = i + 1;
-                        if(this.idx >= this.levels[this.lvl].length)
-                        {
-                            this.idx = 0;
-                            if(this.loopMode == 2)
-                                l.buy(1);
-                            else
-                                this.elapsed = 0;
-                            this.reverse = false;
-                        }
                     }
                     return;
                 default:
                     if(this.system.ignoreList.includes(
-                        this.levels[this.lvl][i]))
+                    this.levels[this.lvl][i]))
                         break;
                     let breakAhead = this.backtrackList.includes(
-                        this.levels[this.lvl][i + 1]);
+                    this.levels[this.lvl][i + 1]);
                     if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
                     this.forward();
@@ -883,7 +885,9 @@ class Renderer
      */
     getProgressFrac()
     {
-        return [Math.max(this.idx - 1, 0), (this.levels[this.lvl].length - 2)];
+        return [Math.max(Math.min(this.idx - 1,
+        this.levels[this.lvl].length - 2), 0),
+        (this.levels[this.lvl].length - 2)];
     }
     /**
      * Returns the current progress on this level.
@@ -894,8 +898,8 @@ class Renderer
         if(typeof this.levels[this.lvl] == 'undefined')
             return 0;
 
-        return Math.max(this.idx - 1, 0) * 100 /
-        (this.levels[this.lvl].length - 2);
+        let pf = this.getProgressFrac();
+        return pf[0] * 100 / pf[1];
     }
     /**
      * Returns the current progress as a string.
@@ -903,7 +907,8 @@ class Renderer
      */
     getProgressString()
     {
-        return `i=${Math.max(this.idx - 1, 0)}/${this.levels[this.lvl].length - 2}`;
+        let pf = this.getProgressFrac();
+        return `i=${pf[0]}/${pf[1]}`;
     }
     /**
      * Returns a loading message.
@@ -1315,9 +1320,9 @@ var init = () =>
 
     theory.createSecretAchievement(0, undefined,
         'Watching Grass Grow',
-        'Let the renderer draw a 5-minute long figure or playlist.',
+        'Let the renderer draw a 10-minute long figure or playlist.',
         'Be patient.',
-        () => min.value > 4.6
+        () => min.value > 9.6
     );
 }
 
