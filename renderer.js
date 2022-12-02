@@ -2920,35 +2920,42 @@ var setInternalState = (stateStr) =>
     if(worldValues.length > 5)
         tickDelayMode = Boolean(Number(worldValues[5]));
 
-    let systemValues = values[2].split(' ');
-    let system = new LSystem(systemValues[0], systemValues.slice(3),
-    Number(systemValues[1]), Number(systemValues[2]));
+    if(values.length > 1)
+    {
+        let rendererValues = values[1].split(' ');
+        if(rendererValues.length > 0)
+            rendererValues[0] = Number(rendererValues[0]);
+        if(rendererValues.length > 1)
+            rendererValues[1] = Number(rendererValues[1]);
+        if(rendererValues.length > 2)
+            rendererValues[2] = Boolean(Number(rendererValues[2]));
+        if(rendererValues.length > 3)
+            rendererValues[3] = Number(rendererValues[3]);
+        if(rendererValues.length > 4)
+            rendererValues[4] = Number(rendererValues[4]);
+        if(rendererValues.length > 5)
+            rendererValues[5] = Number(rendererValues[5]);
+        if(rendererValues.length > 6)
+            rendererValues[6] = Number(rendererValues[6]);
+        if(rendererValues.length > 7)
+            rendererValues[7] = Number(rendererValues[7]);
+        if(rendererValues.length > 8)
+            rendererValues[8] = Boolean(Number(rendererValues[8]));
+        if(rendererValues.length > 9)
+            rendererValues[9] = Boolean(Number(rendererValues[9]));
+        if(rendererValues.length > 10)
+            rendererValues[10] = Boolean(Number(rendererValues[10]));
 
-    let rendererValues = values[1].split(' ');
-    if(rendererValues.length > 0)
-        rendererValues[0] = Number(rendererValues[0]);
-    if(rendererValues.length > 1)
-        rendererValues[1] = Number(rendererValues[1]);
-    if(rendererValues.length > 2)
-        rendererValues[2] = Boolean(Number(rendererValues[2]));
-    if(rendererValues.length > 3)
-        rendererValues[3] = Number(rendererValues[3]);
-    if(rendererValues.length > 4)
-        rendererValues[4] = Number(rendererValues[4]);
-    if(rendererValues.length > 5)
-        rendererValues[5] = Number(rendererValues[5]);
-    if(rendererValues.length > 6)
-        rendererValues[6] = Number(rendererValues[6]);
-    if(rendererValues.length > 7)
-        rendererValues[7] = Number(rendererValues[7]);
-    if(rendererValues.length > 8)
-        rendererValues[8] = Boolean(Number(rendererValues[8]));
-    if(rendererValues.length > 9)
-        rendererValues[9] = Boolean(Number(rendererValues[9]));
-    if(rendererValues.length > 10)
-        rendererValues[10] = Boolean(Number(rendererValues[10]));
-
-    renderer = new Renderer(system, ...rendererValues);
+        if(values.length > 2)
+        {
+            let systemValues = values[2].split(' ');
+            let system = new LSystem(systemValues[0], systemValues.slice(3),
+            Number(systemValues[1]), Number(systemValues[2]));
+            renderer = new Renderer(system, ...rendererValues);
+        }
+        else
+            renderer = new Renderer(arrow, ...rendererValues);
+    }
     
     for(let i = 3; i + 1 < values.length; i += 2)
         savedSystems.set(values[i], values[i + 1]);

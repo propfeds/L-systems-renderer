@@ -19,6 +19,7 @@
 - Playlist queueing system, which will help with future endeavours
   - Mode 0 doesn't do anything, mode 1 queues the same thing, mode 2 queues next
   - Not really a queue, just a 'next' number
+  - Or just collect the variable level when it ends
 
 - Version number: helps migrating settings
 - Theory pause button?
@@ -27,10 +28,11 @@
 
 - Context sensitivity
   - `b < a > c → aa`
+  - How to store? Maps?
 
 ## Currently Impossible
 
 - Remove the add button, every rule is bunched into one field
-  - Entry.keyboard? (`Keyboard.TEXT`)
+  - Entry.keyboard? (`Keyboard.TEXT`) doesn't work
   - https://andyp.dev/posts/xamarin-forms-essentials-keyboard-master-guide
   - Which means, adding extra processing in view menu and system menu
