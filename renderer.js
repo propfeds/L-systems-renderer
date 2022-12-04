@@ -1370,7 +1370,7 @@ var tick = (elapsedTime, multiplier) =>
         renderer.draw(l.level, true);
     }
 
-    if(ts.level > 0)
+    if(ts.level > 0 && (!gameIsOffline || offlineDrawing))
         renderer.tick(elapsedTime);
     let msTime = renderer.getElapsedTime();
     min.value = msTime[0] + msTime[1] / 100;
@@ -1605,13 +1605,13 @@ var getUpgradeListDelegate = () =>
     let expButton = createMenuButton(createSaveMenu, 'Save/load', height);
     expButton.row = 1;
     expButton.column = 0;
-    let manualButton = createMenuButton(createManualMenu, 'Manual', height);
-    manualButton.row = 1;
-    manualButton.column = 1;
     let worldButton = createMenuButton(createWorldMenu, 'Theory settings',
     height);
-    worldButton.row = 2;
-    worldButton.column = 0;
+    worldButton.row = 1;
+    worldButton.column = 1;
+    let manualButton = createMenuButton(createManualMenu, 'Manual', height);
+    manualButton.row = 2;
+    manualButton.column = 0;
 
     let stack = ui.createScrollView
     ({

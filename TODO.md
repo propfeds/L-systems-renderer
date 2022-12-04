@@ -1,6 +1,6 @@
 # L-systems Renderer
 
-## 0.19: Spring Cleaning
+## 0.19: Winter Sweep
 
 - Add more comments in the code
 - Add more systems to the manual (algae)
@@ -24,7 +24,7 @@
 - Version number: helps migrating settings
 - Theory pause button?
 
-## 0.20
+## 0.20: Spring Cleaning
 
 - Context sensitivity
   - `b < a > c → aa`
