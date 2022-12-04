@@ -22,7 +22,6 @@
   - Or just collect the variable level when it ends
 
 - Version number: helps migrating settings
-- Theory pause button?
 
 ## 0.20: Spring Cleaning
 

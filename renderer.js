@@ -8,7 +8,6 @@ import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
-import { ImageSource } from '../api/ui/properties/ImageSource';
 
 /*
 Disclaimer: The consensus around L-system's grammar is generally not much
@@ -29,26 +28,29 @@ and the Z stands for Zombies.
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
 
-var id = 'L_systems_renderer';
-var name = 'L-systems Renderer';
-var description = 'An educational tool that lets you draw various fractal ' +
-                  'figures and plants.\n\nFeatures:\n- Can store a whole ' +
-                  'army of systems!\n- Stochastic (randomised) systems\n' +
-                  '- Switch between camera modes: fixed (scaled) and cursor-' +
-                  'focused\n- Stroke options\n\nWarning: As of 0.18, the '+
-                  'renderer\'s configuration will be messed up due to format ' +
-                  'changes to the internal state.';
-var authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
-              'providing help with quaternions';
-var versionStr = 'v0.19 WIP';
-var version = 0.182;
-var time = 0;
-var page = 0;
-var offlineDrawing = false;
-var gameIsOffline = false;
-var altCurrencies = true;
-var tickDelayMode = true;
+const id = 'L_systems_renderer';
+const name = 'L-systems Renderer';
+const description = 'An educational tool that lets you draw various fractal ' +
+                    'figures and plants.\n\nFeatures:\n- Can store a whole ' +
+                    'army of systems!\n- Stochastic (randomised) systems\n' +
+                    '- Switch between camera modes: fixed (scaled) and ' +
+                    'cursor-focused\n- Stroke options\n\nWarning: As of 0.18, '+
+                    'the renderer\'s configuration will be messed up due to ' +
+                    'format changes to the internal state.';
+const authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
+                'for providing help with quaternions';
+const versionStr = 'v0.19 WIP';
+const version = 0.182;
 const MAX_CHARS_PER_TICK = 10000;
+
+/**
+ * Returns a string of a fixed decimal number, with a fairly uniform width.
+ * @returns {string} the string.
+ */
+let getCoordString = (x) => x.toFixed(x >= -0.01 ?
+    (x <= 9.999 ? 3 : (x <= 99.99 ? 2 : 1)) :
+    (x < -9.99 ? (x < -99.9 ? 0 : 1) : 2)
+);
 
 /**
  * Represents a linear congruential generator.
@@ -950,21 +952,20 @@ class Renderer
     }
 }
 
-/**
- * Returns a string of a fixed decimal number, with a fairly uniform width.
- * @returns {string} the string.
- */
-var getCoordString = (x) => x.toFixed(x >= -0.01 ?
-    (x <= 9.999 ? 3 : (x <= 99.99 ? 2 : 1)) :
-    (x < -9.99 ? (x < -99.9 ? 0 : 1) : 2));
+let time = 0;
+let page = 0;
+let offlineDrawing = false;
+let gameIsOffline = false;
+let altCurrencies = true;
+let tickDelayMode = true;
 
-var arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
-var renderer = new Renderer(arrow, 1, 2, false, 1);
+let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
+let renderer = new Renderer(arrow, 1, 2, false, 1);
 
-var xAxisQuat = new Quaternion(0, 1, 0, 0);
-var globalSeed = new LCG(Date.now());
-var savedSystems = new Map();
-var manualPages =
+let xAxisQuat = new Quaternion(0, 1, 0, 0);
+let globalSeed = new LCG(Date.now());
+let savedSystems = new Map();
+let manualPages =
 [
     {
         title: 'The Main Screen',
@@ -1268,7 +1269,7 @@ Upright`,
     }
 ];
 
-var init = () =>
+let init = () =>
 {
     // if(altCurrencies)
     // {
@@ -1305,7 +1306,11 @@ var init = () =>
         let getDesc = (level) =>
         {
             if(tickDelayMode)
+            {
+                if(level == 0)
+                    return `\\text{Tick delay: }\\infty`;
                 return `\\text{Tick delay: }${(level / 10).toString()}\\text{ sec}`;
+            }
             return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
         }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
@@ -1326,9 +1331,9 @@ var init = () =>
     );
 }
 
-var alwaysShowRefundButtons = () => true;
+let alwaysShowRefundButtons = () => true;
 
-var timeCheck = (elapsedTime) =>
+let timeCheck = (elapsedTime) =>
 {
     if(ts.level == 0)
         return false;
@@ -1342,7 +1347,7 @@ var timeCheck = (elapsedTime) =>
     return time >= 1 / ts.level - 1e-8
 }
 
-var tick = (elapsedTime, multiplier) =>
+let tick = (elapsedTime, multiplier) =>
 {
     if(timeCheck(elapsedTime))
     {
@@ -1378,7 +1383,7 @@ var tick = (elapsedTime, multiplier) =>
     theory.invalidateTertiaryEquation();
 }
 
-var getEquationOverlay = () =>
+let getEquationOverlay = () =>
 {
     let result = ui.createLatexLabel
     ({
@@ -1391,7 +1396,7 @@ var getEquationOverlay = () =>
     return result;
 }
 
-var createVariableButton = (variable, height) =>
+let createVariableButton = (variable, height) =>
 {
     let frame = ui.createFrame
     ({
@@ -1409,7 +1414,7 @@ var createVariableButton = (variable, height) =>
     return frame;
 }
 
-var createMinusButton = (variable, height, symbol = '-') =>
+let createMinusButton = (variable, height, symbol = '-') =>
 {
     let bc = () => variable.level > 0 ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1454,7 +1459,7 @@ var createMinusButton = (variable, height, symbol = '-') =>
     return frame;
 }
 
-var createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10) =>
+let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10) =>
 {
     let bc = () => variable.level < variable.maxLevel ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1501,7 +1506,7 @@ var createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10) =>
     return frame;
 }
 
-var createMenuButton = (menuFunc, name, height) =>
+let createMenuButton = (menuFunc, name, height) =>
 {
     let frame = ui.createFrame
     ({
@@ -1539,7 +1544,7 @@ var createMenuButton = (menuFunc, name, height) =>
 }
 
 // For example: The level variable button opens the sequence menu
-var createClickableVariableButton = (variable, callback, height) =>
+let createClickableVariableButton = (variable, callback, height) =>
 {
     let frame = ui.createFrame
     ({
@@ -1575,7 +1580,7 @@ var createClickableVariableButton = (variable, callback, height) =>
     return frame;
 }
 
-var getUpgradeListDelegate = () =>
+let getUpgradeListDelegate = () =>
 {
     let height = ui.screenHeight * 0.055;
 
@@ -1683,7 +1688,7 @@ var getUpgradeListDelegate = () =>
     return stack;
 }
 
-var createConfigMenu = () =>
+let createConfigMenu = () =>
 {
     let tmpIScale = renderer.initScale;
     let iScaleEntry = ui.createEntry
@@ -2059,7 +2064,7 @@ var createConfigMenu = () =>
     return menu;
 }
 
-var createSystemMenu = () =>
+let createSystemMenu = () =>
 {
     let tmpAxiom = renderer.system.axiom;
     let axiomEntry = ui.createEntry
@@ -2252,7 +2257,7 @@ var createSystemMenu = () =>
     return menu;
 }
 
-var createNamingMenu = (title, values) =>
+let createNamingMenu = (title, values) =>
 {
     let tmpName = title;
     let nameEntry = ui.createEntry
@@ -2294,7 +2299,7 @@ var createNamingMenu = (title, values) =>
     return menu;
 }
 
-var createClipboardMenu = (values) =>
+let createClipboardMenu = (values) =>
 {
     let tmpSys = values;
     let sysEntry = ui.createEntry
@@ -2337,7 +2342,7 @@ var createClipboardMenu = (values) =>
     return menu;
 }
 
-var createViewMenu = (title) =>
+let createViewMenu = (title) =>
 {
     values = savedSystems.get(title);
 
@@ -2509,7 +2514,7 @@ var createViewMenu = (title) =>
     return menu;
 }
 
-var createSaveMenu = () =>
+let createSaveMenu = () =>
 {
     let menu;
     let getSystemGrid = () =>
@@ -2635,7 +2640,7 @@ var createSaveMenu = () =>
     return menu;
 }
 
-var createManualMenu = () =>
+let createManualMenu = () =>
 {
     let pageTitle = ui.createLatexLabel
     ({
@@ -2742,7 +2747,7 @@ var createManualMenu = () =>
     return menu;
 }
 
-var createSequenceMenu = () =>
+let createSequenceMenu = () =>
 {
     let tmpLvls = [];
     for(let i = 0; i < renderer.levels.length; ++i)
@@ -2799,7 +2804,7 @@ var createSequenceMenu = () =>
     return menu;
 }
 
-var createWorldMenu = () =>
+let createWorldMenu = () =>
 {
     let tmpOD = offlineDrawing;
     let ODSwitch = ui.createSwitch
@@ -2893,7 +2898,7 @@ var createWorldMenu = () =>
     return menu;
 }
 
-var getInternalState = () =>
+let getInternalState = () =>
 {
     let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
@@ -2904,7 +2909,7 @@ var getInternalState = () =>
     return result;
 }
 
-var setInternalState = (stateStr) =>
+let setInternalState = (stateStr) =>
 {
     let values = stateStr.split('\n');
 
@@ -2961,21 +2966,21 @@ var setInternalState = (stateStr) =>
         savedSystems.set(values[i], values[i + 1]);
 }
 
-var canResetStage = () => true;
+let canResetStage = () => true;
 
-var getResetStageMessage = () => 'You are about to reroll the system\'s seed.';
+let getResetStageMessage = () => 'You are about to reroll the system\'s seed.';
 
-var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
+let resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 
-var getTertiaryEquation = () =>
+let getTertiaryEquation = () =>
 {
     if(altCurrencies)
         return renderer.getOriString();
     return renderer.getStateString();
 }
 
-var get3DGraphPoint = () => renderer.getCursor();
+let get3DGraphPoint = () => renderer.getCursor();
 
-var get3DGraphTranslation = () => renderer.getCamera();
+let get3DGraphTranslation = () => renderer.getCamera();
 
 init();
