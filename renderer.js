@@ -139,6 +139,7 @@ const locStrings =
 
         menuTheory: 'Theory Settings',
         labelOfflineDrawing: 'Offline drawing: ',
+        labelResetLvl: 'Reset level on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
 
@@ -1070,8 +1071,9 @@ class Renderer
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = 0;
-        l.level = 0;
-        this.update(0);
+        if(resetLvlOnConstruct)
+            l.level = 0;
+        this.update(l.level);
     }
     /**
      * Rerolls the seed of the current system, according to the global LCG.
@@ -1342,6 +1344,7 @@ let offlineDrawing = false;
 let gameIsOffline = false;
 let altCurrencies = true;
 let tickDelayMode = false;
+let resetLvlOnConstruct = true;
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, 1, 2, false, 1);
@@ -1351,14 +1354,10 @@ let globalSeed = new LCG(Date.now());
 let savedSystems = new Map();
 let manualSystems =
 [
-    {
-    },
-    {
-    },
-    {
-    },
-    {
-    },
+    {},
+    {},
+    {},
+    {},
     {
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
@@ -3022,19 +3021,37 @@ let createWorldMenu = () =>
             }
         }
     });
+    let tmpRL = resetLvlOnConstruct;
+    let RLSwitch = ui.createSwitch
+    ({
+        isToggled: tmpRL,
+        row: 1,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpRL = !tmpRL;
+                RLSwitch.isToggled = tmpRL;
+            }
+        }
+    });
     let tmpAC = altCurrencies;
     let ACLabel = ui.createLatexLabel
     ({
         text: Localization.format(getLoc('labelTerEq'),
         getLoc('terEqModes')[Number(tmpAC)]),
-        row: 1,
+        row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let ACSwitch = ui.createSwitch
     ({
         isToggled: tmpAC,
-        row: 1,
+        row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -3071,6 +3088,14 @@ let createWorldMenu = () =>
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         ODSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelResetLvl'),
+                            row: 1,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        RLSwitch,
                         ACLabel,
                         ACSwitch
                     ]
@@ -3087,6 +3112,7 @@ let createWorldMenu = () =>
                     {
                         Sound.playClick();
                         offlineDrawing = tmpOD;
+                        resetLvlOnConstruct = tmpRL;
                         altCurrencies = tmpAC;
                         menu.hide();
                     }
@@ -3099,7 +3125,7 @@ let createWorldMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -3123,6 +3149,8 @@ var setInternalState = (stateStr) =>
         altCurrencies = Boolean(Number(worldValues[4]));
     if(worldValues.length > 5)
         tickDelayMode = Boolean(Number(worldValues[5]));
+    if(worldValues.length > 6)
+        resetLvlOnConstruct = Boolean(Number(worldValues[6]));
 
     if(values.length > 1)
     {

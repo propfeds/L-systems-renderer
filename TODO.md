@@ -4,7 +4,6 @@
 
 - Add more comments in the code
 - Add more systems to the manual (algae)
-- Store a temp let when refunding/bulk buying a variable that allows you to return to that level
 - A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -15,11 +14,6 @@
   - Technically not possible currently
   - Storing descriptions is also probably not possible
   - Unless we have the power of version number
-
-- Playlist queueing system, which will help with future endeavours
-  - Mode 0 doesn't do anything, mode 1 queues the same thing, mode 2 queues next
-  - Not really a queue, just a 'next' number
-  - Or just collect the variable level when it ends
 
 - Version number: helps migrating settings
 
