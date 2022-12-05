@@ -5,6 +5,8 @@
 - Add more comments in the code
 - Add more systems to the manual (algae)
 - Move all strings to global scope for translations!
+  - Naming system for the loc string names is not consistent rn
+- Store a temp let when refunding/bulk buying a variable that allows you to return to that level
 - A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game

@@ -8,6 +8,7 @@ import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
+import { Localization } from '../api/Localization';
 
 /*
 Disclaimer: The consensus around L-system's grammar is generally not much
@@ -28,20 +29,399 @@ and the Z stands for Zombies.
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
 
-const id = 'L_systems_renderer';
-const name = 'L-systems Renderer';
-const description = 'An educational tool that lets you draw various fractal ' +
-                    'figures and plants.\n\nFeatures:\n- Can store a whole ' +
-                    'army of systems!\n- Stochastic (randomised) systems\n' +
-                    '- Switch between camera modes: fixed (scaled) and ' +
-                    'cursor-focused\n- Stroke options\n\nWarning: As of 0.18, '+
-                    'the renderer\'s configuration will be messed up due to ' +
-                    'format changes to the internal state.';
-const authors = 'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
+var id = 'L_systems_renderer';
+var getName = (language) =>
+{
+    let names =
+    {
+        en: 'L-systems Renderer',
+    };
+
+    if(language in names)
+        return names[language];
+
+    return names.en;
+}
+var getDescription = (language) =>
+{
+    let descs =
+    {
+        en:
+`An educational tool that lets you model various fractal figures and plants.
+
+Features:
+- Can store a whole army of systems!
+- Stochastic (randomised) and 3D systems
+- Camera modes: static and cursor-focused (lerp)
+- Speed and stroke options
+
+Warning: As of v0.18, the renderer's configuration will be messed up due to ` +
+`format changes to the internal state.`,
+    };
+
+    if(language in descs)
+        return descs[language];
+
+    return descs.en;
+}
+var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions';
-const versionStr = 'v0.19 WIP';
-const version = 0.182;
+var version = 0.182;
+
 const MAX_CHARS_PER_TICK = 10000;
+
+const locStrings =
+{
+    en:
+    {
+        rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{} chars}})\\end{{matrix}}',
+
+        elapsedCurrency: ' (elapsed)',
+        varLvDesc: '\\text{{Level: }}{0}{1}',
+        varTdDesc: '\\text{{Tick delay: }}{0}\\text{{ sec}}',
+        varTdDescInf: '\\text{{Tick delay: }}\\infty',
+        varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
+
+        saPatienceTitle: 'Watching Grass Grow',
+        saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
+        'playlist.',
+        saPatienceHint: 'Be patient.',
+
+        overlayTitle: 'v0.19: Winter Sweep (WIP)',
+
+        sysButton: 'L-system menu',
+        cfgButton: 'Renderer menu',
+        slButton: 'Save/load',
+        worldButton: 'Theory settings',
+        manualButton: 'Manual',
+
+        saveButton: 'Save',
+        defaultButton: 'Reset to Defaults',
+        addButton: 'Add',
+        constructButton: 'Construct',
+        deleteButton: 'Delete',
+        viewButton: 'View',
+        clipboardButton: 'Clipboard',
+        prevButton: 'Previous',
+        nextButton: 'Next',
+        closeButton: 'Close',
+
+        cfgMenuTitle: 'Renderer Menu',
+        iScaleLabel: 'Initial scale: ',
+        fScaleLabel: 'Figure scale per level: ',
+        CFCLabel: 'Camera mode: {0}',
+        camModes: ['Static', 'Cursor-focused'],
+        camLabel: 'Centre (x, y, z): ',
+        FFLabel: 'Follow factor (0-1): ',
+        LMLabel: 'Looping mode: {0}',
+        loopModes: ['Off', 'Level', 'Playlist'],
+        uprightLabel: 'Upright x-axis: ',
+        QDLabel: 'Quickdraw straight lines: ',
+        QBLabel: 'Quick backtrack: ',
+        EXBLabel: 'Backtrack list: ',
+
+        sysMenuTitle: 'L-system Menu',
+        axiomLabel: 'Axiom: ',
+        angleLabel: 'Turning angle (°): ',
+        rulesLabel: 'Production rules: ',
+        ignoreLabel: 'Ignored symbols: ',
+        seedLabel: 'Seed (for stochastic systems): ',
+
+        saveMenuTitle: 'Save/Load Menu',
+        currentSystem: 'Current system: ',
+        savedSystems: 'Saved systems: ',
+
+        clipboardMenuTitle: 'Clipboard Menu',
+
+        namingMenuTitle: 'Name System',
+        defaultSystemName: 'Untitled L-system',
+        duplicateSuffix: ' (copy)',
+
+        worldMenuTitle: 'Theory Settings',
+        ODLabel: 'Offline drawing: ',
+        ACLabel: 'Tertiary equation: {0}',
+        terEqModes: ['Coordinates', 'Orientation'],
+
+        manualMenuTitle: 'Manual ({0}/{1})',
+        manual:
+        [
+            {
+                title: 'The Main Screen',
+                contents:
+`The main screen consists of the renderer and its controls.
+
+Level: the system's level. Pressing + or - will derive/revert the system ` +
+`respectively. Pressing the Level button will reveal all levels of the system.
+
+Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
+`produces less accurate lines).
+Pressing the Tickspeed button will toggle between Tick delay and Tickspeed ` +
+`modes.
+(Tip: holding + or - will buy/refund a variable in bulk.)
+
+Reroll: located on the top right. Pressing this button will reroll the ` +
+`system's seed (for stochastic systems).`
+            },
+            {
+                title: 'A Primer on L-systems',
+                contents:
+`Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
+`grammar that describes the growth of a sequence (string). It is often used ` +
+`to model plants and draw fractal figures.
+
+Terms:
+Axiom: the starting sequence.
+Rules: how each symbol in the sequence is derived per level. Each rule is ` +
+`written in the form of: {symbol}={derivation(s)}
+
+Symbols:
+Any letter: moves cursor forward to draw.
++ -: rotates cursor on the z-axis (yaw), counter-/clockwise respectively.
+& ^: rotates cursor on the y-axis (pitch).
+\\ /: rotates cursor on the x-axis (roll).
+|: reverses cursor direction.
+[ ]: allows for branches by queueing cursor positions on a stack.
+, : separates between derivations (for stochastic systems).`
+            },
+            {
+                title: 'Tips on Constructing an L-system',
+                contents:
+`Although traditionally F is used to go forward, each letter can be used to ` +
+`mean different things, such as drawing a flower, emulating growth stages, ` +
+`alternating between patterns, etc.
+
+For some simple systems, a symbol (often X) is used to resemble the ` +
+`fractal's shape.
+
+Brackets work in a stack mechanism, therefore every [ has to be properly ` +
+`followed by a ] in the same production rule.
+
+To create a stochastic system, simply list several derivations in the same ` +
+`rule, separated by a , (comma). One of those derivations will be randomly ` +
+`selected per symbol whenever the system is derived.
+Generally, to keep a degree of uniformity in the system, it is advised for ` +
+`the derivations to be similar in shape.`
+            },
+            {
+                title: 'Configuring your L-system',
+                contents:
+`Configure the visual representation of your L-system with the renderer menu.
+
+Initial scale: zooms out by this much for every figure.
+Figure scale: zooms the figure out by a multiplier per level.
+
+Camera mode: toggles between static and cursor-focused.
+Centre: sets camera position for level 0 (this follows figure scale, and is ` +
+`based on non-upright coordinates).
+Camera follow factor: changes how quickly the camera chases the cursor.
+(Note: figure scale and camera centre needs to be experimented manually for ` +
+`each individual L-system.)
+
+Looping mode: Level mode repeats a single level, while the Playlist mode ` +
+`draws levels consecutively.
+Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
+`z-axis.
+
+Quickdraw: skips over consecutive straight lines.
+Quick backtrack: similarly, but on the way back.
+Backtrack list: sets stopping symbols for quickdraw/backtrack.`
+            },
+            {
+                title: 'Example: Arrow weed',
+                contents:
+`Meet the default system. It tastes like mint.
+
+Axiom: X
+F=FF
+X=F[+X][-X]FX
+Turning angle: 30°
+
+Applies static camera:
+Scale: 1, 2
+Centre: (1, 0, 0)`
+            },
+            {
+                title: 'Example: Dragon curve',
+                contents:
+`Also known as the Heighway dragon.
+
+Axiom: FX
+Y=-FX-Y
+X=X+YF+
+Turning angle: 90°
+
+Applies static camera:
+Scale: 4, sqrt(2)
+Centre: (0, 0, 0)`
+            },
+            {
+                title: 'Example: Stochastic weed',
+                contents:
+`It generates a random shape every time it rolls!
+
+Axiom: X
+F=FF
+X=F-[[X]+X]+F[+FX]-X,
+     F+[[X]-X]-F[-FX]+X
+Turning angle: 22.5°
+
+Applies static camera:
+Scale: 1, 2
+Centre: (1, 0, 0)
+Upright`
+            },
+            {
+                title: 'Example: Lucky flower',
+                contents:
+`How tall can it grow until it sprouts a flower? Reroll to find out!
+
+Axiom: A
+A=I[L]B,
+     I[L]A,
+     I[L][R]B,
+     IF
+B=I[R]A,
+     I[R]B,
+     I[L][R]A,
+     IF
+L=---I,
+     --I,
+     ----I
+R=+++I,
+     ++I,
+     ++++I
+F=[---[I+I]--I+I][+++[I-I]++I-I]I
+Turning angle: 12°
+
+Applies static camera:
+Scale: 6, 1
+Centre: (1, 0, 0)
+Upright`
+            },
+            {
+                title: 'Example: Blackboard tree (3D)',
+                contents:
+`A blackboard tree (Alstonia scholaris) when it's still tiny.
+
+Axiom: F
+F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]
+M=Z-M
+N=Z+N
+O=Z&O
+P=Z^P
+Y=Z-ZY+
+Z=ZZ
+Turning angle: 8°
+
+Applies static camera:
+Scale: 2, 2
+Centre: (1.5, 0, 0)
+Upright`
+            },
+            {
+                title: 'Example: Hilbert curve (3D)',
+                contents:
+`If you set to high tickspeed, it look like brainz.
+
+Axiom: X
+X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
+Turning angle: 90°
+Ignore: X
+
+Applies static camera:
+Scale: 1, 2
+Centre: (0.5, -0.5, -0.5)`
+            },
+            {
+                title: 'Example: Fern (3D)',
+                contents:
+`Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
+
+Axiom: FFFA
+A=[++++++++++++++FC]B^+B[--------------FD]B+BA
+C=[---------FF][+++++++++FF]B&&+C
+D=[---------FF][+++++++++FF]B&&-D
+Turning angle: 4°
+
+Applies static camera: (mathematically unproven)
+Scale: 3, 1.3
+Centre: (0.6, 0, 0)
+Upright`
+            },
+            {
+                title: 'Example: Cultivar FF (Botched)',
+                contents:
+`Represents a common source of carbohydrates.
+
+Axiom: X
+F=FF
+X=F-[[X]+X]+F[-X]-X
+Turning angle: 15°
+
+Applies static camera:
+Scale: 1, 2
+Centre: (1, 0, 0)
+Upright`
+            },
+            {
+                title: 'Example: Cultivar FXF (Botched)',
+                contents:
+`Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
+`Legends have it, once a snake moult has weathered enough, a new life is ` +
+`born unto the tattered husk, and from there, it stretches.
+
+Axiom: X
+F=F[+F]XF
+X=F-[[X]+X]+F[-FX]-X
+Turning angle: 27°
+
+Applies static camera: (mathematically unproven)
+Scale: 1.5, 2
+Centre: (0.15, -0.5, 0)`
+            },
+            {
+                title: 'Example: Cultivar XEXF (Botched)',
+                contents:
+`Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
+`resilience of nature against the harsh logarithm drop-off. It also smells ` +
+`really, really good.
+
+Axiom: X
+E=XEXF-
+F=FX+[E]X
+X=F-[X+[X[++E]F]]+F[X+FX]-X
+Turning angle: 22.5°
+
+Applies static camera: (mathematically unproven)
+Scale: 1, 3
+Centre: (0,75, -0,25, 0)
+Upright`
+            }
+        ],
+
+        seqMenuTitle: 'View Sequences',
+        lvlLabel: 'Level {0}: ',
+
+        rerollSeed: 'You are about to reroll the system\'s seed.',
+    }
+};
+
+let menuLang = Localization.language;
+/**
+ * Returns a localised string.
+ * @param {string} name the internal name of the string.
+ * @returns {string} the string.
+ */
+let getLoc = (name, lang = menuLang) =>
+{
+    if(lang in locStrings && name in locStrings[lang])
+        return locStrings[lang][name];
+
+    if(name in locStrings.en)
+        return locStrings.en[name];
+    
+    return `String not found: ${lang}.${name}`;
+}
 
 /**
  * Returns a string of a fixed decimal number, with a fairly uniform width.
@@ -918,7 +1298,8 @@ class Renderer
      */
     getLoadingString()
     {
-        return `\\begin{matrix}Loading...&\\text{Lv. ${this.loaded + 1}}&(${this.levels[this.loaded + 1].length}/?)\\end{matrix}`;
+        return Localization.format(getLoc('rendererLoading'), this.loaded + 1,
+        this.levels[this.loaded + 1].length);
     }
     /**
      * Returns the cursor's position as a string.
@@ -965,136 +1346,25 @@ let renderer = new Renderer(arrow, 1, 2, false, 1);
 let xAxisQuat = new Quaternion(0, 1, 0, 0);
 let globalSeed = new LCG(Date.now());
 let savedSystems = new Map();
-let manualPages =
+let manualSystems =
 [
     {
-        title: 'The Main Screen',
-        contents: 
-`The main screen consists of the renderer and its controls.
-
-Level: the system's level. Pressing + or - will derive/revert the system ` +
-`respectively. Pressing the Level button will reveal all levels of the system.
-
-Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
-`produces less accurate lines).
-Pressing the Tickspeed button will toggle between Tick delay and Tickspeed ` +
-`modes.
-(Tip: holding + or - will buy/refund a variable in bulk.)
-
-Reroll: located on the top right. Pressing this button will reroll the ` +
-`system's seed (for stochastic systems).`
     },
     {
-        title: 'A Primer on L-systems',
-        contents:
-`Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
-`grammar that describes the growth of a sequence (string). It is often used ` +
-`to model plants and draw fractal figures.
-
-Terms:
-Axiom: the starting sequence.
-Rules: how each symbol in the sequence is derived per level. Each rule is ` +
-`written in the form of: {symbol}={derivation(s)}
-
-Symbols:
-Any letter: moves cursor forward to draw.
-+ -: rotates cursor on the z-axis (yaw), counter-/clockwise respectively.
-& ^: rotates cursor on the y-axis (pitch).
-\\ /: rotates cursor on the x-axis (roll).
-|: reverses cursor direction.
-[ ]: allows for branches by queueing cursor positions on a stack.
-, : separates between derivations (for stochastic systems).`
     },
     {
-        title: 'Tips on Constructing an L-system',
-        contents: 
-`Although traditionally F is used to go forward, each letter can be used to ` +
-`mean different things, such as drawing a flower, emulating growth stages, ` +
-`alternating between patterns, etc.
-
-For some simple systems, a symbol (often X) is used to resemble the ` +
-`fractal's shape.
-
-Brackets work in a stack mechanism, therefore every [ has to be properly ` +
-`followed by a ] in the same production rule.
-
-To create a stochastic system, simply list several derivations in the same ` +
-`rule, separated by a , (comma). One of those derivations will be randomly ` +
-`selected per symbol whenever the system is derived.
-Generally, to keep a degree of uniformity in the system, it is advised for ` +
-`the derivations to be similar in shape.`
     },
     {
-        title: 'Configuring your L-system',
-        contents:
-`Configure the visual representation of your L-system with the renderer menu.
-
-Initial scale: zooms out by this much for every figure.
-Figure scale: zooms the figure out by a multiplier per level.
-
-Camera mode: toggles between static and cursor-focused.
-Centre: sets camera position for level 0 (this follows figure scale, and is ` +
-`based on non-upright coordinates).
-Camera follow factor: changes how quickly the camera chases the cursor.
-(Note: figure scale and camera centre needs to be experimented manually for ` +
-`each individual L-system.)
-
-Looping mode: Level mode repeats a single level, while the Playlist mode ` +
-`draws levels consecutively.
-Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
-`z-axis.
-
-Quickdraw: skips over consecutive straight lines.
-Quick backtrack: similarly, but on the way back.
-Backtrack list: sets stopping symbols for quickdraw/backtrack.`
     },
     {
-        title: 'Example: Arrow weed',
-        contents:
-`Meet the default system. It tastes like mint.
-
-Axiom: X
-F=FF
-X=F[+X][-X]FX
-Turning angle: 30°
-
-Applies static camera:
-Scale: 1, 2
-Centre: (1, 0, 0)`,
         system: arrow,
         config: [1, 2, 1, 0, 0, false]
     },
     {
-        title: 'Example: Dragon curve',
-        contents:
-`Also known as the Heighway dragon.
-
-Axiom: FX
-Y=-FX-Y
-X=X+YF+
-Turning angle: 90°
-
-Applies static camera:
-Scale: 4, sqrt(2)
-Centre: (0, 0, 0)`,
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: [4, Math.sqrt(2), 0, 0, 0, false]
     },
     {
-        title: 'Example: Stochastic weed',
-        contents:
-`It generates a random shape every time it rolls!
-
-Axiom: X
-F=FF
-X=F-[[X]+X]+F[+FX]-X,
-     F+[[X]-X]-F[-FX]+X
-Turning angle: 22.5°
-
-Applies static camera:
-Scale: 1, 2
-Centre: (1, 0, 0)
-Upright`,
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
@@ -1102,32 +1372,6 @@ Upright`,
         config: [1, 2, 1, 0, 0, true]
     },
     {
-        title: 'Example: Lucky flower',
-        contents:
-`How tall can it grow until it sprouts a flower? Reroll to find out!
-
-Axiom: A
-A=I[L]B,
-     I[L]A,
-     I[L][R]B,
-     IF
-B=I[R]A,
-     I[R]B,
-     I[L][R]A,
-     IF
-L=---I,
-     --I,
-     ----I
-R=+++I,
-     ++I,
-     ++++I
-F=[---[I+I]--I+I][+++[I-I]++I-I]I
-Turning angle: 12°
-
-Applies static camera:
-Scale: 6, 1
-Centre: (1, 0, 0)
-Upright`,
         system: new LSystem('A', [
             'A=I[L]B,I[L]A,I[L][R]B,IF',
             'B=I[R]A,I[R]B,I[L][R]A,IF',
@@ -1138,24 +1382,6 @@ Upright`,
         config: [6, 1, 1, 0, 0, true]
     },
     {
-        title: 'Example: Blackboard tree (3D)',
-        contents:
-`A blackboard tree (Alstonia scholaris) when it's still tiny.
-
-Axiom: F
-F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]
-M=Z-M
-N=Z+N
-O=Z&O
-P=Z^P
-Y=Z-ZY+
-Z=ZZ
-Turning angle: 8°
-
-Applies static camera:
-Scale: 2, 2
-Centre: (1.5, 0, 0)
-Upright`,
         system: new LSystem('F', [
             'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
             'M=Z-M',
@@ -1168,18 +1394,6 @@ Upright`,
         config: [2, 2, 0.6, 0, 0, true]
     },
     {
-        title: 'Example: Hilbert curve (3D)',
-        contents:
-`If you set to high tickspeed, it look like brainz.
-
-Axiom: X
-X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
-Turning angle: 90°
-Ignore: X
-
-Applies static camera:
-Scale: 1, 2
-Centre: (0.5, -0.5, -0.5)`,
         system: new LSystem('X', [
             'X',
             'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
@@ -1187,20 +1401,6 @@ Centre: (0.5, -0.5, -0.5)`,
         config: [1, 2, 0.5, 0.5, 0.5, false]
     },
     {
-        title: 'Example: Fern (3D)',
-        contents:
-`Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
-
-Axiom: FFFA
-A=[++++++++++++++FC]B^+B[--------------FD]B+BA
-C=[---------FF][+++++++++FF]B&&+C
-D=[---------FF][+++++++++FF]B&&-D
-Turning angle: 4°
-
-Applies static camera: (mathematically unproven)
-Scale: 3, 1.3
-Centre: (0.6, 0, 0)
-Upright`,
         system: new LSystem('FFFA', [
             'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
             'C=[---------FF][+++++++++FF]B&&+C',
@@ -1209,57 +1409,14 @@ Upright`,
         config: [3, 1.3, 0.6, 0, 0, true]
     },
     {
-        title: 'Example: Cultivar FF (Botched)',
-        contents:
-`Represents a common source of carbohydrates.
-
-Axiom: X
-F=FF
-X=F-[[X]+X]+F[-X]-X
-Turning angle: 15°
-
-Applies static camera:
-Scale: 1, 2
-Centre: (1, 0, 0)
-Upright`,
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: [1, 2, 1, 0, 0, true]
     },
     {
-        title: 'Example: Cultivar FXF (Botched)',
-        contents:
-`Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
-`Legends have it, once a snake moult has weathered enough, a new life is ` +
-`born unto the tattered husk, and from there, it stretches.
-
-Axiom: X
-F=F[+F]XF
-X=F-[[X]+X]+F[-FX]-X
-Turning angle: 27°
-
-Applies static camera: (mathematically unproven)
-Scale: 1.5, 2
-Centre: (0.15, -0.5, 0)`,
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: [1.5, 2, 0.15, -0.5, 0, false]
     },
     {
-        title: 'Example: Cultivar XEXF (Botched)',
-        contents:
-`Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
-`resilience of nature against the harsh logarithm drop-off. It also smells ` +
-`really, really good.
-
-Axiom: X
-E=XEXF-
-F=FX+[E]X
-X=F-[X+[X[++E]F]]+F[X+FX]-X
-Turning angle: 22.5°
-
-Applies static camera: (mathematically unproven)
-Scale: 1, 3
-Centre: (0,75, -0,25, 0)
-Upright`,
         system: new LSystem('X', [
             'E=XEXF-',
             'F=FX+[E]X',
@@ -1269,30 +1426,15 @@ Upright`,
     }
 ];
 
-let init = () =>
+var init = () =>
 {
-    // if(altCurrencies)
-    // {
-    //     roll = theory.createCurrency(' = x');
-    //     pitch = theory.createCurrency(' = y');
-    //     yaw = theory.createCurrency(' = z');
-    // }
-    // else
-    // {
-    //     // yaw = theory.createCurrency('° (yaw)', '\\degree_z');
-    //     // pitch = theory.createCurrency('° (pitch)', '\\degree_y');
-    //     // roll = theory.createCurrency('° (roll)', '\\degree_x');
-    //     roll = theory.createCurrency('i');
-    //     pitch = theory.createCurrency('j');
-    //     yaw = theory.createCurrency('k');
-    // }
-    min = theory.createCurrency(' (elapsed)');
-    // sec = theory.createCurrency(' chars');
+    min = theory.createCurrency(getLoc('elapsedCurrency'));
     progress = theory.createCurrency('%');
 
     // l (Level)
     {
-        let getDesc = (level) => `\\text{Level: }${level.toString()} ${(renderer.loopMode == 2 ? '+' : '')}`;
+        let getDesc = (level) => Localization.format(getLoc('varLvDesc'),
+        level.toString(), renderer.loopMode == 2 ? '+' : '');
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
@@ -1308,10 +1450,11 @@ let init = () =>
             if(tickDelayMode)
             {
                 if(level == 0)
-                    return `\\text{Tick delay: }\\infty`;
-                return `\\text{Tick delay: }${(level / 10).toString()}\\text{ sec}`;
+                    return getLoc('varTdDescInf');
+                return Localization.format(getLoc('varTdDesc'),
+                (level / 10).toString());
             }
-            return `\\text{Tickspeed: }${level.toString()}/\\text{sec}`;
+            return Localization.format(getLoc('varTsDesc'), level.toString());
         }
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, progress, new FreeCost);
@@ -1324,14 +1467,14 @@ let init = () =>
     }
 
     theory.createSecretAchievement(0, undefined,
-        'Watching Grass Grow',
-        'Let the renderer draw a 10-minute long figure or playlist.',
-        'Be patient.',
+        getLoc('saPatienceTitle'),
+        getLoc('saPatienceDesc'),
+        getLoc('saPatienceHint'),
         () => min.value > 9.6
     );
 }
 
-let alwaysShowRefundButtons = () => true;
+var alwaysShowRefundButtons = () => true;
 
 let timeCheck = (elapsedTime) =>
 {
@@ -1347,7 +1490,7 @@ let timeCheck = (elapsedTime) =>
     return time >= 1 / ts.level - 1e-8
 }
 
-let tick = (elapsedTime, multiplier) =>
+var tick = (elapsedTime, multiplier) =>
 {
     if(timeCheck(elapsedTime))
     {
@@ -1383,11 +1526,11 @@ let tick = (elapsedTime, multiplier) =>
     theory.invalidateTertiaryEquation();
 }
 
-let getEquationOverlay = () =>
+var getEquationOverlay = () =>
 {
     let result = ui.createLatexLabel
     ({
-        text: versionStr,
+        text: getLoc('overlayTitle'),
         displacementX: 6,
         displacementY: 4,
         fontSize: 9,
@@ -1580,7 +1723,7 @@ let createClickableVariableButton = (variable, callback, height) =>
     return frame;
 }
 
-let getUpgradeListDelegate = () =>
+var getUpgradeListDelegate = () =>
 {
     let height = ui.screenHeight * 0.055;
 
@@ -1601,20 +1744,24 @@ let getUpgradeListDelegate = () =>
     tsButton.row = 1;
     tsButton.column = 0;
 
-    let sysButton = createMenuButton(createSystemMenu, 'L-system menu', height);
+    let sysButton = createMenuButton(createSystemMenu, getLoc('sysButton'),
+    height);
     sysButton.row = 0;
     sysButton.column = 0;
-    let cfgButton = createMenuButton(createConfigMenu, 'Renderer menu', height);
+    let cfgButton = createMenuButton(createConfigMenu, getLoc('cfgButton'),
+    height);
     cfgButton.row = 0;
     cfgButton.column = 1;
-    let expButton = createMenuButton(createSaveMenu, 'Save/load', height);
-    expButton.row = 1;
-    expButton.column = 0;
-    let worldButton = createMenuButton(createWorldMenu, 'Theory settings',
+    let slButton = createMenuButton(createSaveMenu, getLoc('slButton'),
+    height);
+    slButton.row = 1;
+    slButton.column = 0;
+    let worldButton = createMenuButton(createWorldMenu, getLoc('worldButton'),
     height);
     worldButton.row = 1;
     worldButton.column = 1;
-    let manualButton = createMenuButton(createManualMenu, 'Manual', height);
+    let manualButton = createMenuButton(createManualMenu,
+    getLoc('manualButton'), height);
     manualButton.row = 2;
     manualButton.column = 0;
 
@@ -1677,7 +1824,7 @@ let getUpgradeListDelegate = () =>
                     [
                         sysButton,
                         cfgButton,
-                        expButton,
+                        slButton,
                         manualButton,
                         worldButton
                     ]
@@ -1715,10 +1862,10 @@ let createConfigMenu = () =>
         }
     });
     let tmpCFC = renderer.cursorFocused;
-    let camModes = ['Static', 'Cursor-focused'];
     let CFCLabel = ui.createLatexLabel
     ({
-        text: `Camera mode: ${camModes[Number(tmpCFC)]}`,
+        text: Localization.format(getLoc('CFCLabel'),
+        getLoc('camModes')[Number(tmpCFC)]),
         row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -1741,7 +1888,8 @@ let createConfigMenu = () =>
                 camGrid.isVisible = !tmpCFC;
                 FFLabel.isVisible = tmpCFC;
                 FFEntry.isVisible = tmpCFC;
-                CFCLabel.text = `Camera mode: ${camModes[Number(tmpCFC)]}`;
+                CFCLabel.text = Localization.format(getLoc('CFCLabel'),
+                getLoc('camModes')[Number(tmpCFC)]);
             }
         }
     });
@@ -1758,7 +1906,7 @@ let createConfigMenu = () =>
         [
             ui.createLatexLabel
             ({
-                text: 'Centre (x, y, z): ',
+                text: getLoc('camLabel'),
                 row: 0,
                 column: 0,
                 verticalOptions: LayoutOptions.CENTER
@@ -1811,7 +1959,7 @@ let createConfigMenu = () =>
     let tmpFF = renderer.followFactor;
     let FFLabel = ui.createLatexLabel
     ({
-        text: 'Follow factor (0-1): ',
+        text: getLoc('FFLabel'),
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER,
@@ -1830,10 +1978,10 @@ let createConfigMenu = () =>
         }
     });
     let tmpLM = renderer.loopMode;
-    let loopModes = ['Off', 'Level', 'Playlist'];
     let LMLabel = ui.createLatexLabel
     ({
-        text: `Looping mode: ${loopModes[tmpLM]}`,
+        text: Localization.format(getLoc('LMLabel'),
+        getLoc('loopModes')[tmpLM]),
         row: 0,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -1851,7 +1999,8 @@ let createConfigMenu = () =>
         onValueChanged: () =>
         {
             tmpLM = Math.round(LMSlider.value);
-            LMLabel.text = `Looping mode: ${loopModes[tmpLM]}`;
+            LMLabel.text = Localization.format(getLoc('LMLabel'),
+            getLoc('loopModes')[tmpLM]);
         },
         onDragCompleted: () =>
         {
@@ -1916,7 +2065,7 @@ let createConfigMenu = () =>
     let tmpEXB = renderer.backtrackList;
     let EXBLabel = ui.createLatexLabel
     ({
-        text: 'Backtrack list: ',
+        text: getLoc('EXBLabel'),
         row: 4,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -1934,7 +2083,7 @@ let createConfigMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: 'Renderer Menu',
+        title: getLoc('cfgMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -1952,7 +2101,7 @@ let createConfigMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Initial scale: ',
+                                        text: getLoc('iScaleLabel'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -1960,7 +2109,7 @@ let createConfigMenu = () =>
                                     iScaleEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Figure scale per level: ',
+                                        text: getLoc('fScaleLabel'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -1989,7 +2138,7 @@ let createConfigMenu = () =>
                                     LMSlider,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Upright x-axis: ',
+                                        text: getLoc('uprightLabel'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -1997,7 +2146,7 @@ let createConfigMenu = () =>
                                     uprightSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Quickdraw straight lines: ',
+                                        text: getLoc('QDLabel'),
                                         row: 2,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2005,7 +2154,7 @@ let createConfigMenu = () =>
                                     QDSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Quick backtrack: ',
+                                        text: getLoc('QBLabel'),
                                         row: 3,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2030,7 +2179,7 @@ let createConfigMenu = () =>
                     [
                         ui.createButton
                         ({
-                            text: 'Save',
+                            text: getLoc('saveButton'),
                             row: 0,
                             column: 0,
                             onClicked: () =>
@@ -2044,7 +2193,7 @@ let createConfigMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Reset to Defaults',
+                            text: getLoc('defaultButton'),
                             row: 0,
                             column: 1,
                             onClicked: () =>
@@ -2116,7 +2265,7 @@ let createSystemMenu = () =>
     });
     let addRuleButton = ui.createButton
     ({
-        text: 'Add',
+        text: getLoc('addButton'),
         row: 0,
         column: 1,
         // heightRequest: 40,
@@ -2160,7 +2309,7 @@ let createSystemMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: 'L-system Menu',
+        title: getLoc('sysMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -2178,7 +2327,7 @@ let createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Axiom: ',
+                                        text: getLoc('axiomLabel'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2186,7 +2335,7 @@ let createSystemMenu = () =>
                                     axiomEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Turning angle (°): ',
+                                        text: getLoc('angleLabel'),
                                         row: 0,
                                         column: 2,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2201,7 +2350,7 @@ let createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Production rules: ',
+                                        text: getLoc('rulesLabel'),
                                         verticalOptions: LayoutOptions.CENTER,
                                         margin: new Thickness(0, 6)
                                     }),
@@ -2216,7 +2365,7 @@ let createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Ignored symbols: ',
+                                        text: getLoc('ignoreLabel'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2224,7 +2373,7 @@ let createSystemMenu = () =>
                                     ignoreEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Seed (for stochastic systems): ',
+                                        text: getLoc('seedLabel'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2242,7 +2391,7 @@ let createSystemMenu = () =>
                 }),
                 ui.createButton
                 ({
-                    text: 'Construct',
+                    text: getLoc('constructButton'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2270,7 +2419,7 @@ let createNamingMenu = (title, values) =>
     });
     let menu = ui.createPopup
     ({
-        title: 'Name System',
+        title: getLoc('namingMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -2283,12 +2432,12 @@ let createNamingMenu = (title, values) =>
                 }),
                 ui.createButton
                 ({
-                    text: 'Save',
+                    text: getLoc('saveButton'),
                     onClicked: () =>
                     {
                         Sound.playClick();
                         while(savedSystems.has(tmpName))
-                            tmpName += ' (copy)';
+                            tmpName += getLoc('duplicateSuffix');
                         savedSystems.set(tmpName, values);
                         menu.hide();
                     }
@@ -2312,7 +2461,7 @@ let createClipboardMenu = (values) =>
     });
     let menu = ui.createPopup
     ({
-        title: 'Clipboard Menu',
+        title: getLoc('clipboardMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -2325,7 +2474,7 @@ let createClipboardMenu = (values) =>
                 }),
                 ui.createButton
                 ({
-                    text: 'Construct',
+                    text: getLoc('constructButton'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2394,7 +2543,7 @@ let createViewMenu = (title) =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Axiom: ',
+                                        text: getLoc('axiomLabel'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2407,7 +2556,7 @@ let createViewMenu = (title) =>
                                     }),
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Turning angle (°): ',
+                                        text: getLoc('angleLabel'),
                                         row: 0,
                                         column: 2,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2424,7 +2573,7 @@ let createViewMenu = (title) =>
                             }),
                             ui.createLatexLabel
                             ({
-                                text: 'Production rules: ',
+                                text: getLoc('rulesLabel'),
                                 verticalOptions: LayoutOptions.CENTER,
                                 margin: new Thickness(0, 6)
                             }),
@@ -2439,7 +2588,7 @@ let createViewMenu = (title) =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Ignored symbols: ',
+                                        text: getLoc('ignoreLabel'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2452,7 +2601,7 @@ let createViewMenu = (title) =>
                                     }),
                                     ui.createLatexLabel
                                     ({
-                                        text: 'Seed (for stochastic systems): ',
+                                        text: getLoc('seedLabel'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2483,7 +2632,7 @@ let createViewMenu = (title) =>
                     [
                         ui.createButton
                         ({
-                            text: 'Construct',
+                            text: getLoc('constructButton'),
                             row: 0,
                             column: 0,
                             onClicked: () =>
@@ -2496,7 +2645,7 @@ let createViewMenu = (title) =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Delete',
+                            text: getLoc('deleteButton'),
                             row: 0,
                             column: 1,
                             onClicked: () =>
@@ -2542,7 +2691,7 @@ let createSaveMenu = () =>
     {
         let btn = ui.createButton
         ({
-            text: 'View',
+            text: getLoc('viewButton'),
             row: 0,
             column: 1,
             // heightRequest: 40,
@@ -2567,7 +2716,7 @@ let createSaveMenu = () =>
 
     menu = ui.createPopup
     ({
-        title: 'Save/Load Menu',
+        title: getLoc('saveMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -2579,14 +2728,14 @@ let createSaveMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: 'Current system: ',
+                            text: getLoc('currentSystem'),
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         ui.createButton
                         ({
-                            text: 'Clipboard',
+                            text: getLoc('clipboardButton'),
                             row: 0,
                             column: 1,
                             onClicked: () =>
@@ -2598,7 +2747,7 @@ let createSaveMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Save',
+                            text: getLoc('saveButton'),
                             row: 0,
                             column: 2,
                             // heightRequest: 40,
@@ -2606,7 +2755,7 @@ let createSaveMenu = () =>
                             {
                                 Sound.playClick();
                                 let namingMenu = createNamingMenu(
-                                    'Untitled L-system',
+                                    getLoc('defaultSystemName'),
                                     renderer.system.toString(), systemGrid);
                                 namingMenu.onDisappearing = () =>
                                 {
@@ -2625,7 +2774,7 @@ let createSaveMenu = () =>
                 }),
                 ui.createLatexLabel
                 ({
-                    text: 'Saved systems: ',
+                    text: getLoc('savedSystems'),
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 6)
                 }),
@@ -2642,6 +2791,8 @@ let createSaveMenu = () =>
 
 let createManualMenu = () =>
 {
+    let manualPages = getLoc('manual');
+
     let pageTitle = ui.createLatexLabel
     ({
         // padding: new Thickness(0, 0),
@@ -2658,7 +2809,8 @@ let createManualMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: `Manual (${page + 1}/${manualPages.length})`,
+        title: Localization.format(getLoc('manualMenuTitle'), page + 1,
+        getLoc('manual').length),
         content: ui.createStackLayout
         ({
             children:
@@ -2685,7 +2837,7 @@ let createManualMenu = () =>
                     [
                         ui.createButton
                         ({
-                            text: 'Previous',
+                            text: getLoc('prevButton'),
                             row: 0,
                             column: 0,
                             isVisible: () => page > 0,
@@ -2695,7 +2847,10 @@ let createManualMenu = () =>
                                 {
                                     Sound.playClick();
                                     --page;
-                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
+                                    menu.title = Localization.format(
+                                        getLoc('manualMenuTitle'), page + 1,
+                                        getLoc('manual').length
+                                    );
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
@@ -2704,17 +2859,18 @@ let createManualMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Construct',
+                            text: getLoc('constructButton'),
                             row: 0,
                             column: 1,
-                            isVisible: () => 'system' in manualPages[page],
+                            isVisible: () => 'system' in manualSystems[page],
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.applySystem(manualPages[page].system);
-                                if('config' in manualPages[page])
+                                renderer.applySystem(
+                                manualSystems[page].system);
+                                if('config' in manualSystems[page])
                                 {
-                                    let a = manualPages[page].config;
+                                    let a = manualSystems[page].config;
                                     renderer.configureStaticCamera(...a);
                                 }
                                 menu.hide();
@@ -2722,7 +2878,7 @@ let createManualMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: 'Next',
+                            text: getLoc('nextButton'),
                             row: 0,
                             column: 2,
                             isVisible: () => page < manualPages.length - 1,
@@ -2732,7 +2888,10 @@ let createManualMenu = () =>
                                 if(page < manualPages.length - 1)
                                 {
                                     ++page;
-                                    menu.title = `Manual (${page + 1}/${manualPages.length})`;
+                                    menu.title = Localization.format(
+                                        getLoc('manualMenuTitle'), page + 1,
+                                        getLoc('manual').length
+                                    );
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
@@ -2754,7 +2913,7 @@ let createSequenceMenu = () =>
     {
         tmpLvls.push(ui.createLatexLabel
         ({
-            text: `Level ${i}: `,
+            text: Localization.format(getLoc('lvlLabel'), i),
             row: i,
             column: 0,
             verticalOptions: LayoutOptions.CENTER
@@ -2774,7 +2933,7 @@ let createSequenceMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: 'Sequences Menu',
+        title: getLoc('seqMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -2791,7 +2950,7 @@ let createSequenceMenu = () =>
                 }),
                 ui.createButton
                 ({
-                    text: 'Close',
+                    text: getLoc('closeButton'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2825,10 +2984,10 @@ let createWorldMenu = () =>
         }
     });
     let tmpAC = altCurrencies;
-    let TEqModes = ['Coordinates', 'Orientation'];
     let ACLabel = ui.createLatexLabel
     ({
-        text: `Tertiary equation: ${TEqModes[Number(tmpAC)]}`,
+        text: Localization.format(getLoc('ACLabel'),
+        getLoc('terEqModes')[Number(tmpAC)]),
         row: 1,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -2847,14 +3006,15 @@ let createWorldMenu = () =>
                 Sound.playClick();
                 tmpAC = !tmpAC;
                 ACSwitch.isToggled = tmpAC;
-                ACLabel.text = `Tertiary equation: ${TEqModes[Number(tmpAC)]}`;
+                ACLabel.text = Localization.format(getLoc('ACLabel'),
+                getLoc('terEqModes')[Number(tmpAC)]);
             }
         }
     });
 
     let menu = ui.createPopup
     ({
-        title: 'Theory Settings',
+        title: getLoc('worldMenuTitle'),
         content: ui.createStackLayout
         ({
             children:
@@ -2866,7 +3026,7 @@ let createWorldMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: 'Offline drawing: ',
+                            text: getLoc('ODLabel'),
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -2883,7 +3043,7 @@ let createWorldMenu = () =>
                 }),
                 ui.createButton
                 ({
-                    text: 'Save',
+                    text: getLoc('saveButton'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2898,7 +3058,7 @@ let createWorldMenu = () =>
     return menu;
 }
 
-let getInternalState = () =>
+var getInternalState = () =>
 {
     let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
@@ -2909,7 +3069,7 @@ let getInternalState = () =>
     return result;
 }
 
-let setInternalState = (stateStr) =>
+var setInternalState = (stateStr) =>
 {
     let values = stateStr.split('\n');
 
@@ -2966,21 +3126,21 @@ let setInternalState = (stateStr) =>
         savedSystems.set(values[i], values[i + 1]);
 }
 
-let canResetStage = () => true;
+var canResetStage = () => true;
 
-let getResetStageMessage = () => 'You are about to reroll the system\'s seed.';
+var getResetStageMessage = () => getLoc('rerollSeed');
 
-let resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
+var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 
-let getTertiaryEquation = () =>
+var getTertiaryEquation = () =>
 {
     if(altCurrencies)
         return renderer.getOriString();
     return renderer.getStateString();
 }
 
-let get3DGraphPoint = () => renderer.getCursor();
+var get3DGraphPoint = () => renderer.getCursor();
 
-let get3DGraphTranslation = () => renderer.getCamera();
+var get3DGraphTranslation = () => renderer.getCamera();
 
 init();
