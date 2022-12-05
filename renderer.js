@@ -1533,7 +1533,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: getLoc('equationOverlay'),
-        displacementX: 6,
+        displacementX: 5,
         displacementY: 4,
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
