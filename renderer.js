@@ -527,33 +527,33 @@ class Quaternion
 {
     /**
      * @constructor
-     * @param {number} w (default: 1) the real component.
-     * @param {number} x (default: 0) the imaginary i component.
-     * @param {number} y (default: 0) the imaginary j component.
-     * @param {number} z (default: 0) the imaginary k component.
+     * @param {number} r (default: 1) the real component.
+     * @param {number} i (default: 0) the imaginary i component.
+     * @param {number} j (default: 0) the imaginary j component.
+     * @param {number} k (default: 0) the imaginary k component.
      */
-    constructor(w = 1, x = 0, y = 0, z = 0)
+    constructor(r = 1, i = 0, j = 0, k = 0)
     {
         /**
          * @type {number} the real component.
          * @public
          */
-        this.w = w;
+        this.r = r;
         /**
          * @type {number} the imaginary i component.
          * @public
          */
-        this.x = x;
+        this.i = i;
         /**
          * @type {number} the imaginary j component.
          * @public
          */
-        this.y = y;
+        this.j = j;
         /**
          * @type {number} the imaginary k component.
          * @public
          */
-        this.z = z;
+        this.k = k;
     }
 
     /**
@@ -565,10 +565,10 @@ class Quaternion
     add(quat)
     {
         return new Quaternion(
-            this.w + quat.w,
-            this.x + quat.x,
-            this.y + quat.y,
-            this.z + quat.z
+            this.r + quat.r,
+            this.i + quat.i,
+            this.j + quat.j,
+            this.k + quat.k
         );
     }
     /**
@@ -579,14 +579,14 @@ class Quaternion
      */
     mul(quat)
     {
-        let t0 = this.w * quat.w - this.x * quat.x -
-        this.y * quat.y - this.z * quat.z;
-        let t1 = this.w * quat.x + this.x * quat.w +
-        this.y * quat.z - this.z * quat.y;
-        let t2 = this.w * quat.y - this.x * quat.z +
-        this.y * quat.w + this.z * quat.x;
-        let t3 = this.w * quat.z + this.x * quat.y -
-        this.y * quat.x + this.z * quat.w;
+        let t0 = this.r * quat.r - this.i * quat.i -
+        this.j * quat.j - this.k * quat.k;
+        let t1 = this.r * quat.i + this.i * quat.r +
+        this.j * quat.k - this.k * quat.j;
+        let t2 = this.r * quat.j - this.i * quat.k +
+        this.j * quat.r + this.k * quat.i;
+        let t3 = this.r * quat.k + this.i * quat.j -
+        this.j * quat.i + this.k * quat.r;
         return new Quaternion(t0, t1, t2, t3);
     }
     /**
@@ -597,7 +597,7 @@ class Quaternion
      */
     neg()
     {
-        return new Quaternion(this.w, -this.x, -this.y, -this.z);
+        return new Quaternion(this.r, -this.i, -this.j, -this.k);
     }
     /**
      * Returns a rotation vector from the quaternion.
@@ -606,7 +606,7 @@ class Quaternion
     getRotVector()
     {
         let r = this.neg().mul(xAxisQuat).mul(this);
-        return new Vector3(r.x, r.y, r.z);
+        return new Vector3(r.i, r.j, r.k);
     }
     /**
      * Returns the quaternion's string representation.
@@ -614,7 +614,7 @@ class Quaternion
      */
     toString()
     {
-        return `${getCoordString(this.w)} + ${getCoordString(this.x)}i + ${getCoordString(this.y)}j + ${getCoordString(this.z)}k`;
+        return `${getCoordString(this.r)} + ${getCoordString(this.i)}i + ${getCoordString(this.j)}j + ${getCoordString(this.k)}k`;
     }
 }
 
@@ -3078,6 +3078,7 @@ let createWorldMenu = () =>
                 ui.createGrid
                 ({
                     columnDefinitions: ['70*', '30*'],
+                    rowDefinitions: [40, 40, 40],
                     children:
                     [
                         ui.createLatexLabel
