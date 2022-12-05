@@ -12,7 +12,6 @@
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
-  - Post to reddit `r/proceduralgeneration`, crosspost `r/lsystem`
 
 ## Currently Impossible
 
