@@ -74,7 +74,7 @@ const locStrings =
 {
     en:
     {
-        rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{} chars}})\\end{{matrix}}',
+        rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
         currencyTime: ' (elapsed)',
         varLvDesc: '\\text{{Level: }}{0}{1}',
@@ -157,7 +157,7 @@ Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `produces less accurate lines).
 Pressing the Tickspeed button will toggle between Tick delay and Tickspeed ` +
 `modes.
-(Tip: holding + or - will buy/refund a variable in bulk.)
+(Tip: holding + or - will buy/refund a variable in bulks of 10.)
 
 Reroll: located on the top right. Pressing this button will reroll the ` +
 `system's seed (for stochastic systems).`
@@ -1097,10 +1097,10 @@ class Renderer
      */
     tick(dt)
     {
-        if(this.loopMode == 0 && this.idx >= this.levels[this.lvl].length)
-            return;
-        
         if(this.lvl > this.loaded + 1)
+            return;
+
+        if(this.loopMode == 0 && this.idx >= this.levels[this.lvl].length)
             return;
 
         this.elapsed += dt;
@@ -1557,7 +1557,8 @@ let createVariableButton = (variable, height) =>
     return frame;
 }
 
-let createMinusButton = (variable, height, symbol = '-') =>
+let createMinusButton = (variable, height, symbol = '-', quickbuyAmount = 10,
+useAnchor = false, anchor = undefined) =>
 {
     let bc = () => variable.level > 0 ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1581,12 +1582,18 @@ let createMinusButton = (variable, height, symbol = '-') =>
                 frame.borderColor = bc;
                 Sound.playClick();
                 variable.refund(1);
+                if(useAnchor && !anchor.active)
+                    anchor.value = variable.level;
             }
             else if(e.type == TouchType.LONGPRESS)
             {
+                if(useAnchor)
+                    anchor.value = variable.level;
                 frame.borderColor = bc;
                 Sound.playClick();
-                variable.refund(-1);
+                variable.refund(quickbuyAmount);
+                if(useAnchor)
+                    anchor.active = true;
             }
             else if(e.type == TouchType.PRESSED)
             {
@@ -1602,7 +1609,8 @@ let createMinusButton = (variable, height, symbol = '-') =>
     return frame;
 }
 
-let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10) =>
+let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10,
+useAnchor = false, anchor = undefined) =>
 {
     let bc = () => variable.level < variable.maxLevel ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1627,13 +1635,31 @@ let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10) =>
                 frame.borderColor = bc;
                 Sound.playClick();
                 variable.buy(1);
+                if(useAnchor && !anchor.active)
+                    anchor.value = variable.level;
             }
             else if(e.type == TouchType.LONGPRESS)
             {
                 frame.borderColor = bc;
                 Sound.playClick();
-                for(let i = 0; i < quickbuyAmount; ++i)
+
+                let q = quickbuyAmount;
+                if(useAnchor && anchor.active)
+                {
+                    q = Math.min(q, anchor.value - variable.level);
+                    if(q == 0)
+                        q = quickbuyAmount;
+                }
+                for(let i = 0; i < q; ++i)
                     variable.buy(1);
+
+                if(useAnchor)
+                {
+                    if(!anchor.active)
+                        anchor.value = variable.level;
+                    else
+                        anchor.active = false;
+                }
             }
             else if(e.type == TouchType.PRESSED)
             {
@@ -1767,6 +1793,12 @@ var getUpgradeListDelegate = () =>
     manualButton.row = 2;
     manualButton.column = 0;
 
+    let lastTsLevel =
+    {
+        value: ts.level,
+        active: false
+    };
+
     let stack = ui.createScrollView
     ({
         content: ui.createStackLayout
@@ -1804,8 +1836,10 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(ts, height, '–'),
-                                createPlusButton(ts, height)
+                                createMinusButton(ts, height, '–', 10, true,
+                                lastTsLevel),
+                                createPlusButton(ts, height, '+', 10, true,
+                                lastTsLevel)
                             ]
                         })
                     ]
