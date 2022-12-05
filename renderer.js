@@ -76,7 +76,7 @@ const locStrings =
     {
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{} chars}})\\end{{matrix}}',
 
-        elapsedCurrency: ' (elapsed)',
+        currencyTime: ' (elapsed)',
         varLvDesc: '\\text{{Level: }}{0}{1}',
         varTdDesc: '\\text{{Tick delay: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick delay: }}\\infty',
@@ -87,62 +87,62 @@ const locStrings =
         'playlist.',
         saPatienceHint: 'Be patient.',
 
-        overlayTitle: 'v0.19: Winter Sweep (WIP)',
+        equationOverlay: 'v0.19: Winter Sweep (WIP)',
 
-        sysButton: 'L-system menu',
-        cfgButton: 'Renderer menu',
-        slButton: 'Save/load',
-        worldButton: 'Theory settings',
-        manualButton: 'Manual',
+        btnSave: 'Save',
+        btnDefault: 'Reset to Defaults',
+        btnAdd: 'Add',
+        btnConstruct: 'Construct',
+        btnDelete: 'Delete',
+        btnView: 'View',
+        btnClipboard: 'Clipboard',
+        btnPrev: 'Previous',
+        btnNext: 'Next',
+        btnClose: 'Close',
 
-        saveButton: 'Save',
-        defaultButton: 'Reset to Defaults',
-        addButton: 'Add',
-        constructButton: 'Construct',
-        deleteButton: 'Delete',
-        viewButton: 'View',
-        clipboardButton: 'Clipboard',
-        prevButton: 'Previous',
-        nextButton: 'Next',
-        closeButton: 'Close',
+        btnMenuLSystem: 'L-system menu',
+        btnMenuRenderer: 'Renderer menu',
+        btnMenuSave: 'Save/load',
+        btnMenuTheory: 'Theory settings',
+        btnMenuManual: 'Manual',
 
-        cfgMenuTitle: 'Renderer Menu',
-        iScaleLabel: 'Initial scale: ',
-        fScaleLabel: 'Figure scale per level: ',
-        CFCLabel: 'Camera mode: {0}',
+        menuLSystem: 'L-system Menu',
+        labelAxiom: 'Axiom: ',
+        labelAngle: 'Turning angle (°): ',
+        labelRules: 'Production rules: ',
+        labelIgnored: 'Ignored symbols: ',
+        labelSeed: 'Seed (for stochastic systems): ',
+
+        menuRenderer: 'Renderer Menu',
+        labelInitScale: 'Initial scale: ',
+        labelFigScale: 'Figure scale per level: ',
+        labelCamMode: 'Camera mode: {0}',
         camModes: ['Static', 'Cursor-focused'],
-        camLabel: 'Centre (x, y, z): ',
-        FFLabel: 'Follow factor (0-1): ',
-        LMLabel: 'Looping mode: {0}',
+        labelCamCentre: 'Centre (x, y, z): ',
+        labelFollowFactor: 'Follow factor (0-1): ',
+        labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Level', 'Playlist'],
-        uprightLabel: 'Upright x-axis: ',
-        QDLabel: 'Quickdraw straight lines: ',
-        QBLabel: 'Quick backtrack: ',
-        EXBLabel: 'Backtrack list: ',
+        labelUpright: 'Upright x-axis: ',
+        labelQuickdraw: 'Quickdraw straight lines: ',
+        labelQuickBT: 'Quick backtrack: ',
+        labelBTList: 'Backtrack list: ',
 
-        sysMenuTitle: 'L-system Menu',
-        axiomLabel: 'Axiom: ',
-        angleLabel: 'Turning angle (°): ',
-        rulesLabel: 'Production rules: ',
-        ignoreLabel: 'Ignored symbols: ',
-        seedLabel: 'Seed (for stochastic systems): ',
-
-        saveMenuTitle: 'Save/Load Menu',
+        menuSave: 'Save/Load Menu',
         currentSystem: 'Current system: ',
         savedSystems: 'Saved systems: ',
 
-        clipboardMenuTitle: 'Clipboard Menu',
+        menuClipboard: 'Clipboard Menu',
 
-        namingMenuTitle: 'Name System',
+        menuNaming: 'Name System',
         defaultSystemName: 'Untitled L-system',
         duplicateSuffix: ' (copy)',
 
-        worldMenuTitle: 'Theory Settings',
-        ODLabel: 'Offline drawing: ',
-        ACLabel: 'Tertiary equation: {0}',
+        menuTheory: 'Theory Settings',
+        labelOfflineDrawing: 'Offline drawing: ',
+        labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
 
-        manualMenuTitle: 'Manual ({0}/{1})',
+        menuManual: 'Manual ({0}/{1})',
         manual:
         [
             {
@@ -399,8 +399,8 @@ Upright`
             }
         ],
 
-        seqMenuTitle: 'View Sequences',
-        lvlLabel: 'Level {0}: ',
+        menuSequence: 'View Sequences',
+        labelLevelSeq: 'Level {0}: ',
 
         rerollSeed: 'You are about to reroll the system\'s seed.',
     }
@@ -1428,7 +1428,7 @@ let manualSystems =
 
 var init = () =>
 {
-    min = theory.createCurrency(getLoc('elapsedCurrency'));
+    min = theory.createCurrency(getLoc('currencyTime'));
     progress = theory.createCurrency('%');
 
     // l (Level)
@@ -1530,7 +1530,7 @@ var getEquationOverlay = () =>
 {
     let result = ui.createLatexLabel
     ({
-        text: getLoc('overlayTitle'),
+        text: getLoc('equationOverlay'),
         displacementX: 6,
         displacementY: 4,
         fontSize: 9,
@@ -1744,24 +1744,26 @@ var getUpgradeListDelegate = () =>
     tsButton.row = 1;
     tsButton.column = 0;
 
-    let sysButton = createMenuButton(createSystemMenu, getLoc('sysButton'),
+    let sysButton = createMenuButton(createSystemMenu, getLoc('btnMenuLSystem'),
     height);
     sysButton.row = 0;
     sysButton.column = 0;
-    let cfgButton = createMenuButton(createConfigMenu, getLoc('cfgButton'),
+    let cfgButton = createMenuButton(createConfigMenu,
+    getLoc('btnMenuRenderer'),
     height);
     cfgButton.row = 0;
     cfgButton.column = 1;
-    let slButton = createMenuButton(createSaveMenu, getLoc('slButton'),
+    let slButton = createMenuButton(createSaveMenu, getLoc('btnMenuSave'),
     height);
     slButton.row = 1;
     slButton.column = 0;
-    let worldButton = createMenuButton(createWorldMenu, getLoc('worldButton'),
+    let theoryButton = createMenuButton(createWorldMenu,
+    getLoc('btnMenuTheory'),
     height);
-    worldButton.row = 1;
-    worldButton.column = 1;
+    theoryButton.row = 1;
+    theoryButton.column = 1;
     let manualButton = createMenuButton(createManualMenu,
-    getLoc('manualButton'), height);
+    getLoc('btnMenuManual'), height);
     manualButton.row = 2;
     manualButton.column = 0;
 
@@ -1825,8 +1827,8 @@ var getUpgradeListDelegate = () =>
                         sysButton,
                         cfgButton,
                         slButton,
-                        manualButton,
-                        worldButton
+                        theoryButton,
+                        manualButton
                     ]
                 })
             ]
@@ -1864,7 +1866,7 @@ let createConfigMenu = () =>
     let tmpCFC = renderer.cursorFocused;
     let CFCLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('CFCLabel'),
+        text: Localization.format(getLoc('labelCamMode'),
         getLoc('camModes')[Number(tmpCFC)]),
         row: 2,
         column: 0,
@@ -1888,7 +1890,7 @@ let createConfigMenu = () =>
                 camGrid.isVisible = !tmpCFC;
                 FFLabel.isVisible = tmpCFC;
                 FFEntry.isVisible = tmpCFC;
-                CFCLabel.text = Localization.format(getLoc('CFCLabel'),
+                CFCLabel.text = Localization.format(getLoc('labelCamMode'),
                 getLoc('camModes')[Number(tmpCFC)]);
             }
         }
@@ -1906,7 +1908,7 @@ let createConfigMenu = () =>
         [
             ui.createLatexLabel
             ({
-                text: getLoc('camLabel'),
+                text: getLoc('labelCamCentre'),
                 row: 0,
                 column: 0,
                 verticalOptions: LayoutOptions.CENTER
@@ -1959,7 +1961,7 @@ let createConfigMenu = () =>
     let tmpFF = renderer.followFactor;
     let FFLabel = ui.createLatexLabel
     ({
-        text: getLoc('FFLabel'),
+        text: getLoc('labelFollowFactor'),
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER,
@@ -1980,7 +1982,7 @@ let createConfigMenu = () =>
     let tmpLM = renderer.loopMode;
     let LMLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('LMLabel'),
+        text: Localization.format(getLoc('labelLoopMode'),
         getLoc('loopModes')[tmpLM]),
         row: 0,
         column: 0,
@@ -1999,7 +2001,7 @@ let createConfigMenu = () =>
         onValueChanged: () =>
         {
             tmpLM = Math.round(LMSlider.value);
-            LMLabel.text = Localization.format(getLoc('LMLabel'),
+            LMLabel.text = Localization.format(getLoc('labelLoopMode'),
             getLoc('loopModes')[tmpLM]);
         },
         onDragCompleted: () =>
@@ -2065,7 +2067,7 @@ let createConfigMenu = () =>
     let tmpEXB = renderer.backtrackList;
     let EXBLabel = ui.createLatexLabel
     ({
-        text: getLoc('EXBLabel'),
+        text: getLoc('labelBTList'),
         row: 4,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
@@ -2083,7 +2085,7 @@ let createConfigMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: getLoc('cfgMenuTitle'),
+        title: getLoc('menuRenderer'),
         content: ui.createStackLayout
         ({
             children:
@@ -2101,7 +2103,7 @@ let createConfigMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('iScaleLabel'),
+                                        text: getLoc('labelInitScale'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2109,7 +2111,7 @@ let createConfigMenu = () =>
                                     iScaleEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('fScaleLabel'),
+                                        text: getLoc('labelFigScale'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2138,7 +2140,7 @@ let createConfigMenu = () =>
                                     LMSlider,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('uprightLabel'),
+                                        text: getLoc('labelUpright'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2146,7 +2148,7 @@ let createConfigMenu = () =>
                                     uprightSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('QDLabel'),
+                                        text: getLoc('labelQuickdraw'),
                                         row: 2,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2154,7 +2156,7 @@ let createConfigMenu = () =>
                                     QDSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('QBLabel'),
+                                        text: getLoc('labelQuickBT'),
                                         row: 3,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2179,7 +2181,7 @@ let createConfigMenu = () =>
                     [
                         ui.createButton
                         ({
-                            text: getLoc('saveButton'),
+                            text: getLoc('btnSave'),
                             row: 0,
                             column: 0,
                             onClicked: () =>
@@ -2193,7 +2195,7 @@ let createConfigMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('defaultButton'),
+                            text: getLoc('btnDefault'),
                             row: 0,
                             column: 1,
                             onClicked: () =>
@@ -2265,7 +2267,7 @@ let createSystemMenu = () =>
     });
     let addRuleButton = ui.createButton
     ({
-        text: getLoc('addButton'),
+        text: getLoc('btnAdd'),
         row: 0,
         column: 1,
         // heightRequest: 40,
@@ -2309,7 +2311,7 @@ let createSystemMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: getLoc('sysMenuTitle'),
+        title: getLoc('menuLSystem'),
         content: ui.createStackLayout
         ({
             children:
@@ -2327,7 +2329,7 @@ let createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('axiomLabel'),
+                                        text: getLoc('labelAxiom'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2335,7 +2337,7 @@ let createSystemMenu = () =>
                                     axiomEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('angleLabel'),
+                                        text: getLoc('labelAngle'),
                                         row: 0,
                                         column: 2,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2350,7 +2352,7 @@ let createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('rulesLabel'),
+                                        text: getLoc('labelRules'),
                                         verticalOptions: LayoutOptions.CENTER,
                                         margin: new Thickness(0, 6)
                                     }),
@@ -2365,7 +2367,7 @@ let createSystemMenu = () =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('ignoreLabel'),
+                                        text: getLoc('labelIgnored'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2373,7 +2375,7 @@ let createSystemMenu = () =>
                                     ignoreEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('seedLabel'),
+                                        text: getLoc('labelSeed'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2391,7 +2393,7 @@ let createSystemMenu = () =>
                 }),
                 ui.createButton
                 ({
-                    text: getLoc('constructButton'),
+                    text: getLoc('btnConstruct'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2419,7 +2421,7 @@ let createNamingMenu = (title, values) =>
     });
     let menu = ui.createPopup
     ({
-        title: getLoc('namingMenuTitle'),
+        title: getLoc('menuNaming'),
         content: ui.createStackLayout
         ({
             children:
@@ -2432,7 +2434,7 @@ let createNamingMenu = (title, values) =>
                 }),
                 ui.createButton
                 ({
-                    text: getLoc('saveButton'),
+                    text: getLoc('btnSave'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2461,7 +2463,7 @@ let createClipboardMenu = (values) =>
     });
     let menu = ui.createPopup
     ({
-        title: getLoc('clipboardMenuTitle'),
+        title: getLoc('menuClipboard'),
         content: ui.createStackLayout
         ({
             children:
@@ -2474,7 +2476,7 @@ let createClipboardMenu = (values) =>
                 }),
                 ui.createButton
                 ({
-                    text: getLoc('constructButton'),
+                    text: getLoc('btnConstruct'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2543,7 +2545,7 @@ let createViewMenu = (title) =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('axiomLabel'),
+                                        text: getLoc('labelAxiom'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2556,7 +2558,7 @@ let createViewMenu = (title) =>
                                     }),
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('angleLabel'),
+                                        text: getLoc('labelAngle'),
                                         row: 0,
                                         column: 2,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2573,7 +2575,7 @@ let createViewMenu = (title) =>
                             }),
                             ui.createLatexLabel
                             ({
-                                text: getLoc('rulesLabel'),
+                                text: getLoc('labelRules'),
                                 verticalOptions: LayoutOptions.CENTER,
                                 margin: new Thickness(0, 6)
                             }),
@@ -2588,7 +2590,7 @@ let createViewMenu = (title) =>
                                 [
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('ignoreLabel'),
+                                        text: getLoc('labelIgnored'),
                                         row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2601,7 +2603,7 @@ let createViewMenu = (title) =>
                                     }),
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('seedLabel'),
+                                        text: getLoc('labelSeed'),
                                         row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
@@ -2632,7 +2634,7 @@ let createViewMenu = (title) =>
                     [
                         ui.createButton
                         ({
-                            text: getLoc('constructButton'),
+                            text: getLoc('btnConstruct'),
                             row: 0,
                             column: 0,
                             onClicked: () =>
@@ -2645,7 +2647,7 @@ let createViewMenu = (title) =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('deleteButton'),
+                            text: getLoc('btnDelete'),
                             row: 0,
                             column: 1,
                             onClicked: () =>
@@ -2691,7 +2693,7 @@ let createSaveMenu = () =>
     {
         let btn = ui.createButton
         ({
-            text: getLoc('viewButton'),
+            text: getLoc('btnView'),
             row: 0,
             column: 1,
             // heightRequest: 40,
@@ -2716,7 +2718,7 @@ let createSaveMenu = () =>
 
     menu = ui.createPopup
     ({
-        title: getLoc('saveMenuTitle'),
+        title: getLoc('menuSave'),
         content: ui.createStackLayout
         ({
             children:
@@ -2735,7 +2737,7 @@ let createSaveMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('clipboardButton'),
+                            text: getLoc('btnClipboard'),
                             row: 0,
                             column: 1,
                             onClicked: () =>
@@ -2747,7 +2749,7 @@ let createSaveMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('saveButton'),
+                            text: getLoc('btnSave'),
                             row: 0,
                             column: 2,
                             // heightRequest: 40,
@@ -2809,7 +2811,7 @@ let createManualMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: Localization.format(getLoc('manualMenuTitle'), page + 1,
+        title: Localization.format(getLoc('menuManual'), page + 1,
         getLoc('manual').length),
         content: ui.createStackLayout
         ({
@@ -2837,7 +2839,7 @@ let createManualMenu = () =>
                     [
                         ui.createButton
                         ({
-                            text: getLoc('prevButton'),
+                            text: getLoc('btnPrev'),
                             row: 0,
                             column: 0,
                             isVisible: () => page > 0,
@@ -2848,7 +2850,7 @@ let createManualMenu = () =>
                                     Sound.playClick();
                                     --page;
                                     menu.title = Localization.format(
-                                        getLoc('manualMenuTitle'), page + 1,
+                                        getLoc('menuManual'), page + 1,
                                         getLoc('manual').length
                                     );
                                     pageTitle.text = manualPages[page].title;
@@ -2859,7 +2861,7 @@ let createManualMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('constructButton'),
+                            text: getLoc('btnConstruct'),
                             row: 0,
                             column: 1,
                             isVisible: () => 'system' in manualSystems[page],
@@ -2878,7 +2880,7 @@ let createManualMenu = () =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('nextButton'),
+                            text: getLoc('btnNext'),
                             row: 0,
                             column: 2,
                             isVisible: () => page < manualPages.length - 1,
@@ -2889,7 +2891,7 @@ let createManualMenu = () =>
                                 {
                                     ++page;
                                     menu.title = Localization.format(
-                                        getLoc('manualMenuTitle'), page + 1,
+                                        getLoc('menuManual'), page + 1,
                                         getLoc('manual').length
                                     );
                                     pageTitle.text = manualPages[page].title;
@@ -2913,7 +2915,7 @@ let createSequenceMenu = () =>
     {
         tmpLvls.push(ui.createLatexLabel
         ({
-            text: Localization.format(getLoc('lvlLabel'), i),
+            text: Localization.format(getLoc('labelLevelSeq'), i),
             row: i,
             column: 0,
             verticalOptions: LayoutOptions.CENTER
@@ -2933,7 +2935,7 @@ let createSequenceMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: getLoc('seqMenuTitle'),
+        title: getLoc('menuSequence'),
         content: ui.createStackLayout
         ({
             children:
@@ -2950,7 +2952,7 @@ let createSequenceMenu = () =>
                 }),
                 ui.createButton
                 ({
-                    text: getLoc('closeButton'),
+                    text: getLoc('btnClose'),
                     onClicked: () =>
                     {
                         Sound.playClick();
@@ -2986,7 +2988,7 @@ let createWorldMenu = () =>
     let tmpAC = altCurrencies;
     let ACLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('ACLabel'),
+        text: Localization.format(getLoc('labelTerEq'),
         getLoc('terEqModes')[Number(tmpAC)]),
         row: 1,
         column: 0,
@@ -3006,7 +3008,7 @@ let createWorldMenu = () =>
                 Sound.playClick();
                 tmpAC = !tmpAC;
                 ACSwitch.isToggled = tmpAC;
-                ACLabel.text = Localization.format(getLoc('ACLabel'),
+                ACLabel.text = Localization.format(getLoc('labelTerEq'),
                 getLoc('terEqModes')[Number(tmpAC)]);
             }
         }
@@ -3014,7 +3016,7 @@ let createWorldMenu = () =>
 
     let menu = ui.createPopup
     ({
-        title: getLoc('worldMenuTitle'),
+        title: getLoc('menuTheory'),
         content: ui.createStackLayout
         ({
             children:
@@ -3026,7 +3028,7 @@ let createWorldMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: getLoc('ODLabel'),
+                            text: getLoc('labelOfflineDrawing'),
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -3043,7 +3045,7 @@ let createWorldMenu = () =>
                 }),
                 ui.createButton
                 ({
-                    text: getLoc('saveButton'),
+                    text: getLoc('btnSave'),
                     onClicked: () =>
                     {
                         Sound.playClick();
