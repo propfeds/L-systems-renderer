@@ -1,6 +1,10 @@
 # L-systems Renderer
 
-## 0.19: Winter Sweep
+## 0.20: Spring Cleaning
+
+- Context sensitivity
+  - `b < a > c → aa`
+  - How to store? Maps?
 
 - Add more comments in the code
 - Add more systems to the manual (algae)
@@ -10,22 +14,13 @@
   - Like a blog post, sort of
   - Post to reddit `r/proceduralgeneration`, crosspost `r/lsystem`
 
-- Saved systems can also store static camera configs like manual pages?
-  - Technically not possible currently
-  - Storing descriptions is also probably not possible
-  - Unless we have the power of version number
-
-- Version number: helps migrating settings
-
-## 0.20: Spring Cleaning
-
-- Context sensitivity
-  - `b < a > c → aa`
-  - How to store? Maps?
-
 ## Currently Impossible
 
 - Remove the add button, every rule is bunched into one field
   - Entry.keyboard? (`Keyboard.TEXT`) doesn't work
   - https://andyp.dev/posts/xamarin-forms-essentials-keyboard-master-guide
   - Which means, adding extra processing in view menu and system menu
+- Saved systems can also store static camera configs like manual pages?
+  - Technically not possible currently
+  - Storing descriptions is also probably not possible
+  - Unless we have the power of version number

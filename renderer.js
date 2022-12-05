@@ -66,7 +66,7 @@ Warning: As of v0.18, the renderer's configuration will be messed up due to ` +
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions';
-var version = 0.182;
+var version = 0.19;
 
 const MAX_CHARS_PER_TICK = 10000;
 
@@ -87,7 +87,7 @@ const locStrings =
         'playlist.',
         saPatienceHint: 'Be patient.',
 
-        equationOverlay: 'v0.19: Winter Sweep (WIP)',
+        equationOverlay: 'v0.19: Winter Sweep',
 
         btnSave: 'Save',
         btnDefault: 'Reset to Defaults',
@@ -403,7 +403,7 @@ Upright`
             }
         ],
 
-        menuSequence: 'View Sequences',
+        menuSequence: 'Sequences Menu',
         labelLevelSeq: 'Level {0}: ',
 
         rerollSeed: 'You are about to reroll the system\'s seed.',
