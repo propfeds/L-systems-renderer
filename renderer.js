@@ -152,12 +152,15 @@ const locStrings =
 
 Level: the system's level. Pressing + or - will derive/revert the system ` +
 `respectively. Pressing the Level button will reveal all levels of the system.
+(Tip: holding + or - will buy/refund the variable in bulks of 10.)
 
 Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `produces less accurate lines).
-Pressing the Tickspeed button will toggle between Tick delay and Tickspeed ` +
+Pressing the Tickspeed button will toggle between Tickspeed and Tick delay ` +
 `modes.
-(Tip: holding + or - will buy/refund a variable in bulks of 10.)
+(Tip: holding - on Tickspeed will create an 'anchor' and pause the renderer. ` +
+`Holding + afterwards will return the renderer to the previously 'anchored' ` +
+`speed.)
 
 Reroll: located on the top right. Pressing this button will reroll the ` +
 `system's seed (for stochastic systems).`
@@ -1338,7 +1341,7 @@ let page = 0;
 let offlineDrawing = false;
 let gameIsOffline = false;
 let altCurrencies = true;
-let tickDelayMode = true;
+let tickDelayMode = false;
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, 1, 2, false, 1);
