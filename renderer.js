@@ -68,15 +68,27 @@ var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions';
 var version = 0.19;
 
+let time = 0;
+let page = 0;
+let offlineDrawing = false;
+let gameIsOffline = false;
+let altCurrencies = true;
+let tickDelayMode = false;
+let resetLvlOnConstruct = true;
+var l, ts;
+
 const MAX_CHARS_PER_TICK = 10000;
 
 const locStrings =
 {
     en:
-    {
+    {        
+        equationOverlay: 'v0.19.1: Winter Sweep (WIP)',
+
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
         currencyTime: ' (elapsed)',
+
         varLvDesc: '\\text{{Level: }}{0}{1}',
         varTdDesc: '\\text{{Tick delay: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick delay: }}\\infty',
@@ -86,8 +98,6 @@ const locStrings =
         saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
         'playlist.',
         saPatienceHint: 'Be patient.',
-
-        equationOverlay: 'v0.19: Winter Sweep',
 
         btnSave: 'Save',
         btnDefault: 'Reset to Defaults',
@@ -1337,14 +1347,6 @@ class Renderer
         return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
-
-let time = 0;
-let page = 0;
-let offlineDrawing = false;
-let gameIsOffline = false;
-let altCurrencies = true;
-let tickDelayMode = false;
-let resetLvlOnConstruct = true;
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, 1, 2, false, 1);

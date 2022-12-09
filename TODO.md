@@ -1,14 +1,19 @@
 # L-systems Renderer
 
+## 0.19.1
+
+- [ ] Anchor should be internally processed by the ts var, not the level button
+
 ## 0.20: It Depends
 
-- Context sensitivity
+- [ ] Context sensitivity
   - `b < a > c → aa`
   - How to store? Maps?
-
-- Add more comments in the code
-- Add more systems to the manual (algae)
-- A more detailed README
+- [ ] Redesign manual
+  - Add more systems to the manual (algae)
+  - Add tutorial-like flows that explain concepts
+- [ ] Add more comments in the code
+- [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
