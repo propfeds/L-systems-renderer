@@ -3,6 +3,7 @@
 ## 0.19.1
 
 - [ ] Anchor should be internally processed by the ts var, not the level button
+  - Can it work both ways or just downwards?
 
 ## 0.20: It Depends
 
@@ -17,6 +18,7 @@
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
+- [ ] Optimise using the API's profiler
 
 ## Currently Impossible
 

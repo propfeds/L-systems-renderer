@@ -1472,7 +1472,7 @@ var init = () =>
         ts.boughtOrRefunded = (_) => time = 0;
     }
 
-    theory.createSecretAchievement(0, undefined,
+    theory.createSecretAchievement(0, null,
         getLoc('saPatienceTitle'),
         getLoc('saPatienceDesc'),
         getLoc('saPatienceHint'),
@@ -1564,7 +1564,7 @@ let createVariableButton = (variable, height) =>
 }
 
 let createMinusButton = (variable, height, symbol = '-', quickbuyAmount = 10,
-useAnchor = false, anchor = undefined) =>
+useAnchor = false, anchor = null) =>
 {
     let bc = () => variable.level > 0 ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1616,7 +1616,7 @@ useAnchor = false, anchor = undefined) =>
 }
 
 let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10,
-useAnchor = false, anchor = undefined) =>
+useAnchor = false, anchor = null) =>
 {
     let bc = () => variable.level < variable.maxLevel ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -3208,6 +3208,7 @@ var getTertiaryEquation = () =>
 {
     if(altCurrencies)
         return renderer.getOriString();
+
     return renderer.getStateString();
 }
 
