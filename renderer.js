@@ -75,10 +75,9 @@ let gameIsOffline = false;
 let altCurrencies = true;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
-var l, ts;
+let savedSystems = new Map();
 
 const MAX_CHARS_PER_TICK = 10000;
-
 const locStrings =
 {
     en:
@@ -426,6 +425,7 @@ let menuLang = Localization.language;
  * @param {string} name the internal name of the string.
  * @returns {string} the string.
  */
+
 let getLoc = (name, lang = menuLang) =>
 {
     if(lang in locStrings && name in locStrings[lang])
@@ -536,6 +536,10 @@ class LCG
 class Quaternion
 {
     /**
+     * @static the initial x-axis quaternion used for rotations.
+     */
+    static xAxis = new Quaternion(0, 1, 0, 0);
+    /**
      * @constructor
      * @param {number} r (default: 1) the real component.
      * @param {number} i (default: 0) the imaginary i component.
@@ -615,7 +619,7 @@ class Quaternion
      */
     getRotVector()
     {
-        let r = this.neg().mul(xAxisQuat).mul(this);
+        let r = this.neg().mul(Quaternion.xAxis).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**
@@ -1350,10 +1354,7 @@ class Renderer
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, 1, 2, false, 1);
-
-let xAxisQuat = new Quaternion(0, 1, 0, 0);
 let globalSeed = new LCG(Date.now());
-let savedSystems = new Map();
 let manualSystems =
 [
     {},
@@ -1429,6 +1430,7 @@ let manualSystems =
         config: [1, 3, 0.75, -0.25, 0, true]
     }
 ];
+var l, ts;
 
 var init = () =>
 {
