@@ -538,7 +538,10 @@ class Quaternion
     /**
      * @static the initial x-axis quaternion used for rotations.
      */
-    static xAxis = new Quaternion(0, 1, 0, 0);
+    static xAxis()
+    {
+        return new Quaternion(0, 1, 0, 0);
+    }
     /**
      * @constructor
      * @param {number} r (default: 1) the real component.
@@ -619,7 +622,7 @@ class Quaternion
      */
     getRotVector()
     {
-        let r = this.neg().mul(Quaternion.xAxis).mul(this);
+        let r = this.neg().mul(Quaternion.xAxis()).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**

@@ -2,9 +2,6 @@
 
 ## 0.19.1
 
-- [ ] Anchor should be internally processed by the ts var, not the level button
-  - Can it work both ways or just downwards?
-
 ## 0.20: It Depends
 
 - [ ] Context sensitivity
@@ -30,3 +27,7 @@
   - Technically not possible currently
   - Storing descriptions is also probably not possible
   - Unless we have the power of version number
+- Anchor to be internally processed by the ts var, not the level button
+  - Can it work both ways or just downwards?
+  - It does not work currently due to the fact that variable purchase callbacks
+  are post-processing, and not pre-
