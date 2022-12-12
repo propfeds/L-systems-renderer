@@ -2,6 +2,8 @@
 
 ## 0.19.1
 
+- Just those bugfixes
+
 ## 0.20: It Depends
 
 - [ ] Context sensitivity
@@ -11,10 +13,16 @@
   - Add more systems to the manual (algae)
   - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
+- [ ] Getters and setters in JavaScript
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
+- [ ] New main screen controls idea
+  - Line 1: Player controls: `<< - P + >>`
+  - https://en.wikipedia.org/wiki/Media_control_symbols
+  - Line 2: Level, loop, tickspeed
+  - This will do away with the fucking anchor
 - [ ] Optimise using the API's profiler
 
 ## Currently Impossible

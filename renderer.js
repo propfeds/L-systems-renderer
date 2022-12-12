@@ -2351,6 +2351,7 @@ let createSystemMenu = () =>
     let menu = ui.createPopup
     ({
         title: getLoc('menuLSystem'),
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
