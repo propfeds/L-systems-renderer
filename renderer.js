@@ -70,7 +70,7 @@ var version = 0.19;
 
 let time = 0;
 let page = 0;
-let offlineDrawing = false;
+let offlineReset = false;
 let gameIsOffline = false;
 let altCurrencies = true;
 let tickDelayMode = false;
@@ -147,7 +147,7 @@ const locStrings =
         duplicateSuffix: ' (copy)',
 
         menuTheory: 'Theory Settings',
-        labelOfflineDrawing: 'Offline drawing: ',
+        labelOfflineReset: 'Reset graph after tabbing in: ',
         labelResetLvl: 'Reset level on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
@@ -1116,7 +1116,9 @@ class Renderer
             return;
 
         if(this.loopMode == 0 && this.idx >= this.levels[this.lvl].length)
+        {
             return;
+        }
 
         this.elapsed += dt;
     }
@@ -1482,48 +1484,46 @@ var alwaysShowRefundButtons = () => true;
 
 let timeCheck = (elapsedTime) =>
 {
-    if(ts.level == 0)
-        return false;
-
+    let timeLimit;
     if(tickDelayMode)
     {
         time += 1;
-        return time >= ts.level;
+        timeLimit = ts.level;
     }
-    time += elapsedTime;
-    return time >= 1 / ts.level - 1e-8
+    else
+    {
+        time += elapsedTime;
+        timeLimit = 1 / ts.level;
+    }
+    if(time >= timeLimit - 1e-8)
+    {
+        time -= timeLimit;
+        return true;
+    }
+    return false;
 }
 
 var tick = (elapsedTime, multiplier) =>
 {
-    if(timeCheck(elapsedTime))
+    if(ts.level == 0)
+        return;
+
+    if(game.isCalculatingOfflineProgress)
     {
-        if(game.isCalculatingOfflineProgress)
-            gameIsOffline = true;
-        else if(gameIsOffline)
-        {
-            // Probably triggers only once when reloading
-            if(!offlineDrawing)
-                renderer.reset();
-            gameIsOffline = false;
-        }
-
-        if(!gameIsOffline || offlineDrawing)
-            renderer.draw(l.level);
-
-        if(tickDelayMode)
-            time = 0;
-        else
-            time -= 1 / ts.level;
+        gameIsOffline = true;
+        return;
     }
-    else
+    else if(gameIsOffline)
     {
-        // Updates have to be at full speed
-        renderer.draw(l.level, true);
+        // Probably triggers only once when reloading
+        if(offlineReset)
+            renderer.reset();
+        gameIsOffline = false;
     }
+    
+    renderer.draw(l.level, !timeCheck(elapsedTime));
+    renderer.tick(elapsedTime);
 
-    if(ts.level > 0 && (!gameIsOffline || offlineDrawing))
-        renderer.tick(elapsedTime);
     let msTime = renderer.getElapsedTime();
     min.value = msTime[0] + msTime[1] / 100;
     progress.value = renderer.getProgressPercent();
@@ -2124,6 +2124,7 @@ let createConfigMenu = () =>
     let menu = ui.createPopup
     ({
         title: getLoc('menuRenderer'),
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
@@ -3005,7 +3006,7 @@ let createSequenceMenu = () =>
 
 let createWorldMenu = () =>
 {
-    let tmpOD = offlineDrawing;
+    let tmpOD = offlineReset;
     let ODSwitch = ui.createSwitch
     ({
         isToggled: tmpOD,
@@ -3085,7 +3086,7 @@ let createWorldMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: getLoc('labelOfflineDrawing'),
+                            text: getLoc('labelOfflineReset'),
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -3114,7 +3115,7 @@ let createWorldMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        offlineDrawing = tmpOD;
+                        offlineReset = tmpOD;
                         resetLvlOnConstruct = tmpRL;
                         altCurrencies = tmpAC;
                         menu.hide();
@@ -3128,7 +3129,7 @@ let createWorldMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -3147,7 +3148,7 @@ var setInternalState = (stateStr) =>
     if(worldValues.length > 2)
         page = Number(worldValues[2]);
     if(worldValues.length > 3)
-        offlineDrawing = Boolean(Number(worldValues[3]));
+        offlineReset = Boolean(Number(worldValues[3]));
     if(worldValues.length > 4)
         altCurrencies = Boolean(Number(worldValues[4]));
     if(worldValues.length > 5)
