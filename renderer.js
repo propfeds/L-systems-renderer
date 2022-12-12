@@ -536,13 +536,6 @@ class LCG
 class Quaternion
 {
     /**
-     * @static the initial x-axis quaternion used for rotations.
-     */
-    static xAxis()
-    {
-        return new Quaternion(0, 1, 0, 0);
-    }
-    /**
      * @constructor
      * @param {number} r (default: 1) the real component.
      * @param {number} i (default: 0) the imaginary i component.
@@ -622,7 +615,7 @@ class Quaternion
      */
     getRotVector()
     {
-        let r = this.neg().mul(Quaternion.xAxis()).mul(this);
+        let r = this.neg().mul(xAxisQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**
@@ -1354,6 +1347,8 @@ class Renderer
         return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
+
+const xAxisQuat = new Quaternion(0, 1, 0, 0);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, 1, 2, false, 1);
