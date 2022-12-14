@@ -14,7 +14,7 @@ format changes to the internal state.
 
 ## Installation
 
-Current version: 0.19
+Current version: 0.19.1
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to this theory's raw code. Copy the page's URL.
