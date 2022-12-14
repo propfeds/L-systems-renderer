@@ -66,7 +66,7 @@ Warning: As of v0.18, the renderer's configuration will be messed up due to ` +
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions';
-var version = 0.19;
+var version = 0.191;
 
 let time = 0;
 let page = 0;
@@ -82,7 +82,7 @@ const locStrings =
 {
     en:
     {        
-        equationOverlay: 'v0.19.1: Winter Sweep (WIP)',
+        equationOverlay: 'v0.19.1: Winter Sweep',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
