@@ -976,7 +976,7 @@ class Renderer
                     this.levels[i] += ret.result;
                 
                 this.nextDeriveIdx = ret.next;
-                charCount += ret.result;
+                charCount += ret.result.length;
             }
             if(this.nextDeriveIdx == 0)
                 ++this.loaded;
@@ -1116,9 +1116,7 @@ class Renderer
             return;
 
         if(this.loopMode == 0 && this.idx >= this.levels[this.lvl].length)
-        {
             return;
-        }
 
         this.elapsed += dt;
     }
@@ -1315,8 +1313,10 @@ class Renderer
      */
     getLoadingString()
     {
+        let len = typeof this.levels[this.loaded + 1] == 'undefined' ? 0 :
+        this.levels[this.loaded + 1].length;
         return Localization.format(getLoc('rendererLoading'), this.loaded + 1,
-        this.levels[this.loaded + 1].length);
+        len);
     }
     /**
      * Returns the cursor's position as a string.
