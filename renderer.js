@@ -66,17 +66,28 @@ Warning: As of v0.18, the renderer's configuration will be messed up due to ` +
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions';
-var version = 0.19;
+var version = 0.191;
+
+let time = 0;
+let page = 0;
+let offlineReset = false;
+let gameIsOffline = false;
+let altCurrencies = true;
+let tickDelayMode = false;
+let resetLvlOnConstruct = true;
+let savedSystems = new Map();
 
 const MAX_CHARS_PER_TICK = 10000;
-
 const locStrings =
 {
     en:
-    {
+    {        
+        equationOverlay: 'v0.19.1: Winter Sweep',
+
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
         currencyTime: ' (elapsed)',
+
         varLvDesc: '\\text{{Level: }}{0}{1}',
         varTdDesc: '\\text{{Tick delay: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick delay: }}\\infty',
@@ -86,8 +97,6 @@ const locStrings =
         saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
         'playlist.',
         saPatienceHint: 'Be patient.',
-
-        equationOverlay: 'v0.19: Winter Sweep',
 
         btnSave: 'Save',
         btnDefault: 'Reset to Defaults',
@@ -138,7 +147,7 @@ const locStrings =
         duplicateSuffix: ' (copy)',
 
         menuTheory: 'Theory Settings',
-        labelOfflineDrawing: 'Offline drawing: ',
+        labelOfflineReset: 'Reset graph after tabbing in: ',
         labelResetLvl: 'Reset level on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
@@ -416,6 +425,7 @@ let menuLang = Localization.language;
  * @param {string} name the internal name of the string.
  * @returns {string} the string.
  */
+
 let getLoc = (name, lang = menuLang) =>
 {
     if(lang in locStrings && name in locStrings[lang])
@@ -966,7 +976,7 @@ class Renderer
                     this.levels[i] += ret.result;
                 
                 this.nextDeriveIdx = ret.next;
-                charCount += ret.result;
+                charCount += ret.result.length;
             }
             if(this.nextDeriveIdx == 0)
                 ++this.loaded;
@@ -1303,8 +1313,10 @@ class Renderer
      */
     getLoadingString()
     {
+        let len = typeof this.levels[this.loaded + 1] == 'undefined' ? 0 :
+        this.levels[this.loaded + 1].length;
         return Localization.format(getLoc('rendererLoading'), this.loaded + 1,
-        this.levels[this.loaded + 1].length);
+        len);
     }
     /**
      * Returns the cursor's position as a string.
@@ -1338,20 +1350,11 @@ class Renderer
     }
 }
 
-let time = 0;
-let page = 0;
-let offlineDrawing = false;
-let gameIsOffline = false;
-let altCurrencies = true;
-let tickDelayMode = false;
-let resetLvlOnConstruct = true;
+const xAxisQuat = new Quaternion(0, 1, 0, 0);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, 1, 2, false, 1);
-
-let xAxisQuat = new Quaternion(0, 1, 0, 0);
 let globalSeed = new LCG(Date.now());
-let savedSystems = new Map();
 let manualSystems =
 [
     {},
@@ -1427,6 +1430,7 @@ let manualSystems =
         config: [1, 3, 0.75, -0.25, 0, true]
     }
 ];
+var l, ts;
 
 var init = () =>
 {
@@ -1468,7 +1472,7 @@ var init = () =>
         ts.boughtOrRefunded = (_) => time = 0;
     }
 
-    theory.createSecretAchievement(0, undefined,
+    theory.createSecretAchievement(0, null,
         getLoc('saPatienceTitle'),
         getLoc('saPatienceDesc'),
         getLoc('saPatienceHint'),
@@ -1480,48 +1484,46 @@ var alwaysShowRefundButtons = () => true;
 
 let timeCheck = (elapsedTime) =>
 {
-    if(ts.level == 0)
-        return false;
-
+    let timeLimit;
     if(tickDelayMode)
     {
         time += 1;
-        return time >= ts.level;
+        timeLimit = ts.level;
     }
-    time += elapsedTime;
-    return time >= 1 / ts.level - 1e-8
+    else
+    {
+        time += elapsedTime;
+        timeLimit = 1 / ts.level;
+    }
+    if(time >= timeLimit - 1e-8)
+    {
+        time -= timeLimit;
+        return true;
+    }
+    return false;
 }
 
 var tick = (elapsedTime, multiplier) =>
 {
-    if(timeCheck(elapsedTime))
+    if(ts.level == 0)
+        return;
+
+    if(game.isCalculatingOfflineProgress)
     {
-        if(game.isCalculatingOfflineProgress)
-            gameIsOffline = true;
-        else if(gameIsOffline)
-        {
-            // Probably triggers only once when reloading
-            if(!offlineDrawing)
-                renderer.reset();
-            gameIsOffline = false;
-        }
-
-        if(!gameIsOffline || offlineDrawing)
-            renderer.draw(l.level);
-
-        if(tickDelayMode)
-            time = 0;
-        else
-            time -= 1 / ts.level;
+        gameIsOffline = true;
+        return;
     }
-    else
+    else if(gameIsOffline)
     {
-        // Updates have to be at full speed
-        renderer.draw(l.level, true);
+        // Probably triggers only once when reloading
+        if(offlineReset)
+            renderer.reset();
+        gameIsOffline = false;
     }
+    
+    renderer.draw(l.level, !timeCheck(elapsedTime));
+    renderer.tick(elapsedTime);
 
-    if(ts.level > 0 && (!gameIsOffline || offlineDrawing))
-        renderer.tick(elapsedTime);
     let msTime = renderer.getElapsedTime();
     min.value = msTime[0] + msTime[1] / 100;
     progress.value = renderer.getProgressPercent();
@@ -1560,7 +1562,7 @@ let createVariableButton = (variable, height) =>
 }
 
 let createMinusButton = (variable, height, symbol = '-', quickbuyAmount = 10,
-useAnchor = false, anchor = undefined) =>
+useAnchor = false, anchor = null) =>
 {
     let bc = () => variable.level > 0 ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -1612,7 +1614,7 @@ useAnchor = false, anchor = undefined) =>
 }
 
 let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10,
-useAnchor = false, anchor = undefined) =>
+useAnchor = false, anchor = null) =>
 {
     let bc = () => variable.level < variable.maxLevel ?
     Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
@@ -2122,6 +2124,7 @@ let createConfigMenu = () =>
     let menu = ui.createPopup
     ({
         title: getLoc('menuRenderer'),
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
@@ -2348,6 +2351,7 @@ let createSystemMenu = () =>
     let menu = ui.createPopup
     ({
         title: getLoc('menuLSystem'),
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
@@ -3003,7 +3007,7 @@ let createSequenceMenu = () =>
 
 let createWorldMenu = () =>
 {
-    let tmpOD = offlineDrawing;
+    let tmpOD = offlineReset;
     let ODSwitch = ui.createSwitch
     ({
         isToggled: tmpOD,
@@ -3083,7 +3087,7 @@ let createWorldMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: getLoc('labelOfflineDrawing'),
+                            text: getLoc('labelOfflineReset'),
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -3112,7 +3116,7 @@ let createWorldMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        offlineDrawing = tmpOD;
+                        offlineReset = tmpOD;
                         resetLvlOnConstruct = tmpRL;
                         altCurrencies = tmpAC;
                         menu.hide();
@@ -3126,7 +3130,7 @@ let createWorldMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineDrawing ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -3145,7 +3149,7 @@ var setInternalState = (stateStr) =>
     if(worldValues.length > 2)
         page = Number(worldValues[2]);
     if(worldValues.length > 3)
-        offlineDrawing = Boolean(Number(worldValues[3]));
+        offlineReset = Boolean(Number(worldValues[3]));
     if(worldValues.length > 4)
         altCurrencies = Boolean(Number(worldValues[4]));
     if(worldValues.length > 5)
@@ -3204,6 +3208,7 @@ var getTertiaryEquation = () =>
 {
     if(altCurrencies)
         return renderer.getOriString();
+
     return renderer.getStateString();
 }
 
