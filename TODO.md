@@ -1,9 +1,5 @@
 # L-systems Renderer
 
-## 0.19.1
-
-- Just those bugfixes
-
 ## 0.20: It Depends
 
 - [ ] Context sensitivity
@@ -23,6 +19,16 @@
   - https://en.wikipedia.org/wiki/Media_control_symbols
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
+- [ ] UI touch-ups
+  - [ ] Border colours 
+  - [ ] Text colour changes when hitting buttons
+  - [ ] Shrink the buttons again to look better?
+- [ ] Saved systems can also store static camera configs like manual pages?
+  - Technically not possible currently
+  - Storing descriptions is also probably not possible
+  - Unless we have the power of version number
+    - Keep the old version number in global, but add version-dependent
+    processing regardless
 - [ ] Optimise using the API's profiler
 
 ## Currently Impossible
@@ -31,10 +37,6 @@
   - Entry.keyboard? (`Keyboard.TEXT`) doesn't work
   - https://andyp.dev/posts/xamarin-forms-essentials-keyboard-master-guide
   - Which means, adding extra processing in view menu and system menu
-- Saved systems can also store static camera configs like manual pages?
-  - Technically not possible currently
-  - Storing descriptions is also probably not possible
-  - Unless we have the power of version number
 - Anchor to be internally processed by the ts var, not the level button
   - Can it work both ways or just downwards?
   - It does not work currently due to the fact that variable purchase callbacks
