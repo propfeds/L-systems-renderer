@@ -1505,13 +1505,6 @@ let timeCheck = (elapsedTime) =>
 
 var tick = (elapsedTime, multiplier) =>
 {
-    if(ts.level == 0)
-    {
-        // Keep updating even when paused
-        renderer.draw(l.level, true);
-        return;
-    }
-
     if(game.isCalculatingOfflineProgress)
     {
         gameIsOffline = true;
@@ -1524,9 +1517,17 @@ var tick = (elapsedTime, multiplier) =>
             renderer.reset();
         gameIsOffline = false;
     }
-    
-    renderer.draw(l.level, !timeCheck(elapsedTime));
-    renderer.tick(elapsedTime);
+
+    if(ts.level == 0)
+    {
+        // Keep updating even when paused
+        renderer.draw(l.level, true);
+    }
+    else
+    {
+        renderer.draw(l.level, !timeCheck(elapsedTime));
+        renderer.tick(elapsedTime);
+    }
 
     let msTime = renderer.getElapsedTime();
     min.value = msTime[0] + msTime[1] / 100;
