@@ -1,6 +1,6 @@
 # L-systems Renderer
 
-## 0.20: It Depends
+## 0.20
 
 - [ ] Context sensitivity
   - `b < a > c → aa`

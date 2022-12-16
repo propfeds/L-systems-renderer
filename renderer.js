@@ -77,12 +77,13 @@ let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let savedSystems = new Map();
 
+const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
 const MAX_CHARS_PER_TICK = 10000;
 const locStrings =
 {
     en:
     {        
-        equationOverlay: 'v0.19.1: Winter Sweep',
+        equationOverlay: 'v0.20 - Mistletoe (WIP)',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
@@ -1540,15 +1541,15 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: getLoc('equationOverlay'),
-        displacementX: 5,
-        displacementY: 4,
+        displacementX: 6,
+        displacementY: 5,
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
     return result;
 }
 
-let createVariableButton = (variable, height) =>
+let createVariableButton = (variable, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -1567,8 +1568,8 @@ let createVariableButton = (variable, height) =>
     return frame;
 }
 
-let createMinusButton = (variable, height, symbol = '-', quickbuyAmount = 10,
-useAnchor = false, anchor = null) =>
+let createMinusButton = (variable, symbol = '-', height = DEFAULT_BUTTON_HEIGHT,
+quickbuyAmount = 10, useAnchor = false, anchor = null) =>
 {
     let bc = () => variable.level > 0 ? Color.BORDER : Color.TRANSPARENT;
     let tc = () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
@@ -1626,8 +1627,8 @@ useAnchor = false, anchor = null) =>
     return frame;
 }
 
-let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10,
-useAnchor = false, anchor = null) =>
+let createPlusButton = (variable, symbol = '+', height = DEFAULT_BUTTON_HEIGHT,
+quickbuyAmount = 10, useAnchor = false, anchor = null) =>
 {
     let bc = () => variable.level < variable.maxLevel ? Color.BORDER :
     Color.TRANSPARENT;
@@ -1700,7 +1701,7 @@ useAnchor = false, anchor = null) =>
     return frame;
 }
 
-let createMenuButton = (menuFunc, name, height) =>
+let createMenuButton = (menuFunc, name, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -1742,7 +1743,8 @@ let createMenuButton = (menuFunc, name, height) =>
 }
 
 // For example: The level variable button opens the sequence menu
-let createClickableVariableButton = (variable, callback, height) =>
+let createClickableVariableButton = (variable, callback,
+height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -1784,14 +1786,12 @@ let createClickableVariableButton = (variable, callback, height) =>
 
 var getUpgradeListDelegate = () =>
 {
-    let height = ui.screenHeight * 0.055;
-
     let openSeqMenu = () =>
     {
         let menu = createSequenceMenu();
         menu.show();
     }
-    let lvlButton = createClickableVariableButton(l, openSeqMenu, height);
+    let lvlButton = createClickableVariableButton(l, openSeqMenu);
     lvlButton.row = 0;
     lvlButton.column = 0;
 
@@ -1799,30 +1799,27 @@ var getUpgradeListDelegate = () =>
     {
         tickDelayMode = !tickDelayMode;
     }
-    let tsButton = createClickableVariableButton(ts, toggleTDM, height);
+    let tsButton = createClickableVariableButton(ts, toggleTDM);
     tsButton.row = 1;
     tsButton.column = 0;
 
-    let sysButton = createMenuButton(createSystemMenu, getLoc('btnMenuLSystem'),
-    height);
+    let sysButton = createMenuButton(createSystemMenu,
+    getLoc('btnMenuLSystem'));
     sysButton.row = 0;
     sysButton.column = 0;
     let cfgButton = createMenuButton(createConfigMenu,
-    getLoc('btnMenuRenderer'),
-    height);
+    getLoc('btnMenuRenderer'));
     cfgButton.row = 0;
     cfgButton.column = 1;
-    let slButton = createMenuButton(createSaveMenu, getLoc('btnMenuSave'),
-    height);
+    let slButton = createMenuButton(createSaveMenu, getLoc('btnMenuSave'));
     slButton.row = 1;
     slButton.column = 0;
     let theoryButton = createMenuButton(createWorldMenu,
-    getLoc('btnMenuTheory'),
-    height);
+    getLoc('btnMenuTheory'));
     theoryButton.row = 1;
     theoryButton.column = 1;
     let manualButton = createMenuButton(createManualMenu,
-    getLoc('btnMenuManual'), height);
+    getLoc('btnMenuManual'));
     manualButton.row = 2;
     manualButton.column = 0;
 
@@ -1834,7 +1831,7 @@ var getUpgradeListDelegate = () =>
 
     let stack = ui.createScrollView
     ({
-        padding: new Thickness(3, 4),
+        padding: new Thickness(4, 6),
         content: ui.createStackLayout
         ({
             children:
@@ -1842,8 +1839,12 @@ var getUpgradeListDelegate = () =>
                 ui.createGrid
                 ({
                     columnSpacing: 6,
-                    rowSpacing: 4,
-                    rowDefinitions: [height, height],
+                    rowSpacing: 6,
+                    rowDefinitions:
+                    [
+                        DEFAULT_BUTTON_HEIGHT,
+                        DEFAULT_BUTTON_HEIGHT
+                    ],
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -1852,12 +1853,12 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 0,
                             column: 1,
-                            columnSpacing: 6,
+                            columnSpacing: 4,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(l, height, '–'),
-                                createPlusButton(l, height)
+                                createMinusButton(l, '–'),
+                                createPlusButton(l)
                             ]
                         }),
                         tsButton,
@@ -1869,24 +1870,29 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(ts, height, '–', 10, true,
-                                lastTsLevel),
-                                createPlusButton(ts, height, '+', 10, true,
-                                lastTsLevel)
+                                createMinusButton(ts, '–',
+                                DEFAULT_BUTTON_HEIGHT, 10, true, lastTsLevel),
+                                createPlusButton(ts, '+',
+                                DEFAULT_BUTTON_HEIGHT, 10, true, lastTsLevel)
                             ]
                         })
                     ]
                 }),
                 ui.createBox
                 ({
-                    heightRequest: 1,
-                    margin: new Thickness(0, 4)
+                    heightRequest: 0,
+                    // margin: new Thickness(0, 1)
                 }),
                 ui.createGrid
                 ({
                     columnSpacing: 6,
                     rowSpacing: 4,
-                    rowDefinitions: [height, height, height],
+                    rowDefinitions:
+                    [
+                        DEFAULT_BUTTON_HEIGHT,
+                        DEFAULT_BUTTON_HEIGHT,
+                        DEFAULT_BUTTON_HEIGHT
+                    ],
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
