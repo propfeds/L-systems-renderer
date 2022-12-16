@@ -19,10 +19,10 @@
   - https://en.wikipedia.org/wiki/Media_control_symbols
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
-- [ ] UI touch-ups
-  - [ ] Border colours 
-  - [ ] Text colour changes when hitting buttons
-  - [ ] Shrink the buttons again to look better?
+- [x] UI touch-ups
+  - [x] Border colours 
+  - [x] Text colour changes when hitting buttons
+  - [x] Shrink the buttons again to look better?
 - [ ] Saved systems can also store static camera configs like manual pages?
   - Technically not possible currently
   - Storing descriptions is also probably not possible

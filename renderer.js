@@ -1834,15 +1834,15 @@ var getUpgradeListDelegate = () =>
 
     let stack = ui.createScrollView
     ({
+        padding: new Thickness(3, 4),
         content: ui.createStackLayout
         ({
             children:
             [
                 ui.createGrid
                 ({
-                    padding: new Thickness(0, 3),
-                    columnSpacing: 3,
-                    rowSpacing: 3,
+                    columnSpacing: 6,
+                    rowSpacing: 4,
                     rowDefinitions: [height, height],
                     columnDefinitions: ['50*', '50*'],
                     children:
@@ -1852,7 +1852,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 0,
                             column: 1,
-                            columnSpacing: 3,
+                            columnSpacing: 6,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -1865,7 +1865,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 1,
                             column: 1,
-                            columnSpacing: 3,
+                            columnSpacing: 6,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -1880,13 +1880,12 @@ var getUpgradeListDelegate = () =>
                 ui.createBox
                 ({
                     heightRequest: 1,
-                    // margin: new Thickness(0, 2, 0, 3)
+                    margin: new Thickness(0, 4)
                 }),
                 ui.createGrid
                 ({
-                    padding: new Thickness(0, 3),
-                    columnSpacing: 3,
-                    rowSpacing: 3,
+                    columnSpacing: 6,
+                    rowSpacing: 4,
                     rowDefinitions: [height, height, height],
                     columnDefinitions: ['50*', '50*'],
                     children:
