@@ -1838,7 +1838,7 @@ var getUpgradeListDelegate = () =>
             [
                 ui.createGrid
                 ({
-                    columnSpacing: 6,
+                    columnSpacing: 4,
                     rowSpacing: 4,
                     rowDefinitions:
                     [
@@ -1885,7 +1885,7 @@ var getUpgradeListDelegate = () =>
                 }),
                 ui.createGrid
                 ({
-                    columnSpacing: 6,
+                    columnSpacing: 4,
                     rowSpacing: 4,
                     rowDefinitions:
                     [
