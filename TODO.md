@@ -6,7 +6,7 @@
   - `b < a > c → aa`
   - How to store? Maps?
 - [ ] Redesign manual
-  - Add more systems to the manual (algae)
+  - Add more systems to the manual (algae, or like, mistletoe)
   - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
 - [ ] Getters and setters in JavaScript

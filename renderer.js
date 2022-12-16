@@ -614,7 +614,7 @@ class Quaternion
      * Returns a rotation vector from the quaternion.
      * @returns {Vector3} the rotation vector.
      */
-    getRotVector()
+    get rotVector()
     {
         let r = this.neg().mul(xAxisQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
@@ -835,7 +835,7 @@ class Renderer
          * @type {Vector3} the camera's coordinates.
          * @public
          */
-        this.camera = new Vector3(camX, camY, camZ);
+        this.staticCamera = new Vector3(camX, camY, camZ);
         /**
          * @type {number} the follow factor.
          * @public
@@ -1037,7 +1037,7 @@ class Renderer
         this.initScale = initScale;
         this.figureScale = figureScale;
         this.cursorFocused = cursorFocused;
-        this.camera = new Vector3(camX, camY, camZ);
+        this.staticCamera = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
         this.loopMode = loopMode;
         this.upright = upright;
@@ -1065,7 +1065,7 @@ class Renderer
 
         this.initScale = initScale;
         this.figureScale = figureScale;
-        this.camera = new Vector3(camX, camY, camZ);
+        this.staticCamera = new Vector3(camX, camY, camZ);
         this.upright = upright;
 
         if(requireReset)
@@ -1104,9 +1104,9 @@ class Renderer
     forward()
     {
         if(this.reverse)
-            this.state -= this.ori.getRotVector();
+            this.state -= this.ori.rotVector;
         else
-            this.state += this.ori.getRotVector();
+            this.state += this.ori.rotVector;
     }
     /**
      * Ticks the clock.
@@ -1223,19 +1223,27 @@ class Renderer
      * Returns the camera centre's coordinates.
      * @returns {Vector3} the coordinates.
      */
-    getCentre()
+    get centre()
     {
         if(this.cursorFocused)
-            return -this.getCursor(this.lvl);
+            return -this.cursor;
         if(this.upright)
-            return new Vector3(this.camera.y, this.camera.x, -this.camera.z);
-        return new Vector3(-this.camera.x, this.camera.y, -this.camera.z);
+            return new Vector3(
+                this.staticCamera.y,
+                this.staticCamera.x,
+                -this.staticCamera.z
+            );
+        return new Vector3(
+            -this.staticCamera.x,
+            this.staticCamera.y,
+            -this.staticCamera.z
+        );
     }
     /**
      * Returns the cursor's coordinates.
      * @returns {Vector3} the coordinates.
      */
-    getCursor()
+    get cursor()
     {
         let coords = this.state / (this.initScale * this.figureScale **
             this.lvl);
@@ -1247,30 +1255,30 @@ class Renderer
      * Returns the camera's coordinates.
      * @returns {Vector3} the coordinates.
      */
-    getCamera()
+    get camera()
     {
         if(this.cursorFocused)
         {
-            let newCamera = this.getCentre() * this.followFactor +
+            let newCamera = this.centre * this.followFactor +
             this.lastCamera * (1 - this.followFactor);
             this.lastCamera = newCamera;
             return newCamera;
         }
         else
-            return this.getCentre();
+            return this.centre;
     }
     /**
      * Returns the cursor's orientation.
      * @returns {Quaternion} the orientation.
      */
-    getAngles()
+    get angles()
     {
         return this.ori;
     }
     /**
      * Returns the elapsed time.
      */
-    getElapsedTime()
+    get elapsedTime()
     {
         return [
             Math.floor(this.elapsed / 60),
@@ -1281,7 +1289,7 @@ class Renderer
      * Returns the current progress on this level.
      * @returns {number[]} the current progress in fractions.
      */
-    getProgressFrac()
+    get progressFrac()
     {
         return [Math.max(Math.min(this.idx - 1,
         this.levels[this.lvl].length - 2), 0),
@@ -1291,28 +1299,28 @@ class Renderer
      * Returns the current progress on this level.
      * @returns {number} (between 0 and 100) the current progress.
      */
-    getProgressPercent()
+    get progressPercent()
     {
         if(typeof this.levels[this.lvl] == 'undefined')
             return 0;
 
-        let pf = this.getProgressFrac();
+        let pf = this.progressFrac;
         return pf[0] * 100 / pf[1];
     }
     /**
      * Returns the current progress as a string.
      * @returns {string} the string.
      */
-    getProgressString()
+    get progressString()
     {
-        let pf = this.getProgressFrac();
+        let pf = this.progressFrac;
         return `i=${pf[0]}/${pf[1]}`;
     }
     /**
      * Returns a loading message.
      * @returns {string} the string.
      */
-    getLoadingString()
+    get loadingString()
     {
         let len = typeof this.levels[this.loaded + 1] == 'undefined' ? 0 :
         this.levels[this.loaded + 1].length;
@@ -1323,23 +1331,23 @@ class Renderer
      * Returns the cursor's position as a string.
      * @returns {string} the string.
      */
-    getStateString()
+    get stateString()
     {
         if(typeof this.levels[this.lvl] == 'undefined')
-            return this.getLoadingString();
+            return this.loadingString;
 
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.getProgressString()}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.progressString}\\end{matrix}`;
     }
     /**
      * Returns the cursor's orientation as a string.
      * @returns {string} the string.
      */
-    getOriString()
+    get oriString()
     {
         if(typeof this.levels[this.lvl] == 'undefined')
-            return this.getLoadingString();
+            return this.loadingString;
 
-        return `\\begin{matrix}q=${this.ori.toString()},&${this.getProgressString()}\\end{matrix}`;
+        return `\\begin{matrix}q=${this.ori.toString()},&${this.progressString}\\end{matrix}`;
     }
     /**
      * Returns the renderer's string representation.
@@ -1347,7 +1355,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camera.x} ${this.camera.y} ${this.camera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.staticCamera.x} ${this.staticCamera.y} ${this.staticCamera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
     }
 }
 
@@ -1530,9 +1538,9 @@ var tick = (elapsedTime, multiplier) =>
         renderer.tick(elapsedTime);
     }
 
-    let msTime = renderer.getElapsedTime();
+    let msTime = renderer.elapsedTime;
     min.value = msTime[0] + msTime[1] / 100;
-    progress.value = renderer.getProgressPercent();
+    progress.value = renderer.progressPercent;
     theory.invalidateTertiaryEquation();
 }
 
@@ -1967,9 +1975,9 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpCX = renderer.camera.x;
-    let tmpCY = renderer.camera.y;
-    let tmpCZ = renderer.camera.z;
+    let tmpCX = renderer.staticCamera.x;
+    let tmpCY = renderer.staticCamera.y;
+    let tmpCZ = renderer.staticCamera.z;
     let camLabel = ui.createGrid
     ({
         row: 3,
@@ -3243,13 +3251,13 @@ var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
 var getTertiaryEquation = () =>
 {
     if(altCurrencies)
-        return renderer.getOriString();
+        return renderer.oriString;
 
-    return renderer.getStateString();
+    return renderer.stateString;
 }
 
-var get3DGraphPoint = () => renderer.getCursor();
+var get3DGraphPoint = () => renderer.cursor;
 
-var get3DGraphTranslation = () => renderer.getCamera();
+var get3DGraphTranslation = () => renderer.camera;
 
 init();
