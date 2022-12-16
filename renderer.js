@@ -1839,7 +1839,7 @@ var getUpgradeListDelegate = () =>
                 ui.createGrid
                 ({
                     columnSpacing: 6,
-                    rowSpacing: 6,
+                    rowSpacing: 4,
                     rowDefinitions:
                     [
                         DEFAULT_BUTTON_HEIGHT,
@@ -1866,7 +1866,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 1,
                             column: 1,
-                            columnSpacing: 6,
+                            columnSpacing: 4,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
