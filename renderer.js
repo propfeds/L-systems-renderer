@@ -137,8 +137,8 @@ const locStrings =
         labelBTList: 'Backtrack list: ',
 
         menuSave: 'Save/Load Menu',
-        currentSystem: 'Current system: ',
-        savedSystems: 'Saved systems: ',
+        labelCurrentSystem: 'Current system: ',
+        labelSavedSystems: 'Saved systems: ',
 
         menuClipboard: 'Clipboard Menu',
 
@@ -2314,7 +2314,7 @@ let createSystemMenu = () =>
         text: getLoc('btnAdd'),
         row: 0,
         column: 1,
-        // heightRequest: 40,
+        heightRequest: 40,
         onClicked: () =>
         {
             Sound.playClick();
@@ -2399,7 +2399,7 @@ let createSystemMenu = () =>
                                     ({
                                         text: getLoc('labelRules'),
                                         verticalOptions: LayoutOptions.CENTER,
-                                        margin: new Thickness(0, 6)
+                                        margin: new Thickness(0, 12)
                                     }),
                                     addRuleButton
                                 ]
@@ -2622,7 +2622,7 @@ let createViewMenu = (title) =>
                             ({
                                 text: getLoc('labelRules'),
                                 verticalOptions: LayoutOptions.CENTER,
-                                margin: new Thickness(0, 6)
+                                margin: new Thickness(0, 12)
                             }),
                             ui.createStackLayout
                             ({
@@ -2741,7 +2741,7 @@ let createSaveMenu = () =>
             text: getLoc('btnView'),
             row: 0,
             column: 1,
-            // heightRequest: 40,
+            heightRequest: 40,
             onClicked: () =>
             {
                 Sound.playClick();
@@ -2775,7 +2775,7 @@ let createSaveMenu = () =>
                     [
                         ui.createLatexLabel
                         ({
-                            text: getLoc('currentSystem'),
+                            text: getLoc('labelCurrentSystem'),
                             row: 0,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
@@ -2785,6 +2785,7 @@ let createSaveMenu = () =>
                             text: getLoc('btnClipboard'),
                             row: 0,
                             column: 1,
+                            heightRequest: 40,
                             onClicked: () =>
                             {
                                 let clipMenu = createClipboardMenu(
@@ -2797,7 +2798,7 @@ let createSaveMenu = () =>
                             text: getLoc('btnSave'),
                             row: 0,
                             column: 2,
-                            // heightRequest: 40,
+                            heightRequest: 40,
                             onClicked: () =>
                             {
                                 Sound.playClick();
@@ -2821,7 +2822,8 @@ let createSaveMenu = () =>
                 }),
                 ui.createLatexLabel
                 ({
-                    text: getLoc('savedSystems'),
+                    text: getLoc('labelSavedSystems'),
+                    horizontalOptions: LayoutOptions.CENTER,
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 6)
                 }),
