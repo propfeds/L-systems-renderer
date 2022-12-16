@@ -9,7 +9,7 @@
   - Add more systems to the manual (algae, or like, mistletoe)
   - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
-- [ ] Getters and setters in JavaScript
+- [x] Getters and setters in JavaScript
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -20,14 +20,14 @@
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
 - [x] UI touch-ups
-  - [x] Border colours 
+  - [x] Border colours
   - [x] Text colour changes when hitting buttons
   - [x] Shrink the buttons again to look better?
-- [ ] Saved systems can also store static camera configs like manual pages?
-  - Technically not possible currently
-  - Storing descriptions is also probably not possible
-  - Unless we have the power of version number
-    - Keep the old version number in global, but add version-dependent
+- [ ] Saved systems
+  - [ ] Choice to overwrite or create copy
+  - [ ] Store static camera configs and description
+    - We have the power of version number
+    - Testing: keep the old version number in global, but add version-dependent
     processing regardless
 - [ ] Optimise using the API's profiler
 
