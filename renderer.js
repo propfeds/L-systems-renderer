@@ -1570,7 +1570,7 @@ let createVariableButton = (variable, height) =>
 let createMinusButton = (variable, height, symbol = '-', quickbuyAmount = 10,
 useAnchor = false, anchor = null) =>
 {
-    let bc = () => variable.level > 0 ? Color.BORDER : Color.TRANSPARENT;
+    let bc = () => variable.level > 0 ? Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
     let tc = () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
     let tcPressed = () => variable.level > 0 ? Color.TEXT_MEDIUM :
     Color.TEXT_DARK;
@@ -1612,7 +1612,7 @@ useAnchor = false, anchor = null) =>
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.TRANSPARENT;
+                frame.borderColor = Color.BORDER;
                 frame.content.textColor = tcPressed;
             }
             else if(e.type == TouchType.CANCELLED)
@@ -1629,7 +1629,7 @@ useAnchor = false, anchor = null) =>
 let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10,
 useAnchor = false, anchor = null) =>
 {
-    let bc = () => variable.level < variable.maxLevel ? Color.BORDER :
+    let bc = () => variable.level < variable.maxLevel ? Color.MINIGAME_TILE_BORDER :
     Color.TRANSPARENT;
     let tc = () => variable.level < variable.maxLevel ? Color.TEXT :
     Color.TEXT_MEDIUM;
@@ -1686,7 +1686,7 @@ useAnchor = false, anchor = null) =>
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.TRANSPARENT;
+                frame.borderColor = Color.BORDER;
                 frame.content.textColor = tcPressed;
             }
             else if(e.type == TouchType.CANCELLED)
@@ -1720,23 +1720,23 @@ let createMenuButton = (menuFunc, name, height) =>
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 frame.content.textColor = Color.TEXT;
                 let menu = menuFunc();
                 menu.show();
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.TRANSPARENT;
+                frame.borderColor = Color.BORDER;
                 frame.content.textColor = Color.TEXT_MEDIUM;
             }
             else if(e.type == TouchType.CANCELLED)
             {
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 frame.content.textColor = Color.TEXT;
             }
         },
-        borderColor: Color.BORDER
+        borderColor: Color.MINIGAME_TILE_BORDER
     });
     return frame;
 }
@@ -1762,22 +1762,22 @@ let createClickableVariableButton = (variable, callback, height) =>
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 frame.content.textColor = Color.TEXT;
                 callback();
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.TRANSPARENT;
+                frame.borderColor = Color.BORDER;
                 frame.content.textColor = Color.TEXT_MEDIUM;
             }
             else if(e.type == TouchType.CANCELLED)
             {
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 frame.content.textColor = Color.TEXT
             }
         },
-        borderColor: Color.BORDER
+        borderColor: Color.MINIGAME_TILE_BORDER
     });
     return frame;
 }
