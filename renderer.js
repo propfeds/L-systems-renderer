@@ -1506,7 +1506,11 @@ let timeCheck = (elapsedTime) =>
 var tick = (elapsedTime, multiplier) =>
 {
     if(ts.level == 0)
+    {
+        // Keep updating even when paused
+        renderer.draw(l.level, true);
         return;
+    }
 
     if(game.isCalculatingOfflineProgress)
     {
@@ -1515,7 +1519,7 @@ var tick = (elapsedTime, multiplier) =>
     }
     else if(gameIsOffline)
     {
-        // Probably triggers only once when reloading
+        // Triggers only once when reloading
         if(offlineReset)
             renderer.reset();
         gameIsOffline = false;
