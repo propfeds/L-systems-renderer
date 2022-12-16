@@ -31,6 +31,14 @@
     processing regardless
 - [ ] Optimise using the API's profiler
 
+## Preparing for Lemma's Garden
+
+- [ ] Implement parametric systems
+- [ ] Custom models for each symbol
+  - Petals, leaves and such
+  - Array of Vector3s denoting edges
+  - Separate way forward and way back?
+
 ## Currently Impossible
 
 - Remove the add button, every rule is bunched into one field
