@@ -484,7 +484,7 @@ class LCG
      * Returns a random integer within [0, 2^31).
      * @returns {number} the next integer in the generator.
      */
-    nextInt()
+    get nextInt()
     {
         this.state = (this.a * this.state + this.c) % this.m;
         return this.state;
@@ -500,12 +500,12 @@ class LCG
         if(includeEnd)
         {
             // [0, 1]
-            return this.nextInt() / (this.m - 1);
+            return this.nextInt / (this.m - 1);
         }
         else
         {
             // [0, 1)
-            return this.nextInt() / this.m;
+            return this.nextInt / this.m;
         }
     }
     /**
@@ -606,7 +606,7 @@ class Quaternion
      * quaternions.
      * @returns {Quaternion} the negation.
      */
-    neg()
+    get neg()
     {
         return new Quaternion(this.r, -this.i, -this.j, -this.k);
     }
@@ -616,7 +616,7 @@ class Quaternion
      */
     get rotVector()
     {
-        let r = this.neg().mul(xAxisQuat).mul(this);
+        let r = this.neg.mul(xAxisQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**
@@ -756,7 +756,7 @@ class LSystem
      * Sets the system's seed.
      * @param {number} seed the seed.
      */
-    setSeed(seed)
+    set rerollSeed(seed)
     {
         this.seed = seed;
         this.random = new LCG(this.seed);
@@ -807,9 +807,9 @@ class Renderer
      * to act as stoppers for backtracking.
      */
     constructor(system, initScale = 1, figureScale = 2, cursorFocused = false,
-        camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
-        upright = false, quickDraw = false, quickBacktrack = false,
-        backtrackList = '+-&^\\/|[]')
+    camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
+    upright = false, quickDraw = false, quickBacktrack = false,
+    backtrackList = '+-&^\\/|[]')
     {
         /**
          * @type {LSystem} the L-system being handled.
@@ -832,7 +832,7 @@ class Renderer
          */
         this.cursorFocused = cursorFocused;
         /**
-         * @type {Vector3} the camera's coordinates.
+         * @type {Vector3} the static camera's coordinates.
          * @public
          */
         this.staticCamera = new Vector3(camX, camY, camZ);
@@ -1025,8 +1025,8 @@ class Renderer
      * backtracking.
      */
     configure(initScale, figureScale, cursorFocused, camX, camY, camZ,
-        followFactor, loopMode, upright, quickDraw, quickBacktrack,
-        backtrackList)
+    followFactor, loopMode, upright, quickDraw, quickBacktrack,
+    backtrackList)
     {
         let requireReset = (initScale != this.initScale) ||
         (figureScale != this.figureScale) || (upright != this.upright) ||
@@ -1075,7 +1075,7 @@ class Renderer
      * Applies a new L-system to the renderer.
      * @param {LSystem} system the new system.
      */
-    applySystem(system)
+    set applySystem(system)
     {
         this.system = system;
         this.levels = [];
@@ -1087,12 +1087,12 @@ class Renderer
         this.update(l.level);
     }
     /**
-     * Rerolls the seed of the current system, according to the global LCG.
+     * Sets the seed of the current system.
      * @param {number} seed the seed.
      */
-    rerollSeed(seed)
+    set seed(seed)
     {
-        this.system.setSeed(seed);
+        this.system.rerollSeed = seed;
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = this.lvl;
@@ -2479,8 +2479,8 @@ let createSystemMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        renderer.applySystem(new LSystem(tmpAxiom, tmpRules,
-                            tmpAngle, tmpSeed));
+                        renderer.applySystem = new LSystem(tmpAxiom, tmpRules,
+                            tmpAngle, tmpSeed);
                         menu.hide();
                     }
                 })
@@ -2563,9 +2563,9 @@ let createClipboardMenu = (values) =>
                     {
                         Sound.playClick();
                         let systemValues = tmpSys.split(' ');
-                        renderer.applySystem(new LSystem(systemValues[0],
+                        renderer.applySystem = new LSystem(systemValues[0],
                             systemValues.slice(3), Number(systemValues[1]),
-                            Number(systemValues[2])));
+                            Number(systemValues[2]));
                         menu.hide();
                     }
                 })
@@ -2722,8 +2722,8 @@ let createViewMenu = (title) =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.applySystem(new LSystem(tmpAxiom,
-                                    tmpRules, tmpAngle, tmpSeed));
+                                renderer.applySystem = new LSystem(tmpAxiom,
+                                    tmpRules, tmpAngle, tmpSeed);
                                 menu.hide();
                             }
                         }),
@@ -2952,8 +2952,8 @@ let createManualMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.applySystem(
-                                manualSystems[page].system);
+                                renderer.applySystem =
+                                manualSystems[page].system;
                                 if('config' in manualSystems[page])
                                 {
                                     let a = manualSystems[page].config;
@@ -3246,7 +3246,7 @@ var canResetStage = () => true;
 
 var getResetStageMessage = () => getLoc('rerollSeed');
 
-var resetStage = () => renderer.rerollSeed(globalSeed.nextInt());
+var resetStage = () => renderer.seed = globalSeed.nextInt;
 
 var getTertiaryEquation = () =>
 {
