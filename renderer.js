@@ -1553,6 +1553,7 @@ let createVariableButton = (variable, height) =>
     let frame = ui.createFrame
     ({
         heightRequest: height,
+        cornerRadius: 1,
         padding: new Thickness(10, 2),
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
@@ -1569,12 +1570,15 @@ let createVariableButton = (variable, height) =>
 let createMinusButton = (variable, height, symbol = '-', quickbuyAmount = 10,
 useAnchor = false, anchor = null) =>
 {
-    let bc = () => variable.level > 0 ?
-    Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
+    let bc = () => variable.level > 0 ? Color.BORDER : Color.TRANSPARENT;
+    let tc = () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
+    let tcPressed = () => variable.level > 0 ? Color.TEXT_MEDIUM :
+    Color.TEXT_DARK;
     let frame = ui.createFrame
     ({
         column: 0,
         heightRequest: height,
+        cornerRadius: 1,
         padding: new Thickness(10, 2),
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
@@ -1582,35 +1586,39 @@ useAnchor = false, anchor = null) =>
             text: symbol,
             horizontalOptions: LayoutOptions.CENTER,
             verticalOptions: LayoutOptions.CENTER,
-            textColor: () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM
+            textColor: tc
         }),
         onTouched: (e) =>
         {
             if(e.type == TouchType.SHORTPRESS_RELEASED)
             {
-                frame.borderColor = bc;
                 Sound.playClick();
+                frame.borderColor = bc;
+                frame.content.textColor = tc;
                 variable.refund(1);
                 if(useAnchor && !anchor.active)
                     anchor.value = variable.level;
             }
             else if(e.type == TouchType.LONGPRESS)
             {
+                Sound.playClick();
                 if(useAnchor)
                     anchor.value = variable.level;
                 frame.borderColor = bc;
-                Sound.playClick();
+                frame.content.textColor = tc;
                 variable.refund(quickbuyAmount);
                 if(useAnchor)
                     anchor.active = true;
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = tcPressed;
             }
             else if(e.type == TouchType.CANCELLED)
             {
                 frame.borderColor = bc;
+                frame.content.textColor = tc;
             }
         },
         borderColor: bc
@@ -1621,12 +1629,17 @@ useAnchor = false, anchor = null) =>
 let createPlusButton = (variable, height, symbol = '+', quickbuyAmount = 10,
 useAnchor = false, anchor = null) =>
 {
-    let bc = () => variable.level < variable.maxLevel ?
-    Color.MINIGAME_TILE_BORDER : Color.TRANSPARENT;
+    let bc = () => variable.level < variable.maxLevel ? Color.BORDER :
+    Color.TRANSPARENT;
+    let tc = () => variable.level < variable.maxLevel ? Color.TEXT :
+    Color.TEXT_MEDIUM;
+    let tcPressed = () => variable.level < variable.maxLevel ?
+    Color.TEXT_MEDIUM : Color.TEXT_DARK;
     let frame = ui.createFrame
     ({
         column: 1,
         heightRequest: height,
+        cornerRadius: 1,
         padding: new Thickness(10, 2),
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
@@ -1634,23 +1647,24 @@ useAnchor = false, anchor = null) =>
             text: symbol,
             horizontalOptions: LayoutOptions.CENTER,
             verticalOptions: LayoutOptions.CENTER,
-            textColor: () => variable.level < variable.maxLevel ?
-            Color.TEXT : Color.TEXT_MEDIUM
+            textColor: tc
         }),
         onTouched: (e) =>
         {
             if(e.type == TouchType.SHORTPRESS_RELEASED)
             {
-                frame.borderColor = bc;
                 Sound.playClick();
+                frame.borderColor = bc;
+                frame.content.textColor = tc;
                 variable.buy(1);
                 if(useAnchor && !anchor.active)
                     anchor.value = variable.level;
             }
             else if(e.type == TouchType.LONGPRESS)
             {
-                frame.borderColor = bc;
                 Sound.playClick();
+                frame.borderColor = bc;
+                frame.content.textColor = tc;
 
                 let q = quickbuyAmount;
                 if(useAnchor && anchor.active)
@@ -1672,11 +1686,13 @@ useAnchor = false, anchor = null) =>
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = tcPressed;
             }
             else if(e.type == TouchType.CANCELLED)
             {
                 frame.borderColor = bc;
+                frame.content.textColor = tc;
             }
         },
         borderColor: bc
@@ -1689,6 +1705,7 @@ let createMenuButton = (menuFunc, name, height) =>
     let frame = ui.createFrame
     ({
         heightRequest: height,
+        cornerRadius: 1,
         padding: new Thickness(10, 2),
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
@@ -1702,21 +1719,24 @@ let createMenuButton = (menuFunc, name, height) =>
             if(e.type == TouchType.SHORTPRESS_RELEASED ||
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
-                frame.borderColor = Color.MINIGAME_TILE_BORDER;
                 Sound.playClick();
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT;
                 let menu = menuFunc();
                 menu.show();
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = Color.TEXT_MEDIUM;
             }
             else if(e.type == TouchType.CANCELLED)
             {
-                frame.borderColor = Color.MINIGAME_TILE_BORDER;
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT;
             }
         },
-        borderColor: Color.MINIGAME_TILE_BORDER
+        borderColor: Color.BORDER
     });
     return frame;
 }
@@ -1727,6 +1747,7 @@ let createClickableVariableButton = (variable, callback, height) =>
     let frame = ui.createFrame
     ({
         heightRequest: height,
+        cornerRadius: 1,
         padding: new Thickness(10, 2),
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
@@ -1741,19 +1762,22 @@ let createClickableVariableButton = (variable, callback, height) =>
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
-                frame.borderColor = Color.MINIGAME_TILE_BORDER;
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT;
                 callback();
             }
             else if(e.type == TouchType.PRESSED)
             {
-                frame.borderColor = Color.BORDER;
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = Color.TEXT_MEDIUM;
             }
             else if(e.type == TouchType.CANCELLED)
             {
-                frame.borderColor = Color.MINIGAME_TILE_BORDER;
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT
             }
         },
-        borderColor: Color.MINIGAME_TILE_BORDER
+        borderColor: Color.BORDER
     });
     return frame;
 }
@@ -2038,8 +2062,8 @@ let createConfigMenu = () =>
         minimum: 0,
         maximum: 2,
         value: tmpLM,
-        // minimumTrackColor: Color.MINIGAME_TILE_BORDER,
-        // maximumTrackColor: Color.BORDER,
+        // minimumTrackColor: Color.BORDER,
+        // maximumTrackColor: Color.TRANSPARENT,
         // thumbImageSource: ImageSource.UPGRADES,
         onValueChanged: () =>
         {
