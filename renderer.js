@@ -1847,7 +1847,7 @@ var getUpgradeListDelegate = () =>
                 ui.createGrid
                 ({
                     columnSpacing: 6,
-                    rowSpacing: 4,
+                    rowSpacing: 6,
                     rowDefinitions:
                     [
                         DEFAULT_BUTTON_HEIGHT,
@@ -1861,7 +1861,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 0,
                             column: 1,
-                            columnSpacing: 4,
+                            columnSpacing: 6,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -1874,7 +1874,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 1,
                             column: 1,
-                            columnSpacing: 4,
+                            columnSpacing: 6,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -1889,12 +1889,12 @@ var getUpgradeListDelegate = () =>
                 ui.createBox
                 ({
                     heightRequest: 0,
-                    // margin: new Thickness(0, 1)
+                    // margin: new Thickness(0, 2)
                 }),
                 ui.createGrid
                 ({
                     columnSpacing: 6,
-                    rowSpacing: 4,
+                    rowSpacing: 6,
                     rowDefinitions:
                     [
                         DEFAULT_BUTTON_HEIGHT,
