@@ -106,6 +106,8 @@ const locStrings =
         btnDelete: 'Delete',
         btnView: 'View',
         btnClipboard: 'Clipboard',
+        btnOverwrite: 'Overwrite',
+        btnCreateCopy: 'Create Copy',
         btnPrev: 'Previous',
         btnNext: 'Next',
         btnClose: 'Close',
@@ -143,7 +145,7 @@ const locStrings =
 
         menuClipboard: 'Clipboard Menu',
 
-        menuNaming: 'Name System',
+        menuNaming: 'Save System',
         defaultSystemName: 'Untitled L-system',
         duplicateSuffix: ' (copy)',
 
@@ -156,26 +158,6 @@ const locStrings =
         menuManual: 'Manual ({0}/{1})',
         manual:
         [
-            {
-                title: 'The Main Screen',
-                contents:
-`The main screen consists of the renderer and its controls.
-
-Level: the system's level. Pressing + or - will derive/revert the system ` +
-`respectively. Pressing the Level button will reveal all levels of the system.
-(Tip: holding + or - will buy/refund the variable in bulks of 10.)
-
-Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
-`produces less accurate lines).
-Pressing the Tickspeed button will toggle between Tickspeed and Tick delay ` +
-`modes.
-(Tip: holding - on Tickspeed will create an 'anchor' and pause the renderer. ` +
-`Holding + afterwards will return the renderer to the previously 'anchored' ` +
-`speed.)
-
-Reroll: located on the top right. Pressing this button will reroll the ` +
-`system's seed (for stochastic systems).`
-            },
             {
                 title: 'A Primer on L-systems',
                 contents:
@@ -198,26 +180,27 @@ Any letter: moves cursor forward to draw.
 , : separates between derivations (for stochastic systems).`
             },
             {
-                title: 'Tips on Constructing an L-system',
+                title: 'Controls: Main theory screen',
                 contents:
-`Although traditionally F is used to go forward, each letter can be used to ` +
-`mean different things, such as drawing a flower, emulating growth stages, ` +
-`alternating between patterns, etc.
+`The main screen consists of the renderer and its controls.
 
-For some simple systems, a symbol (often X) is used to resemble the ` +
-`fractal's shape.
+Level: the system's level. Pressing + or - will derive/revert the system ` +
+`respectively. Pressing the Level button will reveal all levels of the system.
+(Tip: holding + or - will buy/refund the variable in bulks of 10.)
 
-Brackets work in a stack mechanism, therefore every [ has to be properly ` +
-`followed by a ] in the same production rule.
+Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
+`produces less accurate lines).
+Pressing the Tickspeed button will toggle between Tickspeed and Tick delay ` +
+`modes.
+(Tip: holding - on Tickspeed will create an 'anchor' and pause the renderer. ` +
+`Holding + afterwards will return the renderer to the previously 'anchored' ` +
+`speed.)
 
-To create a stochastic system, simply list several derivations in the same ` +
-`rule, separated by a , (comma). One of those derivations will be randomly ` +
-`selected per symbol whenever the system is derived.
-Generally, to keep a degree of uniformity in the system, it is advised for ` +
-`the derivations to be similar in shape.`
+Reroll: located on the top right. Pressing this button will reroll the ` +
+`system's seed (for stochastic systems).`
             },
             {
-                title: 'Configuring your L-system',
+                title: 'Controls: Configuring the renderer',
                 contents:
 `Configure the visual representation of your L-system with the renderer menu.
 
@@ -239,6 +222,25 @@ Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
 Quickdraw: skips over consecutive straight lines.
 Quick backtrack: similarly, but on the way back.
 Backtrack list: sets stopping symbols for quickdraw/backtrack.`
+            },
+            {
+                title: 'Tips on Constructing an L-system',
+                contents:
+`Although traditionally F is used to go forward, each letter can be used to ` +
+`mean different things, such as drawing a flower, emulating growth stages, ` +
+`alternating between patterns, etc.
+
+For some simple systems, a symbol (often X) is used to resemble the ` +
+`fractal's shape.
+
+Brackets work in a stack mechanism, therefore every [ has to be properly ` +
+`followed by a ] in the same production rule.
+
+To create a stochastic system, simply list several derivations in the same ` +
+`rule, separated by a , (comma). One of those derivations will be randomly ` +
+`selected per symbol whenever the system is derived.
+Generally, to keep a degree of uniformity in the system, it is advised for ` +
+`the derivations to be similar in shape.`
             },
             {
                 title: 'Example: Arrow weed',
@@ -2742,7 +2744,6 @@ let createViewMenu = (title) =>
 
 let createSaveMenu = () =>
 {
-    let menu;
     let getSystemGrid = () =>
     {
         let children = [];
@@ -2791,7 +2792,7 @@ let createSaveMenu = () =>
         children: getSystemGrid() 
     });
 
-    menu = ui.createPopup
+    let menu = ui.createPopup
     ({
         title: getLoc('menuSave'),
         content: ui.createStackLayout
@@ -2853,9 +2854,9 @@ let createSaveMenu = () =>
                 ui.createLatexLabel
                 ({
                     text: getLoc('labelSavedSystems'),
-                    horizontalOptions: LayoutOptions.CENTER,
+                    // horizontalOptions: LayoutOptions.CENTER,
                     verticalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 6)
+                    margin: new Thickness(0, 12)
                 }),
                 ui.createScrollView
                 ({
@@ -2874,7 +2875,8 @@ let createManualMenu = () =>
 
     let pageTitle = ui.createLatexLabel
     ({
-        // padding: new Thickness(0, 0),
+        padding: new Thickness(0, 2),
+        heightRequest: 24,
         text: manualPages[page].title,
         horizontalOptions: LayoutOptions.CENTER,
         verticalOptions: LayoutOptions.CENTER
@@ -2897,8 +2899,8 @@ let createManualMenu = () =>
                 pageTitle,
                 ui.createFrame
                 ({
-                    padding: new Thickness(6, 6),
-                    heightRequest: ui.screenHeight * 0.3,
+                    padding: new Thickness(8, 6),
+                    heightRequest: ui.screenHeight * 0.32,
                     content: ui.createScrollView
                     ({
                         content: pageContents

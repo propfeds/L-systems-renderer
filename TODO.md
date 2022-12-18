@@ -25,8 +25,11 @@
   - [x] Shrink the buttons again to look better?
 - [ ] Saved systems
   - [ ] Choice to overwrite or create copy
+    - Include list of saved systems in naming menu
   - [ ] Store static camera configs and description
     - We have the power of version number
+    - Store the current system in the same format
+      - Systems adopted from the manual will bear the entry's title
     - Testing: keep the old version number in global, but add version-dependent
     processing regardless
 - [x] Custom class that stores variable controls?
