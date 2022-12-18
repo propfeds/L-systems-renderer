@@ -29,6 +29,12 @@
     - We have the power of version number
     - Testing: keep the old version number in global, but add version-dependent
     processing regardless
+- [ ] Function to create button pack for a variable
+  - Solves weird logic with anchor
+  - Allows loop mode controls
+  - More responsive UI?
+- [ ] resetLvlOnConstruct should actually be renderer's property since the only
+logic exists there
 - [ ] Optimise using the API's profiler
 
 ## Preparing for Lemma's Garden

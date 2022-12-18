@@ -1557,7 +1557,8 @@ var getEquationOverlay = () =>
     return result;
 }
 
-let createVariableButton = (variable, height = DEFAULT_BUTTON_HEIGHT) =>
+let createVariableButton = (variable, callback = null,
+height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -1573,11 +1574,37 @@ let createVariableButton = (variable, height = DEFAULT_BUTTON_HEIGHT) =>
         }),
         borderColor: Color.TRANSPARENT
     });
+    if(callback !== null)
+    {
+        frame.borderColor = Color.BORDER;
+        frame.content.textColor = Color.TEXT;
+        frame.onTouched = (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT;
+                callback();
+            }
+            else if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = Color.TEXT_MEDIUM;
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT
+            }
+        }
+    }
     return frame;
 }
 
-let createMinusButton = (variable, symbol = '-', height = DEFAULT_BUTTON_HEIGHT,
-quickbuyAmount = 10, useAnchor = false, anchor = null) =>
+let createMinusButton = (variable, anchor = null, symbol = '-',
+quickbuyAmount = 10, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let bc = () => variable.level > 0 ? Color.BORDER : Color.TRANSPARENT;
     let tc = () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
@@ -1605,18 +1632,18 @@ quickbuyAmount = 10, useAnchor = false, anchor = null) =>
                 frame.borderColor = bc;
                 frame.content.textColor = tc;
                 variable.refund(1);
-                if(useAnchor && !anchor.active)
+                if(anchor !== null && !anchor.active)
                     anchor.value = variable.level;
             }
             else if(e.type == TouchType.LONGPRESS)
             {
                 Sound.playClick();
-                if(useAnchor)
+                if(anchor !== null)
                     anchor.value = variable.level;
                 frame.borderColor = bc;
                 frame.content.textColor = tc;
                 variable.refund(quickbuyAmount);
-                if(useAnchor)
+                if(anchor !== null)
                     anchor.active = true;
             }
             else if(e.type == TouchType.PRESSED)
@@ -1635,8 +1662,8 @@ quickbuyAmount = 10, useAnchor = false, anchor = null) =>
     return frame;
 }
 
-let createPlusButton = (variable, symbol = '+', height = DEFAULT_BUTTON_HEIGHT,
-quickbuyAmount = 10, useAnchor = false, anchor = null) =>
+let createPlusButton = (variable, anchor = null, symbol = '+',
+quickbuyAmount = 10, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let bc = () => variable.level < variable.maxLevel ? Color.BORDER :
     Color.TRANSPARENT;
@@ -1666,7 +1693,7 @@ quickbuyAmount = 10, useAnchor = false, anchor = null) =>
                 frame.borderColor = bc;
                 frame.content.textColor = tc;
                 variable.buy(1);
-                if(useAnchor && !anchor.active)
+                if(anchor !== null && !anchor.active)
                     anchor.value = variable.level;
             }
             else if(e.type == TouchType.LONGPRESS)
@@ -1676,7 +1703,7 @@ quickbuyAmount = 10, useAnchor = false, anchor = null) =>
                 frame.content.textColor = tc;
 
                 let q = quickbuyAmount;
-                if(useAnchor && anchor.active)
+                if(anchor !== null && anchor.active)
                 {
                     q = Math.min(q, anchor.value - variable.level);
                     if(q == 0)
@@ -1685,7 +1712,7 @@ quickbuyAmount = 10, useAnchor = false, anchor = null) =>
                 for(let i = 0; i < q; ++i)
                     variable.buy(1);
 
-                if(useAnchor)
+                if(anchor !== null)
                 {
                     if(!anchor.active)
                         anchor.value = variable.level;
@@ -1750,48 +1777,6 @@ let createMenuButton = (menuFunc, name, height = DEFAULT_BUTTON_HEIGHT) =>
     return frame;
 }
 
-// For example: The level variable button opens the sequence menu
-let createClickableVariableButton = (variable, callback,
-height = DEFAULT_BUTTON_HEIGHT) =>
-{
-    let frame = ui.createFrame
-    ({
-        heightRequest: height,
-        cornerRadius: 1,
-        padding: new Thickness(10, 2),
-        verticalOptions: LayoutOptions.CENTER,
-        content: ui.createLatexLabel
-        ({
-            text: () => variable.getDescription(),
-            verticalOptions: LayoutOptions.CENTER,
-            textColor: Color.TEXT
-        }),
-        onTouched: (e) =>
-        {
-            if(e.type == TouchType.SHORTPRESS_RELEASED ||
-                e.type == TouchType.LONGPRESS_RELEASED)
-            {
-                Sound.playClick();
-                frame.borderColor = Color.BORDER;
-                frame.content.textColor = Color.TEXT;
-                callback();
-            }
-            else if(e.type == TouchType.PRESSED)
-            {
-                frame.borderColor = Color.TRANSPARENT;
-                frame.content.textColor = Color.TEXT_MEDIUM;
-            }
-            else if(e.type == TouchType.CANCELLED)
-            {
-                frame.borderColor = Color.BORDER;
-                frame.content.textColor = Color.TEXT
-            }
-        },
-        borderColor: Color.BORDER
-    });
-    return frame;
-}
-
 var getUpgradeListDelegate = () =>
 {
     let openSeqMenu = () =>
@@ -1799,7 +1784,7 @@ var getUpgradeListDelegate = () =>
         let menu = createSequenceMenu();
         menu.show();
     }
-    let lvlButton = createClickableVariableButton(l, openSeqMenu);
+    let lvlButton = createVariableButton(l, openSeqMenu);
     lvlButton.row = 0;
     lvlButton.column = 0;
 
@@ -1807,7 +1792,7 @@ var getUpgradeListDelegate = () =>
     {
         tickDelayMode = !tickDelayMode;
     }
-    let tsButton = createClickableVariableButton(ts, toggleTDM);
+    let tsButton = createVariableButton(ts, toggleTDM);
     tsButton.row = 1;
     tsButton.column = 0;
 
@@ -1865,8 +1850,8 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(l, '–'),
-                                createPlusButton(l)
+                                createMinusButton(l, null, '–'),
+                                createPlusButton(l, null)
                             ]
                         }),
                         tsButton,
@@ -1878,10 +1863,8 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(ts, '–',
-                                DEFAULT_BUTTON_HEIGHT, 10, true, lastTsLevel),
-                                createPlusButton(ts, '+',
-                                DEFAULT_BUTTON_HEIGHT, 10, true, lastTsLevel)
+                                createMinusButton(ts, lastTsLevel, '–'),
+                                createPlusButton(ts, lastTsLevel)
                             ]
                         })
                     ]
