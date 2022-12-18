@@ -415,8 +415,9 @@ Upright`
             }
         ],
 
-        menuSequence: 'Sequences Menu',
+        menuSequence: 'Sequence Menu',
         labelLevelSeq: 'Level {0}: ',
+        labelChars: '({0} chars)',
 
         rerollSeed: 'You are about to reroll the system\'s seed.',
     }
@@ -2999,11 +3000,29 @@ let createSequenceMenu = () =>
             column: 0,
             verticalOptions: LayoutOptions.CENTER
         }));
-        tmpLvls.push(ui.createEntry
+        tmpLvls.push(ui.createGrid
         ({
-            text: renderer.levels[i].slice(1, -1),
+            columnDefinitions: ['80*', 'auto'],
             row: i,
-            column: 1
+            column: 1,
+            children:
+            [
+                ui.createEntry
+                ({
+                    text: renderer.levels[i].slice(1, -1),
+                    row: 0,
+                    column: 0
+                }),
+                ui.createLatexLabel
+                ({
+                    text: Localization.format(getLoc('labelChars'),
+                    renderer.levels[i].length - 2),
+                    row: 0,
+                    column: 1,
+                    horizontalOptions: LayoutOptions.END_AND_EXPAND,
+                    verticalOptions: LayoutOptions.CENTER
+                })
+            ]
         }));
     }
     let seqGrid = ui.createGrid
