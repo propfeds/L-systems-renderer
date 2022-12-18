@@ -107,7 +107,7 @@ const locStrings =
         btnView: 'View',
         btnClipboard: 'Clipboard',
         btnOverwrite: 'Overwrite',
-        btnCreateCopy: 'Create Copy',
+        btnSaveCopy: 'Save as Copy',
         btnPrev: 'Previous',
         btnNext: 'Next',
         btnClose: 'Close',
@@ -146,7 +146,9 @@ const locStrings =
         menuClipboard: 'Clipboard Menu',
 
         menuNaming: 'Save System',
+        labelName: 'Title: ',
         defaultSystemName: 'Untitled L-system',
+        labelDesc: 'Description: ',
         duplicateSuffix: ' (copy)',
 
         menuTheory: 'Theory Settings',
@@ -2492,11 +2494,86 @@ let createNamingMenu = (title, values) =>
     let nameEntry = ui.createEntry
     ({
         text: tmpName,
+        row: 0,
+        column: 1,
         onTextChanged: (ot, nt) =>
         {
             tmpName = nt;
         }
     });
+    let descEntry = ui.createEntry
+    ({
+        text: '',
+        row: 0,
+        column: 1,
+    });
+
+    let getSystemGrid = () =>
+    {
+        let children = [];
+        let i = 0;
+        for(let [key, value] of savedSystems)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: key,
+                row: i,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }));
+            let btnO = createOverwriteButton(key);
+            btnO.row = i;
+            children.push(btnO);
+            let btnC = createSaveCopyButton(key);
+            btnC.row = i;
+            children.push(btnC);
+            ++i;
+        }
+        return children;
+    };
+    let createOverwriteButton = (title) =>
+    {
+        let btn = ui.createButton
+        ({
+            text: getLoc('btnOverwrite'),
+            row: 0,
+            column: 1,
+            heightRequest: 40,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                savedSystems.set(title, values);
+                menu.hide();
+            }
+        });
+        return btn;
+    };
+    let createSaveCopyButton = (title) =>
+    {
+        let btn = ui.createButton
+        ({
+            text: getLoc('btnSaveCopy'),
+            row: 0,
+            column: 2,
+            heightRequest: 40,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                let tmpTitle = title;
+                while(savedSystems.has(tmpTitle))
+                    tmpTitle += getLoc('duplicateSuffix');
+                savedSystems.set(tmpTitle, values);
+                menu.hide();
+            }
+        });
+        return btn;
+    };
+    let systemGrid = ui.createGrid
+    ({
+        columnDefinitions: ['40*', '30*', '30*'],
+        children: getSystemGrid() 
+    });
+
     let menu = ui.createPopup
     ({
         title: getLoc('menuNaming'),
@@ -2504,23 +2581,67 @@ let createNamingMenu = (title, values) =>
         ({
             children:
             [
-                nameEntry,
+                ui.createGrid
+                ({
+                    columnDefinitions: ['15*', '55*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelName'),
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        nameEntry,
+                        ui.createButton
+                        ({
+                            text: getLoc('btnSave'),
+                            row: 0,
+                            column: 2,
+                            heightRequest: 40,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                while(savedSystems.has(tmpName))
+                                    tmpName += getLoc('duplicateSuffix');
+                                savedSystems.set(tmpName, values);
+                                menu.hide();
+                            }
+                        })
+                    ]
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['30*', '70*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelDesc'),
+                            row: 0,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        descEntry
+                    ]
+                }),
                 ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createButton
+                ui.createLatexLabel
                 ({
-                    text: getLoc('btnSave'),
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        while(savedSystems.has(tmpName))
-                            tmpName += getLoc('duplicateSuffix');
-                        savedSystems.set(tmpName, values);
-                        menu.hide();
-                    }
+                    text: getLoc('labelSavedSystems'),
+                    // horizontalOptions: LayoutOptions.CENTER,
+                    verticalOptions: LayoutOptions.CENTER,
+                    margin: new Thickness(0, 12)
+                }),
+                ui.createScrollView
+                ({
+                    // heightRequest: ui.screenHeight * 0.25,
+                    content: systemGrid
                 })
             ]
         })
@@ -2836,7 +2957,8 @@ let createSaveMenu = () =>
                                 Sound.playClick();
                                 let namingMenu = createNamingMenu(
                                     getLoc('defaultSystemName'),
-                                    renderer.system.toString(), systemGrid);
+                                    renderer.system.toString(), systemGrid
+                                );
                                 namingMenu.onDisappearing = () =>
                                 {
                                     systemGrid.children = getSystemGrid();
@@ -2876,8 +2998,7 @@ let createManualMenu = () =>
 
     let pageTitle = ui.createLatexLabel
     ({
-        padding: new Thickness(0, 2),
-        heightRequest: 24,
+        margin: new Thickness(0, 4),
         text: manualPages[page].title,
         horizontalOptions: LayoutOptions.CENTER,
         verticalOptions: LayoutOptions.CENTER
