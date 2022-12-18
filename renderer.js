@@ -1557,183 +1557,189 @@ var getEquationOverlay = () =>
     return result;
 }
 
-let createVariableButton = (variable, callback = null,
-height = DEFAULT_BUTTON_HEIGHT) =>
+class VariableControls
 {
-    let frame = ui.createFrame
-    ({
-        heightRequest: height,
-        cornerRadius: 1,
-        padding: new Thickness(10, 2),
-        verticalOptions: LayoutOptions.CENTER,
-        content: ui.createLatexLabel
-        ({
-            text: () => variable.getDescription(),
-            verticalOptions: LayoutOptions.CENTER,
-            textColor: Color.TEXT_MEDIUM
-        }),
-        borderColor: Color.TRANSPARENT
-    });
-    if(callback !== null)
+    constructor(variable, useAnchor = false, quickbuyAmount = 10)
     {
-        frame.borderColor = Color.BORDER;
-        frame.content.textColor = Color.TEXT;
-        frame.onTouched = (e) =>
+        this.variable = variable;
+        this.useAnchor = useAnchor;
+        this.anchor = this.variable.level;
+        this.anchorActive = false;
+        this.quickbuyAmount = quickbuyAmount;
+    }
+
+    createVariableButton(callback = null, height = DEFAULT_BUTTON_HEIGHT)
+    {
+        let frame = ui.createFrame
+        ({
+            heightRequest: height,
+            cornerRadius: 1,
+            padding: new Thickness(10, 2),
+            verticalOptions: LayoutOptions.CENTER,
+            content: ui.createLatexLabel
+            ({
+                text: () => this.variable.getDescription(),
+                verticalOptions: LayoutOptions.CENTER,
+                textColor: Color.TEXT_MEDIUM
+            }),
+            borderColor: Color.TRANSPARENT
+        });
+        if(callback !== null)
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED ||
-                e.type == TouchType.LONGPRESS_RELEASED)
+            frame.borderColor = Color.BORDER;
+            frame.content.textColor = Color.TEXT;
+            frame.onTouched = (e) =>
             {
-                Sound.playClick();
-                frame.borderColor = Color.BORDER;
-                frame.content.textColor = Color.TEXT;
-                callback();
-            }
-            else if(e.type == TouchType.PRESSED)
-            {
-                frame.borderColor = Color.TRANSPARENT;
-                frame.content.textColor = Color.TEXT_MEDIUM;
-            }
-            else if(e.type == TouchType.CANCELLED)
-            {
-                frame.borderColor = Color.BORDER;
-                frame.content.textColor = Color.TEXT
+                if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                    e.type == TouchType.LONGPRESS_RELEASED)
+                {
+                    Sound.playClick();
+                    frame.borderColor = Color.BORDER;
+                    frame.content.textColor = Color.TEXT;
+                    callback();
+                }
+                else if(e.type == TouchType.PRESSED)
+                {
+                    frame.borderColor = Color.TRANSPARENT;
+                    frame.content.textColor = Color.TEXT_MEDIUM;
+                }
+                else if(e.type == TouchType.CANCELLED)
+                {
+                    frame.borderColor = Color.BORDER;
+                    frame.content.textColor = Color.TEXT
+                }
             }
         }
+        return frame;
     }
-    return frame;
-}
-
-let createMinusButton = (variable, anchor = null, symbol = '-',
-quickbuyAmount = 10, height = DEFAULT_BUTTON_HEIGHT) =>
-{
-    let bc = () => variable.level > 0 ? Color.BORDER : Color.TRANSPARENT;
-    let tc = () => variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
-    let tcPressed = () => variable.level > 0 ? Color.TEXT_MEDIUM :
-    Color.TEXT_DARK;
-    let frame = ui.createFrame
-    ({
-        column: 0,
-        heightRequest: height,
-        cornerRadius: 1,
-        padding: new Thickness(10, 2),
-        verticalOptions: LayoutOptions.CENTER,
-        content: ui.createLatexLabel
+    createRefundButton(symbol = '-', height = DEFAULT_BUTTON_HEIGHT)
+    {
+        let bc = () => this.variable.level > 0 ?
+        Color.BORDER : Color.TRANSPARENT;
+        let tc = () => this.variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
+        let tcPressed = () => this.variable.level > 0 ?
+        Color.TEXT_MEDIUM : Color.TEXT_DARK;
+        let frame = ui.createFrame
         ({
-            text: symbol,
-            horizontalOptions: LayoutOptions.CENTER,
+            heightRequest: height,
+            cornerRadius: 1,
+            padding: new Thickness(10, 2),
             verticalOptions: LayoutOptions.CENTER,
-            textColor: tc
-        }),
-        onTouched: (e) =>
-        {
-            if(e.type == TouchType.SHORTPRESS_RELEASED)
+            content: ui.createLatexLabel
+            ({
+                text: symbol,
+                horizontalOptions: LayoutOptions.CENTER,
+                verticalOptions: LayoutOptions.CENTER,
+                textColor: tc
+            }),
+            onTouched: (e) =>
             {
-                Sound.playClick();
-                frame.borderColor = bc;
-                frame.content.textColor = tc;
-                variable.refund(1);
-                if(anchor !== null && !anchor.active)
-                    anchor.value = variable.level;
-            }
-            else if(e.type == TouchType.LONGPRESS)
-            {
-                Sound.playClick();
-                if(anchor !== null)
-                    anchor.value = variable.level;
-                frame.borderColor = bc;
-                frame.content.textColor = tc;
-                variable.refund(quickbuyAmount);
-                if(anchor !== null)
-                    anchor.active = true;
-            }
-            else if(e.type == TouchType.PRESSED)
-            {
-                frame.borderColor = Color.TRANSPARENT;
-                frame.content.textColor = tcPressed;
-            }
-            else if(e.type == TouchType.CANCELLED)
-            {
-                frame.borderColor = bc;
-                frame.content.textColor = tc;
-            }
-        },
-        borderColor: bc
-    });
-    return frame;
-}
-
-let createPlusButton = (variable, anchor = null, symbol = '+',
-quickbuyAmount = 10, height = DEFAULT_BUTTON_HEIGHT) =>
-{
-    let bc = () => variable.level < variable.maxLevel ? Color.BORDER :
-    Color.TRANSPARENT;
-    let tc = () => variable.level < variable.maxLevel ? Color.TEXT :
-    Color.TEXT_MEDIUM;
-    let tcPressed = () => variable.level < variable.maxLevel ?
-    Color.TEXT_MEDIUM : Color.TEXT_DARK;
-    let frame = ui.createFrame
-    ({
-        column: 1,
-        heightRequest: height,
-        cornerRadius: 1,
-        padding: new Thickness(10, 2),
-        verticalOptions: LayoutOptions.CENTER,
-        content: ui.createLatexLabel
+                if(e.type == TouchType.SHORTPRESS_RELEASED)
+                {
+                    Sound.playClick();
+                    frame.borderColor = bc;
+                    frame.content.textColor = tc;
+                    this.variable.refund(1);
+                    if(this.useAnchor && !this.anchorActive)
+                        this.anchor = this.variable.level;
+                }
+                else if(e.type == TouchType.LONGPRESS)
+                {
+                    Sound.playClick();
+                    if(this.useAnchor)
+                        this.anchor = this.variable.level;
+                    frame.borderColor = bc;
+                    frame.content.textColor = tc;
+                    this.variable.refund(this.quickbuyAmount);
+                    if(this.useAnchor)
+                        this.anchorActive = true;
+                }
+                else if(e.type == TouchType.PRESSED)
+                {
+                    frame.borderColor = Color.TRANSPARENT;
+                    frame.content.textColor = tcPressed;
+                }
+                else if(e.type == TouchType.CANCELLED)
+                {
+                    frame.borderColor = bc;
+                    frame.content.textColor = tc;
+                }
+            },
+            borderColor: bc
+        });
+        return frame;
+    }
+    createBuyButton(symbol = '+', height = DEFAULT_BUTTON_HEIGHT)
+    {
+        let bc = () => this.variable.level < this.variable.maxLevel ?
+        Color.BORDER : Color.TRANSPARENT;
+        let tc = () => this.variable.level < this.variable.maxLevel ?
+        Color.TEXT : Color.TEXT_MEDIUM;
+        let tcPressed = () => this.variable.level < this.variable.maxLevel ?
+        Color.TEXT_MEDIUM : Color.TEXT_DARK;
+        let frame = ui.createFrame
         ({
-            text: symbol,
-            horizontalOptions: LayoutOptions.CENTER,
+            heightRequest: height,
+            cornerRadius: 1,
+            padding: new Thickness(10, 2),
             verticalOptions: LayoutOptions.CENTER,
-            textColor: tc
-        }),
-        onTouched: (e) =>
-        {
-            if(e.type == TouchType.SHORTPRESS_RELEASED)
+            content: ui.createLatexLabel
+            ({
+                text: symbol,
+                horizontalOptions: LayoutOptions.CENTER,
+                verticalOptions: LayoutOptions.CENTER,
+                textColor: tc
+            }),
+            onTouched: (e) =>
             {
-                Sound.playClick();
-                frame.borderColor = bc;
-                frame.content.textColor = tc;
-                variable.buy(1);
-                if(anchor !== null && !anchor.active)
-                    anchor.value = variable.level;
-            }
-            else if(e.type == TouchType.LONGPRESS)
-            {
-                Sound.playClick();
-                frame.borderColor = bc;
-                frame.content.textColor = tc;
-
-                let q = quickbuyAmount;
-                if(anchor !== null && anchor.active)
+                if(e.type == TouchType.SHORTPRESS_RELEASED)
                 {
-                    q = Math.min(q, anchor.value - variable.level);
-                    if(q == 0)
-                        q = quickbuyAmount;
+                    Sound.playClick();
+                    frame.borderColor = bc;
+                    frame.content.textColor = tc;
+                    this.variable.buy(1);
+                    if(this.useAnchor && !this.anchorActive)
+                        this.anchor = this.variable.level;
                 }
-                for(let i = 0; i < q; ++i)
-                    variable.buy(1);
-
-                if(anchor !== null)
+                else if(e.type == TouchType.LONGPRESS)
                 {
-                    if(!anchor.active)
-                        anchor.value = variable.level;
-                    else
-                        anchor.active = false;
+                    Sound.playClick();
+                    frame.borderColor = bc;
+                    frame.content.textColor = tc;
+
+                    let q = this.quickbuyAmount;
+                    if(this.useAnchor && this.anchorActive)
+                    {
+                        q = Math.min(q, this.anchor - this.variable.level);
+                        if(q == 0)
+                            q = this.quickbuyAmount;
+                    }
+                    for(let i = 0; i < q; ++i)
+                        this.variable.buy(1);
+
+                    if(this.useAnchor)
+                    {
+                        if(!this.anchorActive)
+                            this.anchor = this.variable.level;
+                        else
+                            this.anchorActive = false;
+                    }
                 }
-            }
-            else if(e.type == TouchType.PRESSED)
-            {
-                frame.borderColor = Color.TRANSPARENT;
-                frame.content.textColor = tcPressed;
-            }
-            else if(e.type == TouchType.CANCELLED)
-            {
-                frame.borderColor = bc;
-                frame.content.textColor = tc;
-            }
-        },
-        borderColor: bc
-    });
-    return frame;
+                else if(e.type == TouchType.PRESSED)
+                {
+                    frame.borderColor = Color.TRANSPARENT;
+                    frame.content.textColor = tcPressed;
+                }
+                else if(e.type == TouchType.CANCELLED)
+                {
+                    frame.borderColor = bc;
+                    frame.content.textColor = tc;
+                }
+            },
+            borderColor: bc
+        });
+        return frame;
+    }
 }
 
 let createMenuButton = (menuFunc, name, height = DEFAULT_BUTTON_HEIGHT) =>
@@ -1779,22 +1785,32 @@ let createMenuButton = (menuFunc, name, height = DEFAULT_BUTTON_HEIGHT) =>
 
 var getUpgradeListDelegate = () =>
 {
+    let lvlControls = new VariableControls(l);
     let openSeqMenu = () =>
     {
         let menu = createSequenceMenu();
         menu.show();
     }
-    let lvlButton = createVariableButton(l, openSeqMenu);
+    let lvlButton = lvlControls.createVariableButton(openSeqMenu);
     lvlButton.row = 0;
     lvlButton.column = 0;
+    let lvlRefund = lvlControls.createRefundButton('–');
+    lvlRefund.column = 0;
+    let lvlBuy = lvlControls.createBuyButton();
+    lvlBuy.column = 1;
 
+    let tsControls = new VariableControls(ts, true);
     let toggleTDM = () =>
     {
         tickDelayMode = !tickDelayMode;
     }
-    let tsButton = createVariableButton(ts, toggleTDM);
+    let tsButton = tsControls.createVariableButton(toggleTDM);
     tsButton.row = 1;
     tsButton.column = 0;
+    let tsRefund = tsControls.createRefundButton('–');
+    tsRefund.column = 0;
+    let tsBuy = tsControls.createBuyButton();
+    tsBuy.column = 1;
 
     let sysButton = createMenuButton(createSystemMenu,
     getLoc('btnMenuLSystem'));
@@ -1815,12 +1831,6 @@ var getUpgradeListDelegate = () =>
     getLoc('btnMenuManual'));
     manualButton.row = 2;
     manualButton.column = 0;
-
-    let lastTsLevel =
-    {
-        value: ts.level,
-        active: false
-    };
 
     let stack = ui.createScrollView
     ({
@@ -1850,8 +1860,8 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(l, null, '–'),
-                                createPlusButton(l, null)
+                                lvlRefund,
+                                lvlBuy
                             ]
                         }),
                         tsButton,
@@ -1863,8 +1873,8 @@ var getUpgradeListDelegate = () =>
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
-                                createMinusButton(ts, lastTsLevel, '–'),
-                                createPlusButton(ts, lastTsLevel)
+                                tsRefund,
+                                tsBuy
                             ]
                         })
                     ]
