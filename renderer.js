@@ -109,6 +109,7 @@ const locStrings =
         btnOverwrite: 'Overwrite',
         btnSaveCopy: 'Save as Copy',
         btnSelect: 'Select',
+        btnSelected: '(Selected)',
         btnPrev: 'Previous',
         btnNext: 'Next',
         btnClose: 'Close',
@@ -2492,7 +2493,6 @@ let createSystemMenu = () =>
 let createNamingMenu = (title, values) =>
 {
     let tmpName = title;
-    let selectedBtn = null;
     let nameEntry = ui.createEntry
     ({
         text: tmpName,
@@ -2501,8 +2501,6 @@ let createNamingMenu = (title, values) =>
         onTextChanged: (ot, nt) =>
         {
             tmpName = nt;
-            // if(selectedBtn !== null)
-            //     selectedBtn.isVisible = true;
         }
     });
     let descEntry = ui.createEntry
@@ -2525,29 +2523,26 @@ let createNamingMenu = (title, values) =>
                 column: 0,
                 verticalOptions: LayoutOptions.CENTER
             }));
-            let btnO = createSelectButton(key);
+            let btnO = createOverwriteButton(key);
             btnO.row = i;
             children.push(btnO);
             ++i;
         }
         return children;
     };
-    let createSelectButton = (title) =>
+    let createOverwriteButton = (title) =>
     {
         let btn = ui.createButton
         ({
-            text: getLoc('btnSelect'),
+            text: getLoc('btnOverwrite'),
             row: 0,
             column: 1,
             heightRequest: 40,
             onClicked: () =>
             {
                 Sound.playClick();
-                nameEntry.text = title;
-                if(selectedBtn !== null)
-                    selectedBtn.isVisible = true;
-                selectedBtn = btn;
-                btn.isVisible = false;
+                savedSystems.set(title, values);
+                menu.hide();
             }
         });
         return btn;
@@ -2617,52 +2612,20 @@ let createNamingMenu = (title, values) =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createGrid
+                ui.createButton
                 ({
-                    minimumHeightRequest: 64,
-                    columnDefinitions: ['50*', '50*'],
-                    children:
-                    [
-                        ui.createButton
-                        ({
-                            text: getLoc('btnOverwrite'),
-                            row: 0,
-                            column: 0,
-                            onClicked: () =>
-                            {
-                                Sound.playClick();
-                                savedSystems.set(tmpName, values);
-                                menu.hide();
-                            }
-                        }),
-                        ui.createButton
-                        ({
-                            text: getLoc('btnSaveCopy'),
-                            row: 0,
-                            column: 1,
-                            onClicked: () =>
-                            {
-                                Sound.playClick();
-                                while(savedSystems.has(tmpName))
-                                    tmpName += getLoc('duplicateSuffix');
-                                savedSystems.set(tmpName, values);
-                                menu.hide();
-                            }
-                        })
-                    ]
-                }),
-                // ui.createButton
-                // ({
-                //     text: getLoc('btnSave'),
-                //     onClicked: () =>
-                //     {
-                //         Sound.playClick();
-                //         while(savedSystems.has(tmpName))
-                //             tmpName += getLoc('duplicateSuffix');
-                //         savedSystems.set(tmpName, values);
-                //         menu.hide();
-                //     }
-                // })
+                    text: getLoc('btnSave'),
+                    row: 0,
+                    column: 1,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        while(savedSystems.has(tmpName))
+                            tmpName += getLoc('duplicateSuffix');
+                        savedSystems.set(tmpName, values);
+                        menu.hide();
+                    }
+                })
             ]
         })
     });
