@@ -1,3 +1,24 @@
+/*
+L-systems Renderer implementation in Exponential Idle.
+
+Disclaimer: The literature around (OL) L-system's symbols is generally not much
+consistent. Therefore, the symbols used here may mean different things in other
+implementations. One such example is that \ and / may be swapped; or that +
+would turn the cursor clockwise instead of counter (as implemented here).
+Another example would be that < and > are used instead of \ and /.
+
+The maths used in this theory do not resemble a paragon of correctness either,
+particularly referencing the horrible butchery of quaternions, and all the
+camera rotation slander in the world. In this theory, the vector is initially
+heading in the X-axis, instead of the Y/Z-axis, which is more common in other
+implementations of L-systems. I'm just a unit circle kind of person.
+
+If the X is the eyes of a laughing face, then the Y represents my waifu Ms. Y,
+and the Z stands for Zombies.
+
+(c) 2022 Temple of Pan (R) (TM) All rights reversed.
+*/
+
 import { FreeCost } from '../api/Costs';
 import { theory } from '../api/Theory';
 import { Utils } from '../api/Utils';
@@ -9,25 +30,6 @@ import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
 import { Localization } from '../api/Localization';
-
-/*
-Disclaimer: The consensus around L-system's grammar is generally not much
-consistent. Therefore, the symbols used here may mean different things in
-different implementations. One such example is that \ and / may be swapped; or
-that + would turn the cursor clockwise instead of counter (as implemented here).
-Another example would be that < and > are used instead of \ and /.
-
-The maths used in this theory do not resemble any sort of correctness either,
-particularly referencing the horrible butchery of quaternions, and all the
-camera rotation slander in the world. In this theory, the vector is initially
-heading in the X-axis, unlike the Y-axis which is way more common in common
-implementations of any kind. I'm just a unit circle kind of person.
-
-If the X is the eyes of a laughing face, then the Y represents my waifu Ms. Y,
-and the Z stands for Zombies.
-
-(c) 2022 Temple of Pan (R) (TM) All rights reversed.
-*/
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -1647,19 +1649,18 @@ class VariableControls
                     frame.borderColor = bc;
                     frame.content.textColor = tc;
                     this.variable.refund(1);
-                    if(this.useAnchor && !this.anchorActive)
-                        this.anchor = this.variable.level;
                 }
                 else if(e.type == TouchType.LONGPRESS)
                 {
                     Sound.playClick();
                     if(this.useAnchor)
+                    {
                         this.anchor = this.variable.level;
+                        this.anchorActive = true;
+                    }
                     frame.borderColor = bc;
                     frame.content.textColor = tc;
                     this.variable.refund(this.quickbuyAmount);
-                    if(this.useAnchor)
-                        this.anchorActive = true;
                 }
                 else if(e.type == TouchType.PRESSED)
                 {
@@ -1705,8 +1706,6 @@ class VariableControls
                     frame.borderColor = bc;
                     frame.content.textColor = tc;
                     this.variable.buy(1);
-                    if(this.useAnchor && !this.anchorActive)
-                        this.anchor = this.variable.level;
                 }
                 else if(e.type == TouchType.LONGPRESS)
                 {
@@ -1720,17 +1719,10 @@ class VariableControls
                         q = Math.min(q, this.anchor - this.variable.level);
                         if(q == 0)
                             q = this.quickbuyAmount;
+                        this.anchorActive = false;
                     }
                     for(let i = 0; i < q; ++i)
                         this.variable.buy(1);
-
-                    if(this.useAnchor)
-                    {
-                        if(!this.anchorActive)
-                            this.anchor = this.variable.level;
-                        else
-                            this.anchorActive = false;
-                    }
                 }
                 else if(e.type == TouchType.PRESSED)
                 {

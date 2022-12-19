@@ -9,7 +9,7 @@
   - Add more systems to the manual (algae, or like, mistletoe)
   - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
-- [x] Getters and setters in JavaScript
+- [ ] Optimise using the API's profiler
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -19,34 +19,44 @@
   - https://en.wikipedia.org/wiki/Media_control_symbols
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
-- [x] UI touch-ups
-  - [x] Border colours
-  - [x] Text colour changes when hitting buttons
-  - [x] Shrink the buttons again to look better?
 - [ ] Saved systems
-  - [ ] Choice to overwrite or create copy
+  - [x] Choice to overwrite or create copy
     - Include list of saved systems in naming menu
   - [ ] Store static camera configs and description
     - We have the power of version number
     - Store the current system in the same format
       - Systems adopted from the manual will bear the entry's title
-    - Testing: keep the old version number in global, but add version-dependent
-    processing regardless
+    - Internal state: store the number of systems before storing saved systems
+      - To prepare for LG and models
+    - Testing: keep the old version number in global, add version-dependent
+    processing in internal state code, while testing newest implementation
 - [x] Custom class that stores variable controls?
   - [x] Solves weird logic with anchor
   - [ ] Allows loop mode controls
   - [ ] Update updating method to make a more responsive UI?
 - [ ] resetLvlOnConstruct should actually be renderer's property since the only
 logic exists there
-- [ ] Optimise using the API's profiler
+- [x] Getters and setters in JavaScript
+- [x] UI touch-ups
+  - [x] Border colours
+  - [x] Text colour changes when hitting buttons
+  - [x] Shrink the buttons again to look better?
+- [x] Redesign anchor logic
+  - Only register anchor level before longpressing minus and level > 0
 
-## Preparing for Lemma's Garden
+## Far Future: Preparation for Lemma's Garden
 
 - [ ] Implement parametric systems
 - [ ] Custom models for each symbol
   - Petals, leaves and such
-  - Array of Vector3s denoting edges
-  - Separate way forward and way back?
+  - Array of Vector3s denoting vertices
+  - Bool to determine whether the model is terminal (?)
+    - If terminal, has only one path of going from (0, 0, 0) through the list
+    then back to (0, 0, 0)
+    - If not terminal, has two paths:
+      - From (0, 0, 0) through the first path to (1, 0, 0)
+      - From (1, 0, 0) through the second path back to (0, 0, 0)
+  - [ ] Renderer option to disable models
 
 ## Currently Impossible
 
