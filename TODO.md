@@ -25,10 +25,12 @@
   - [ ] Edit existing systems
   - [ ] Store static camera configs and description
     - We have the power of version number
-    - Store the current system in the same format
-      - Systems adopted from the manual will bear the entry's title
-    - Internal state: store the number of systems before storing saved systems
-      - To prepare for LG and models
+    - Don't change the current system's internal state format
+      - Instead, store a temp system name in global to show up in naming menu
+      - Systems adopted from the manual will bear the entry's title, like that
+    - Internal state: store the number of systems (and then models...) in the
+    first line
+      - To prepare for LG (models)
     - Testing: keep the old version number in global, add version-dependent
     processing in internal state code, while testing newest implementation
 - [x] Get rid of the brackets and the -2s
