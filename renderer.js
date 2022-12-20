@@ -137,7 +137,7 @@ const locStrings =
         labelCamCentre: 'Centre (x, y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
-        loopModes: ['Off', 'Level', 'Playlist'],
+        loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
         labelUpright: 'Upright x-axis: ',
         labelQuickdraw: 'Quickdraw straight lines: ',
         labelQuickBT: 'Quick backtrack: ',
@@ -802,9 +802,9 @@ class Renderer
      * @param {number} camX (default: 0) the camera's x-axis centre.
      * @param {number} camY (default: 0) the camera's y-axis centre.
      * @param {number} camZ (default: 0) the camera's z-axis centre.
-     * @param {number} followFactor (default: 0.15; between 0 and 1) the
+     * @param {number} followFactor (default: 0.1; between 0 and 1) the
      * camera's cursor-following speed.
-     * @param {number} loopMode (default: 0; between 0 and 2) the renderer's
+     * @param {number} loopMode (default: 0; between 0 and 3) the renderer's
      * looping mode.
      * @param {boolean} upright (default: false) whether to rotate the system
      * around the z-axis by 90 degrees.
@@ -816,9 +816,10 @@ class Renderer
      * to act as stoppers for backtracking.
      */
     constructor(system, initScale = 1, figureScale = 2, cursorFocused = false,
-    camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
+    camX = 0, camY = 0, camZ = 0, followFactor = 0.1, loopMode = 0,
     upright = false, quickDraw = false, quickBacktrack = false,
-    backtrackList = '+-&^\\/|[]')
+    backtrackList = '+-&^\\/|[]', camOffsetX = 0, camOffsetY = 0,
+    camOffsetZ = 0, loadModels = false)
     {
         /**
          * @type {LSystem} the L-system being handled.
@@ -854,7 +855,7 @@ class Renderer
          * @type {number} the looping mode.
          * @public
          */
-        this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 2));
+        this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 3));
         /**
          * @type {boolean} the x-axis' orientation.
          * @public
@@ -877,6 +878,8 @@ class Renderer
          * @public
          */
         this.backtrackList = backtrackList;
+        this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
+        this.loadModels = loadModels;
         /**
          * @type {Vector3} the cursor's position.
          * @public but shouldn't be.
@@ -942,7 +945,6 @@ class Renderer
          * @public I told you so many times that you shouldn't access these.
          */
         this.nextDeriveIdx = 0;
-        this.update(0);
     }
 
     /**
@@ -953,7 +955,7 @@ class Renderer
      */
     update(level, seedChanged = false)
     {
-        let clearGraph = this.loopMode != 2 || level < this.lvl || seedChanged;
+        let clearGraph = this.loopMode != 3 || level < this.lvl || seedChanged;
 
         if(this.lvl != level)
         {
@@ -972,7 +974,7 @@ class Renderer
 
             if(i == 0)
             {
-                this.levels[i] = `[${this.system.axiom}]`;
+                this.levels[i] = this.system.axiom;
                 charCount += this.levels[i].length;
                 this.nextDeriveIdx = 0;
             }
@@ -1125,7 +1127,8 @@ class Renderer
         if(this.lvl > this.loaded + 1)
             return;
 
-        if(this.loopMode == 0 && this.idx >= this.levels[this.lvl].length)
+        if(this.idx >= this.levels[this.lvl].length && (this.loopMode == 0 ||
+        (this.loopMode == 1 && this.stack.length == 0)))
             return;
 
         this.elapsed += dt;
@@ -1154,23 +1157,32 @@ class Renderer
 
         if(this.idx >= this.levels[this.lvl].length)
         {
-            switch(this.loopMode)
+            if(this.loopMode == 0)
+                return;
+
+            if(this.stack.length == 0)
             {
-                case 2:
-                    l.buy(1);
-                    break;
-                case 1:
-                    this.reset(false);
-                    break;
-                case 0:
-                    return;
+                switch(this.loopMode)
+                {
+                    case 3:
+                        l.buy(1);
+                        return;
+                    case 2:
+                        this.reset(false);
+                        return;
+                    case 1:
+                        return;
+                }
             }
+
+            let t = this.stack.pop();
+            this.state = t[0];
+            this.ori = t[1];
         }
 
-        let i;
-        for(i = this.idx; i < this.levels[this.lvl].length; ++i)
+        for(; this.idx < this.levels[this.lvl].length; ++this.idx)
         {
-            switch(this.levels[this.lvl][i])
+            switch(this.levels[this.lvl][this.idx])
             {
                 case '+':
                     this.ori = this.system.rotations.get('+').mul(this.ori);
@@ -1208,23 +1220,25 @@ class Renderer
                     this.idStack[this.idStack.length - 1])
                     {
                         this.idStack.pop();
-                        this.idx = i + 1;
+                        ++this.idx;
                     }
                     return;
                 default:
                     if(this.system.ignoreList.includes(
-                    this.levels[this.lvl][i]))
+                    this.levels[this.lvl][this.idx]))
                         break;
                     let breakAhead = this.backtrackList.includes(
-                    this.levels[this.lvl][i + 1]);
+                    this.levels[this.lvl][this.idx + 1]);
                     if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
                     this.forward();
-                    this.idx = i + 1;
                     if(this.quickDraw && !breakAhead)
                         break;
                     else
+                    {
+                        ++this.idx;
                         return;
+                    }
             }
         }
     }
@@ -1300,9 +1314,7 @@ class Renderer
      */
     get progressFrac()
     {
-        return [Math.max(Math.min(this.idx - 1,
-        this.levels[this.lvl].length - 2), 0),
-        (this.levels[this.lvl].length - 2)];
+        return [this.idx, this.levels[this.lvl].length];
     }
     /**
      * Returns the current progress on this level.
@@ -1458,7 +1470,7 @@ var init = () =>
     // l (Level)
     {
         let getDesc = (level) => Localization.format(getLoc('varLvDesc'),
-        level.toString(), renderer.loopMode == 2 ? '+' : '');
+        level.toString(), renderer.loopMode == 3 ? '+' : '');
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
@@ -2065,7 +2077,7 @@ let createConfigMenu = () =>
         row: 0,
         column: 1,
         minimum: 0,
-        maximum: 2,
+        maximum: 3,
         value: tmpLM,
         // minimumTrackColor: Color.BORDER,
         // maximumTrackColor: Color.TRANSPARENT,
@@ -3105,14 +3117,14 @@ let createSequenceMenu = () =>
             [
                 ui.createEntry
                 ({
-                    text: renderer.levels[i].slice(1, -1),
+                    text: renderer.levels[i],
                     row: 0,
                     column: 0
                 }),
                 ui.createLatexLabel
                 ({
                     text: Localization.format(getLoc('labelChars'),
-                    renderer.levels[i].length - 2),
+                    renderer.levels[i].length),
                     row: 0,
                     column: 1,
                     horizontalOptions: LayoutOptions.END_AND_EXPAND,

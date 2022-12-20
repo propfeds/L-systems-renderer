@@ -30,12 +30,12 @@
       - To prepare for LG and models
     - Testing: keep the old version number in global, add version-dependent
     processing in internal state code, while testing newest implementation
+- [x] Get rid of the brackets and the -2s
+- [x] Get rid of i
 - [x] Custom class that stores variable controls?
   - [x] Solves weird logic with anchor
   - [ ] Allows loop mode controls
   - [ ] Update updating method to make a more responsive UI?
-- [ ] resetLvlOnConstruct should actually be renderer's property since the only
-logic exists there
 - [x] Getters and setters in JavaScript
 - [x] UI touch-ups
   - [x] Border colours
