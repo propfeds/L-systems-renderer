@@ -134,7 +134,8 @@ const locStrings =
         labelFigScale: 'Figure scale per level: ',
         labelCamMode: 'Camera mode: {0}',
         camModes: ['Static', 'Cursor-focused'],
-        labelCamCentre: 'Centre (x, y, z): ',
+        labelCamCentre: 'Scaled centre (x, y, z): ',
+        labelCamOffset: 'Offset (x, y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
@@ -845,7 +846,7 @@ class Renderer
          * @type {Vector3} the static camera's coordinates.
          * @public
          */
-        this.staticCamera = new Vector3(camX, camY, camZ);
+        this.camCentre = new Vector3(camX, camY, camZ);
         /**
          * @type {number} the follow factor.
          * @public
@@ -1037,7 +1038,7 @@ class Renderer
      */
     configure(initScale, figureScale, cursorFocused, camX, camY, camZ,
     followFactor, loopMode, upright, quickDraw, quickBacktrack,
-    backtrackList)
+    backtrackList, camOffsetX, camOffsetY, camOffsetZ)
     {
         let requireReset = (initScale != this.initScale) ||
         (figureScale != this.figureScale) || (upright != this.upright) ||
@@ -1048,13 +1049,14 @@ class Renderer
         this.initScale = initScale;
         this.figureScale = figureScale;
         this.cursorFocused = cursorFocused;
-        this.staticCamera = new Vector3(camX, camY, camZ);
+        this.camCentre = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
         this.loopMode = loopMode;
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
         this.backtrackList = backtrackList;
+        this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
 
         if(requireReset)
             this.reset();
@@ -1069,15 +1071,17 @@ class Renderer
      * @param {boolean} upright whether to rotate the system around the z-axis
      * by 90 degrees.
      */
-    configureStaticCamera(initScale, figureScale, camX, camY, camZ, upright)
+    configureStaticCamera(initScale, figureScale, camX, camY, camZ, camOffsetX,
+    camOffsetY, camOffsetZ, upright)
     {
         let requireReset = (initScale != this.initScale) ||
         (figureScale != this.figureScale) || (upright != this.upright);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
-        this.staticCamera = new Vector3(camX, camY, camZ);
+        this.camCentre = new Vector3(camX, camY, camZ);
         this.upright = upright;
+        this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
 
         if(requireReset)
             this.reset();
@@ -1242,6 +1246,13 @@ class Renderer
             }
         }
     }
+    swizzle(coords)
+    {
+        // The game uses left-handed Y-up, I mean Y-down coordinates.
+        if(this.upright)
+            return new Vector3(-coords.y, -coords.x, coords.z);
+        return new Vector3(coords.x, -coords.y, coords.z);
+    }
     /**
      * Returns the camera centre's coordinates.
      * @returns {Vector3} the coordinates.
@@ -1250,17 +1261,9 @@ class Renderer
     {
         if(this.cursorFocused)
             return -this.cursor;
-        if(this.upright)
-            return new Vector3(
-                this.staticCamera.y,
-                this.staticCamera.x,
-                -this.staticCamera.z
-            );
-        return new Vector3(
-            -this.staticCamera.x,
-            this.staticCamera.y,
-            -this.staticCamera.z
-        );
+
+        return this.swizzle(-this.camCentre - this.camOffset /
+        (this.initScale * this.figureScale ** this.lvl));
     }
     /**
      * Returns the cursor's coordinates.
@@ -1269,10 +1272,9 @@ class Renderer
     get cursor()
     {
         let coords = this.state / (this.initScale * this.figureScale **
-            this.lvl);
-        if(this.upright)
-            return new Vector3(-coords.y, -coords.x, coords.z);
-        return new Vector3(coords.x, -coords.y, coords.z);
+        this.lvl);
+        
+        return this.swizzle(coords);
     }
     /**
      * Returns the camera's coordinates.
@@ -1376,7 +1378,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.staticCamera.x} ${this.staticCamera.y} ${this.staticCamera.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camCentre.x} ${this.camCentre.y} ${this.camCentre.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.camOffset.x} ${this.camOffset.y} ${this.camOffset.z}`;
     }
 }
 
@@ -1393,18 +1395,18 @@ let manualSystems =
     {},
     {
         system: arrow,
-        config: [1, 2, 1, 0, 0, false]
+        config: [1, 2, 1, 0, 0, 0, 0, 0, false]
     },
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
-        config: [4, Math.sqrt(2), 0, 0, 0, false]
+        config: [4, Math.sqrt(2), 0, 0, 0, 0, 0, 0, false]
     },
     {
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
         ], 22.5),
-        config: [1, 2, 1, 0, 0, true]
+        config: [1, 2, 1, 0, 0, 0, 0, 0, true]
     },
     {
         system: new LSystem('A', [
@@ -1414,7 +1416,7 @@ let manualSystems =
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
         ], 12),
-        config: [6, 1, 1, 0, 0, true]
+        config: [6, 1, 1, 0, 0, 0, 0, 0, true]
     },
     {
         system: new LSystem('F', [
@@ -1426,14 +1428,14 @@ let manualSystems =
             'Y=Z-ZY+',
             'Z=ZZ'
         ], 8),
-        config: [2, 2, 0.6, 0, 0, true]
+        config: [2, 2, 0.6, 0, 0, 0, 0, 0, true]
     },
     {
         system: new LSystem('X', [
             'X',
             'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
         ], 90),
-        config: [1, 2, 0.5, 0.5, 0.5, false]
+        config: [1, 2, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, false]
     },
     {
         system: new LSystem('FFFA', [
@@ -1441,7 +1443,7 @@ let manualSystems =
             'C=[---------FF][+++++++++FF]B&&+C',
             'D=[---------FF][+++++++++FF]B&&-D'
         ], 4),
-        config: [3, 1.3, 0.6, 0, 0, true]
+        config: [3, 1.3, 0.6, 0, 0, 0, 0, 0, true]
     },
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
@@ -1449,7 +1451,7 @@ let manualSystems =
     },
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
-        config: [1.5, 2, 0.15, -0.5, 0, false]
+        config: [1.5, 2, 0.15, -0.5, 0, 0, 0, 0, false]
     },
     {
         system: new LSystem('X', [
@@ -1457,7 +1459,7 @@ let manualSystems =
             'F=FX+[E]X',
             'X=F-[X+[X[++E]F]]+F[X+FX]-X'
         ], 22.5),
-        config: [1, 3, 0.75, -0.25, 0, true]
+        config: [1, 3, 0.75, -0.25, 0, 0, 0, 0, true]
     }
 ];
 var l, ts;
@@ -1972,6 +1974,8 @@ let createConfigMenu = () =>
                 CFCSwitch.isToggled = tmpCFC;
                 camLabel.isVisible = !tmpCFC;
                 camGrid.isVisible = !tmpCFC;
+                camOffLabel.isVisible = !tmpCFC;
+                camOffGrid.isVisible = !tmpCFC;
                 FFLabel.isVisible = tmpCFC;
                 FFEntry.isVisible = tmpCFC;
                 CFCLabel.text = Localization.format(getLoc('labelCamMode'),
@@ -1979,9 +1983,9 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpCX = renderer.staticCamera.x;
-    let tmpCY = renderer.staticCamera.y;
-    let tmpCZ = renderer.staticCamera.z;
+    let tmpCX = renderer.camCentre.x;
+    let tmpCY = renderer.camCentre.y;
+    let tmpCZ = renderer.camCentre.z;
     let camLabel = ui.createGrid
     ({
         row: 3,
@@ -2038,6 +2042,69 @@ let createConfigMenu = () =>
                 onTextChanged: (ot, nt) =>
                 {
                     tmpCZ = Number(nt);
+                }
+            })
+        ]
+    });
+    let tmpOX = renderer.camOffset.x;
+    let tmpOY = renderer.camOffset.y;
+    let tmpOZ = renderer.camOffset.z;
+    let camOffLabel = ui.createGrid
+    ({
+        row: 4,
+        column: 0,
+        columnDefinitions: ['55*', '15*'],
+        isVisible: !tmpCFC,
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelCamOffset'),
+                row: 0,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }),
+            ui.createEntry
+            ({
+                text: tmpOX.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpOX = Number(nt);
+                }
+            })
+        ]
+    });
+    let camOffGrid = ui.createGrid
+    ({
+        row: 4,
+        column: 1,
+        columnDefinitions: ['50*', '50*'],
+        isVisible: !tmpCFC,
+        children:
+        [
+            ui.createEntry
+            ({
+                text: tmpOY.toString(),
+                row: 0,
+                column: 0,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpOY = Number(nt);
+                }
+            }),
+            ui.createEntry
+            ({
+                text: tmpOZ.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpOZ = Number(nt);
                 }
             })
         ]
@@ -2206,6 +2273,8 @@ let createConfigMenu = () =>
                                     CFCSwitch,
                                     camLabel,
                                     camGrid,
+                                    camOffLabel,
+                                    camOffGrid,
                                     FFLabel,
                                     FFEntry
                                 ]
@@ -2274,7 +2343,8 @@ let createConfigMenu = () =>
                                 Sound.playClick();
                                 renderer.configure(tmpIScale, tmpFScale,
                                     tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                    tmpUpright, tmpQD, tmpQB, tmpEXB);
+                                    tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX,
+                                    tmpOY, tmpOZ);
                                 menu.hide();
                             }
                         }),
@@ -3348,6 +3418,12 @@ var setInternalState = (stateStr) =>
             rendererValues[9] = Boolean(Number(rendererValues[9]));
         if(rendererValues.length > 10)
             rendererValues[10] = Boolean(Number(rendererValues[10]));
+        if(rendererValues.length > 12)
+            rendererValues[12] = Number(rendererValues[12]);
+        if(rendererValues.length > 13)
+            rendererValues[13] = Number(rendererValues[13]);
+        if(rendererValues.length > 14)
+            rendererValues[14] = Number(rendererValues[14]);
 
         if(values.length > 2)
         {
