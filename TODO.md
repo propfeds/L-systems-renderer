@@ -22,6 +22,7 @@
 - [ ] Saved systems
   - [x] Choice to overwrite or create copy
     - Include list of saved systems in naming menu
+  - [ ] Edit existing systems
   - [ ] Store static camera configs and description
     - We have the power of version number
     - Store the current system in the same format

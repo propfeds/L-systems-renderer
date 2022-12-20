@@ -140,6 +140,7 @@ const locStrings =
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
         labelUpright: 'Upright x-axis: ',
+        labelLoadModels: '(Teaser!) Load models: ',
         labelQuickdraw: 'Quickdraw straight lines: ',
         labelQuickBT: 'Quick backtrack: ',
         labelBTList: 'Backtrack list: ',
@@ -353,7 +354,8 @@ Ignore: X
 
 Applies static camera:
 Scale: 1, 2
-Centre: (0.5, -0.5, -0.5)`
+Centre: (0.5, 0.5, 0.5)
+Offset: (-0.5, -0.5, -0.5)`
             },
             {
                 title: 'Example: Fern (3D)',
@@ -1038,13 +1040,14 @@ class Renderer
      */
     configure(initScale, figureScale, cursorFocused, camX, camY, camZ,
     followFactor, loopMode, upright, quickDraw, quickBacktrack,
-    backtrackList, camOffsetX, camOffsetY, camOffsetZ)
+    backtrackList, camOffsetX, camOffsetY, camOffsetZ, loadModels)
     {
         let requireReset = (initScale != this.initScale) ||
         (figureScale != this.figureScale) || (upright != this.upright) ||
         (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
-        (backtrackList != this.backtrackList);
+        (backtrackList != this.backtrackList) ||
+        (loadModels != this.loadModels);
 
         this.initScale = initScale;
         this.figureScale = figureScale;
@@ -1057,6 +1060,7 @@ class Renderer
         this.quickBacktrack = quickBacktrack;
         this.backtrackList = backtrackList;
         this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
+        this.loadModels = loadModels;
 
         if(requireReset)
             this.reset();
@@ -1378,7 +1382,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camCentre.x} ${this.camCentre.y} ${this.camCentre.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.camOffset.x} ${this.camOffset.y} ${this.camOffset.z}`;
+        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camCentre.x} ${this.camCentre.y} ${this.camCentre.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.camOffset.x} ${this.camOffset.y} ${this.camOffset.z} ${this.loadModels ? 1 : 0}`;
     }
 }
 
@@ -2179,11 +2183,30 @@ let createConfigMenu = () =>
             }
         }
     });
+    let tmpModel = renderer.loadModels;
+    let modelSwitch = ui.createSwitch
+    ({
+        isVisible: false,
+        isToggled: tmpModel,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpModel = !tmpModel;
+                uprightSwitch.isToggled = tmpModel;
+            }
+        }
+    });
     let tmpQD = renderer.quickDraw;
     let QDSwitch = ui.createSwitch
     ({
         isToggled: tmpQD,
-        row: 2,
+        row: 3,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2201,7 +2224,7 @@ let createConfigMenu = () =>
     let QBSwitch = ui.createSwitch
     ({
         isToggled: tmpQB,
-        row: 3,
+        row: 4,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2219,14 +2242,14 @@ let createConfigMenu = () =>
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
-        row: 4,
+        row: 5,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let EXBEntry = ui.createEntry
     ({
         text: tmpEXB,
-        row: 4,
+        row: 5,
         column: 1,
         onTextChanged: (ot, nt) =>
         {
@@ -2302,8 +2325,16 @@ let createConfigMenu = () =>
                                     uprightSwitch,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelQuickdraw'),
+                                        text: getLoc('labelLoadModels'),
                                         row: 2,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    modelSwitch,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelQuickdraw'),
+                                        row: 3,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2311,7 +2342,7 @@ let createConfigMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickBT'),
-                                        row: 3,
+                                        row: 4,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2344,7 +2375,7 @@ let createConfigMenu = () =>
                                 renderer.configure(tmpIScale, tmpFScale,
                                     tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
                                     tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX,
-                                    tmpOY, tmpOZ);
+                                    tmpOY, tmpOZ, tmpModel);
                                 menu.hide();
                             }
                         }),
@@ -3423,7 +3454,9 @@ var setInternalState = (stateStr) =>
         if(rendererValues.length > 13)
             rendererValues[13] = Number(rendererValues[13]);
         if(rendererValues.length > 14)
-            rendererValues[14] = Number(rendererValues[14]);
+            rendererValues[14] = Number(rendererValues[14]);        
+        if(rendererValues.length > 15)
+            rendererValues[15] = Boolean(Number(rendererValues[15]));
 
         if(values.length > 2)
         {
