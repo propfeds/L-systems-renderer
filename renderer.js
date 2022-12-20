@@ -800,7 +800,7 @@ class Renderer
      * @constructor
      * @param {LSystem} system the L-system to be handled.
      * @param {number} initScale (default: 1; non-zero) the initial scale.
-     * @param {number} figureScale (default: 2; non-zero) the per-level scale.
+     * @param {number} figureScale (default: 1; non-zero) the per-level scale.
      * @param {boolean} cursorFocused (default: false) the camera mode.
      * @param {number} camX (default: 0) the camera's x-axis centre.
      * @param {number} camY (default: 0) the camera's y-axis centre.
@@ -818,7 +818,7 @@ class Renderer
      * @param {string} backtrackList (default: '+-&^\\/|[]') a list of symbols
      * to act as stoppers for backtracking.
      */
-    constructor(system, initScale = 1, figureScale = 2, cursorFocused = false,
+    constructor(system, initScale = 1, figureScale = 1, cursorFocused = false,
     camX = 0, camY = 0, camZ = 0, followFactor = 0.1, loopMode = 0,
     upright = false, quickDraw = false, quickBacktrack = false,
     backtrackList = '+-&^\\/|[]', camOffsetX = 0, camOffsetY = 0,
