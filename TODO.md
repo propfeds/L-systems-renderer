@@ -43,6 +43,7 @@
   - [x] Shrink the buttons again to look better?
 - [x] Redesign anchor logic
   - Only register anchor level before longpressing minus and level > 0
+- [ ] Change entries' keyboards into telephone format
 
 ## Far Future: Preparation for Lemma's Garden
 

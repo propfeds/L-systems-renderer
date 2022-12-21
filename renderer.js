@@ -2196,7 +2196,7 @@ let createConfigMenu = () =>
         onTouched: (e) =>
         {
             if(e.type == TouchType.SHORTPRESS_RELEASED ||
-                e.type == TouchType.LONGPRESS_RELEASED)
+            e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 tmpUpright = !tmpUpright;
@@ -2843,14 +2843,22 @@ let createViewMenu = (title) =>
         text: tmpIScale.toString(),
         row: 0,
         column: 1,
-        horizontalTextAlignment: TextAlignment.END
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpIScale = Number(nt);
+        }
     });
     let fScaleEntry = ui.createEntry
     ({
         text: tmpFScale.toString(),
         row: 1,
         column: 1,
-        horizontalTextAlignment: TextAlignment.END
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpFScale = Number(nt);
+        }
     });
     let camLabel = ui.createGrid
     ({
@@ -2871,7 +2879,11 @@ let createViewMenu = (title) =>
                 text: tmpCX.toString(),
                 row: 0,
                 column: 1,
-                horizontalTextAlignment: TextAlignment.END
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCX = Number(nt);
+                }
             })
         ]
     });
@@ -2887,14 +2899,22 @@ let createViewMenu = (title) =>
                 text: tmpCY.toString(),
                 row: 0,
                 column: 0,
-                horizontalTextAlignment: TextAlignment.END
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCY = Number(nt);
+                }
             }),
             ui.createEntry
             ({
                 text: tmpCZ.toString(),
                 row: 0,
                 column: 1,
-                horizontalTextAlignment: TextAlignment.END
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCZ = Number(nt);
+                }
             })
         ]
     });
@@ -2917,7 +2937,11 @@ let createViewMenu = (title) =>
                 text: tmpOX.toString(),
                 row: 0,
                 column: 1,
-                horizontalTextAlignment: TextAlignment.END
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpOX = Number(nt);
+                }
             })
         ]
     });
@@ -2933,14 +2957,22 @@ let createViewMenu = (title) =>
                 text: tmpOY.toString(),
                 row: 0,
                 column: 0,
-                horizontalTextAlignment: TextAlignment.END
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpOY = Number(nt);
+                }
             }),
             ui.createEntry
             ({
                 text: tmpOZ.toString(),
                 row: 0,
                 column: 1,
-                horizontalTextAlignment: TextAlignment.END
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpOZ = Number(nt);
+                }
             })
         ]
     });
@@ -2949,16 +2981,46 @@ let createViewMenu = (title) =>
         isToggled: tmpUpright,
         row: 4,
         column: 1,
-        horizontalOptions: LayoutOptions.END
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+            e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpUpright = !tmpUpright;
+                uprightSwitch.isToggled = tmpUpright;
+            }
+        }
     });
 
     let systemValues = values.split(' ');
 
     let menu;
     let tmpAxiom = systemValues[0];
+    let axiomEntry = ui.createEntry
+    ({
+        text: tmpAxiom,
+        row: 0,
+        column: 1,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAxiom = nt;
+        }
+    });
     let tmpAngle = Number(systemValues[1]);
+    let angleEntry = ui.createEntry
+    ({
+        text: tmpAngle.toString(),
+        row: 0,
+        column: 3,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAngle = Number(nt);
+        }
+    });
     let tmpRules = systemValues.slice(3);
-
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
@@ -2974,11 +3036,61 @@ let createViewMenu = (title) =>
         {
             ruleEntries.push(ui.createEntry
             ({
-                text: tmpRules[i]
+                text: tmpRules[i],
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpRules[i] = nt;
+                }
             }));
         }
     }
+    let ruleStack = ui.createStackLayout
+    ({
+        children: ruleEntries
+    });
+    let addRuleButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: 40,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = ruleEntries.length;
+            ruleEntries.push(ui.createEntry
+            ({
+                text: '',
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpRules[i + 1] = nt;
+                }
+            }));
+            ruleStack.children = ruleEntries;
+        }
+    });
+    let ignoreEntry = ui.createEntry
+    ({
+        text: tmpRules[0],
+        row: 0,
+        column: 1,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpRules[0] = nt;
+        }
+    });
     let tmpSeed = Number(systemValues[2]);
+    let seedEntry = ui.createEntry
+    ({
+        text: tmpSeed.toString(),
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSeed = Number(nt);
+        }
+    });
 
     menu = ui.createPopup
     ({
@@ -3012,12 +3124,7 @@ let createViewMenu = (title) =>
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    ui.createEntry
-                                    ({
-                                        text: tmpAxiom,
-                                        row: 0,
-                                        column: 1
-                                    }),
+                                    axiomEntry,
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelAngle'),
@@ -3025,26 +3132,24 @@ let createViewMenu = (title) =>
                                         column: 2,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    ui.createEntry
-                                    ({
-                                        text: tmpAngle.toString(),
-                                        row: 0,
-                                        column: 3,
-                                        horizontalTextAlignment:
-                                        TextAlignment.END
-                                    }),
+                                    angleEntry
                                 ]
                             }),
-                            ui.createLatexLabel
+                            ui.createGrid
                             ({
-                                text: getLoc('labelRules'),
-                                verticalOptions: LayoutOptions.CENTER,
-                                margin: new Thickness(0, 12)
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelRules'),
+                                        verticalOptions: LayoutOptions.CENTER,
+                                        margin: new Thickness(0, 12)
+                                    }),
+                                    addRuleButton
+                                ]
                             }),
-                            ui.createStackLayout
-                            ({
-                                children: ruleEntries
-                            }),
+                            ruleStack,
                             ui.createGrid
                             ({
                                 columnDefinitions: ['70*', '30*'],
@@ -3057,12 +3162,7 @@ let createViewMenu = (title) =>
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    ui.createEntry
-                                    ({
-                                        text: tmpRules[0],
-                                        row: 0,
-                                        column: 1
-                                    }),
+                                    ignoreEntry,
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelSeed'),
@@ -3070,14 +3170,7 @@ let createViewMenu = (title) =>
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    ui.createEntry
-                                    ({
-                                        text: tmpSeed.toString(),
-                                        row: 1,
-                                        column: 1,
-                                        horizontalTextAlignment:
-                                        TextAlignment.END
-                                    })
+                                    seedEntry
                                 ]
                             }),
                             ui.createBox
@@ -3138,7 +3231,7 @@ let createViewMenu = (title) =>
                 ui.createGrid
                 ({
                     minimumHeightRequest: 64,
-                    columnDefinitions: ['50*', '50*'],
+                    columnDefinitions: ['30*', '30*', '30*'],
                     children:
                     [
                         ui.createButton
@@ -3161,9 +3254,28 @@ let createViewMenu = (title) =>
                         }),
                         ui.createButton
                         ({
-                            text: getLoc('btnDelete'),
+                            text: getLoc('btnSave'),
                             row: 0,
                             column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                savedSystems.set(title, {
+                                    desc: tmpDesc,
+                                    system: new LSystem(tmpAxiom, tmpRules,
+                                    tmpAngle, tmpSeed).toString(),
+                                    config: [tmpIScale, tmpFScale, tmpCX,
+                                    tmpCY, tmpCZ, tmpOX, tmpOY, tmpOZ,
+                                    tmpUpright]
+                                });
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnDelete'),
+                            row: 0,
+                            column: 2,
                             onClicked: () =>
                             {
                                 Sound.playClick();
