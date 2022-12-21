@@ -3400,7 +3400,7 @@ let createWorldMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0}`;
+    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0} ${savedSystems.size}`;
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
@@ -3414,8 +3414,11 @@ var setInternalState = (stateStr) =>
     let values = stateStr.split('\n');
 
     let worldValues = values[0].split(' ');
+    let stateVersion = 0;
+    if(worldValues.length > 0)
+        stateVersion = Number(worldValues[0]);
     if(worldValues.length > 1)
-        time = parseBigNumber(worldValues[1]);
+        time = Number(worldValues[1]);
     if(worldValues.length > 2)
         page = Number(worldValues[2]);
     if(worldValues.length > 3)
@@ -3426,6 +3429,9 @@ var setInternalState = (stateStr) =>
         tickDelayMode = Boolean(Number(worldValues[5]));
     if(worldValues.length > 6)
         resetLvlOnConstruct = Boolean(Number(worldValues[6]));
+    let noofSystems = 0;
+    if(worldValues.length > 7)
+        noofSystems = Number(worldValues[7]);
 
     if(values.length > 1)
     {
@@ -3472,8 +3478,17 @@ var setInternalState = (stateStr) =>
             renderer = new Renderer(arrow, ...rendererValues);
     }
     
-    for(let i = 3; i + 1 < values.length; i += 2)
-        savedSystems.set(values[i], values[i + 1]);
+    if(stateVersion < 0.2)
+    {
+        // Load everything.
+        for(let i = 0; 4 + i * 2 < values.length; ++i)
+            savedSystems.set(values[3 + i * 2], values[4 + i * 2]);
+    }
+    else
+    {
+        for(let i = 0; i < noofSystems; ++i)
+            savedSystems.set(values[3 + i * 2], values[4 + i * 2]);
+    }
 }
 
 var canResetStage = () => true;
