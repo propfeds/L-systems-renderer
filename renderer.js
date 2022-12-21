@@ -68,7 +68,7 @@ Warning: As of v0.18, the renderer's configuration will be messed up due to ` +
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions';
-var version = 0.191;
+var version = 0.2;
 
 let time = 0;
 let page = 0;
@@ -155,6 +155,7 @@ const locStrings =
         labelName: 'Title: ',
         defaultSystemName: 'Untitled L-system',
         labelDesc: 'Description: ',
+        noDescription: 'No description.',
         duplicateSuffix: ' (copy)',
 
         menuTheory: 'Theory Settings',
@@ -1467,6 +1468,7 @@ let manualSystems =
     }
 ];
 let tmpSystemName = getLoc('defaultSystemName');
+let tmpSystemDesc = '';
 var l, ts;
 
 var init = () =>
@@ -1821,6 +1823,7 @@ var getUpgradeListDelegate = () =>
     let toggleTDM = () =>
     {
         tickDelayMode = !tickDelayMode;
+        time = 0;
     }
     let tsButton = tsControls.createVariableButton(toggleTDM);
     tsButton.row = 1;
@@ -2609,11 +2612,16 @@ let createNamingMenu = (title, values) =>
             tmpName = nt;
         }
     });
+    let tmpDesc = tmpSystemDesc;
     let descEntry = ui.createEntry
     ({
-        text: '',
+        text: tmpDesc,
         row: 0,
         column: 1,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpDesc = nt;
+        }
     });
 
     let getSystemGrid = () =>
@@ -2647,7 +2655,11 @@ let createNamingMenu = (title, values) =>
             onClicked: () =>
             {
                 Sound.playClick();
-                savedSystems.set(title, values);
+                savedSystems.set(title, {
+                    desc: savedSystems.get(title).desc,
+                    system: values,
+                    config: [1, 1, 0, 0, 0, 0, 0, 0, false]
+                });
                 tmpSystemName = title;
                 menu.hide();
             }
@@ -2729,7 +2741,11 @@ let createNamingMenu = (title, values) =>
                         Sound.playClick();
                         while(savedSystems.has(tmpName))
                             tmpName += getLoc('duplicateSuffix');
-                        savedSystems.set(tmpName, values);
+                        savedSystems.set(tmpName, {
+                            desc: tmpDesc,
+                            system: values,
+                            config: [1, 1, 0, 0, 0, 0, 0, 0, false]
+                        });
                         tmpSystemName = tmpName;
                         menu.hide();
                     }
@@ -2785,7 +2801,12 @@ let createClipboardMenu = (values) =>
 
 let createViewMenu = (title) =>
 {
-    values = savedSystems.get(title);
+    let systemObj = savedSystems.get(title);
+    let values = systemObj.system;
+    let tmpDesc = systemObj.desc;
+    if(tmpDesc in [null, undefined, ''])
+        tmpDesc = getLoc('noDescription');
+    // camera config is next
 
     let systemValues = values.split(' ');
 
@@ -2828,6 +2849,13 @@ let createViewMenu = (title) =>
                     ({
                         children:
                         [
+                            ui.createLatexLabel
+                            ({
+                                text: tmpDesc,
+                                margin: new Thickness(0, 4),
+                                horizontalOptions: LayoutOptions.CENTER,
+                                verticalOptions: LayoutOptions.CENTER
+                            }),
                             ui.createGrid
                             ({
                                 columnDefinitions: ['20*', '30*', '30*', '20*'],
@@ -3404,7 +3432,10 @@ var getInternalState = () =>
     result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
     for(let [key, value] of savedSystems)
     {
-        result += `\n${key}\n${value}`;
+        result += `\n${key}\n${value.desc}\n${value.system}\n`;
+        let c = value.config;
+        c[8] = c[8] ? 1 : 0;
+        result += c.join(' ');
     }
     return result;
 }
@@ -3482,12 +3513,20 @@ var setInternalState = (stateStr) =>
     {
         // Load everything.
         for(let i = 0; 4 + i * 2 < values.length; ++i)
-            savedSystems.set(values[3 + i * 2], values[4 + i * 2]);
+            savedSystems.set(values[3 + i * 2], {
+                desc: getLoc('noDescription'),
+                system: values[4 + i * 2],
+                config: [1, 1, 0, 0, 0, 0, 0, 0, false]
+            });
     }
     else
     {
         for(let i = 0; i < noofSystems; ++i)
-            savedSystems.set(values[3 + i * 2], values[4 + i * 2]);
+            savedSystems.set(values[3 + i * 4], {
+                desc: values[4 + i * 4],
+                system: values[5 + i * 4],
+                config: values[6 + i * 4].split(' ')
+            });
     }
 }
 
