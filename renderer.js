@@ -1623,14 +1623,19 @@ class VariableControls
     constructor(variable, useAnchor = false, quickbuyAmount = 10)
     {
         this.variable = variable;
+        this.varBtn = null;
+        this.refundBtn = null;
+        this.buyBtn = null;
         this.useAnchor = useAnchor;
         this.anchor = this.variable.level;
         this.anchorActive = false;
         this.quickbuyAmount = quickbuyAmount;
     }
-
     createVariableButton(callback = null, height = DEFAULT_BUTTON_HEIGHT)
     {
+        if(this.varBtn !== null)
+            return this.varBtn;
+        
         let frame = ui.createFrame
         ({
             heightRequest: height,
@@ -1671,16 +1676,28 @@ class VariableControls
                 }
             }
         }
-        return frame;
+        this.varBtn = frame;
+        return this.varBtn;
+    }
+    updateRefundButton()
+    {
+        this.refundBtn.borderColor = this.variable.level > 0 ? Color.BORDER :
+        Color.TRANSPARENT;
+        this.refundBtn.content.textColor = this.variable.level > 0 ?
+        Color.TEXT : Color.TEXT_MEDIUM;
     }
     createRefundButton(symbol = '-', height = DEFAULT_BUTTON_HEIGHT)
     {
-        let bc = () => this.variable.level > 0 ?
-        Color.BORDER : Color.TRANSPARENT;
-        let tc = () => this.variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
-        let tcPressed = () => this.variable.level > 0 ?
-        Color.TEXT_MEDIUM : Color.TEXT_DARK;
-        let frame = ui.createFrame
+        if(this.refundBtn !== null)
+            return this.refundBtn;
+
+        // let bc = () => this.variable.level > 0 ? Color.BORDER :
+        // Color.TRANSPARENT;
+        // let tc = () => this.variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
+        // let tcPressed = () => this.variable.level > 0 ? Color.TEXT_MEDIUM :
+        // Color.TEXT_DARK;
+
+        this.refundBtn = ui.createFrame
         ({
             heightRequest: height,
             cornerRadius: 1,
@@ -1691,53 +1708,69 @@ class VariableControls
                 text: symbol,
                 horizontalOptions: LayoutOptions.CENTER,
                 verticalOptions: LayoutOptions.CENTER,
-                textColor: tc
+                textColor: this.variable.level > 0 ? Color.TEXT :
+                Color.TEXT_MEDIUM
             }),
             onTouched: (e) =>
             {
                 if(e.type == TouchType.SHORTPRESS_RELEASED)
                 {
                     Sound.playClick();
-                    frame.borderColor = bc;
-                    frame.content.textColor = tc;
                     this.variable.refund(1);
+
+                    this.updateRefundButton();
+                    this.updateBuyButton();
                 }
                 else if(e.type == TouchType.LONGPRESS)
                 {
                     Sound.playClick();
                     if(this.useAnchor)
                     {
-                        this.anchor = this.variable.level;
                         this.anchorActive = true;
+                        if(this.variable.level > 0)
+                            this.anchor = this.variable.level;
                     }
-                    frame.borderColor = bc;
-                    frame.content.textColor = tc;
                     this.variable.refund(this.quickbuyAmount);
+
+                    this.updateRefundButton();
+                    this.updateBuyButton();
                 }
                 else if(e.type == TouchType.PRESSED)
                 {
-                    frame.borderColor = Color.TRANSPARENT;
-                    frame.content.textColor = tcPressed;
+                    this.refundBtn.borderColor = Color.TRANSPARENT;
+                    this.refundBtn.content.textColor = this.variable.level > 0 ?
+                    Color.TEXT_MEDIUM : Color.TEXT_DARK;
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
-                    frame.borderColor = bc;
-                    frame.content.textColor = tc;
+                    this.updateRefundButton();
                 }
             },
-            borderColor: bc
+            borderColor: this.variable.level > 0 ? Color.BORDER :
+            Color.TRANSPARENT
         });
-        return frame;
+        return this.refundBtn;
+    }
+    updateBuyButton()
+    {
+        this.buyBtn.borderColor = this.variable.level < this.variable.maxLevel ?
+        Color.BORDER : Color.TRANSPARENT;
+        this.buyBtn.content.textColor = this.variable.level <
+        this.variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM;
     }
     createBuyButton(symbol = '+', height = DEFAULT_BUTTON_HEIGHT)
     {
-        let bc = () => this.variable.level < this.variable.maxLevel ?
-        Color.BORDER : Color.TRANSPARENT;
-        let tc = () => this.variable.level < this.variable.maxLevel ?
-        Color.TEXT : Color.TEXT_MEDIUM;
-        let tcPressed = () => this.variable.level < this.variable.maxLevel ?
-        Color.TEXT_MEDIUM : Color.TEXT_DARK;
-        let frame = ui.createFrame
+        if(this.buyBtn !== null)
+            return this.buyBtn;
+
+        // let bc = () => this.variable.level < this.variable.maxLevel ?
+        // Color.BORDER : Color.TRANSPARENT;
+        // let tc = () => this.variable.level < this.variable.maxLevel ?
+        // Color.TEXT : Color.TEXT_MEDIUM;
+        // let tcPressed = () => this.variable.level < this.variable.maxLevel ?
+        // Color.TEXT_MEDIUM : Color.TEXT_DARK;
+
+        this.buyBtn = ui.createFrame
         ({
             heightRequest: height,
             cornerRadius: 1,
@@ -1748,23 +1781,22 @@ class VariableControls
                 text: symbol,
                 horizontalOptions: LayoutOptions.CENTER,
                 verticalOptions: LayoutOptions.CENTER,
-                textColor: tc
+                textColor: this.variable.level < this.variable.maxLevel ?
+                Color.TEXT : Color.TEXT_MEDIUM
             }),
             onTouched: (e) =>
             {
                 if(e.type == TouchType.SHORTPRESS_RELEASED)
                 {
                     Sound.playClick();
-                    frame.borderColor = bc;
-                    frame.content.textColor = tc;
                     this.variable.buy(1);
+
+                    this.updateBuyButton();
+                    this.updateRefundButton();
                 }
                 else if(e.type == TouchType.LONGPRESS)
                 {
                     Sound.playClick();
-                    frame.borderColor = bc;
-                    frame.content.textColor = tc;
-
                     let q = this.quickbuyAmount;
                     if(this.useAnchor && this.anchorActive)
                     {
@@ -1775,25 +1807,30 @@ class VariableControls
                     }
                     for(let i = 0; i < q; ++i)
                         this.variable.buy(1);
+                    
+                    this.updateBuyButton();
+                    this.updateRefundButton();
                 }
                 else if(e.type == TouchType.PRESSED)
                 {
-                    frame.borderColor = Color.TRANSPARENT;
-                    frame.content.textColor = tcPressed;
+                    this.buyBtn.borderColor = Color.TRANSPARENT;
+                    this.buyBtn.content.textColor = this.variable.level <
+                    this.variable.maxLevel ? Color.TEXT_MEDIUM :
+                    Color.TEXT_DARK;
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
-                    frame.borderColor = bc;
-                    frame.content.textColor = tc;
+                    this.updateBuyButton();
                 }
             },
-            borderColor: bc
+            borderColor: this.variable.level < this.variable.maxLevel ?
+            Color.BORDER : Color.TRANSPARENT
         });
-        return frame;
+        return this.buyBtn;
     }
 }
 
-let createMenuButton = (menuFunc, name, height = DEFAULT_BUTTON_HEIGHT) =>
+let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -1803,7 +1840,7 @@ let createMenuButton = (menuFunc, name, height = DEFAULT_BUTTON_HEIGHT) =>
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
         ({
-            text: name,
+            text: title,
             verticalOptions: LayoutOptions.CENTER,
             textColor: Color.TEXT
         }),
@@ -2420,9 +2457,9 @@ let createConfigMenu = () =>
                             {
                                 Sound.playClick();
                                 renderer.configure(tmpIScale, tmpFScale,
-                                    tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                    tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX,
-                                    tmpOY, tmpOZ, tmpModel);
+                                tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
+                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX, tmpOY,
+                                tmpOZ, tmpModel);
                                 menu.hide();
                             }
                         }),
