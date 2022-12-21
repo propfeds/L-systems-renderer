@@ -55,11 +55,11 @@ var getDescription = (language) =>
 Features:
 - Can store a whole army of systems!
 - Stochastic (randomised) and 3D systems
-- Camera modes: static and cursor-focused (lerp)
-- Speed and stroke options
+- Camera modes: static and cursor-centred
+- Drawing speed and stroke options
 
-Warning: As of v0.18, the renderer's configuration will be messed up due to ` +
-`format changes to the internal state.`,
+Warning: v0.20 might break your internal state. Be sure to back it up to ` +
+`another save, and in case it's corrupted, please contact me.`,
     };
 
     if(language in descs)
@@ -1656,18 +1656,18 @@ class VariableControls
             frame.content.textColor = Color.TEXT;
             frame.onTouched = (e) =>
             {
-                if(e.type == TouchType.SHORTPRESS_RELEASED ||
-                    e.type == TouchType.LONGPRESS_RELEASED)
+                if(e.type == TouchType.PRESSED)
+                {
+                    frame.borderColor = Color.TRANSPARENT;
+                    frame.content.textColor = Color.TEXT_MEDIUM;
+                }
+                else if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
                 {
                     Sound.playClick();
                     frame.borderColor = Color.BORDER;
                     frame.content.textColor = Color.TEXT;
                     callback();
-                }
-                else if(e.type == TouchType.PRESSED)
-                {
-                    frame.borderColor = Color.TRANSPARENT;
-                    frame.content.textColor = Color.TEXT_MEDIUM;
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
@@ -1713,7 +1713,13 @@ class VariableControls
             }),
             onTouched: (e) =>
             {
-                if(e.type == TouchType.SHORTPRESS_RELEASED)
+                if(e.type == TouchType.PRESSED)
+                {
+                    this.refundBtn.borderColor = Color.TRANSPARENT;
+                    this.refundBtn.content.textColor = this.variable.level > 0 ?
+                    Color.TEXT_MEDIUM : Color.TEXT_DARK;
+                }
+                else if(e.type == TouchType.SHORTPRESS_RELEASED)
                 {
                     Sound.playClick();
                     this.variable.refund(1);
@@ -1734,12 +1740,6 @@ class VariableControls
 
                     this.updateRefundButton();
                     this.updateBuyButton();
-                }
-                else if(e.type == TouchType.PRESSED)
-                {
-                    this.refundBtn.borderColor = Color.TRANSPARENT;
-                    this.refundBtn.content.textColor = this.variable.level > 0 ?
-                    Color.TEXT_MEDIUM : Color.TEXT_DARK;
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
@@ -1786,7 +1786,14 @@ class VariableControls
             }),
             onTouched: (e) =>
             {
-                if(e.type == TouchType.SHORTPRESS_RELEASED)
+                if(e.type == TouchType.PRESSED)
+                {
+                    this.buyBtn.borderColor = Color.TRANSPARENT;
+                    this.buyBtn.content.textColor = this.variable.level <
+                    this.variable.maxLevel ? Color.TEXT_MEDIUM :
+                    Color.TEXT_DARK;
+                }
+                else if(e.type == TouchType.SHORTPRESS_RELEASED)
                 {
                     Sound.playClick();
                     this.variable.buy(1);
@@ -1810,13 +1817,6 @@ class VariableControls
                     
                     this.updateBuyButton();
                     this.updateRefundButton();
-                }
-                else if(e.type == TouchType.PRESSED)
-                {
-                    this.buyBtn.borderColor = Color.TRANSPARENT;
-                    this.buyBtn.content.textColor = this.variable.level <
-                    this.variable.maxLevel ? Color.TEXT_MEDIUM :
-                    Color.TEXT_DARK;
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
@@ -1846,19 +1846,19 @@ let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
         }),
         onTouched: (e) =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED ||
-                e.type == TouchType.LONGPRESS_RELEASED)
+            if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = Color.TEXT_MEDIUM;
+            }
+            else if(e.type == TouchType.SHORTPRESS_RELEASED ||
+            e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
                 frame.borderColor = Color.BORDER;
                 frame.content.textColor = Color.TEXT;
                 let menu = menuFunc();
                 menu.show();
-            }
-            else if(e.type == TouchType.PRESSED)
-            {
-                frame.borderColor = Color.TRANSPARENT;
-                frame.content.textColor = Color.TEXT_MEDIUM;
             }
             else if(e.type == TouchType.CANCELLED)
             {
