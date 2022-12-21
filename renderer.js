@@ -72,9 +72,9 @@ var version = 0.2;
 
 let time = 0;
 let page = 0;
-let offlineReset = false;
+let offlineReset = true;
 let gameIsOffline = false;
-let altCurrencies = true;
+let altCurrencies = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let savedSystems = new Map();
@@ -1484,7 +1484,7 @@ let manualSystems =
     }
 ];
 let tmpSystemName = getLoc('defaultSystemName');
-let tmpSystemDesc = '';
+let tmpSystemDesc = getLoc('noDescription');
 var l, ts;
 
 var init = () =>
@@ -2823,7 +2823,7 @@ let createViewMenu = (title) =>
     let systemObj = savedSystems.get(title);
     let values = systemObj.system;
     let tmpDesc = systemObj.desc;
-    if(tmpDesc in [null, undefined, ''])
+    if(tmpDesc in [null, undefined])
         tmpDesc = getLoc('noDescription');
     let rendererValues = systemObj.config;
     // log(rendererValues.toString());
@@ -2995,7 +2995,7 @@ let createViewMenu = (title) =>
                             ui.createLatexLabel
                             ({
                                 text: tmpDesc,
-                                margin: new Thickness(0, 4),
+                                margin: new Thickness(0, 6),
                                 horizontalOptions: LayoutOptions.CENTER,
                                 verticalOptions: LayoutOptions.CENTER
                             }),
@@ -3309,7 +3309,7 @@ let createManualMenu = () =>
 
     let pageTitle = ui.createLatexLabel
     ({
-        margin: new Thickness(0, 4),
+        margin: new Thickness(0, 6),
         text: manualPages[page].title,
         horizontalOptions: LayoutOptions.CENTER,
         verticalOptions: LayoutOptions.CENTER
@@ -3623,12 +3623,12 @@ let createWorldMenu = () =>
 var getInternalState = () =>
 {
     let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0} ${savedSystems.size}`;
-    result += `\n${renderer.toString()}\n${renderer.system.toString()}`;
+    result += `\n${renderer.toString()}\n${tmpSystemName}\n${tmpSystemDesc}\n${renderer.system.toString()}\n`;
     for(let [key, value] of savedSystems)
     {
         result += `\n${key}\n${value.desc}\n${value.system}\n`;
         result += value.config.slice(0, -1).join(' ');
-        result += ` ${value.config[8] ? 1 : 0}`;
+        result += ` ${value.config[8] ? 1 : 0}\n`;
     }
     return result;
 }
@@ -3691,15 +3691,35 @@ var setInternalState = (stateStr) =>
         if(rendererValues.length > 15)
             rendererValues[15] = Boolean(Number(rendererValues[15]));
 
-        if(values.length > 2)
+        if(stateVersion < 0.2)
         {
-            let systemValues = values[2].split(' ');
-            let system = new LSystem(systemValues[0], systemValues.slice(3),
-            Number(systemValues[1]), Number(systemValues[2]));
-            renderer = new Renderer(system, ...rendererValues);
+            if(values.length > 2)
+            {
+                let systemValues = values[2].split(' ');
+                let system = new LSystem(systemValues[0], systemValues.slice(3),
+                Number(systemValues[1]), Number(systemValues[2]));
+                renderer = new Renderer(system, ...rendererValues);
+            }
+            else
+                renderer = new Renderer(arrow, ...rendererValues);
         }
         else
-            renderer = new Renderer(arrow, ...rendererValues);
+        {
+            if(values.length > 2)
+                tmpSystemName = values[2];
+            if(values.length > 3)
+                tmpSystemDesc = values[3];
+            if(values.length > 4)
+            {
+                let systemValues = values[4].split(' ');
+                let system = new LSystem(systemValues[0], systemValues.slice(3),
+                Number(systemValues[1]), Number(systemValues[2]));
+                renderer = new Renderer(system, ...rendererValues);
+            }
+            else
+                renderer = new Renderer(arrow, ...rendererValues);
+        }
+        
     }
     
     if(stateVersion < 0.2)
@@ -3716,7 +3736,7 @@ var setInternalState = (stateStr) =>
     {
         for(let i = 0; i < noofSystems; ++i)
         {
-            let rv = values[6 + i * 4].split(' ');
+            let rv = values[9 + i * 5].split(' ');
             if(rv.length > 0)
                 rv[0] = Number(rv[0]);
             if(rv.length > 1)
@@ -3736,9 +3756,9 @@ var setInternalState = (stateStr) =>
             if(rv.length > 8)
                 rv[8] = Boolean(Number(rv[8]));
 
-            savedSystems.set(values[3 + i * 4], {
-                desc: values[4 + i * 4],
-                system: values[5 + i * 4],
+            savedSystems.set(values[6 + i * 5], {
+                desc: values[7 + i * 5],
+                system: values[8 + i * 5],
                 config: rv
             });
         }

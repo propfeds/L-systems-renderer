@@ -23,7 +23,7 @@
   - [x] Choice to overwrite or create copy
     - Include list of saved systems in naming menu
   - [ ] Edit existing systems
-  - [ ] Store static camera configs and description
+  - [x] Store static camera configs and description
     - We have the power of version number
     - Don't change the current system's internal state format
       - Instead, store a temp system name in global to show up in naming menu
