@@ -78,6 +78,7 @@ let altCurrencies = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let savedSystems = new Map();
+let savedModels = [];
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
 const MAX_CHARS_PER_TICK = 10000;
@@ -3622,7 +3623,7 @@ let createWorldMenu = () =>
 
 var getInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0} ${savedSystems.size}`;
+    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0} ${savedSystems.size} ${savedModels.length}`;
     result += `\n${renderer.toString()}\n${tmpSystemName}\n${tmpSystemDesc}\n${renderer.system.toString()}\n`;
     for(let [key, value] of savedSystems)
     {

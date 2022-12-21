@@ -2,9 +2,6 @@
 
 ## 0.20
 
-- [ ] Context sensitivity
-  - `b < a > c → aa`
-  - How to store? Maps?
 - [ ] Redesign manual
   - Add more systems to the manual (algae, or like, mistletoe)
   - Add tutorial-like flows that explain concepts
@@ -49,7 +46,10 @@
 
 ## Far Future: Preparation for Lemma's Garden
 
-- [ ] Implement parametric systems
+- [ ] Context sensitivity
+  - `b < a > c → aa`
+  - How to store? Maps?
+- [ ] Parametric systems
 - [ ] Custom models for each symbol
   - Petals, leaves and such
   - Array of Vector3s denoting vertices
@@ -59,7 +59,10 @@
     - If not terminal, has two paths:
       - From (0, 0, 0) through the first path to (1, 0, 0)
       - From (1, 0, 0) through the second path back to (0, 0, 0)
-  - [ ] Renderer option to disable models
+  - [x] Renderer option to disable models
+  - Can models' names contain spaces?
+    - How are they referenced in systems? As a list of names? An ID that is the
+    index of an array?
 
 ## Currently Impossible
 
