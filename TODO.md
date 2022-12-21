@@ -16,10 +16,16 @@
   - https://en.wikipedia.org/wiki/Media_control_symbols
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
-- [ ] Saved systems
+- [x] Custom class that stores variable controls?
+  - [x] Solves weird logic with anchor
+  - [ ] Allows loop mode controls
+  - [ ] Update updating method to make a more responsive UI?
+- [x] Change entries' keyboards into numeric format
+
+- [x] Saved systems
   - [x] Choice to overwrite or create copy
     - Include list of saved systems in naming menu
-  - [ ] Edit existing systems
+  - [x] Edit existing systems
   - [x] Store static camera configs and description
     - We have the power of version number
     - Don't change the current system's internal state format
@@ -32,10 +38,6 @@
     processing in internal state code, while testing newest implementation
 - [x] Get rid of the brackets and the -2s
 - [x] Get rid of i
-- [x] Custom class that stores variable controls?
-  - [x] Solves weird logic with anchor
-  - [ ] Allows loop mode controls
-  - [ ] Update updating method to make a more responsive UI?
 - [x] Getters and setters in JavaScript
 - [x] UI touch-ups
   - [x] Border colours
@@ -43,7 +45,6 @@
   - [x] Shrink the buttons again to look better?
 - [x] Redesign anchor logic
   - Only register anchor level before longpressing minus and level > 0
-- [ ] Change entries' keyboards into telephone format
 
 ## Far Future: Preparation for Lemma's Garden
 

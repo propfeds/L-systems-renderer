@@ -25,6 +25,7 @@ import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
 import { ui } from '../api/ui/UI';
 import { Color } from '../api/ui/properties/Color';
+import { Keyboard } from '../api/ui/properties/Keyboard';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
@@ -1954,6 +1955,7 @@ let createConfigMenu = () =>
     let iScaleEntry = ui.createEntry
     ({
         text: tmpIScale.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 0,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
@@ -1966,6 +1968,7 @@ let createConfigMenu = () =>
     let fScaleEntry = ui.createEntry
     ({
         text: tmpFScale.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
@@ -2029,6 +2032,7 @@ let createConfigMenu = () =>
             ui.createEntry
             ({
                 text: tmpCX.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2050,6 +2054,7 @@ let createConfigMenu = () =>
             ui.createEntry
             ({
                 text: tmpCY.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 0,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2061,6 +2066,7 @@ let createConfigMenu = () =>
             ui.createEntry
             ({
                 text: tmpCZ.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2092,6 +2098,7 @@ let createConfigMenu = () =>
             ui.createEntry
             ({
                 text: tmpOX.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2113,6 +2120,7 @@ let createConfigMenu = () =>
             ui.createEntry
             ({
                 text: tmpOY.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 0,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2124,6 +2132,7 @@ let createConfigMenu = () =>
             ui.createEntry
             ({
                 text: tmpOZ.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2146,6 +2155,7 @@ let createConfigMenu = () =>
     let FFEntry = ui.createEntry
     ({
         text: tmpFF.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 3,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
@@ -2440,6 +2450,7 @@ let createSystemMenu = () =>
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 0,
         column: 3,
         horizontalTextAlignment: TextAlignment.END,
@@ -2508,6 +2519,7 @@ let createSystemMenu = () =>
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
@@ -2841,6 +2853,7 @@ let createViewMenu = (title) =>
     let iScaleEntry = ui.createEntry
     ({
         text: tmpIScale.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 0,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
@@ -2852,6 +2865,7 @@ let createViewMenu = (title) =>
     let fScaleEntry = ui.createEntry
     ({
         text: tmpFScale.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
@@ -2877,6 +2891,7 @@ let createViewMenu = (title) =>
             ui.createEntry
             ({
                 text: tmpCX.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2897,6 +2912,7 @@ let createViewMenu = (title) =>
             ui.createEntry
             ({
                 text: tmpCY.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 0,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2908,6 +2924,7 @@ let createViewMenu = (title) =>
             ui.createEntry
             ({
                 text: tmpCZ.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2935,6 +2952,7 @@ let createViewMenu = (title) =>
             ui.createEntry
             ({
                 text: tmpOX.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2955,6 +2973,7 @@ let createViewMenu = (title) =>
             ui.createEntry
             ({
                 text: tmpOY.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 0,
                 horizontalTextAlignment: TextAlignment.END,
@@ -2966,6 +2985,7 @@ let createViewMenu = (title) =>
             ui.createEntry
             ({
                 text: tmpOZ.toString(),
+                keyboard: Keyboard.NUMERIC,
                 row: 0,
                 column: 1,
                 horizontalTextAlignment: TextAlignment.END,
@@ -3012,6 +3032,7 @@ let createViewMenu = (title) =>
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 0,
         column: 3,
         horizontalTextAlignment: TextAlignment.END,
@@ -3083,6 +3104,7 @@ let createViewMenu = (title) =>
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
+        keyboard: Keyboard.NUMERIC,
         row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
