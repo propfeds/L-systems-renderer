@@ -148,6 +148,7 @@ const locStrings =
         menuSave: 'Save/Load Menu',
         labelCurrentSystem: 'Current system: ',
         labelSavedSystems: 'Saved systems: ',
+        labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
 
@@ -165,6 +166,7 @@ const locStrings =
         terEqModes: ['Coordinates', 'Orientation'],
 
         menuManual: 'Manual ({0}/{1})',
+        manualSystemDesc: 'From manual with love.',
         manual:
         [
             {
@@ -1305,6 +1307,20 @@ class Renderer
     {
         return this.ori;
     }
+    get staticCamera()
+    {
+        return [
+            this.initScale,
+            this.figureScale,
+            this.camCentre.x,
+            this.camCentre.y,
+            this.camCentre.z,
+            this.camOffset.x,
+            this.camOffset.y,
+            this.camOffset.z,
+            this.upright
+        ];
+    }
     /**
      * Returns the elapsed time.
      */
@@ -2365,6 +2381,7 @@ let createConfigMenu = () =>
                 }),
                 ui.createGrid
                 ({
+                    minimumHeightRequest: 64,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -2589,7 +2606,7 @@ let createSystemMenu = () =>
                     {
                         Sound.playClick();
                         renderer.applySystem = new LSystem(tmpAxiom, tmpRules,
-                            tmpAngle, tmpSeed);
+                        tmpAngle, tmpSeed);
                         menu.hide();
                     }
                 })
@@ -2599,9 +2616,9 @@ let createSystemMenu = () =>
     return menu;
 }
 
-let createNamingMenu = (title, values) =>
+let createNamingMenu = () =>
 {
-    let tmpName = title;
+    let tmpName = tmpSystemName;
     let nameEntry = ui.createEntry
     ({
         text: tmpName,
@@ -2657,10 +2674,11 @@ let createNamingMenu = (title, values) =>
                 Sound.playClick();
                 savedSystems.set(title, {
                     desc: savedSystems.get(title).desc,
-                    system: values,
-                    config: [1, 1, 0, 0, 0, 0, 0, 0, false]
+                    system: renderer.system.toString(),
+                    config: renderer.staticCamera
                 });
                 tmpSystemName = title;
+                tmpSystemDesc = savedSystems.get(title).desc;
                 menu.hide();
             }
         });
@@ -2743,10 +2761,11 @@ let createNamingMenu = (title, values) =>
                             tmpName += getLoc('duplicateSuffix');
                         savedSystems.set(tmpName, {
                             desc: tmpDesc,
-                            system: values,
-                            config: [1, 1, 0, 0, 0, 0, 0, 0, false]
+                            system: renderer.system.toString(),
+                            config: renderer.staticCamera
                         });
                         tmpSystemName = tmpName;
+                        tmpSystemDesc = tmpDesc;
                         menu.hide();
                     }
                 })
@@ -2788,8 +2807,8 @@ let createClipboardMenu = (values) =>
                         Sound.playClick();
                         let systemValues = tmpSys.split(' ');
                         renderer.applySystem = new LSystem(systemValues[0],
-                            systemValues.slice(3), Number(systemValues[1]),
-                            Number(systemValues[2]));
+                        systemValues.slice(3), Number(systemValues[1]),
+                        Number(systemValues[2]));
                         menu.hide();
                     }
                 })
@@ -2806,7 +2825,131 @@ let createViewMenu = (title) =>
     let tmpDesc = systemObj.desc;
     if(tmpDesc in [null, undefined, ''])
         tmpDesc = getLoc('noDescription');
-    // camera config is next
+    let rendererValues = systemObj.config;
+    // log(rendererValues.toString());
+    let tmpIScale = rendererValues[0];
+    let tmpFScale = rendererValues[1];
+    let tmpCX = rendererValues[2];
+    let tmpCY = rendererValues[3];
+    let tmpCZ = rendererValues[4];
+    let tmpOX = rendererValues[5];
+    let tmpOY = rendererValues[6];
+    let tmpOZ = rendererValues[7];
+    let tmpUpright = rendererValues[8];
+
+    let iScaleEntry = ui.createEntry
+    ({
+        text: tmpIScale.toString(),
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END
+    });
+    let fScaleEntry = ui.createEntry
+    ({
+        text: tmpFScale.toString(),
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END
+    });
+    let camLabel = ui.createGrid
+    ({
+        row: 2,
+        column: 0,
+        columnDefinitions: ['55*', '15*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelCamCentre'),
+                row: 0,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }),
+            ui.createEntry
+            ({
+                text: tmpCX.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END
+            })
+        ]
+    });
+    let camGrid = ui.createGrid
+    ({
+        row: 2,
+        column: 1,
+        columnDefinitions: ['50*', '50*'],
+        children:
+        [
+            ui.createEntry
+            ({
+                text: tmpCY.toString(),
+                row: 0,
+                column: 0,
+                horizontalTextAlignment: TextAlignment.END
+            }),
+            ui.createEntry
+            ({
+                text: tmpCZ.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END
+            })
+        ]
+    });
+    let camOffLabel = ui.createGrid
+    ({
+        row: 3,
+        column: 0,
+        columnDefinitions: ['55*', '15*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelCamOffset'),
+                row: 0,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }),
+            ui.createEntry
+            ({
+                text: tmpOX.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END
+            })
+        ]
+    });
+    let camOffGrid = ui.createGrid
+    ({
+        row: 3,
+        column: 1,
+        columnDefinitions: ['50*', '50*'],
+        children:
+        [
+            ui.createEntry
+            ({
+                text: tmpOY.toString(),
+                row: 0,
+                column: 0,
+                horizontalTextAlignment: TextAlignment.END
+            }),
+            ui.createEntry
+            ({
+                text: tmpOZ.toString(),
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END
+            })
+        ]
+    });
+    let uprightSwitch = ui.createSwitch
+    ({
+        isToggled: tmpUpright,
+        row: 4,
+        column: 1,
+        horizontalOptions: LayoutOptions.END
+    });
 
     let systemValues = values.split(' ');
 
@@ -2935,6 +3078,53 @@ let createViewMenu = (title) =>
                                         TextAlignment.END
                                     })
                                 ]
+                            }),
+                            ui.createBox
+                            ({
+                                heightRequest: 1,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createLatexLabel
+                            ({
+                                text: getLoc('labelApplyCamera'),
+                                // horizontalOptions: LayoutOptions.CENTER,
+                                verticalOptions: LayoutOptions.CENTER,
+                                margin: new Thickness(0, 12)
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelInitScale'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    iScaleEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelFigScale'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    fScaleEntry,
+                                    camLabel,
+                                    camGrid,
+                                    camOffLabel,
+                                    camOffGrid,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelUpright'),
+                                        row: 4,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    uprightSwitch
+                                ]
                             })
                         ]
                     })
@@ -2960,7 +3150,11 @@ let createViewMenu = (title) =>
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed);
+                                renderer.configureStaticCamera(tmpIScale,
+                                tmpFScale, tmpCX, tmpCY, tmpCZ, tmpOX, tmpOY,
+                                tmpOZ, tmpUpright);
                                 tmpSystemName = title;
+                                tmpSystemDesc = tmpDesc;
                                 menu.hide();
                             }
                         }),
@@ -3075,8 +3269,7 @@ let createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let namingMenu = createNamingMenu(tmpSystemName,
-                                renderer.system.toString(), systemGrid);
+                                let namingMenu = createNamingMenu();
                                 namingMenu.onDisappearing = () =>
                                 {
                                     systemGrid.children = getSystemGrid();
@@ -3195,6 +3388,7 @@ let createManualMenu = () =>
                                     renderer.configureStaticCamera(...a);
                                 }
                                 tmpSystemName = manualPages[page].title;
+                                tmpSystemDesc = getLoc('manualSystemDesc');
                                 menu.hide();
                             }
                         }),
@@ -3433,9 +3627,8 @@ var getInternalState = () =>
     for(let [key, value] of savedSystems)
     {
         result += `\n${key}\n${value.desc}\n${value.system}\n`;
-        let c = value.config;
-        c[8] = c[8] ? 1 : 0;
-        result += c.join(' ');
+        result += value.config.slice(0, -1).join(' ');
+        result += ` ${value.config[8] ? 1 : 0}`;
     }
     return result;
 }
@@ -3522,11 +3715,33 @@ var setInternalState = (stateStr) =>
     else
     {
         for(let i = 0; i < noofSystems; ++i)
+        {
+            let rv = values[6 + i * 4].split(' ');
+            if(rv.length > 0)
+                rv[0] = Number(rv[0]);
+            if(rv.length > 1)
+                rv[1] = Number(rv[1]);
+            if(rv.length > 2)
+                rv[2] = Number(rv[2]);
+            if(rv.length > 3)
+                rv[3] = Number(rv[3]);
+            if(rv.length > 4)
+                rv[4] = Number(rv[4]);
+            if(rv.length > 5)
+                rv[5] = Number(rv[5]);
+            if(rv.length > 6)
+                rv[6] = Number(rv[6]);
+            if(rv.length > 7)
+                rv[7] = Number(rv[7]);
+            if(rv.length > 8)
+                rv[8] = Boolean(Number(rv[8]));
+
             savedSystems.set(values[3 + i * 4], {
                 desc: values[4 + i * 4],
                 system: values[5 + i * 4],
-                config: values[6 + i * 4].split(' ')
+                config: rv
             });
+        }
     }
 }
 
