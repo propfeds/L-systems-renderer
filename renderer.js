@@ -78,6 +78,7 @@ let gameIsOffline = false;
 let altCurrencies = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
+
 let savedSystems = new Map();
 let savedModels = [];
 
@@ -135,10 +136,10 @@ const locStrings =
         labelInitScale: 'Initial scale: ',
         labelFigScale: 'Figure scale per level: ',
         labelCamMode: 'Camera mode: {0}',
-        camModes: ['Static', 'Cursor-focused'],
+        camModes: ['Static', 'Linear', 'Frictional'],
         labelCamCentre: 'Scaled centre (x, y, z): ',
         labelCamOffset: 'Offset (x, y, z): ',
-        labelFollowFactor: 'Follow factor (0-1): ',
+        labelFollowFactor: 'Smoothing factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
         labelUpright: 'Upright x-axis: ',
@@ -806,7 +807,7 @@ class Renderer
      * @param {LSystem} system the L-system to be handled.
      * @param {number} initScale (default: 1; non-zero) the initial scale.
      * @param {number} figureScale (default: 1; non-zero) the per-level scale.
-     * @param {boolean} cursorFocused (default: false) the camera mode.
+     * @param {boolean} cameraMode (default: 0) the camera mode.
      * @param {number} camX (default: 0) the camera's x-axis centre.
      * @param {number} camY (default: 0) the camera's y-axis centre.
      * @param {number} camZ (default: 0) the camera's z-axis centre.
@@ -823,8 +824,8 @@ class Renderer
      * @param {string} backtrackList (default: '+-&^\\/|[]') a list of symbols
      * to act as stoppers for backtracking.
      */
-    constructor(system, initScale = 1, figureScale = 1, cursorFocused = false,
-    camX = 0, camY = 0, camZ = 0, followFactor = 0.1, loopMode = 0,
+    constructor(system, initScale = 1, figureScale = 1, cameraMode = 0,
+    camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
     upright = false, quickDraw = false, quickBacktrack = false,
     backtrackList = '+-&^\\/|[]', camOffsetX = 0, camOffsetY = 0,
     camOffsetZ = 0, loadModels = false)
@@ -848,7 +849,7 @@ class Renderer
          * @type {boolean} the camera mode.
          * @public
          */
-        this.cursorFocused = cursorFocused;
+        this.cameraMode = Math.round(Math.min(Math.max(cameraMode, 0), 2));
         /**
          * @type {Vector3} the static camera's coordinates.
          * @public
@@ -948,6 +949,7 @@ class Renderer
          * @public didn't tell you so.
          */
         this.lastCamera = new Vector3(0, 0, 0);
+        this.lastCamVel = new Vector3(0, 0, 0);
         /**
          * @type {number} the next index to update for the current level.
          * @public I told you so many times that you shouldn't access these.
@@ -1028,7 +1030,7 @@ class Renderer
      * Configures every parameter of the renderer, except the system.
      * @param {number} initScale the initial scale.
      * @param {number} figureScale the per-level scale.
-     * @param {boolean} cursorFocused the camera mode.
+     * @param {boolean} cameraMode the camera mode.
      * @param {number} camX the camera's x-axis centre.
      * @param {number} camY the camera's y-axis centre.
      * @param {number} camZ the camera's z-axis centre.
@@ -1043,7 +1045,7 @@ class Renderer
      * @param {string} backtrackList a list of symbols to act as stoppers for
      * backtracking.
      */
-    configure(initScale, figureScale, cursorFocused, camX, camY, camZ,
+    configure(initScale, figureScale, cameraMode, camX, camY, camZ,
     followFactor, loopMode, upright, quickDraw, quickBacktrack,
     backtrackList, camOffsetX, camOffsetY, camOffsetZ, loadModels)
     {
@@ -1056,7 +1058,7 @@ class Renderer
 
         this.initScale = initScale;
         this.figureScale = figureScale;
-        this.cursorFocused = cursorFocused;
+        this.cameraMode = cameraMode;
         this.camCentre = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
         this.loopMode = loopMode;
@@ -1268,7 +1270,7 @@ class Renderer
      */
     get centre()
     {
-        if(this.cursorFocused)
+        if(this.cameraMode)
             return -this.cursor;
 
         return this.swizzle(-this.camCentre - this.camOffset /
@@ -1291,15 +1293,26 @@ class Renderer
      */
     get camera()
     {
-        if(this.cursorFocused)
+        let newCamera;
+        switch(this.cameraMode)
         {
-            let newCamera = this.centre * this.followFactor +
-            this.lastCamera * (1 - this.followFactor);
-            this.lastCamera = newCamera;
-            return newCamera;
+            case 2:
+                let dist = this.centre - this.lastCamera;
+                // This is NOT real friction. It just looks nice.
+                newCamera = this.lastCamera + dist * this.followFactor ** 2 +
+                this.lastCamVel * (1 - this.followFactor) ** 2;
+                this.lastCamVel = newCamera - this.lastCamera;
+                this.lastCamera = newCamera;
+                return newCamera;
+            case 1:
+                newCamera = this.centre * this.followFactor +
+                this.lastCamera * (1 - this.followFactor);
+                this.lastCamVel = newCamera - this.lastCamera;
+                this.lastCamera = newCamera;
+                return newCamera;
+            case 0:
+                return this.centre;
         }
-        else
-            return this.centre;
     }
     /**
      * Returns the cursor's orientation.
@@ -1401,7 +1414,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.initScale} ${this.figureScale} ${this.cursorFocused ? 1 : 0} ${this.camCentre.x} ${this.camCentre.y} ${this.camCentre.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.camOffset.x} ${this.camOffset.y} ${this.camOffset.z} ${this.loadModels ? 1 : 0}`;
+        return`${this.initScale} ${this.figureScale} ${this.cameraMode} ${this.camCentre.x} ${this.camCentre.y} ${this.camCentre.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.camOffset.x} ${this.camOffset.y} ${this.camOffset.z} ${this.loadModels ? 1 : 0}`;
     }
 }
 
@@ -1977,38 +1990,40 @@ let createConfigMenu = () =>
             tmpFScale = Number(nt);
         }
     });
-    let tmpCFC = renderer.cursorFocused;
-    let CFCLabel = ui.createLatexLabel
+    let tmpCM = renderer.cameraMode;
+    let CMLabel = ui.createLatexLabel
     ({
         text: Localization.format(getLoc('labelCamMode'),
-        getLoc('camModes')[Number(tmpCFC)]),
+        getLoc('camModes')[tmpCM]),
         row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
-    let CFCSwitch = ui.createSwitch
+    let CMSlider = ui.createSlider
     ({
-        isToggled: tmpCFC,
         row: 2,
         column: 1,
-        horizontalOptions: LayoutOptions.END,
-        onTouched: (e) =>
+        minimum: 0,
+        maximum: 2,
+        value: tmpCM,
+        onValueChanged: () =>
         {
-            if(e.type == TouchType.SHORTPRESS_RELEASED ||
-                e.type == TouchType.LONGPRESS_RELEASED)
-            {
-                Sound.playClick();
-                tmpCFC = !tmpCFC;
-                CFCSwitch.isToggled = tmpCFC;
-                camLabel.isVisible = !tmpCFC;
-                camGrid.isVisible = !tmpCFC;
-                camOffLabel.isVisible = !tmpCFC;
-                camOffGrid.isVisible = !tmpCFC;
-                FFLabel.isVisible = tmpCFC;
-                FFEntry.isVisible = tmpCFC;
-                CFCLabel.text = Localization.format(getLoc('labelCamMode'),
-                getLoc('camModes')[Number(tmpCFC)]);
-            }
+            tmpCM = Math.round(CMSlider.value);
+            CMSlider.isToggled = tmpCM > 0;
+            camLabel.isVisible = tmpCM == 0;
+            camGrid.isVisible = tmpCM == 0;
+            camOffLabel.isVisible = tmpCM == 0;
+            camOffGrid.isVisible = tmpCM == 0;
+            FFLabel.isVisible = tmpCM > 0;
+            FFEntry.isVisible = tmpCM > 0;
+            CMLabel.text = Localization.format(getLoc('labelCamMode'),
+            getLoc('camModes')[tmpCM]);
+                
+        },
+        onDragCompleted: () =>
+        {
+            Sound.playClick();
+            CMSlider.value = tmpCM;
         }
     });
     let tmpCX = renderer.camCentre.x;
@@ -2019,7 +2034,7 @@ let createConfigMenu = () =>
         row: 3,
         column: 0,
         columnDefinitions: ['55*', '15*'],
-        isVisible: !tmpCFC,
+        isVisible: tmpCM == 0,
         children:
         [
             ui.createLatexLabel
@@ -2048,7 +2063,7 @@ let createConfigMenu = () =>
         row: 3,
         column: 1,
         columnDefinitions: ['50*', '50*'],
-        isVisible: !tmpCFC,
+        isVisible: tmpCM == 0,
         children:
         [
             ui.createEntry
@@ -2085,7 +2100,7 @@ let createConfigMenu = () =>
         row: 4,
         column: 0,
         columnDefinitions: ['55*', '15*'],
-        isVisible: !tmpCFC,
+        isVisible: tmpCM == 0,
         children:
         [
             ui.createLatexLabel
@@ -2114,7 +2129,7 @@ let createConfigMenu = () =>
         row: 4,
         column: 1,
         columnDefinitions: ['50*', '50*'],
-        isVisible: !tmpCFC,
+        isVisible: tmpCM == 0,
         children:
         [
             ui.createEntry
@@ -2150,7 +2165,7 @@ let createConfigMenu = () =>
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER,
-        isVisible: tmpCFC
+        isVisible: tmpCM > 0
     });
     let FFEntry = ui.createEntry
     ({
@@ -2159,7 +2174,7 @@ let createConfigMenu = () =>
         row: 3,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
-        isVisible: tmpCFC,
+        isVisible: tmpCM > 0,
         onTextChanged: (ot, nt) =>
         {
             tmpFF = Number(nt);
@@ -2323,8 +2338,8 @@ let createConfigMenu = () =>
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     fScaleEntry,
-                                    CFCLabel,
-                                    CFCSwitch,
+                                    CMLabel,
+                                    CMSlider,
                                     camLabel,
                                     camGrid,
                                     camOffLabel,
@@ -2405,7 +2420,7 @@ let createConfigMenu = () =>
                             {
                                 Sound.playClick();
                                 renderer.configure(tmpIScale, tmpFScale,
-                                    tmpCFC, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
+                                    tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
                                     tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX,
                                     tmpOY, tmpOZ, tmpModel);
                                 menu.hide();
@@ -3800,7 +3815,7 @@ var setInternalState = (stateStr) =>
         if(rendererValues.length > 1)
             rendererValues[1] = Number(rendererValues[1]);
         if(rendererValues.length > 2)
-            rendererValues[2] = Boolean(Number(rendererValues[2]));
+            rendererValues[2] = Number(rendererValues[2]);
         if(rendererValues.length > 3)
             rendererValues[3] = Number(rendererValues[3]);
         if(rendererValues.length > 4)

@@ -2,6 +2,10 @@
 
 ## 0.20
 
+- [ ] Context sensitivity
+  - `b < a > c → aa`
+  - How to store? Maps?
+
 - [ ] Redesign manual
   - Add more systems to the manual (algae, or like, mistletoe)
   - Add tutorial-like flows that explain concepts
@@ -20,8 +24,8 @@
   - [x] Solves weird logic with anchor
   - [ ] Allows loop mode controls
   - [ ] Update updating method to make a more responsive UI?
-- [x] Change entries' keyboards into numeric format
 
+- [x] Change entries' keyboards into numeric format
 - [x] Saved systems
   - [x] Choice to overwrite or create copy
     - Include list of saved systems in naming menu
@@ -48,9 +52,6 @@
 
 ## Far Future: Preparation for Lemma's Garden
 
-- [ ] Context sensitivity
-  - `b < a > c → aa`
-  - How to store? Maps?
 - [ ] Parametric systems
 - [ ] Custom models for each symbol
   - Petals, leaves and such
