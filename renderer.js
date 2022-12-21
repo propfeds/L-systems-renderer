@@ -1466,6 +1466,7 @@ let manualSystems =
         config: [1, 3, 0.75, -0.25, 0, 0, 0, 0, true]
     }
 ];
+let tmpSystemName = getLoc('defaultSystemName');
 var l, ts;
 
 var init = () =>
@@ -2647,6 +2648,7 @@ let createNamingMenu = (title, values) =>
             {
                 Sound.playClick();
                 savedSystems.set(title, values);
+                tmpSystemName = title;
                 menu.hide();
             }
         });
@@ -2728,6 +2730,7 @@ let createNamingMenu = (title, values) =>
                         while(savedSystems.has(tmpName))
                             tmpName += getLoc('duplicateSuffix');
                         savedSystems.set(tmpName, values);
+                        tmpSystemName = tmpName;
                         menu.hide();
                     }
                 })
@@ -2928,7 +2931,8 @@ let createViewMenu = (title) =>
                             {
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
-                                    tmpRules, tmpAngle, tmpSeed);
+                                tmpRules, tmpAngle, tmpSeed);
+                                tmpSystemName = title;
                                 menu.hide();
                             }
                         }),
@@ -3043,10 +3047,8 @@ let createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let namingMenu = createNamingMenu(
-                                    getLoc('defaultSystemName'),
-                                    renderer.system.toString(), systemGrid
-                                );
+                                let namingMenu = createNamingMenu(tmpSystemName,
+                                renderer.system.toString(), systemGrid);
                                 namingMenu.onDisappearing = () =>
                                 {
                                     systemGrid.children = getSystemGrid();
@@ -3164,6 +3166,7 @@ let createManualMenu = () =>
                                     let a = manualSystems[page].config;
                                     renderer.configureStaticCamera(...a);
                                 }
+                                tmpSystemName = manualPages[page].title;
                                 menu.hide();
                             }
                         }),
