@@ -1674,9 +1674,10 @@ class Measurer
             this.lastStamp = Date.now();
         else
         {
+            let closingStamp = Date.now();
             let i = this.ticksPassed % this.window;
             this.windowSum -= this.records[i];
-            this.records[i] = Date.now() - this.lastStamp;
+            this.records[i] = closingStamp - this.lastStamp;
             this.windowSum += this.records[i];
             this.sum += this.records[i];
             this.lastStamp = null;
@@ -1798,7 +1799,7 @@ var l, ts;
 let lvlControls, tsControls;
 
 // Measure drawing performance
-let drawMeasurer = new Measurer('renderer.draw()', 50);
+let drawMeasurer = new Measurer('renderer.draw()', 30);
 
 var init = () =>
 {
