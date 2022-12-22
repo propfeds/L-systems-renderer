@@ -1,6 +1,6 @@
 # L-systems Renderer
 
-## 0.20
+## 0.20 - Mistletoe Edition
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
@@ -10,21 +10,17 @@
   - Add more systems to the manual (algae, or like, mistletoe)
   - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
-- [ ] Optimise using the API's profiler
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
-- [ ] New main screen controls idea
-  - Line 1: Player controls: `<< - P + >>`
-  - https://en.wikipedia.org/wiki/Media_control_symbols
-  - Line 2: Level, loop, tickspeed
-  - This will do away with the fucking anchor
+- [ ] Optimise using the API's profiler
+  - The profiler is very limited in functionality.
+  - [x] Instead, implemented a rough profiler using Date.now()
+
 - [x] Custom class that stores variable controls?
   - [x] Solves weird logic with anchor
-  - [ ] Allows loop mode controls
-  - [ ] Update updating method to make a more responsive UI?
-
+  - [x] Update updating method to make a more responsive UI?
 - [x] Change entries' keyboards into numeric format
 - [x] Saved systems
   - [x] Choice to overwrite or create copy
@@ -38,8 +34,8 @@
     - Internal state: store the number of systems (and then models...) in the
     first line
       - To prepare for LG (models)
-    - Testing: keep the old version number in global, add version-dependent
-    processing in internal state code, while testing newest implementation
+    - Testing: keep the new version number in global, add version-dependent
+    processing in internal state code, while loading old backup file
 - [x] Get rid of the brackets and the -2s
 - [x] Get rid of i
 - [x] Getters and setters in JavaScript
@@ -56,9 +52,9 @@
 - [ ] Custom models for each symbol
   - Petals, leaves and such
   - Array of Vector3s denoting vertices
-  - Bool to determine whether the model is terminal (?)
+  - Bool to determine whether the model is a terminal node
     - If terminal, has only one path of going from (0, 0, 0) through the list
-    then back to (0, 0, 0)
+    then back to (0, 0, 0), does not draw the forward line
     - If not terminal, has two paths:
       - From (0, 0, 0) through the first path to (1, 0, 0)
       - From (1, 0, 0) through the second path back to (0, 0, 0)
@@ -67,7 +63,7 @@
     - How are they referenced in systems? As a list of names? An ID that is the
     index of an array?
 
-## Currently Impossible
+## Impossible or Scrapped
 
 - Remove the add button, every rule is bunched into one field
   - Entry.keyboard? (`Keyboard.TEXT`) doesn't work
@@ -77,3 +73,8 @@
   - Can it work both ways or just downwards?
   - It does not work currently due to the fact that variable purchase callbacks
   are post-processing, and not pre-
+- Main screen controls idea
+  - Line 1: Player controls: `<< - P + >>`
+  - https://en.wikipedia.org/wiki/Media_control_symbols
+  - Line 2: Level, loop, tickspeed
+  - This will do away with the fucking anchor

@@ -78,6 +78,7 @@ let gameIsOffline = false;
 let altCurrencies = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
+let measurePerformance = false;
 
 let savedSystems = new Map();
 let savedModels = [];
@@ -124,6 +125,16 @@ const locStrings =
         btnMenuSave: 'Save/load',
         btnMenuTheory: 'Theory settings',
         btnMenuManual: 'Manual',
+        btnStartMeasure: 'Measure performance',
+        btnEndMeasure: 'Stop measuring',
+
+        measurement: '{0}: average {1}ms over {2} ticks',
+
+        rerollSeed: 'You are about to reroll the system\'s seed.',
+
+        menuSequence: 'Sequence Menu',
+        labelLevelSeq: 'Level {0}: ',
+        labelChars: '({0} chars)',
 
         menuLSystem: 'L-system Menu',
         labelAxiom: 'Axiom: ',
@@ -428,13 +439,7 @@ Scale: 1, 3
 Centre: (0,75, -0,25, 0)
 Upright`
             }
-        ],
-
-        menuSequence: 'Sequence Menu',
-        labelLevelSeq: 'Level {0}: ',
-        labelChars: '({0} chars)',
-
-        rerollSeed: 'You are about to reroll the system\'s seed.',
+        ]
     }
 };
 
@@ -671,6 +676,7 @@ class LSystem
          * @public
          */
         this.rules = new Map();
+        this.contextRules = new Map();
         /**
          * @type {string} a list of symbols ignored by the renderer.
          * @public
@@ -1499,7 +1505,8 @@ class VariableControls
 
         // let bc = () => this.variable.level > 0 ? Color.BORDER :
         // Color.TRANSPARENT;
-        // let tc = () => this.variable.level > 0 ? Color.TEXT : Color.TEXT_MEDIUM;
+        // let tc = () => this.variable.level > 0 ? Color.TEXT :
+        // Color.TEXT_MEDIUM;
         // let tcPressed = () => this.variable.level > 0 ? Color.TEXT_MEDIUM :
         // Color.TEXT_DARK;
 
@@ -1636,6 +1643,73 @@ class VariableControls
     }
 }
 
+class Measurer
+{
+    constructor(name, window = 10)
+    {
+        this.name = name;
+        this.window = window;
+        this.sum = 0;
+        this.windowSum = 0;
+        this.records = [];
+        for(let i = 0; i < this.window; ++i)
+            this.records[i] = 0;
+        this.ticksPassed = 0;
+        this.lastStamp = null;
+    }
+    
+    reset()
+    {
+        this.sum = 0;
+        this.windowSum = 0;
+        this.records = [];
+        for(let i = 0; i < this.window; ++i)
+            this.records[i] = 0;
+        this.ticksPassed = 0;
+        this.lastStamp = null;
+    }
+    stamp()
+    {
+        if(this.lastStamp === null)
+            this.lastStamp = Date.now();
+        else
+        {
+            let i = this.ticksPassed % this.window;
+            this.windowSum -= this.records[i];
+            this.records[i] = Date.now() - this.lastStamp;
+            this.windowSum += this.records[i];
+            this.sum += this.records[i];
+            this.lastStamp = null;
+            ++this.ticksPassed;
+        }
+    }
+    get windowAvg()
+    {
+        return this.windowSum / Math.min(this.window, this.ticksPassed);
+    }
+    get allTimeAvg()
+    {
+        return this.sum / this.ticksPassed;
+    }
+    get windowAvgString()
+    {
+        if(this.ticksPassed == 0)
+            return '';
+
+        return Localization.format(getLoc('measurement'), this.name,
+        getCoordString(this.windowAvg), Math.min(this.window,
+        this.ticksPassed));
+    }
+    get allTimeAvgString()
+    {
+        if(this.ticksPassed == 0)
+            return '';
+
+        return Localization.format(getLoc('measurement'), this.name,
+        getCoordString(this.allTimeAvg), this.ticksPassed);
+    }
+}
+
 const xAxisQuat = new Quaternion(0, 1, 0, 0);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
@@ -1720,7 +1794,11 @@ let tmpSystemName = getLoc('defaultSystemName');
 let tmpSystemDesc = getLoc('noDescription');
 
 var l, ts;
+// Variable controls
 let lvlControls, tsControls;
+
+// Measure drawing performance
+let drawMeasurer = new Measurer('renderer.draw()', 50);
 
 var init = () =>
 {
@@ -1818,6 +1896,10 @@ var tick = (elapsedTime, multiplier) =>
         gameIsOffline = false;
     }
 
+    // Measure performance
+    if(measurePerformance)
+        drawMeasurer.stamp();
+
     if(ts.level == 0)
     {
         // Keep updating even when paused
@@ -1829,6 +1911,10 @@ var tick = (elapsedTime, multiplier) =>
         renderer.tick(elapsedTime);
     }
 
+    // Measure performance
+    if(measurePerformance)
+        drawMeasurer.stamp();
+
     let msTime = renderer.elapsedTime;
     min.value = msTime[0] + msTime[1] / 100;
     progress.value = renderer.progressPercent;
@@ -1839,7 +1925,7 @@ var getEquationOverlay = () =>
 {
     let result = ui.createLatexLabel
     ({
-        text: getLoc('equationOverlay'),
+        text: () => `${getLoc('equationOverlay')}\n\n${drawMeasurer.windowAvgString}`,
         displacementX: 6,
         displacementY: 5,
         fontSize: 9,
@@ -1848,7 +1934,7 @@ var getEquationOverlay = () =>
     return result;
 }
 
-let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
+let createButton = (label, callback, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -1858,7 +1944,7 @@ let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
         verticalOptions: LayoutOptions.CENTER,
         content: ui.createLatexLabel
         ({
-            text: title,
+            text: label,
             verticalOptions: LayoutOptions.CENTER,
             textColor: Color.TEXT
         }),
@@ -1875,8 +1961,7 @@ let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
                 Sound.playClick();
                 frame.borderColor = Color.BORDER;
                 frame.content.textColor = Color.TEXT;
-                let menu = menuFunc();
-                menu.show();
+                callback();
             }
             else if(e.type == TouchType.CANCELLED)
             {
@@ -1895,7 +1980,7 @@ var getUpgradeListDelegate = () =>
     {
         let menu = createSequenceMenu();
         menu.show();
-    }
+    };
     let lvlButton = lvlControls.createVariableButton(openSeqMenu);
     lvlButton.row = 0;
     lvlButton.column = 0;
@@ -1909,7 +1994,7 @@ var getUpgradeListDelegate = () =>
         tickDelayMode = !tickDelayMode;
         tsControls.updateDescription();
         time = 0;
-    }
+    };
     let tsButton = tsControls.createVariableButton(toggleTDM);
     tsButton.row = 1;
     tsButton.column = 0;
@@ -1918,25 +2003,38 @@ var getUpgradeListDelegate = () =>
     let tsBuy = tsControls.createBuyButton();
     tsBuy.column = 1;
 
-    let sysButton = createMenuButton(createSystemMenu,
-    getLoc('btnMenuLSystem'));
+    let sysButton = createButton(getLoc('btnMenuLSystem'), () =>
+    createSystemMenu().show());
     sysButton.row = 0;
     sysButton.column = 0;
-    let cfgButton = createMenuButton(createConfigMenu,
-    getLoc('btnMenuRenderer'));
+    let cfgButton = createButton(getLoc('btnMenuRenderer'), () =>
+    createConfigMenu().show());
     cfgButton.row = 0;
     cfgButton.column = 1;
-    let slButton = createMenuButton(createSaveMenu, getLoc('btnMenuSave'));
+    let slButton = createButton(getLoc('btnMenuSave'), () =>
+    createSaveMenu().show());
     slButton.row = 1;
     slButton.column = 0;
-    let theoryButton = createMenuButton(createWorldMenu,
-    getLoc('btnMenuTheory'));
+    let theoryButton = createButton(getLoc('btnMenuTheory'), () =>
+    createWorldMenu().show());
     theoryButton.row = 1;
     theoryButton.column = 1;
-    let manualButton = createMenuButton(createManualMenu,
-    getLoc('btnMenuManual'));
+    let manualButton = createButton(getLoc('btnMenuManual'), () =>
+    createManualMenu().show());
     manualButton.row = 2;
     manualButton.column = 0;
+    let toggleMeasure = () =>
+    {
+        measurePerformance = !measurePerformance;
+        perfButton.content.text = measurePerformance ? getLoc('btnEndMeasure') :
+        getLoc('btnStartMeasure');
+        if(measurePerformance)
+            drawMeasurer.reset();
+    };
+    let perfButton = createButton(measurePerformance ? getLoc('btnEndMeasure') :
+    getLoc('btnStartMeasure'), toggleMeasure);
+    perfButton.row = 2;
+    perfButton.column = 1;
 
     let stack = ui.createScrollView
     ({
@@ -2007,7 +2105,8 @@ var getUpgradeListDelegate = () =>
                         cfgButton,
                         slButton,
                         theoryButton,
-                        manualButton
+                        manualButton,
+                        perfButton
                     ]
                 })
             ]
