@@ -1418,206 +1418,6 @@ class Renderer
     }
 }
 
-const xAxisQuat = new Quaternion(0, 1, 0, 0);
-
-let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
-let renderer = new Renderer(arrow, 1, 2, false, 1);
-let globalSeed = new LCG(Date.now());
-let manualSystems =
-[
-    {},
-    {},
-    {},
-    {},
-    {
-        system: arrow,
-        config: [1, 2, 1, 0, 0, 0, 0, 0, false]
-    },
-    {
-        system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
-        config: [4, Math.sqrt(2), 0, 0, 0, 0, 0, 0, false]
-    },
-    {
-        system: new LSystem('X', [
-            'F=FF',
-            'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
-        ], 22.5),
-        config: [1, 2, 1, 0, 0, 0, 0, 0, true]
-    },
-    {
-        system: new LSystem('A', [
-            'A=I[L]B,I[L]A,I[L][R]B,IF',
-            'B=I[R]A,I[R]B,I[L][R]A,IF',
-            'L=---I,--I,----I',
-            'R=+++I,++I,++++I',
-            'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
-        ], 12),
-        config: [6, 1, 1, 0, 0, 0, 0, 0, true]
-    },
-    {
-        system: new LSystem('F', [
-            'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
-            'M=Z-M',
-            'N=Z+N',
-            'O=Z&O',
-            'P=Z^P',
-            'Y=Z-ZY+',
-            'Z=ZZ'
-        ], 8),
-        config: [2, 2, 0.6, 0, 0, 0, 0, 0, true]
-    },
-    {
-        system: new LSystem('X', [
-            'X',
-            'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
-        ], 90),
-        config: [1, 2, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, false]
-    },
-    {
-        system: new LSystem('FFFA', [
-            'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
-            'C=[---------FF][+++++++++FF]B&&+C',
-            'D=[---------FF][+++++++++FF]B&&-D'
-        ], 4),
-        config: [3, 1.3, 0.6, 0, 0, 0, 0, 0, true]
-    },
-    {
-        system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
-        config: [1, 2, 1, 0, 0, true]
-    },
-    {
-        system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
-        config: [1.5, 2, 0.15, -0.5, 0, 0, 0, 0, false]
-    },
-    {
-        system: new LSystem('X', [
-            'E=XEXF-',
-            'F=FX+[E]X',
-            'X=F-[X+[X[++E]F]]+F[X+FX]-X'
-        ], 22.5),
-        config: [1, 3, 0.75, -0.25, 0, 0, 0, 0, true]
-    }
-];
-let tmpSystemName = getLoc('defaultSystemName');
-let tmpSystemDesc = getLoc('noDescription');
-var l, ts;
-
-var init = () =>
-{
-    min = theory.createCurrency(getLoc('currencyTime'));
-    progress = theory.createCurrency('%');
-
-    // l (Level)
-    {
-        let getDesc = (level) => Localization.format(getLoc('varLvDesc'),
-        level.toString(), renderer.loopMode == 3 ? '+' : '');
-        let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
-        l = theory.createUpgrade(0, progress, new FreeCost);
-        l.getDescription = (_) => Utils.getMath(getDesc(l.level));
-        l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level),
-        getInfo(l.level + amount));
-        l.canBeRefunded = (_) => true;
-        l.boughtOrRefunded = (_) => renderer.update(l.level);
-    }
-    // ts (Tickspeed)
-    {
-        let getDesc = (level) =>
-        {
-            if(tickDelayMode)
-            {
-                if(level == 0)
-                    return getLoc('varTdDescInf');
-                return Localization.format(getLoc('varTdDesc'),
-                (level / 10).toString());
-            }
-            return Localization.format(getLoc('varTsDesc'), level.toString());
-        }
-        let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
-        ts = theory.createUpgrade(1, progress, new FreeCost);
-        ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
-        ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level),
-        getInfo(ts.level + amount));
-        ts.maxLevel = 10;
-        ts.canBeRefunded = (_) => true;
-        ts.boughtOrRefunded = (_) => time = 0;
-    }
-
-    theory.createSecretAchievement(0, null,
-        getLoc('saPatienceTitle'),
-        getLoc('saPatienceDesc'),
-        getLoc('saPatienceHint'),
-        () => min.value > 9.6
-    );
-}
-
-var alwaysShowRefundButtons = () => true;
-
-let timeCheck = (elapsedTime) =>
-{
-    let timeLimit;
-    if(tickDelayMode)
-    {
-        time += 1;
-        timeLimit = ts.level;
-    }
-    else
-    {
-        time += elapsedTime;
-        timeLimit = 1 / ts.level;
-    }
-    if(time >= timeLimit - 1e-8)
-    {
-        time -= timeLimit;
-        return true;
-    }
-    return false;
-}
-
-var tick = (elapsedTime, multiplier) =>
-{
-    if(game.isCalculatingOfflineProgress)
-    {
-        gameIsOffline = true;
-        return;
-    }
-    else if(gameIsOffline)
-    {
-        // Triggers only once when reloading
-        if(offlineReset)
-            renderer.reset();
-        gameIsOffline = false;
-    }
-
-    if(ts.level == 0)
-    {
-        // Keep updating even when paused
-        renderer.draw(l.level, true);
-    }
-    else
-    {
-        renderer.draw(l.level, !timeCheck(elapsedTime));
-        renderer.tick(elapsedTime);
-    }
-
-    let msTime = renderer.elapsedTime;
-    min.value = msTime[0] + msTime[1] / 100;
-    progress.value = renderer.progressPercent;
-    theory.invalidateTertiaryEquation();
-}
-
-var getEquationOverlay = () =>
-{
-    let result = ui.createLatexLabel
-    ({
-        text: getLoc('equationOverlay'),
-        displacementX: 6,
-        displacementY: 5,
-        fontSize: 9,
-        textColor: Color.TEXT_MEDIUM
-    });
-    return result;
-}
-
 class VariableControls
 {
     constructor(variable, useAnchor = false, quickbuyAmount = 10)
@@ -1626,10 +1426,16 @@ class VariableControls
         this.varBtn = null;
         this.refundBtn = null;
         this.buyBtn = null;
+
         this.useAnchor = useAnchor;
         this.anchor = this.variable.level;
         this.anchorActive = false;
         this.quickbuyAmount = quickbuyAmount;
+    }
+
+    updateDescription()
+    {
+        this.varBtn.content.text = this.variable.getDescription();
     }
     createVariableButton(callback = null, height = DEFAULT_BUTTON_HEIGHT)
     {
@@ -1644,7 +1450,7 @@ class VariableControls
             verticalOptions: LayoutOptions.CENTER,
             content: ui.createLatexLabel
             ({
-                text: () => this.variable.getDescription(),
+                text: this.variable.getDescription(),
                 verticalOptions: LayoutOptions.CENTER,
                 textColor: Color.TEXT_MEDIUM
             }),
@@ -1830,6 +1636,218 @@ class VariableControls
     }
 }
 
+const xAxisQuat = new Quaternion(0, 1, 0, 0);
+
+let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
+let renderer = new Renderer(arrow, 1, 2, false, 1);
+let globalSeed = new LCG(Date.now());
+let manualSystems =
+[
+    {},
+    {},
+    {},
+    {},
+    {
+        system: arrow,
+        config: [1, 2, 1, 0, 0, 0, 0, 0, false]
+    },
+    {
+        system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
+        config: [4, Math.sqrt(2), 0, 0, 0, 0, 0, 0, false]
+    },
+    {
+        system: new LSystem('X', [
+            'F=FF',
+            'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
+        ], 22.5),
+        config: [1, 2, 1, 0, 0, 0, 0, 0, true]
+    },
+    {
+        system: new LSystem('A', [
+            'A=I[L]B,I[L]A,I[L][R]B,IF',
+            'B=I[R]A,I[R]B,I[L][R]A,IF',
+            'L=---I,--I,----I',
+            'R=+++I,++I,++++I',
+            'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
+        ], 12),
+        config: [6, 1, 1, 0, 0, 0, 0, 0, true]
+    },
+    {
+        system: new LSystem('F', [
+            'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
+            'M=Z-M',
+            'N=Z+N',
+            'O=Z&O',
+            'P=Z^P',
+            'Y=Z-ZY+',
+            'Z=ZZ'
+        ], 8),
+        config: [2, 2, 0.6, 0, 0, 0, 0, 0, true]
+    },
+    {
+        system: new LSystem('X', [
+            'X',
+            'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
+        ], 90),
+        config: [1, 2, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, false]
+    },
+    {
+        system: new LSystem('FFFA', [
+            'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
+            'C=[---------FF][+++++++++FF]B&&+C',
+            'D=[---------FF][+++++++++FF]B&&-D'
+        ], 4),
+        config: [3, 1.3, 0.6, 0, 0, 0, 0, 0, true]
+    },
+    {
+        system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
+        config: [1, 2, 1, 0, 0, true]
+    },
+    {
+        system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
+        config: [1.5, 2, 0.15, -0.5, 0, 0, 0, 0, false]
+    },
+    {
+        system: new LSystem('X', [
+            'E=XEXF-',
+            'F=FX+[E]X',
+            'X=F-[X+[X[++E]F]]+F[X+FX]-X'
+        ], 22.5),
+        config: [1, 3, 0.75, -0.25, 0, 0, 0, 0, true]
+    }
+];
+let tmpSystemName = getLoc('defaultSystemName');
+let tmpSystemDesc = getLoc('noDescription');
+
+var l, ts;
+let lvlControls, tsControls;
+
+var init = () =>
+{
+    min = theory.createCurrency(getLoc('currencyTime'));
+    progress = theory.createCurrency('%');
+
+    // l (Level)
+    {
+        let getDesc = (level) => Localization.format(getLoc('varLvDesc'),
+        level.toString(), renderer.loopMode == 3 ? '+' : '');
+        let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
+        l = theory.createUpgrade(0, progress, new FreeCost);
+        l.getDescription = (_) => Utils.getMath(getDesc(l.level));
+        l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level),
+        getInfo(l.level + amount));
+        l.canBeRefunded = (_) => true;
+        l.boughtOrRefunded = (_) =>
+        {
+            lvlControls.updateDescription();
+            renderer.update(l.level);
+        }
+        lvlControls = new VariableControls(l);
+    }
+    // ts (Tickspeed)
+    {
+        let getDesc = (level) =>
+        {
+            if(tickDelayMode)
+            {
+                if(level == 0)
+                    return getLoc('varTdDescInf');
+                return Localization.format(getLoc('varTdDesc'),
+                (level / 10).toString());
+            }
+            return Localization.format(getLoc('varTsDesc'), level.toString());
+        }
+        let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
+        ts = theory.createUpgrade(1, progress, new FreeCost);
+        ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
+        ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level),
+        getInfo(ts.level + amount));
+        ts.maxLevel = 10;
+        ts.canBeRefunded = (_) => true;
+        ts.boughtOrRefunded = (_) =>
+        {
+            tsControls.updateDescription();
+            time = 0;
+        }
+        tsControls = new VariableControls(ts, true);
+    }
+
+    theory.createSecretAchievement(0, null,
+        getLoc('saPatienceTitle'),
+        getLoc('saPatienceDesc'),
+        getLoc('saPatienceHint'),
+        () => min.value > 9.6
+    );
+}
+
+var alwaysShowRefundButtons = () => true;
+
+let timeCheck = (elapsedTime) =>
+{
+    let timeLimit;
+    if(tickDelayMode)
+    {
+        time += 1;
+        timeLimit = ts.level;
+    }
+    else
+    {
+        time += elapsedTime;
+        timeLimit = 1 / ts.level;
+    }
+    if(time >= timeLimit - 1e-8)
+    {
+        time -= timeLimit;
+        return true;
+    }
+    return false;
+}
+
+var tick = (elapsedTime, multiplier) =>
+{
+    if(game.isCalculatingOfflineProgress)
+    {
+        gameIsOffline = true;
+        return;
+    }
+    else if(gameIsOffline)
+    {
+        // Triggers only once when reloading
+        if(offlineReset)
+            renderer.reset();
+        gameIsOffline = false;
+    }
+
+    if(ts.level == 0)
+    {
+        // Keep updating even when paused
+        renderer.draw(l.level, true);
+    }
+    else
+    {
+        renderer.draw(l.level, !timeCheck(elapsedTime));
+        renderer.tick(elapsedTime);
+    }
+
+    let msTime = renderer.elapsedTime;
+    min.value = msTime[0] + msTime[1] / 100;
+    progress.value = renderer.progressPercent;
+    theory.invalidateTertiaryEquation();
+}
+
+var getEquationOverlay = () =>
+{
+    let result = ui.createLatexLabel
+    ({
+        text: getLoc('equationOverlay'),
+        displacementX: 6,
+        displacementY: 5,
+        fontSize: 9,
+        textColor: Color.TEXT_MEDIUM
+    });
+    return result;
+}
+
 let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
@@ -1873,7 +1891,6 @@ let createMenuButton = (menuFunc, title, height = DEFAULT_BUTTON_HEIGHT) =>
 
 var getUpgradeListDelegate = () =>
 {
-    let lvlControls = new VariableControls(l);
     let openSeqMenu = () =>
     {
         let menu = createSequenceMenu();
@@ -1887,10 +1904,10 @@ var getUpgradeListDelegate = () =>
     let lvlBuy = lvlControls.createBuyButton();
     lvlBuy.column = 1;
 
-    let tsControls = new VariableControls(ts, true);
     let toggleTDM = () =>
     {
         tickDelayMode = !tickDelayMode;
+        tsControls.updateDescription();
         time = 0;
     }
     let tsButton = tsControls.createVariableButton(toggleTDM);
@@ -2460,6 +2477,7 @@ let createConfigMenu = () =>
                                 tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
                                 tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX, tmpOY,
                                 tmpOZ, tmpModel);
+                                lvlControls.updateDescription();
                                 menu.hide();
                             }
                         }),
@@ -2473,6 +2491,7 @@ let createConfigMenu = () =>
                                 Sound.playClick();
                                 let currentSystem = renderer.system;
                                 renderer = new Renderer(currentSystem);
+                                lvlControls.updateDescription();
                                 menu.hide();
                             }
                         })
