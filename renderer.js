@@ -91,8 +91,9 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.20 - Miscalculator (WIP)',
-        equationOverlay: '{0}\n\nDrawing: {1}\n\n{2}',
+        versionName: 'v0.20 - Miscalculator (Work in Progress)',
+        equationOverlayLong: '{0}\n\nDrawing — {1}\n\n{2}',
+        equationOverlay: '{0}\n\n{1}',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
@@ -1980,7 +1981,7 @@ var tick = (elapsedTime, multiplier) =>
 
 var getEquationOverlay = () =>
 {
-    let overlayText = () => Localization.format(getLoc('equationOverlay'),
+    let overlayText = () => Localization.format(getLoc('equationOverlayLong'),
     getLoc('versionName'), tmpSystemName, drawMeasurer.windowAvgString);
     let result = ui.createLatexLabel
     ({
