@@ -91,7 +91,7 @@ const locStrings =
 {
     en:
     {        
-        equationOverlay: 'v0.20 - Spring Cleaning (WIP)',
+        equationOverlay: 'v0.20 (WIP)',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
@@ -863,6 +863,7 @@ class Renderer
         if(typeof this.zoomExpr != 'string')
             this.zoomExpr = this.zoomExpr.toString();
         this.zoom = MathExpression.parse(zoomExpr);
+        this.zoomVal = 1;
         /**
          * @type {boolean} the camera mode.
          * @public
@@ -989,6 +990,8 @@ class Renderer
         {
             this.reset(clearGraph);
             this.lv = level;
+            this.zoomVal = this.zoom.evaluate(
+            v => this.getVariable(v)).toNumber();
         }
 
         this.loadTarget = Math.max(level, this.loadTarget);
@@ -1077,6 +1080,7 @@ class Renderer
         if(typeof this.zoomExpr != 'string')
             this.zoomExpr = this.zoomExpr.toString();
         this.zoom = MathExpression.parse(zoomExpr);
+        this.zoomVal = this.zoom.evaluate(v => this.getVariable(v)).toNumber();
         this.cameraMode = cameraMode;
         this.camCentre = new Vector3(camX, camY, camZ);
         this.followFactor = followFactor;
@@ -1113,6 +1117,7 @@ class Renderer
         if(typeof this.zoomExpr != 'string')
             this.zoomExpr = this.zoomExpr.toString();
         this.zoom = MathExpression.parse(zoomExpr);
+        this.zoomVal = this.zoom.evaluate(v => this.getVariable(v)).toNumber();
         this.camCentre = new Vector3(camX, camY, camZ);
         this.upright = upright;
         this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
@@ -1288,6 +1293,14 @@ class Renderer
 
         return new Vector3(coords.x, -coords.y, coords.z);
     }
+    getVariable(v)
+    {
+        switch(v)
+        {
+            case 'lv': return BigNumber.from(this.lv);
+        }
+        return null;
+    }
     /**
      * Returns the camera centre's coordinates.
      * @returns {Vector3} the coordinates.
@@ -1297,15 +1310,7 @@ class Renderer
         if(this.cameraMode)
             return -this.cursor;
 
-        let zoomLevel = this.zoom.evaluate(v =>
-        {
-            switch(v)
-            {
-                case 'lv': return BigNumber.from(this.lv);
-            }
-            return null;
-        }).toNumber();
-        return this.swizzle(-this.camCentre - this.camOffset / zoomLevel);
+        return this.swizzle(-this.camCentre - this.camOffset / this.zoomVal);
     }
     /**
      * Returns the cursor's coordinates.
@@ -1313,16 +1318,7 @@ class Renderer
      */
     get cursor()
     {
-        let zoomLevel = this.zoom.evaluate(v =>
-        {
-            switch (v)
-            {
-                case 'lv': return BigNumber.from(this.lv);
-            }
-            return null;
-        }).toNumber();
-        let coords = this.state / zoomLevel;
-        
+        let coords = this.state / this.zoomVal;
         return this.swizzle(coords);
     }
     /**

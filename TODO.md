@@ -1,15 +1,6 @@
 # L-systems Renderer
 
-## 0.20 - Spring Cleaning
-
-- [ ] Redesign manual
-  - Add more systems to the manual (algae, or like, mistletoe)
-  - Add tutorial-like flows that explain concepts
-- [ ] Add more comments in the code
-- [ ] A more detailed README
-  - Showcases the power of tickspeed and stroke options
-  - Discusses limitations of the game
-  - Like a blog post, sort of
+## 0.20
 
 - [ ] Renderer camera zoom and centre using MathExpressions instead of a hundred
 parameters
@@ -46,7 +37,16 @@ parameters
 - [x] Redesign anchor logic
   - Only register anchor level before longpressing minus and level > 0
 
-## Mistletoe Edition (for Lemma's Garden)
+## Planned
+
+- [ ] Redesign manual
+  - Add more systems to the manual (algae, or like, mistletoe)
+  - Add tutorial-like flows that explain concepts
+- [ ] Add more comments in the code
+- [ ] A more detailed README
+  - Showcases the power of tickspeed and stroke options
+  - Discusses limitations of the game
+  - Like a blog post, sort of
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
