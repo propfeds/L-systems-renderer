@@ -107,7 +107,7 @@ const locStrings =
         saPatienceHint: 'Be patient.',
 
         btnSave: 'Save',
-        btnDefault: 'Reset to Defaults',
+        btnDefault: 'Reset to Defaults*',
         btnAdd: 'Add',
         btnConstruct: 'Construct',
         btnDelete: 'Delete',
@@ -2483,6 +2483,7 @@ let createConfigMenu = () =>
             [
                 ui.createScrollView
                 ({
+                    heightRequest: ui.screenHeight * 0.36,
                     content: ui.createStackLayout
                     ({
                         children:
@@ -2941,7 +2942,7 @@ let createNamingMenu = () =>
                 }),
                 ui.createScrollView
                 ({
-                    // heightRequest: ui.screenHeight * 0.25,
+                    heightRequest: ui.screenHeight * 0.2,
                     content: systemGrid
                 }),
                 ui.createBox
@@ -3309,6 +3310,7 @@ let createViewMenu = (title) =>
             [
                 ui.createScrollView
                 ({
+                    // heightRequest: ui.screenHeight * 0.32,
                     content: ui.createStackLayout
                     ({
                         children:
@@ -3614,7 +3616,7 @@ let createSaveMenu = () =>
                 }),
                 ui.createScrollView
                 ({
-                    // heightRequest: ui.screenHeight * 0.25,
+                    heightRequest: ui.screenHeight * 0.32,
                     content: systemGrid
                 })
             ]
