@@ -1,23 +1,14 @@
 # L-systems Renderer
 
-## 0.20 - Mistletoe Edition
+## 0.20 - Spring Cleaning
 
-- [ ] Context sensitivity
-  - `b < a > c → aa`
-  - How to store? Maps?
-
-- [ ] Redesign manual
-  - Add more systems to the manual (algae, or like, mistletoe)
-  - Add tutorial-like flows that explain concepts
-- [ ] Add more comments in the code
-- [ ] A more detailed README
-  - Showcases the power of tickspeed and stroke options
-  - Discusses limitations of the game
-  - Like a blog post, sort of
+- [ ] Renderer camera zoom and centre using MathExpressions instead of a hundred
+parameters
 - [ ] Optimise using the API's profiler
   - The profiler is very limited in functionality.
   - [x] Instead, implemented a rough profiler using Date.now()
 
+- [x] Internal state using JSON
 - [x] Custom class that stores variable controls?
   - [x] Solves weird logic with anchor
   - [x] Update updating method to make a more responsive UI?
@@ -46,8 +37,11 @@
 - [x] Redesign anchor logic
   - Only register anchor level before longpressing minus and level > 0
 
-## Far Future: Preparation for Lemma's Garden
+## Mistletoe Edition (Lemma's Garden)
 
+- [ ] Context sensitivity
+  - `b < a > c → aa`
+  - How to store? Maps?
 - [ ] Parametric systems
 - [ ] Custom models for each symbol
   - Petals, leaves and such
@@ -62,6 +56,15 @@
   - Can models' names contain spaces?
     - How are they referenced in systems? As a list of names? An ID that is the
     index of an array?
+
+- [ ] Redesign manual
+  - Add more systems to the manual (algae, or like, mistletoe)
+  - Add tutorial-like flows that explain concepts
+- [ ] Add more comments in the code
+- [ ] A more detailed README
+  - Showcases the power of tickspeed and stroke options
+  - Discusses limitations of the game
+  - Like a blog post, sort of
 
 ## Impossible or Scrapped
 

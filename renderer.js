@@ -68,14 +68,15 @@ Warning: v0.20 might break your internal state. Be sure to back it up to ` +
     return descs.en;
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
-                'for providing help with quaternions';
+                'for providing help with quaternions\nskyhigh173, for ' +
+                'suggesting clipboard and JSON internal state formatting';
 var version = 0.2;
 
 let time = 0;
 let page = 0;
 let offlineReset = true;
 let gameIsOffline = false;
-let altCurrencies = false;
+let altTerEq = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let measurePerformance = false;
@@ -89,7 +90,7 @@ const locStrings =
 {
     en:
     {        
-        equationOverlay: 'v0.20 - Mistletoe (WIP)',
+        equationOverlay: 'v0.20 - Spring Cleaning (WIP)',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
@@ -147,10 +148,10 @@ const locStrings =
         labelInitScale: 'Initial scale: ',
         labelFigScale: 'Figure scale per level: ',
         labelCamMode: 'Camera mode: {0}',
-        camModes: ['Static', 'Linear', 'Frictional'],
+        camModes: ['Fixed', 'Linear', 'Bézier'],
         labelCamCentre: 'Scaled centre (x, y, z): ',
         labelCamOffset: 'Offset (x, y, z): ',
-        labelFollowFactor: 'Smoothing factor (0-1): ',
+        labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
         labelUpright: 'Upright x-axis: ',
@@ -664,7 +665,7 @@ class LSystem
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
      * @param {number} seed (default: 0) the seed (for stochastic systems).
      */
-    constructor(axiom, rules, turnAngle = 30, seed = 0)
+    constructor(axiom, rules, turnAngle = 30, seed = 0, ignoreList = '')
     {
         /**
          * @type {string} the starting sequence.
@@ -681,7 +682,7 @@ class LSystem
          * @type {string} a list of symbols ignored by the renderer.
          * @public
          */
-        this.ignoreList = '';
+        this.ignoreList = ignoreList;
         for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
@@ -690,7 +691,7 @@ class LSystem
                 if(rs.length < 2)
                 {
                     if(i == 0)
-                        this.ignoreList = rs[0];
+                        this.ignoreList += rs[0];
                     continue;
                 }
                 for(let i = 0; i < 2; ++i)
@@ -784,6 +785,20 @@ class LSystem
     {
         this.seed = seed;
         this.random = new LCG(this.seed);
+    }
+    getRulesStrings(containsIgnoreList = false)
+    {
+        let result = [];
+        if(containsIgnoreList)
+            result.push(this.ignoreList);
+        for(let [key, value] of this.rules)
+        {
+            if(typeof value === 'string')
+                result.push(`${key}=${value}`);
+            else
+                result.push(`${key}=${value.join(',')}`);
+        }
+        return result;
     }
     /**
      * Returns the system's string representation.
@@ -1303,8 +1318,8 @@ class Renderer
         switch(this.cameraMode)
         {
             case 2:
+                // I accidentally discovered Bézier curves unknowingly.
                 let dist = this.centre - this.lastCamera;
-                // This is NOT real friction. It just looks nice.
                 newCamera = this.lastCamera + dist * this.followFactor ** 2 +
                 this.lastCamVel * (1 - this.followFactor) ** 2;
                 this.lastCamVel = newCamera - this.lastCamera;
@@ -1645,9 +1660,9 @@ class VariableControls
 
 class Measurer
 {
-    constructor(name, window = 10)
+    constructor(title, window = 10)
     {
-        this.name = name;
+        this.title = title;
         this.window = window;
         this.sum = 0;
         this.windowSum = 0;
@@ -1697,7 +1712,7 @@ class Measurer
         if(this.ticksPassed == 0)
             return '';
 
-        return Localization.format(getLoc('measurement'), this.name,
+        return Localization.format(getLoc('measurement'), this.title,
         getCoordString(this.windowAvg), Math.min(this.window,
         this.ticksPassed));
     }
@@ -1706,7 +1721,7 @@ class Measurer
         if(this.ticksPassed == 0)
             return '';
 
-        return Localization.format(getLoc('measurement'), this.name,
+        return Localization.format(getLoc('measurement'), this.title,
         getCoordString(this.allTimeAvg), this.ticksPassed);
     }
 }
@@ -2630,15 +2645,7 @@ let createSystemMenu = () =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = [];
-    tmpRules.push(renderer.system.ignoreList);
-    for(let [key, value] of renderer.system.rules)
-    {
-        if(typeof value === 'string')
-            tmpRules.push(`${key}=${value}`);
-        else
-            tmpRules.push(`${key}=${value.join(',')}`);
-    }
+    let tmpRules = renderer.system.getRulesStrings(true);
     let ruleEntries = [];
     for(let i = 1; i < tmpRules.length; ++i)
     {
@@ -3010,7 +3017,6 @@ let createViewMenu = (title) =>
     if(tmpDesc in [null, undefined])
         tmpDesc = getLoc('noDescription');
     let rendererValues = systemObj.config;
-    // log(rendererValues.toString());
     let tmpIScale = rendererValues[0];
     let tmpFScale = rendererValues[1];
     let tmpCX = rendererValues[2];
@@ -3841,7 +3847,7 @@ let createWorldMenu = () =>
             }
         }
     });
-    let tmpAC = altCurrencies;
+    let tmpAC = altTerEq;
     let ACLabel = ui.createLatexLabel
     ({
         text: Localization.format(getLoc('labelTerEq'),
@@ -3916,7 +3922,7 @@ let createWorldMenu = () =>
                         Sound.playClick();
                         offlineReset = tmpOD;
                         resetLvlOnConstruct = tmpRL;
-                        altCurrencies = tmpAC;
+                        altTerEq = tmpAC;
                         menu.hide();
                     }
                 })
@@ -3926,9 +3932,9 @@ let createWorldMenu = () =>
     return menu;
 }
 
-var getInternalState = () =>
+var DEPRECATEDgetInternalState = () =>
 {
-    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altCurrencies ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0} ${savedSystems.size} ${savedModels.length}`;
+    let result = `${version} ${time} ${page} ${offlineReset ? 1 : 0} ${altTerEq ? 1 : 0} ${tickDelayMode ? 1 : 0} ${resetLvlOnConstruct ? 1 : 0} ${savedSystems.size} ${savedModels.length}`;
     result += `\n${renderer.toString()}\n${tmpSystemName}\n${tmpSystemDesc}\n${renderer.system.toString()}\n`;
     for(let [key, value] of savedSystems)
     {
@@ -3939,6 +3945,48 @@ var getInternalState = () =>
     return result;
 }
 
+var getInternalState = () => JSON.stringify
+({
+    version: version,
+    time: time,
+    page: page,
+    offlineReset: offlineReset,
+    altTerEq: altTerEq,
+    tickDelayMode: tickDelayMode,
+    resetLvlOnConstruct: resetLvlOnConstruct,
+    measurePerformance: measurePerformance,
+    renderer:
+    {
+        initScale: renderer.initScale,
+        figureScale: renderer.figureScale,
+        cameraMode: renderer.cameraMode,
+        camCentreX: renderer.camCentre.x,
+        camCentreY: renderer.camCentre.y,
+        camCentreZ: renderer.camCentre.z,
+        camOffsetX: renderer.camOffset.x,
+        camOffsetY: renderer.camOffset.y,
+        camOffsetZ: renderer.camOffset.z,
+        followFactor: renderer.followFactor,
+        loopMode: renderer.loopMode,
+        upright: renderer.upright,
+        loadModels: renderer.loadModels,
+        quickDraw: renderer.quickDraw,
+        quickBacktrack: renderer.quickBacktrack,
+        backtrackList: renderer.backtrackList
+    },
+    system:
+    {
+        title: tmpSystemName,
+        desc: tmpSystemDesc,
+        axiom: renderer.system.axiom,
+        turnAngle: renderer.system.turnAngle,
+        ignoreList: renderer.system.ignoreList,
+        seed: renderer.system.seed,
+        rules: renderer.system.getRulesStrings()
+    },
+    savedSystems: Object.fromEntries(savedSystems)
+}, undefined, 4);
+
 var setInternalState = (stateStr) =>
 {
     let values = stateStr.split('\n');
@@ -3947,126 +3995,175 @@ var setInternalState = (stateStr) =>
     let stateVersion = 0;
     if(worldValues.length > 0)
         stateVersion = Number(worldValues[0]);
-    if(worldValues.length > 1)
-        time = Number(worldValues[1]);
-    if(worldValues.length > 2)
-        page = Number(worldValues[2]);
-    if(worldValues.length > 3)
-        offlineReset = Boolean(Number(worldValues[3]));
-    if(worldValues.length > 4)
-        altCurrencies = Boolean(Number(worldValues[4]));
-    if(worldValues.length > 5)
-        tickDelayMode = Boolean(Number(worldValues[5]));
-    if(worldValues.length > 6)
-        resetLvlOnConstruct = Boolean(Number(worldValues[6]));
-    let noofSystems = 0;
-    if(worldValues.length > 7)
-        noofSystems = Number(worldValues[7]);
 
-    if(values.length > 1)
+    if(isNaN(stateVersion))
     {
-        let rendererValues = values[1].split(' ');
-        if(rendererValues.length > 0)
-            rendererValues[0] = Number(rendererValues[0]);
-        if(rendererValues.length > 1)
-            rendererValues[1] = Number(rendererValues[1]);
-        if(rendererValues.length > 2)
-            rendererValues[2] = Number(rendererValues[2]);
-        if(rendererValues.length > 3)
-            rendererValues[3] = Number(rendererValues[3]);
-        if(rendererValues.length > 4)
-            rendererValues[4] = Number(rendererValues[4]);
-        if(rendererValues.length > 5)
-            rendererValues[5] = Number(rendererValues[5]);
-        if(rendererValues.length > 6)
-            rendererValues[6] = Number(rendererValues[6]);
-        if(rendererValues.length > 7)
-            rendererValues[7] = Number(rendererValues[7]);
-        if(rendererValues.length > 8)
-            rendererValues[8] = Boolean(Number(rendererValues[8]));
-        if(rendererValues.length > 9)
-            rendererValues[9] = Boolean(Number(rendererValues[9]));
-        if(rendererValues.length > 10)
-            rendererValues[10] = Boolean(Number(rendererValues[10]));
-        if(rendererValues.length > 12)
-            rendererValues[12] = Number(rendererValues[12]);
-        if(rendererValues.length > 13)
-            rendererValues[13] = Number(rendererValues[13]);
-        if(rendererValues.length > 14)
-            rendererValues[14] = Number(rendererValues[14]);        
-        if(rendererValues.length > 15)
-            rendererValues[15] = Boolean(Number(rendererValues[15]));
-
-        if(stateVersion < 0.2)
+        let state = JSON.parse(stateStr);
+        log(`Loading JSON state (version: ${state.version})`);
+        time = state.time;
+        page = state.page;
+        offlineReset = state.offlineReset;
+        altTerEq = state.altTerEq;
+        tickDelayMode = state.tickDelayMode;
+        resetLvlOnConstruct = state.resetLvlOnConstruct;
+        measurePerformance = state.measurePerformance;
+        
+        tmpSystemName = state.system.title;
+        tmpSystemDesc = state.system.desc;
+        let system;
+        if('system' in state)
         {
-            if(values.length > 2)
+            system = new LSystem(state.system.axiom, state.system.rules,
+            state.system.turnAngle, state.system.seed, state.system.ignoreList);
+        }
+        else
+            system = arrow;
+        
+        if('renderer' in state)
+        {
+            renderer = new Renderer(system, state.renderer.initScale,
+            state.renderer.figureScale, state.renderer.cameraMode,
+            state.renderer.camCentreX, state.renderer.camCentreY,
+            state.renderer.camCentreZ, state.renderer.followFactor,
+            state.renderer.loopMode, state.renderer.upright,
+            state.renderer.quickDraw, state.renderer.quickBacktrack,
+            state.renderer.backtrackList, state.renderer.camOffsetX,
+            state.renderer.camOffsetY, state.renderer.camOffsetZ,
+            state.renderer.loadModels);
+        }
+        else
+            renderer = new Renderer(system);
+
+        savedSystems = new Map(Object.entries(state.savedSystems));
+    }
+    // Doesn't even need checking the version number; if it appears at all then
+    // it's definitely written before switching to JSON
+    else
+    {
+        log(`Loading space-separated state (version: ${stateVersion})`);
+        if(worldValues.length > 1)
+            time = Number(worldValues[1]);
+        if(worldValues.length > 2)
+            page = Number(worldValues[2]);
+        if(worldValues.length > 3)
+            offlineReset = Boolean(Number(worldValues[3]));
+        if(worldValues.length > 4)
+            altTerEq = Boolean(Number(worldValues[4]));
+        if(worldValues.length > 5)
+            tickDelayMode = Boolean(Number(worldValues[5]));
+        if(worldValues.length > 6)
+            resetLvlOnConstruct = Boolean(Number(worldValues[6]));
+        let noofSystems = 0;
+        if(worldValues.length > 7)
+            noofSystems = Number(worldValues[7]);
+
+        if(values.length > 1)
+        {
+            let rendererValues = values[1].split(' ');
+            if(rendererValues.length > 0)
+                rendererValues[0] = Number(rendererValues[0]);
+            if(rendererValues.length > 1)
+                rendererValues[1] = Number(rendererValues[1]);
+            if(rendererValues.length > 2)
+                rendererValues[2] = Number(rendererValues[2]);
+            if(rendererValues.length > 3)
+                rendererValues[3] = Number(rendererValues[3]);
+            if(rendererValues.length > 4)
+                rendererValues[4] = Number(rendererValues[4]);
+            if(rendererValues.length > 5)
+                rendererValues[5] = Number(rendererValues[5]);
+            if(rendererValues.length > 6)
+                rendererValues[6] = Number(rendererValues[6]);
+            if(rendererValues.length > 7)
+                rendererValues[7] = Number(rendererValues[7]);
+            if(rendererValues.length > 8)
+                rendererValues[8] = Boolean(Number(rendererValues[8]));
+            if(rendererValues.length > 9)
+                rendererValues[9] = Boolean(Number(rendererValues[9]));
+            if(rendererValues.length > 10)
+                rendererValues[10] = Boolean(Number(rendererValues[10]));
+            if(rendererValues.length > 12)
+                rendererValues[12] = Number(rendererValues[12]);
+            if(rendererValues.length > 13)
+                rendererValues[13] = Number(rendererValues[13]);
+            if(rendererValues.length > 14)
+                rendererValues[14] = Number(rendererValues[14]);        
+            if(rendererValues.length > 15)
+                rendererValues[15] = Boolean(Number(rendererValues[15]));
+
+            if(stateVersion < 0.2)
             {
-                let systemValues = values[2].split(' ');
-                let system = new LSystem(systemValues[0], systemValues.slice(3),
-                Number(systemValues[1]), Number(systemValues[2]));
-                renderer = new Renderer(system, ...rendererValues);
+                if(values.length > 2)
+                {
+                    let systemValues = values[2].split(' ');
+                    let system = new LSystem(systemValues[0],
+                    systemValues.slice(3), Number(systemValues[1]),
+                    Number(systemValues[2]));
+                    renderer = new Renderer(system, ...rendererValues);
+                }
+                else
+                    renderer = new Renderer(arrow, ...rendererValues);
             }
             else
-                renderer = new Renderer(arrow, ...rendererValues);
+            {
+                if(values.length > 2)
+                    tmpSystemName = values[2];
+                if(values.length > 3)
+                    tmpSystemDesc = values[3];
+                if(values.length > 4)
+                {
+                    let systemValues = values[4].split(' ');
+                    let system = new LSystem(systemValues[0],
+                    systemValues.slice(3), Number(systemValues[1]),
+                    Number(systemValues[2]));
+                    renderer = new Renderer(system, ...rendererValues);
+                }
+                else
+                    renderer = new Renderer(arrow, ...rendererValues);
+            }
+        }
+        
+        if(stateVersion < 0.2)
+        {
+            // Load everything.
+            for(let i = 0; 4 + i * 2 < values.length; ++i)
+                savedSystems.set(values[3 + i * 2],
+                {
+                    desc: getLoc('noDescription'),
+                    system: values[4 + i * 2],
+                    config: [1, 1, 0, 0, 0, 0, 0, 0, false]
+                });
         }
         else
         {
-            if(values.length > 2)
-                tmpSystemName = values[2];
-            if(values.length > 3)
-                tmpSystemDesc = values[3];
-            if(values.length > 4)
+            for(let i = 0; i < noofSystems; ++i)
             {
-                let systemValues = values[4].split(' ');
-                let system = new LSystem(systemValues[0], systemValues.slice(3),
-                Number(systemValues[1]), Number(systemValues[2]));
-                renderer = new Renderer(system, ...rendererValues);
+                let rv = values[9 + i * 5].split(' ');
+                if(rv.length > 0)
+                    rv[0] = Number(rv[0]);
+                if(rv.length > 1)
+                    rv[1] = Number(rv[1]);
+                if(rv.length > 2)
+                    rv[2] = Number(rv[2]);
+                if(rv.length > 3)
+                    rv[3] = Number(rv[3]);
+                if(rv.length > 4)
+                    rv[4] = Number(rv[4]);
+                if(rv.length > 5)
+                    rv[5] = Number(rv[5]);
+                if(rv.length > 6)
+                    rv[6] = Number(rv[6]);
+                if(rv.length > 7)
+                    rv[7] = Number(rv[7]);
+                if(rv.length > 8)
+                    rv[8] = Boolean(Number(rv[8]));
+                
+                savedSystems.set(values[6 + i * 5], {
+                    desc: values[7 + i * 5],
+                    system: values[8 + i * 5],
+                    config: rv
+                });
             }
-            else
-                renderer = new Renderer(arrow, ...rendererValues);
-        }
-        
-    }
-    
-    if(stateVersion < 0.2)
-    {
-        // Load everything.
-        for(let i = 0; 4 + i * 2 < values.length; ++i)
-            savedSystems.set(values[3 + i * 2], {
-                desc: getLoc('noDescription'),
-                system: values[4 + i * 2],
-                config: [1, 1, 0, 0, 0, 0, 0, 0, false]
-            });
-    }
-    else
-    {
-        for(let i = 0; i < noofSystems; ++i)
-        {
-            let rv = values[9 + i * 5].split(' ');
-            if(rv.length > 0)
-                rv[0] = Number(rv[0]);
-            if(rv.length > 1)
-                rv[1] = Number(rv[1]);
-            if(rv.length > 2)
-                rv[2] = Number(rv[2]);
-            if(rv.length > 3)
-                rv[3] = Number(rv[3]);
-            if(rv.length > 4)
-                rv[4] = Number(rv[4]);
-            if(rv.length > 5)
-                rv[5] = Number(rv[5]);
-            if(rv.length > 6)
-                rv[6] = Number(rv[6]);
-            if(rv.length > 7)
-                rv[7] = Number(rv[7]);
-            if(rv.length > 8)
-                rv[8] = Boolean(Number(rv[8]));
-
-            savedSystems.set(values[6 + i * 5], {
-                desc: values[7 + i * 5],
-                system: values[8 + i * 5],
-                config: rv
-            });
         }
     }
 }
@@ -4079,7 +4176,7 @@ var resetStage = () => renderer.seed = globalSeed.nextInt;
 
 var getTertiaryEquation = () =>
 {
-    if(altCurrencies)
+    if(altTerEq)
         return renderer.oriString;
 
     return renderer.stateString;
