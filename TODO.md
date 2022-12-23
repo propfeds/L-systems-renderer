@@ -2,12 +2,14 @@
 
 ## 0.20
 
-- [ ] Renderer camera zoom and centre using MathExpressions instead of a hundred
-parameters
+- [ ] Rewrite a little bit of the manual according to new changea
 - [ ] Optimise using the API's profiler
   - The profiler is very limited in functionality.
   - [x] Instead, implemented a rough profiler using Date.now()
 
+- [x] Renderer camera zoom using MathExpressions instead of a hundred parameters
+- [x] Renderer camera centre using MathExpressions instead of a hundred
+parameters
 - [x] Internal state using JSON
 - [x] Custom class that stores variable controls?
   - [x] Solves weird logic with anchor

@@ -90,8 +90,9 @@ const MAX_CHARS_PER_TICK = 10000;
 const locStrings =
 {
     en:
-    {        
-        equationOverlay: 'v0.20 (WIP)',
+    {
+        versionName: 'v0.20 - Miscalculator (WIP)',
+        equationOverlay: '{0}\n\nDrawing: {1}\n\n{2}',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
 
@@ -146,21 +147,21 @@ const locStrings =
         labelSeed: 'Seed (for stochastic systems): ',
 
         menuRenderer: 'Renderer Menu',
-        labelInitScale: 'Initial scale*: ',
-        labelFigScale: 'Figure scale (expression)*: ',
+        labelInitScale: 'Initial scale: * ',
+        labelFigScale: 'Figure scale: * ',
         labelCamMode: 'Camera mode: {0}',
         camModes: ['Fixed', 'Linear', 'Bézier'],
-        labelCamCentre: 'Scaled centre (x, y, z): ',
-        labelCamOffset: 'Offset (x, y, z): ',
+        labelCamCentre: 'Fixed camera centre (x,): ',
+        labelCamOffset: '...(y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
-        labelUpright: 'Upright x-axis*: ',
-        labelLoadModels: '(Teaser!) Load models*: ',
-        labelQuickdraw: 'Quickdraw straight lines*: ',
-        labelQuickBT: 'Quick backtrack*: ',
-        labelBTList: 'Backtrack list*: ',
-        labelRequireReset: '*: Modifying this setting will require a reset.',
+        labelUpright: 'Upright x-axis: * ',
+        labelLoadModels: '(Teaser!) Load models: * ',
+        labelQuickdraw: 'Quickdraw straight lines: * ',
+        labelQuickBT: 'Quick backtrack: * ',
+        labelBTList: 'Backtrack list: * ',
+        labelRequireReset: '* Modifying this setting will require a reset.',
 
         menuSave: 'Save/Load Menu',
         labelCurrentSystem: 'Current system: ',
@@ -829,8 +830,7 @@ class Renderer
     /**
      * @constructor
      * @param {LSystem} system the L-system to be handled.
-     * @param {number} initScale (default: 1; non-zero) the initial scale.
-     * @param {number} figureScale (default: 1; non-zero) the per-level scale.
+     * @param {string} figureScale (default: 1) the zoom level expression.
      * @param {boolean} cameraMode (default: 0) the camera mode.
      * @param {number} camX (default: 0) the camera's x-axis centre.
      * @param {number} camY (default: 0) the camera's y-axis centre.
@@ -848,32 +848,35 @@ class Renderer
      * @param {string} backtrackList (default: '+-&^\\/|[]') a list of symbols
      * to act as stoppers for backtracking.
      */
-    constructor(system, zoomExpr = '1', cameraMode = 0,
-    camX = 0, camY = 0, camZ = 0, followFactor = 0.15, loopMode = 0,
-    upright = false, quickDraw = false, quickBacktrack = false,
-    backtrackList = '+-&^\\/|[]', camOffsetX = 0, camOffsetY = 0,
-    camOffsetZ = 0, loadModels = false)
+    constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
+    camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
+    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]',
+    loadModels = false)
     {
         /**
          * @type {LSystem} the L-system being handled.
          * @public
          */
         this.system = system;
-        this.zoomExpr = zoomExpr;
-        if(typeof this.zoomExpr != 'string')
-            this.zoomExpr = this.zoomExpr.toString();
-        this.zoom = MathExpression.parse(zoomExpr);
-        this.zoomVal = 1;
+        this.figScaleStr = figureScale.toString();
+        this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        this.figureScale = 1;
         /**
          * @type {boolean} the camera mode.
          * @public
          */
         this.cameraMode = Math.round(Math.min(Math.max(cameraMode, 0), 2));
+        this.camXStr = camX.toString();
+        this.camYStr = camY.toString();
+        this.camZStr = camZ.toString();
+        this.camXExpr = MathExpression.parse(this.camXStr);
+        this.camYExpr = MathExpression.parse(this.camYStr);
+        this.camZExpr = MathExpression.parse(this.camZStr);
         /**
          * @type {Vector3} the static camera's coordinates.
          * @public
          */
-        this.camCentre = new Vector3(camX, camY, camZ);
+        this.camCentre = new Vector3(0, 0, 0);
         /**
          * @type {number} the follow factor.
          * @public
@@ -906,7 +909,6 @@ class Renderer
          * @public
          */
         this.backtrackList = backtrackList;
-        this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
         this.loadModels = loadModels;
         /**
          * @type {Vector3} the cursor's position.
@@ -990,8 +992,14 @@ class Renderer
         {
             this.reset(clearGraph);
             this.lv = level;
-            this.zoomVal = this.zoom.evaluate(
+            this.figureScale = this.figScaleExpr.evaluate(
             v => this.getVariable(v)).toNumber();
+            this.camCentre = new Vector3
+            (
+                this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
+                this.camYExpr.evaluate(v => this.getVariable(v)).toNumber(),
+                this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
+            );
         }
 
         this.loadTarget = Math.max(level, this.loadTarget);
@@ -1049,8 +1057,7 @@ class Renderer
     }
     /**
      * Configures every parameter of the renderer, except the system.
-     * @param {number} initScale the initial scale.
-     * @param {number} figureScale the per-level scale.
+     * @param {string} figureScale the zoom level expression.
      * @param {boolean} cameraMode the camera mode.
      * @param {number} camX the camera's x-axis centre.
      * @param {number} camY the camera's y-axis centre.
@@ -1066,30 +1073,38 @@ class Renderer
      * @param {string} backtrackList a list of symbols to act as stoppers for
      * backtracking.
      */
-    configure(zoomExpr, cameraMode, camX, camY, camZ,
-    followFactor, loopMode, upright, quickDraw, quickBacktrack,
-    backtrackList, camOffsetX, camOffsetY, camOffsetZ, loadModels)
+    configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
+    loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels)
     {
-        let requireReset = (zoomExpr !== this.zoomExpr) ||
+        let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
         (backtrackList != this.backtrackList) ||
         (loadModels != this.loadModels);
 
-        this.zoomExpr = zoomExpr;
-        if(typeof this.zoomExpr != 'string')
-            this.zoomExpr = this.zoomExpr.toString();
-        this.zoom = MathExpression.parse(zoomExpr);
-        this.zoomVal = this.zoom.evaluate(v => this.getVariable(v)).toNumber();
+        this.figScaleStr = figureScale.toString();
+        this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        this.figureScale = this.figScaleExpr.evaluate(
+        v => this.getVariable(v)).toNumber();
         this.cameraMode = cameraMode;
-        this.camCentre = new Vector3(camX, camY, camZ);
+        this.camXStr = camX.toString();
+        this.camYStr = camY.toString();
+        this.camZStr = camZ.toString();
+        this.camXExpr = MathExpression.parse(this.camXStr);
+        this.camYExpr = MathExpression.parse(this.camYStr);
+        this.camZExpr = MathExpression.parse(this.camZStr);
+        this.camCentre = new Vector3
+        (
+            this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camYExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
+        );
         this.followFactor = followFactor;
         this.loopMode = loopMode;
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
         this.backtrackList = backtrackList;
-        this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
         this.loadModels = loadModels;
 
         if(requireReset)
@@ -1099,28 +1114,35 @@ class Renderer
     }
     /**
      * Configures only the parameters related to the static camera mode.
-     * @param {number} initScale the initial scale.
-     * @param {number} figureScale the per-level scale.
+     * @param {string} figureScale the zoom level expression.
      * @param {number} camX the camera's x-axis centre.
      * @param {number} camY the camera's y-axis centre.
      * @param {number} camZ the camera's z-axis centre.
      * @param {boolean} upright whether to rotate the system around the z-axis
      * by 90 degrees.
      */
-    configureStaticCamera(zoomExpr, camX, camY, camZ, camOffsetX,
-    camOffsetY, camOffsetZ, upright)
+    configureStaticCamera(figureScale, camX, camY, camZ, upright)
     {
-        let requireReset = (zoomExpr !== this.zoomExpr) ||
+        let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright);
 
-        this.zoomExpr = zoomExpr;
-        if(typeof this.zoomExpr != 'string')
-            this.zoomExpr = this.zoomExpr.toString();
-        this.zoom = MathExpression.parse(zoomExpr);
-        this.zoomVal = this.zoom.evaluate(v => this.getVariable(v)).toNumber();
-        this.camCentre = new Vector3(camX, camY, camZ);
+        this.figScaleStr = figureScale.toString();
+        this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        this.figureScale = this.figScaleExpr.evaluate(
+        v => this.getVariable(v)).toNumber();
+        this.camXStr = camX.toString();
+        this.camYStr = camY.toString();
+        this.camZStr = camZ.toString();
+        this.camXExpr = MathExpression.parse(this.camXStr);
+        this.camYExpr = MathExpression.parse(this.camYStr);
+        this.camZExpr = MathExpression.parse(this.camZStr);
+        this.camCentre = new Vector3
+        (
+            this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camYExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
+        );
         this.upright = upright;
-        this.camOffset = new Vector3(camOffsetX, camOffsetY, camOffsetZ);
 
         if(requireReset)
             this.reset();
@@ -1310,7 +1332,7 @@ class Renderer
         if(this.cameraMode)
             return -this.cursor;
 
-        return this.swizzle(-this.camCentre - this.camOffset / this.zoomVal);
+        return this.swizzle(-this.camCentre / this.figureScale);
     }
     /**
      * Returns the cursor's coordinates.
@@ -1318,7 +1340,7 @@ class Renderer
      */
     get cursor()
     {
-        let coords = this.state / this.zoomVal;
+        let coords = this.state / this.figureScale;
         return this.swizzle(coords);
     }
     /**
@@ -1359,13 +1381,10 @@ class Renderer
     get staticCamera()
     {
         return [
-            this.zoomExpr,
-            this.camCentre.x,
-            this.camCentre.y,
-            this.camCentre.z,
-            this.camOffset.x,
-            this.camOffset.y,
-            this.camOffset.z,
+            this.figScaleStr,
+            this.camXStr,
+            this.camYStr,
+            this.camZStr,
             this.upright
         ];
     }
@@ -1447,7 +1466,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.zoomExpr} ${this.cameraMode} ${this.camCentre.x} ${this.camCentre.y} ${this.camCentre.z} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.camOffset.x} ${this.camOffset.y} ${this.camOffset.z} ${this.loadModels ? 1 : 0}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0}`;
     }
 }
 
@@ -1751,7 +1770,7 @@ class Measurer
 const xAxisQuat = new Quaternion(0, 1, 0, 0);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
-let renderer = new Renderer(arrow, '2^lv', 0, 1);
+let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalSeed = new LCG(Date.now());
 let manualSystems =
 [
@@ -1761,18 +1780,18 @@ let manualSystems =
     {},
     {
         system: arrow,
-        config: ['2^lv', 1, 0, 0, 0, 0, 0, false]
+        config: ['2^lv', '2^lv', 0, 0, false]
     },
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
-        config: ['4*sqrt(2)^lv', 0, 0, 0, 0, 0, 0, false]
+        config: ['4*sqrt(2)^lv', 0, 0, 0, false]
     },
     {
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
         ], 22.5),
-        config: ['2^lv', 1, 0, 0, 0, 0, 0, true]
+        config: ['2^lv', '2^lv', 0, 0, true]
     },
     {
         system: new LSystem('A', [
@@ -1782,7 +1801,7 @@ let manualSystems =
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
         ], 12),
-        config: ['6', 1, 0, 0, 0, 0, 0, true]
+        config: [6, 6, 0, 0, true]
     },
     {
         system: new LSystem('F', [
@@ -1794,14 +1813,14 @@ let manualSystems =
             'Y=Z-ZY+',
             'Z=ZZ'
         ], 8),
-        config: ['2*2^lv', 0.6, 0, 0, 0, 0, 0, true]
+        config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
     },
     {
         system: new LSystem('X', [
             'X',
             'X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\'
         ], 90),
-        config: ['2^lv', 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, false]
+        config: ['2^lv', '0.5*2^lv-0.5', '0.5*2^lv-0.5', '0.5*2^lv-0.5', false]
     },
     {
         system: new LSystem('FFFA', [
@@ -1809,15 +1828,15 @@ let manualSystems =
             'C=[---------FF][+++++++++FF]B&&+C',
             'D=[---------FF][+++++++++FF]B&&-D'
         ], 4),
-        config: ['3*1.3^lv', 0.6, 0, 0, 0, 0, 0, true]
+        config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
     },
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
-        config: ['2^lv', 1, 0, 0, true]
+        config: ['2^lv', '2^lv', 0, 0, true]
     },
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
-        config: ['1.5*2^lv', 0.15, -0.5, 0, 0, 0, 0, false]
+        config: ['1.5*2^lv', '0.225*2^lv', '-0.75*2^lv', 0, false]
     },
     {
         system: new LSystem('X', [
@@ -1825,7 +1844,7 @@ let manualSystems =
             'F=FX+[E]X',
             'X=F-[X+[X[++E]F]]+F[X+FX]-X'
         ], 22.5),
-        config: ['3^lv', 0.75, -0.25, 0, 0, 0, 0, true]
+        config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
     }
 ];
 let tmpSystemName = getLoc('defaultSystemName');
@@ -1961,9 +1980,11 @@ var tick = (elapsedTime, multiplier) =>
 
 var getEquationOverlay = () =>
 {
+    let overlayText = () => Localization.format(getLoc('equationOverlay'),
+    getLoc('versionName'), tmpSystemName, drawMeasurer.windowAvgString);
     let result = ui.createLatexLabel
     ({
-        text: () => `${getLoc('equationOverlay')}\n\n${drawMeasurer.windowAvgString}`,
+        text: overlayText,
         displacementX: 6,
         displacementY: 5,
         fontSize: 9,
@@ -2142,7 +2163,7 @@ var getUpgradeListDelegate = () =>
 
 let createConfigMenu = () =>
 {
-    let tmpZE = renderer.zoomExpr;
+    let tmpZE = renderer.figScaleStr;
     let zoomEntry = ui.createEntry
     ({
         text: tmpZE,
@@ -2189,80 +2210,33 @@ let createConfigMenu = () =>
             CMSlider.value = tmpCM;
         }
     });
-    let tmpCX = renderer.camCentre.x;
-    let tmpCY = renderer.camCentre.y;
-    let tmpCZ = renderer.camCentre.z;
-    let camLabel = ui.createGrid
+    let tmpCX = renderer.camXStr;
+    let tmpCY = renderer.camYStr;
+    let tmpCZ = renderer.camZStr;
+    let camLabel = ui.createLatexLabel
     ({
+        text: getLoc('labelCamCentre'),
+        isVisible: tmpCM == 0,
         row: 2,
         column: 0,
-        columnDefinitions: ['55*', '15*'],
-        isVisible: tmpCM == 0,
-        children:
-        [
-            ui.createLatexLabel
-            ({
-                text: getLoc('labelCamCentre'),
-                row: 0,
-                column: 0,
-                verticalOptions: LayoutOptions.CENTER
-            }),
-            ui.createEntry
-            ({
-                text: tmpCX.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCX = Number(nt);
-                }
-            })
-        ]
+        verticalOptions: LayoutOptions.CENTER
     });
-    let camGrid = ui.createGrid
+    let camGrid = ui.createEntry
     ({
+        text: tmpCX,
+        isVisible: tmpCM == 0,
         row: 2,
         column: 1,
-        columnDefinitions: ['50*', '50*'],
-        isVisible: tmpCM == 0,
-        children:
-        [
-            ui.createEntry
-            ({
-                text: tmpCY.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 0,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCY = Number(nt);
-                }
-            }),
-            ui.createEntry
-            ({
-                text: tmpCZ.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCZ = Number(nt);
-                }
-            })
-        ]
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCX = nt;
+        }
     });
-    let tmpOX = renderer.camOffset.x;
-    let tmpOY = renderer.camOffset.y;
-    let tmpOZ = renderer.camOffset.z;
     let camOffLabel = ui.createGrid
     ({
         row: 3,
         column: 0,
-        columnDefinitions: ['55*', '15*'],
+        columnDefinitions: ['40*', '30*'],
         isVisible: tmpCM == 0,
         children:
         [
@@ -2271,55 +2245,31 @@ let createConfigMenu = () =>
                 text: getLoc('labelCamOffset'),
                 row: 0,
                 column: 0,
+                horizontalOptions: LayoutOptions.END,
                 verticalOptions: LayoutOptions.CENTER
             }),
             ui.createEntry
             ({
-                text: tmpOX.toString(),
-                keyboard: Keyboard.NUMERIC,
+                text: tmpCY,
                 row: 0,
                 column: 1,
-                horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
-                    tmpOX = Number(nt);
+                    tmpCY = nt;
                 }
             })
         ]
     });
-    let camOffGrid = ui.createGrid
+    let camOffGrid = ui.createEntry
     ({
+        text: tmpCZ,
+        isVisible: tmpCM == 0,
         row: 3,
         column: 1,
-        columnDefinitions: ['50*', '50*'],
-        isVisible: tmpCM == 0,
-        children:
-        [
-            ui.createEntry
-            ({
-                text: tmpOY.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 0,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpOY = Number(nt);
-                }
-            }),
-            ui.createEntry
-            ({
-                text: tmpOZ.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpOZ = Number(nt);
-                }
-            })
-        ]
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCZ = nt;
+        }
     });
     let tmpFF = renderer.followFactor;
     let FFLabel = ui.createLatexLabel
@@ -2581,10 +2531,9 @@ let createConfigMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let requireReset = renderer.configure(
-                                tmpZE, tmpCM, tmpCX, tmpCY,
-                                tmpCZ, tmpFF, tmpLM, tmpUpright, tmpQD, tmpQB,
-                                tmpEXB, tmpOX, tmpOY, tmpOZ, tmpModel);
+                                let requireReset = renderer.configure(tmpZE,
+                                tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
+                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel);
                                 lvlControls.updateDescription();
                                 if(requireReset)
                                     menu.hide();
@@ -3014,10 +2963,7 @@ let createViewMenu = (title) =>
     let tmpCX = rendererValues[1];
     let tmpCY = rendererValues[2];
     let tmpCZ = rendererValues[3];
-    let tmpOX = rendererValues[4];
-    let tmpOY = rendererValues[5];
-    let tmpOZ = rendererValues[6];
-    let tmpUpright = rendererValues[7];
+    let tmpUpright = rendererValues[4];
 
     let zoomEntry = ui.createEntry
     ({
@@ -3029,72 +2975,28 @@ let createViewMenu = (title) =>
             tmpZE = nt;
         }
     });
-    let camLabel = ui.createGrid
+    let camLabel = ui.createLatexLabel
     ({
-        row: 2,
+        text: getLoc('labelCamCentre'),
+        row: 1,
         column: 0,
-        columnDefinitions: ['55*', '15*'],
-        children:
-        [
-            ui.createLatexLabel
-            ({
-                text: getLoc('labelCamCentre'),
-                row: 0,
-                column: 0,
-                verticalOptions: LayoutOptions.CENTER
-            }),
-            ui.createEntry
-            ({
-                text: tmpCX.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCX = Number(nt);
-                }
-            })
-        ]
+        verticalOptions: LayoutOptions.CENTER
     });
-    let camGrid = ui.createGrid
+    let camGrid = ui.createEntry
     ({
-        row: 2,
+        text: tmpCX,
+        row: 1,
         column: 1,
-        columnDefinitions: ['50*', '50*'],
-        children:
-        [
-            ui.createEntry
-            ({
-                text: tmpCY.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 0,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCY = Number(nt);
-                }
-            }),
-            ui.createEntry
-            ({
-                text: tmpCZ.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCZ = Number(nt);
-                }
-            })
-        ]
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCX = nt;
+        }
     });
     let camOffLabel = ui.createGrid
     ({
-        row: 3,
+        row: 2,
         column: 0,
-        columnDefinitions: ['55*', '15*'],
+        columnDefinitions: ['40*', '30*'],
         children:
         [
             ui.createLatexLabel
@@ -3102,59 +3004,35 @@ let createViewMenu = (title) =>
                 text: getLoc('labelCamOffset'),
                 row: 0,
                 column: 0,
+                horizontalOptions: LayoutOptions.END,
                 verticalOptions: LayoutOptions.CENTER
             }),
             ui.createEntry
             ({
-                text: tmpOX.toString(),
-                keyboard: Keyboard.NUMERIC,
+                text: tmpCY,
                 row: 0,
                 column: 1,
-                horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
-                    tmpOX = Number(nt);
+                    tmpCY = nt;
                 }
             })
         ]
     });
-    let camOffGrid = ui.createGrid
+    let camOffGrid = ui.createEntry
     ({
-        row: 3,
+        text: tmpCZ,
+        row: 2,
         column: 1,
-        columnDefinitions: ['50*', '50*'],
-        children:
-        [
-            ui.createEntry
-            ({
-                text: tmpOY.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 0,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpOY = Number(nt);
-                }
-            }),
-            ui.createEntry
-            ({
-                text: tmpOZ.toString(),
-                keyboard: Keyboard.NUMERIC,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpOZ = Number(nt);
-                }
-            })
-        ]
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCZ = nt;
+        }
     });
     let uprightSwitch = ui.createSwitch
     ({
         isToggled: tmpUpright,
-        row: 4,
+        row: 3,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -3384,7 +3262,7 @@ let createViewMenu = (title) =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelUpright'),
-                                        row: 4,
+                                        row: 3,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -3416,7 +3294,7 @@ let createViewMenu = (title) =>
                                 renderer.applySystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed);
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
-                                tmpCY, tmpCZ, tmpOX, tmpOY, tmpOZ, tmpUpright);
+                                tmpCY, tmpCZ, tmpUpright);
                                 tmpSystemName = title;
                                 tmpSystemDesc = tmpDesc;
                                 menu.hide();
@@ -3430,12 +3308,12 @@ let createViewMenu = (title) =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                savedSystems.set(title, {
+                                savedSystems.set(title,
+                                {
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
                                     tmpAngle, tmpSeed).toString(),
-                                    config: [tmpZE, tmpCX,
-                                    tmpCY, tmpCZ, tmpOX, tmpOY, tmpOZ,
+                                    config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
                                 // menu.hide();
@@ -3946,14 +3824,11 @@ var getInternalState = () => JSON.stringify
     measurePerformance: measurePerformance,
     renderer:
     {
-        zoomExpr: renderer.zoomExpr,
+        figureScale: renderer.figScaleStr,
         cameraMode: renderer.cameraMode,
-        camCentreX: renderer.camCentre.x,
-        camCentreY: renderer.camCentre.y,
-        camCentreZ: renderer.camCentre.z,
-        camOffsetX: renderer.camOffset.x,
-        camOffsetY: renderer.camOffset.y,
-        camOffsetZ: renderer.camOffset.z,
+        camX: renderer.camXStr,
+        camY: renderer.camYStr,
+        camZ: renderer.camZStr,
         followFactor: renderer.followFactor,
         loopMode: renderer.loopMode,
         upright: renderer.upright,
@@ -4009,14 +3884,12 @@ var setInternalState = (stateStr) =>
         
         if('renderer' in state)
         {
-            renderer = new Renderer(system, state.renderer.zoomExpr,
-            state.renderer.cameraMode, state.renderer.camCentreX,
-            state.renderer.camCentreY, state.renderer.camCentreZ,
-            state.renderer.followFactor, state.renderer.loopMode,
-            state.renderer.upright, state.renderer.quickDraw,
-            state.renderer.quickBacktrack, state.renderer.backtrackList,
-            state.renderer.camOffsetX, state.renderer.camOffsetY,
-            state.renderer.camOffsetZ, state.renderer.loadModels);
+            renderer = new Renderer(system, state.renderer.figureScale,
+            state.renderer.cameraMode, state.renderer.camX, state.renderer.camY,
+            state.renderer.camZ, state.renderer.followFactor,
+            state.renderer.loopMode, state.renderer.upright,
+            state.renderer.quickDraw, state.renderer.quickBacktrack,
+            state.renderer.backtrackList, state.renderer.loadModels);
         }
         else
             renderer = new Renderer(system);
@@ -4047,18 +3920,8 @@ var setInternalState = (stateStr) =>
         if(values.length > 1)
         {
             let rv = values[1].split(' ');
-            if(rv.length > 0)
-                rv[0] = Number(rv[0]);
-            if(rv.length > 1)
-                rv[1] = `${rv[0]}*${rv[1]}^lv`;
             if(rv.length > 2)
-                rv[2] = Number(rv[2]);
-            if(rv.length > 3)
-                rv[3] = Number(rv[3]);
-            if(rv.length > 4)
-                rv[4] = Number(rv[4]);
-            if(rv.length > 5)
-                rv[5] = Number(rv[5]);
+                rv[2] = Number(rv[2]);  // cameraMode
             if(rv.length > 6)
                 rv[6] = Number(rv[6]);
             if(rv.length > 7)
@@ -4069,14 +3932,15 @@ var setInternalState = (stateStr) =>
                 rv[9] = Boolean(Number(rv[9]));
             if(rv.length > 10)
                 rv[10] = Boolean(Number(rv[10]));
-            if(rv.length > 12)
-                rv[12] = Number(rv[12]);
+            if(rv.length > 12)  // camera offset
+                rv[3] = `${rv[3]}*${rv[0]}*${rv[1]}^lv+${rv[12]}`;
             if(rv.length > 13)
-                rv[13] = Number(rv[13]);
+                rv[4] = `${rv[4]}*${rv[0]}*${rv[1]}^lv+${rv[13]}`;
             if(rv.length > 14)
-                rv[14] = Number(rv[14]);        
-            if(rv.length > 15)
-                rv[15] = Boolean(Number(rv[15]));
+                rv[5] = `${rv[5]}*${rv[0]}*${rv[1]}^lv+${rv[14]}`;
+                rv[1] = `${rv[0]}*${rv[1]}^lv`;
+            if(rv.length > 15)  // 13 through 15 are discarded
+                rv[12] = Boolean(Number(rv[15]));
 
             if(stateVersion < 0.2)
             {
@@ -4118,7 +3982,7 @@ var setInternalState = (stateStr) =>
                 {
                     desc: getLoc('noDescription'),
                     system: values[4 + i * 2],
-                    config: ['1', 0, 0, 0, 0, 0, 0, false]
+                    config: ['1', '0', '0', '0', false]
                 });
         }
         else
@@ -4126,25 +3990,18 @@ var setInternalState = (stateStr) =>
             for(let i = 0; i < noofSystems; ++i)
             {
                 let rv = values[9 + i * 5].split(' ');
-                if(rv.length > 0)
-                    rv[0] = Number(rv[0]);
-                if(rv.length > 1)
-                    rv[1] = `${rv[0]}*${rv[1]}^lv`;
-                if(rv.length > 2)
-                    rv[2] = Number(rv[2]);
-                if(rv.length > 3)
-                    rv[3] = Number(rv[3]);
-                if(rv.length > 4)
-                    rv[4] = Number(rv[4]);
                 if(rv.length > 5)
-                    rv[5] = Number(rv[5]);
+                    rv[2] = `${rv[2]}*${rv[0]}*${rv[1]}^lv+${rv[5]}`;
                 if(rv.length > 6)
-                    rv[6] = Number(rv[6]);
+                    rv[3] = `${rv[3]}*${rv[0]}*${rv[1]}^lv+${rv[6]}`;
                 if(rv.length > 7)
-                    rv[7] = Number(rv[7]);
-                if(rv.length > 8)
-                    rv[8] = Boolean(Number(rv[8]));
-                
+                {
+                    rv[4] = `${rv[4]}*${rv[0]}*${rv[1]}^lv+${rv[7]}`;
+                    rv[1] = `${rv[0]}*${rv[1]}^lv`;
+                }
+                if(rv.length > 8)   // 6 through 8 are discarded
+                    rv[5] = Boolean(Number(rv[8]));
+
                 savedSystems.set(values[6 + i * 5], {
                     desc: values[7 + i * 5],
                     system: values[8 + i * 5],
