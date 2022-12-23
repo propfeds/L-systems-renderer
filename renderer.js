@@ -68,7 +68,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up to ` +
     return descs.en;
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
-                'for providing help with quaternions\nskyhigh173, for ' +
+                'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
 var version = 0.2;
 
@@ -129,7 +129,7 @@ const locStrings =
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
 
-        measurement: '{0}: average {1}ms over {2} ticks',
+        measurement: '{0}: max {1}ms, avg {2}ms over {3} ticks',
 
         rerollSeed: 'You are about to reroll the system\'s seed.',
 
@@ -145,8 +145,8 @@ const locStrings =
         labelSeed: 'Seed (for stochastic systems): ',
 
         menuRenderer: 'Renderer Menu',
-        labelInitScale: 'Initial scale: ',
-        labelFigScale: 'Figure scale per level: ',
+        labelInitScale: 'Initial scale*: ',
+        labelFigScale: 'Figure scale per level*: ',
         labelCamMode: 'Camera mode: {0}',
         camModes: ['Fixed', 'Linear', 'Bézier'],
         labelCamCentre: 'Scaled centre (x, y, z): ',
@@ -154,11 +154,12 @@ const locStrings =
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
-        labelUpright: 'Upright x-axis: ',
-        labelLoadModels: '(Teaser!) Load models: ',
-        labelQuickdraw: 'Quickdraw straight lines: ',
-        labelQuickBT: 'Quick backtrack: ',
-        labelBTList: 'Backtrack list: ',
+        labelUpright: 'Upright x-axis*: ',
+        labelLoadModels: '(Teaser!) Load models*: ',
+        labelQuickdraw: 'Quickdraw straight lines*: ',
+        labelQuickBT: 'Quick backtrack*: ',
+        labelBTList: 'Backtrack list*: ',
+        labelRequireReset: '*: This setting requires a reset.',
 
         menuSave: 'Save/Load Menu',
         labelCurrentSystem: 'Current system: ',
@@ -179,6 +180,7 @@ const locStrings =
         labelResetLvl: 'Reset level on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
+        labelMeasure: 'Measure performance: ',
 
         menuManual: 'Manual ({0}/{1})',
         manualSystemDesc: 'From manual with love.',
@@ -1092,6 +1094,8 @@ class Renderer
 
         if(requireReset)
             this.reset();
+        
+        return requireReset;
     }
     /**
      * Configures only the parameters related to the static camera mode.
@@ -1666,6 +1670,7 @@ class Measurer
         this.window = window;
         this.sum = 0;
         this.windowSum = 0;
+        this.max = 0;
         this.records = [];
         for(let i = 0; i < this.window; ++i)
             this.records[i] = 0;
@@ -1677,6 +1682,7 @@ class Measurer
     {
         this.sum = 0;
         this.windowSum = 0;
+        this.max = 0;
         this.records = [];
         for(let i = 0; i < this.window; ++i)
             this.records[i] = 0;
@@ -1695,6 +1701,7 @@ class Measurer
             this.records[i] = closingStamp - this.lastStamp;
             this.windowSum += this.records[i];
             this.sum += this.records[i];
+            this.max = Math.max(this.max, this.records[i]);
             this.lastStamp = null;
             ++this.ticksPassed;
         }
@@ -1712,17 +1719,24 @@ class Measurer
         if(this.ticksPassed == 0)
             return '';
 
+        if(!measurePerformance)
+            return '';
+
         return Localization.format(getLoc('measurement'), this.title,
-        getCoordString(this.windowAvg), Math.min(this.window,
-        this.ticksPassed));
+        getCoordString(this.max), getCoordString(this.windowAvg),
+        Math.min(this.window, this.ticksPassed));
     }
     get allTimeAvgString()
     {
         if(this.ticksPassed == 0)
             return '';
 
+        if(!measurePerformance)
+            return '';
+
         return Localization.format(getLoc('measurement'), this.title,
-        getCoordString(this.allTimeAvg), this.ticksPassed);
+        getCoordString(this.max), getCoordString(this.allTimeAvg),
+        this.ticksPassed);
     }
 }
 
@@ -2039,18 +2053,6 @@ var getUpgradeListDelegate = () =>
     createManualMenu().show());
     manualButton.row = 2;
     manualButton.column = 0;
-    let toggleMeasure = () =>
-    {
-        measurePerformance = !measurePerformance;
-        perfButton.content.text = measurePerformance ? getLoc('btnEndMeasure') :
-        getLoc('btnStartMeasure');
-        if(measurePerformance)
-            drawMeasurer.reset();
-    };
-    let perfButton = createButton(measurePerformance ? getLoc('btnEndMeasure') :
-    getLoc('btnStartMeasure'), toggleMeasure);
-    perfButton.row = 2;
-    perfButton.column = 1;
 
     let stack = ui.createScrollView
     ({
@@ -2121,8 +2123,7 @@ var getUpgradeListDelegate = () =>
                         cfgButton,
                         slButton,
                         theoryButton,
-                        manualButton,
-                        perfButton
+                        manualButton
                     ]
                 })
             ]
@@ -2563,7 +2564,14 @@ let createConfigMenu = () =>
                                     }),
                                     QBSwitch,
                                     EXBLabel,
-                                    EXBEntry
+                                    EXBEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelRequireReset'),
+                                        row: 6,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    })
                                 ]
                             })
                         ]
@@ -2588,12 +2596,13 @@ let createConfigMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.configure(tmpIScale, tmpFScale,
-                                tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpOX, tmpOY,
-                                tmpOZ, tmpModel);
+                                let requireReset = renderer.configure(
+                                tmpIScale, tmpFScale, tmpCM, tmpCX, tmpCY,
+                                tmpCZ, tmpFF, tmpLM, tmpUpright, tmpQD, tmpQB,
+                                tmpEXB, tmpOX, tmpOY, tmpOZ, tmpModel);
                                 lvlControls.updateDescription();
-                                menu.hide();
+                                if(requireReset)
+                                    menu.hide();
                             }
                         }),
                         ui.createButton
@@ -3467,7 +3476,7 @@ let createViewMenu = (title) =>
                                     tmpCY, tmpCZ, tmpOX, tmpOY, tmpOZ,
                                     tmpUpright]
                                 });
-                                menu.hide();
+                                // menu.hide();
                             }
                         }),
                         ui.createButton
@@ -3587,7 +3596,6 @@ let createSaveMenu = () =>
                                     systemGrid.children = getSystemGrid();
                                 };
                                 namingMenu.show();
-                                // menu.hide();
                             }
                         })
                     ]
@@ -3875,10 +3883,29 @@ let createWorldMenu = () =>
             }
         }
     });
+    let tmpMP = measurePerformance;
+    let MPSwitch = ui.createSwitch
+    ({
+        isToggled: tmpMP,
+        row: 3,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpMP = !tmpMP;
+                MPSwitch.isToggled = tmpMP;
+            }
+        }
+    });
 
     let menu = ui.createPopup
     ({
         title: getLoc('menuTheory'),
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
@@ -3886,7 +3913,7 @@ let createWorldMenu = () =>
                 ui.createGrid
                 ({
                     columnDefinitions: ['70*', '30*'],
-                    rowDefinitions: [40, 40, 40],
+                    rowDefinitions: [40, 40, 40, 40],
                     children:
                     [
                         ui.createLatexLabel
@@ -3906,7 +3933,15 @@ let createWorldMenu = () =>
                         }),
                         RLSwitch,
                         ACLabel,
-                        ACSwitch
+                        ACSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelMeasure'),
+                            row: 3,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        MPSwitch
                     ]
                 }),
                 ui.createBox
@@ -3923,7 +3958,12 @@ let createWorldMenu = () =>
                         offlineReset = tmpOD;
                         resetLvlOnConstruct = tmpRL;
                         altTerEq = tmpAC;
-                        menu.hide();
+                        if(tmpMP != measurePerformance && tmpMP)
+                        {
+                            drawMeasurer.reset();
+                        }
+                        measurePerformance = tmpMP;
+                        // menu.hide();
                     }
                 })
             ]
