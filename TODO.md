@@ -2,6 +2,15 @@
 
 ## 0.20 - Spring Cleaning
 
+- [ ] Redesign manual
+  - Add more systems to the manual (algae, or like, mistletoe)
+  - Add tutorial-like flows that explain concepts
+- [ ] Add more comments in the code
+- [ ] A more detailed README
+  - Showcases the power of tickspeed and stroke options
+  - Discusses limitations of the game
+  - Like a blog post, sort of
+
 - [ ] Renderer camera zoom and centre using MathExpressions instead of a hundred
 parameters
 - [ ] Optimise using the API's profiler
@@ -37,7 +46,7 @@ parameters
 - [x] Redesign anchor logic
   - Only register anchor level before longpressing minus and level > 0
 
-## Mistletoe Edition (Lemma's Garden)
+## Mistletoe Edition (for Lemma's Garden)
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
@@ -56,15 +65,6 @@ parameters
   - Can models' names contain spaces?
     - How are they referenced in systems? As a list of names? An ID that is the
     index of an array?
-
-- [ ] Redesign manual
-  - Add more systems to the manual (algae, or like, mistletoe)
-  - Add tutorial-like flows that explain concepts
-- [ ] Add more comments in the code
-- [ ] A more detailed README
-  - Showcases the power of tickspeed and stroke options
-  - Discusses limitations of the game
-  - Like a blog post, sort of
 
 ## Impossible or Scrapped
 

@@ -936,7 +936,7 @@ class Renderer
          * @type {number} the current level (updates after buying the variable).
          * @public don't modify this please.
          */
-        this.lvl = -1;
+        this.lv = -1;
         /**
          * @type {number} the maximum level loaded.
          * @public don't mothify this either.
@@ -953,15 +953,15 @@ class Renderer
          */
         this.stack = [];
         /**
-         * @type {number[]} stores the indices of the stack.
+         * @type {number[]} stores the indices of the other stack.
          * @public don't touch this.
          */
-        this.idStack = [];
+        this.idxStack = [];
         /**
          * @type {number} the current index of the sequence.
          * @public don't know.
          */
-        this.idx = 0;
+        this.i = 0;
         /**
          * @type {number} the elapsed time.
          * @public
@@ -988,13 +988,13 @@ class Renderer
      */
     update(level, seedChanged = false)
     {
-        let clearGraph = this.loopMode != 3 || level < this.lvl || seedChanged;
+        let clearGraph = this.loopMode != 3 || level < this.lv || seedChanged;
 
-        if(this.lvl != level)
+        if(this.lv != level)
         {
             this.reset(clearGraph);
-            this.lvl = level;
-        } 
+            this.lv = level;
+        }
 
         this.loadTarget = Math.max(level, this.loadTarget);
 
@@ -1040,8 +1040,8 @@ class Renderer
         this.ori = new Quaternion();
         this.reverse = false;
         this.stack = [];
-        this.idStack = [];
-        this.idx = 0;
+        this.idxStack = [];
+        this.i = 0;
         if(clearGraph)
         {
             this.elapsed = 0;
@@ -1146,8 +1146,8 @@ class Renderer
         this.system.rerollSeed = seed;
         this.nextDeriveIdx = 0;
         this.loaded = -1;
-        this.loadTarget = this.lvl;
-        this.update(this.lvl, true);
+        this.loadTarget = this.lv;
+        this.update(this.lv, true);
     }
     /**
      * Moves the cursor forward.
@@ -1164,10 +1164,10 @@ class Renderer
      */
     tick(dt)
     {
-        if(this.lvl > this.loaded + 1)
+        if(this.lv > this.loaded + 1)
             return;
 
-        if(this.idx >= this.levels[this.lvl].length && (this.loopMode == 0 ||
+        if(this.i >= this.levels[this.lv].length && (this.loopMode == 0 ||
         (this.loopMode == 1 && this.stack.length == 0)))
             return;
 
@@ -1195,7 +1195,7 @@ class Renderer
         if(this.elapsed == 0)
             return;
 
-        if(this.idx >= this.levels[this.lvl].length)
+        if(this.i >= this.levels[this.lv].length)
         {
             if(this.loopMode == 0)
                 return;
@@ -1220,9 +1220,9 @@ class Renderer
             this.ori = t[1];
         }
 
-        for(; this.idx < this.levels[this.lvl].length; ++this.idx)
+        for(; this.i < this.levels[this.lv].length; ++this.i)
         {
-            switch(this.levels[this.lvl][this.idx])
+            switch(this.levels[this.lv][this.i])
             {
                 case '+':
                     this.ori = this.system.rotations.get('+').mul(this.ori);
@@ -1246,7 +1246,7 @@ class Renderer
                     this.reverse = !this.reverse;
                     break;
                 case '[':
-                    this.idStack.push(this.stack.length);
+                    this.idxStack.push(this.stack.length);
                     this.stack.push([this.state, this.ori]);
                     break;
                 case ']':
@@ -1257,18 +1257,18 @@ class Renderer
                     this.state = t[0];
                     this.ori = t[1];
                     if(this.stack.length ==
-                    this.idStack[this.idStack.length - 1])
+                    this.idxStack[this.idxStack.length - 1])
                     {
-                        this.idStack.pop();
-                        ++this.idx;
+                        this.idxStack.pop();
+                        ++this.i;
                     }
                     return;
                 default:
                     if(this.system.ignoreList.includes(
-                    this.levels[this.lvl][this.idx]))
+                    this.levels[this.lv][this.i]))
                         break;
                     let breakAhead = this.backtrackList.includes(
-                    this.levels[this.lvl][this.idx + 1]);
+                    this.levels[this.lv][this.i + 1]);
                     if(!this.quickBacktrack || breakAhead)
                         this.stack.push([this.state, this.ori]);
                     this.forward();
@@ -1276,7 +1276,7 @@ class Renderer
                         break;
                     else
                     {
-                        ++this.idx;
+                        ++this.i;
                         return;
                     }
             }
@@ -1299,7 +1299,7 @@ class Renderer
             return -this.cursor;
 
         return this.swizzle(-this.camCentre - this.camOffset /
-        (this.initScale * this.figureScale ** this.lvl));
+        (this.initScale * this.figureScale ** this.lv));
     }
     /**
      * Returns the cursor's coordinates.
@@ -1308,7 +1308,7 @@ class Renderer
     get cursor()
     {
         let coords = this.state / (this.initScale * this.figureScale **
-        this.lvl);
+        this.lv);
         
         return this.swizzle(coords);
     }
@@ -1377,7 +1377,7 @@ class Renderer
      */
     get progressFrac()
     {
-        return [this.idx, this.levels[this.lvl].length];
+        return [this.i, this.levels[this.lv].length];
     }
     /**
      * Returns the current progress on this level.
@@ -1385,7 +1385,7 @@ class Renderer
      */
     get progressPercent()
     {
-        if(typeof this.levels[this.lvl] == 'undefined')
+        if(typeof this.levels[this.lv] == 'undefined')
             return 0;
 
         let pf = this.progressFrac;
@@ -1417,7 +1417,7 @@ class Renderer
      */
     get stateString()
     {
-        if(typeof this.levels[this.lvl] == 'undefined')
+        if(typeof this.levels[this.lv] == 'undefined')
             return this.loadingString;
 
         return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.progressString}\\end{matrix}`;
@@ -1428,7 +1428,7 @@ class Renderer
      */
     get oriString()
     {
-        if(typeof this.levels[this.lvl] == 'undefined')
+        if(typeof this.levels[this.lv] == 'undefined')
             return this.loadingString;
 
         return `\\begin{matrix}q=${this.ori.toString()},&${this.progressString}\\end{matrix}`;
@@ -3304,6 +3304,7 @@ let createViewMenu = (title) =>
     menu = ui.createPopup
     ({
         title: title,
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
