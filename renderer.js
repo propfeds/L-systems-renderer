@@ -151,7 +151,7 @@ const locStrings =
         labelInitScale: 'Initial scale: * ',
         labelFigScale: 'Figure scale: * ',
         labelCamMode: 'Camera mode: {0}',
-        camModes: ['Fixed', 'Linear', 'Bézier'],
+        camModes: ['Fixed', 'B-Spline', 'Bézier'],
         labelCamCentre: 'Fixed camera centre (x,): ',
         labelCamOffset: '...(y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
@@ -836,7 +836,7 @@ class Renderer
      * @param {number} camX (default: 0) the camera's x-axis centre.
      * @param {number} camY (default: 0) the camera's y-axis centre.
      * @param {number} camZ (default: 0) the camera's z-axis centre.
-     * @param {number} followFactor (default: 0.1; between 0 and 1) the
+     * @param {number} followFactor (default: 0.15; between 0 and 1) the
      * camera's cursor-following speed.
      * @param {number} loopMode (default: 0; between 0 and 3) the renderer's
      * looping mode.
@@ -883,6 +883,8 @@ class Renderer
          * @public
          */
         this.followFactor = Math.min(Math.max(followFactor, 0), 1);
+        this.BézierFactors = this.BézierCoefficients;
+        this.BSplineFactors = this.BSplineCoefficients;
         /**
          * @type {number} the looping mode.
          * @public
@@ -967,11 +969,18 @@ class Renderer
          */
         this.elapsed = 0;
         /**
-         * @type {Vector3} the last tick's camera position.
+         * @type {number} the number of elapsed ticks, specifically used to
+         * track camera history.
+         * @public
+         */
+        this.elapsedTicks = 0;
+        /**
+         * @type {Vector3} the last 3 tick's camera positions.
          * @public didn't tell you so.
          */
-        this.lastCamera = new Vector3(0, 0, 0);
-        this.lastCamVel = new Vector3(0, 0, 0);
+        this.camHistory = [];
+        for(let i = 0; i < 3; ++i)
+            this.camHistory.push(new Vector3(0, 0, 0));
         /**
          * @type {number} the next index to update for the current level.
          * @public I told you so many times that you shouldn't access these.
@@ -995,6 +1004,9 @@ class Renderer
             this.lv = level;
             this.figureScale = this.figScaleExpr.evaluate(
             v => this.getVariable(v)).toNumber();
+            if(this.figureScale == 0)
+                this.figureScale = 1;
+
             this.camCentre = new Vector3
             (
                 this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
@@ -1087,6 +1099,9 @@ class Renderer
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
         this.figureScale = this.figScaleExpr.evaluate(
         v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
+
         this.cameraMode = cameraMode;
         this.camXStr = camX.toString();
         this.camYStr = camY.toString();
@@ -1101,6 +1116,8 @@ class Renderer
             this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
         );
         this.followFactor = followFactor;
+        this.BézierFactors = this.BézierCoefficients;
+        this.BSplineFactors = this.BSplineCoefficients;
         this.loopMode = loopMode;
         this.upright = upright;
         this.quickDraw = quickDraw;
@@ -1131,6 +1148,9 @@ class Renderer
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
         this.figureScale = this.figScaleExpr.evaluate(
         v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
+
         this.camXStr = camX.toString();
         this.camYStr = camY.toString();
         this.camZStr = camZ.toString();
@@ -1308,6 +1328,38 @@ class Renderer
             }
         }
     }
+    get BézierCoefficients()
+    {
+        let t = this.followFactor;
+        return [
+            1 - 3*t + 3*t**2 - t**3,
+            3*t -6*t**2 + 3*t**3,
+            3*t**2 - 3*t**3,
+            t**3
+        ];
+        // return [
+        //     -3 + 6*t -3*t**2,
+        //     3 - 12*t + 9*t**2,
+        //     6*t - 9*t**2,
+        //     3*t**2
+        // ];
+        // return [
+        //     (1 - t)**3,
+        //     t**3 - 4*t**2 + 4*t - 1,
+        //     -(t**3) + t**2 - t,
+        //     t**3
+        // ];
+    }
+    get BSplineCoefficients()
+    {
+        let f = this.followFactor;
+        return [
+            1/6 - f/2 + f**2/2 - f**3/6,
+            2/3 - f**2 + f**3/2,
+            1/6 + f/2 + f**2/2 - f**3/2,
+            f**3/6
+        ];
+    }
     swizzle(coords)
     {
         // The game uses left-handed Y-up, I mean Y-down coordinates.
@@ -1354,22 +1406,40 @@ class Renderer
         switch(this.cameraMode)
         {
             case 2:
-                // I accidentally discovered Bézier curves unknowingly.
-                let dist = this.centre - this.lastCamera;
-                newCamera = this.lastCamera + dist * this.followFactor ** 2 +
-                this.lastCamVel * (1 - this.followFactor) ** 2;
-                this.lastCamVel = newCamera - this.lastCamera;
-                this.lastCamera = newCamera;
-                return newCamera;
+                newCamera = 
+                this.camHistory[this.elapsedTicks % 3] *
+                this.BézierFactors[0] +
+                this.camHistory[(this.elapsedTicks + 1) % 3] *
+                this.BézierFactors[1] +
+                this.camHistory[(this.elapsedTicks + 2) % 3] *
+                this.BézierFactors[2] +
+                this.centre * this.BézierFactors[3];
+                break;
             case 1:
-                newCamera = this.centre * this.followFactor +
-                this.lastCamera * (1 - this.followFactor);
-                this.lastCamVel = newCamera - this.lastCamera;
-                this.lastCamera = newCamera;
-                return newCamera;
+                newCamera = this.camHistory[this.elapsedTicks % 3] *
+                this.BSplineFactors[0] +
+                this.camHistory[(this.elapsedTicks + 1) % 3] *
+                this.BSplineFactors[1] +
+                this.camHistory[(this.elapsedTicks + 2) % 3] *
+                (1 + this.BSplineFactors[2]) +
+                this.centre * this.BSplineFactors[3];
+                break;
             case 0:
-                return this.centre;
+                newCamera = this.centre;
+                break;
         }
+        if(this.elapsedTicks < 10)
+        {
+            log(this.elapsedTicks);
+            log(`0 ${this.camHistory[this.elapsedTicks % 3].toString()}`);
+            log(`1 ${this.camHistory[(this.elapsedTicks + 1) % 3].toString()}`);
+            log(`2 ${this.camHistory[(this.elapsedTicks + 2) % 3].toString()}`);
+            log(`3 ${this.centre.toString()}`);
+            log(`= ${newCamera.toString()}`);
+        }
+        this.camHistory[this.elapsedTicks % 3] = newCamera;
+        ++this.elapsedTicks;
+        return newCamera;
     }
     /**
      * Returns the cursor's orientation.
@@ -1702,7 +1772,7 @@ class Measurer
         this.records = [];
         for(let i = 0; i < this.window; ++i)
             this.records[i] = 0;
-        this.ticksPassed = 0;
+        this.elapsedTicks = 0;
         this.lastStamp = null;
     }
     
@@ -1714,7 +1784,7 @@ class Measurer
         this.records = [];
         for(let i = 0; i < this.window; ++i)
             this.records[i] = 0;
-        this.ticksPassed = 0;
+        this.elapsedTicks = 0;
         this.lastStamp = null;
     }
     stamp()
@@ -1724,27 +1794,27 @@ class Measurer
         else
         {
             let closingStamp = Date.now();
-            let i = this.ticksPassed % this.window;
+            let i = this.elapsedTicks % this.window;
             this.windowSum -= this.records[i];
             this.records[i] = closingStamp - this.lastStamp;
             this.windowSum += this.records[i];
             this.sum += this.records[i];
             this.max = Math.max(this.max, this.records[i]);
             this.lastStamp = null;
-            ++this.ticksPassed;
+            ++this.elapsedTicks;
         }
     }
     get windowAvg()
     {
-        return this.windowSum / Math.min(this.window, this.ticksPassed);
+        return this.windowSum / Math.min(this.window, this.elapsedTicks);
     }
     get allTimeAvg()
     {
-        return this.sum / this.ticksPassed;
+        return this.sum / this.elapsedTicks;
     }
     get windowAvgString()
     {
-        if(this.ticksPassed == 0)
+        if(this.elapsedTicks == 0)
             return '';
 
         if(!measurePerformance)
@@ -1752,11 +1822,11 @@ class Measurer
 
         return Localization.format(getLoc('measurement'), this.title,
         getCoordString(this.max), getCoordString(this.windowAvg),
-        Math.min(this.window, this.ticksPassed));
+        Math.min(this.window, this.elapsedTicks));
     }
     get allTimeAvgString()
     {
-        if(this.ticksPassed == 0)
+        if(this.elapsedTicks == 0)
             return '';
 
         if(!measurePerformance)
@@ -1764,7 +1834,7 @@ class Measurer
 
         return Localization.format(getLoc('measurement'), this.title,
         getCoordString(this.max), getCoordString(this.allTimeAvg),
-        this.ticksPassed);
+        this.elapsedTicks);
     }
 }
 
