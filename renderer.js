@@ -151,7 +151,7 @@ const locStrings =
         labelInitScale: 'Initial scale: * ',
         labelFigScale: 'Figure scale: * ',
         labelCamMode: 'Camera mode: {0}',
-        camModes: ['Fixed', 'Linear', 'Bézier'],
+        camModes: ['Fixed', 'Linear', 'Quadratic'],
         labelCamCentre: 'Fixed camera centre (x,): ',
         labelCamOffset: '...(y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
@@ -1190,7 +1190,8 @@ class Renderer
      */
     tick(dt)
     {
-        if(this.lv > this.loaded + 1)
+        if(this.lv > this.loaded + 1 ||
+        typeof this.levels[this.lv] == 'undefined')
             return;
 
         if(this.i >= this.levels[this.lv].length && (this.loopMode == 0 ||
@@ -1212,7 +1213,8 @@ class Renderer
         if(level > this.loaded)
             this.update(level);
 
-        if(level > this.loaded + 1)
+        if(level > this.loaded + 1 ||
+        typeof this.levels[this.lv] == 'undefined')
             return;
 
         if(onlyUpdate)
