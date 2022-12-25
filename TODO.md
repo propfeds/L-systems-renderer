@@ -2,11 +2,10 @@
 
 ## 0.20
 
-- [ ] Rewrite a little bit of the manual according to new changea
-- [ ] Optimise using the API's profiler
+- [x] Rewrite a little bit of the manual according to new changea
+- [x] Optimise using the API's profiler
   - The profiler is very limited in functionality.
   - [x] Instead, implemented a rough profiler using Date.now()
-
 - [x] Renderer camera zoom using MathExpressions instead of a hundred parameters
 - [x] Renderer camera centre using MathExpressions instead of a hundred
 parameters

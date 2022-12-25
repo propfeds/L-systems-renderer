@@ -91,8 +91,8 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.20 - Miscalculator (Work in Progress)',
-        equationOverlayLong: '{0}\n\nDrawing — {1}\n\n{2}',
+        versionName: 'v0.20 - Miscalculator',
+        equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
@@ -1868,6 +1868,7 @@ let lvlControls, tsControls;
 
 // Measure drawing performance
 let drawMeasurer = new Measurer('renderer.draw()', 30);
+let camMeasurer = new Measurer('renderer.camera', 30);
 
 var init = () =>
 {
@@ -1965,7 +1966,6 @@ var tick = (elapsedTime, multiplier) =>
         gameIsOffline = false;
     }
 
-    // Measure performance
     if(measurePerformance)
         drawMeasurer.stamp();
 
@@ -1980,7 +1980,6 @@ var tick = (elapsedTime, multiplier) =>
         renderer.tick(elapsedTime);
     }
 
-    // Measure performance
     if(measurePerformance)
         drawMeasurer.stamp();
 
@@ -1993,7 +1992,9 @@ var tick = (elapsedTime, multiplier) =>
 var getEquationOverlay = () =>
 {
     let overlayText = () => Localization.format(getLoc('equationOverlayLong'),
-    getLoc('versionName'), tmpSystemName, drawMeasurer.windowAvgString);
+    getLoc('versionName'), tmpSystemName, drawMeasurer.windowAvgString,
+    camMeasurer.windowAvgString);
+
     let result = ui.createLatexLabel
     ({
         text: overlayText,
@@ -3813,6 +3814,7 @@ let createWorldMenu = () =>
                         if(tmpMP != measurePerformance && tmpMP)
                         {
                             drawMeasurer.reset();
+                            camMeasurer.reset();
                         }
                         measurePerformance = tmpMP;
                         // menu.hide();
@@ -4040,6 +4042,17 @@ var getTertiaryEquation = () =>
 
 var get3DGraphPoint = () => renderer.cursor;
 
-var get3DGraphTranslation = () => renderer.camera;
+var get3DGraphTranslation = () =>
+{
+    if(measurePerformance)
+        camMeasurer.stamp();
+
+    let result = renderer.camera;
+
+    if(measurePerformance)
+        camMeasurer.stamp();
+
+    return result;
+}
 
 init();
