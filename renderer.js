@@ -186,7 +186,7 @@ const locStrings =
         labelMeasure: 'Measure performance: ',
 
         menuManual: 'Manual ({0}/{1})',
-        manualSystemDesc: 'From manual with love.',
+        manualSystemDesc: 'Taken from page {0} of the manual.',
         manual:
         [
             {
@@ -274,6 +274,7 @@ Generally, to keep a degree of uniformity in the system, it is advised for ` +
 `the derivations to be similar in shape.`
             },
             {
+                system: 'arrow',
                 title: 'Example: Arrow weed',
                 contents:
 `Meet the default system. It tastes like mint.
@@ -288,6 +289,7 @@ Scale: 1, 2
 Centre: (1, 0, 0)`
             },
             {
+                system: 'dragon',
                 title: 'Example: Dragon curve',
                 contents:
 `Also known as the Heighway dragon.
@@ -302,6 +304,7 @@ Scale: 4, sqrt(2)
 Centre: (0, 0, 0)`
             },
             {
+                system: 'stocWeed',
                 title: 'Example: Stochastic weed',
                 contents:
 `It generates a random shape every time it rolls!
@@ -318,6 +321,7 @@ Centre: (1, 0, 0)
 Upright`
             },
             {
+                system: 'luckyFlower',
                 title: 'Example: Lucky flower',
                 contents:
 `How tall can it grow until it sprouts a flower? Reroll to find out!
@@ -337,7 +341,7 @@ L=---I,
 R=+++I,
      ++I,
      ++++I
-F=[---[I+I]--I+I][+++[I-I]++I-I]I
+F=[---[I+I]--I+I][+++[I-I]++I-I]II
 Turning angle: 12°
 
 Applies static camera:
@@ -346,6 +350,7 @@ Centre: (1, 0, 0)
 Upright`
             },
             {
+                system: 'blackboard',
                 title: 'Example: Blackboard tree (3D)',
                 contents:
 `A blackboard tree (Alstonia scholaris) when it's still tiny.
@@ -366,6 +371,7 @@ Centre: (1.5, 0, 0)
 Upright`
             },
             {
+                system: 'hilbert3D',
                 title: 'Example: Hilbert curve (3D)',
                 contents:
 `If you set to high tickspeed, it look like brainz.
@@ -381,6 +387,7 @@ Centre: (0.5, 0.5, 0.5)
 Offset: (-0.5, -0.5, -0.5)`
             },
             {
+                system: 'fern',
                 title: 'Example: Fern (3D)',
                 contents:
 `Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
@@ -397,7 +404,8 @@ Centre: (0.6, 0, 0)
 Upright`
             },
             {
-                title: 'Example: Cultivar FF (Botched)',
+                system: 'cultFF',
+                title: 'Appendix: Cultivar FF (Botched)',
                 contents:
 `Represents a common source of carbohydrates.
 
@@ -412,7 +420,8 @@ Centre: (1, 0, 0)
 Upright`
             },
             {
-                title: 'Example: Cultivar FXF (Botched)',
+                system: 'cultFXF',
+                title: 'Appendix: Cultivar FXF (Botched)',
                 contents:
 `Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
 `Legends have it, once a snake moult has weathered enough, a new life is ` +
@@ -428,7 +437,8 @@ Scale: 1.5, 2
 Centre: (0.15, -0.5, 0)`
             },
             {
-                title: 'Example: Cultivar XEXF (Botched)',
+                system: 'cultXEXF',
+                title: 'Appendix: Cultivar XEXF (Botched)',
                 contents:
 `Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
 `resilience of nature against the harsh logarithm drop-off. It also smells ` +
@@ -1776,19 +1786,18 @@ let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalSeed = new LCG(Date.now());
 let manualSystems =
-[
-    {},
-    {},
-    {},
-    {},
+{
+    arrow:
     {
         system: arrow,
         config: ['2^lv', '2^lv', 0, 0, false]
     },
+    dragon:
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: ['4*sqrt(2)^lv', 0, 0, 0, false]
     },
+    stocWeed:
     {
         system: new LSystem('X', [
             'F=FF',
@@ -1796,16 +1805,18 @@ let manualSystems =
         ], 22.5),
         config: ['2^lv', '2^lv', 0, 0, true]
     },
+    luckyFlower:
     {
         system: new LSystem('A', [
             'A=I[L]B,I[L]A,I[L][R]B,IF',
             'B=I[R]A,I[R]B,I[L][R]A,IF',
             'L=---I,--I,----I',
             'R=+++I,++I,++++I',
-            'F=[---[I+I]--I+I][+++[I-I]++I-I]I'
+            'F=[---[I+I]--I+I][+++[I-I]++I-I]II'
         ], 12),
         config: [6, 6, 0, 0, true]
     },
+    blackboard:
     {
         system: new LSystem('F', [
             'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
@@ -1818,6 +1829,7 @@ let manualSystems =
         ], 8),
         config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
     },
+    hilbert3D:
     {
         system: new LSystem('X', [
             'X',
@@ -1825,6 +1837,7 @@ let manualSystems =
         ], 90),
         config: ['2^lv', '0.5*2^lv-0.5', '0.5*2^lv-0.5', '0.5*2^lv-0.5', false]
     },
+    fern:
     {
         system: new LSystem('FFFA', [
             'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
@@ -1833,14 +1846,17 @@ let manualSystems =
         ], 4),
         config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
     },
+    cultFF:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: ['2^lv', '2^lv', 0, 0, true]
     },
+    cultFXF:
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: ['1.5*2^lv', '0.225*2^lv', '-0.75*2^lv', 0, false]
     },
+    cultXEXF:
     {
         system: new LSystem('X', [
             'E=XEXF-',
@@ -1849,7 +1865,7 @@ let manualSystems =
         ], 22.5),
         config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
     }
-];
+};
 let tmpSystemName = getLoc('defaultSystemName');
 let tmpSystemDesc = getLoc('noDescription');
 
@@ -3539,19 +3555,19 @@ let createManualMenu = () =>
                             text: getLoc('btnConstruct'),
                             row: 0,
                             column: 1,
-                            isVisible: () => 'system' in manualSystems[page],
+                            isVisible: () => 'system' in manualPages[page],
                             onClicked: () =>
                             {
+                                let s = manualSystems[manualPages[page].system];
                                 Sound.playClick();
-                                renderer.applySystem =
-                                manualSystems[page].system;
-                                if('config' in manualSystems[page])
-                                {
-                                    let a = manualSystems[page].config;
-                                    renderer.configureStaticCamera(...a);
-                                }
+                                renderer.applySystem = s.system;
+
+                                if('config' in s)
+                                    renderer.configureStaticCamera(...s.config);
+
                                 tmpSystemName = manualPages[page].title;
-                                tmpSystemDesc = getLoc('manualSystemDesc');
+                                tmpSystemDesc = Localization.format(
+                                getLoc('manualSystemDesc'), page + 1);
                                 menu.hide();
                             }
                         }),
