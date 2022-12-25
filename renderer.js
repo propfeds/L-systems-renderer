@@ -310,10 +310,10 @@ Turning angle: 60°
 
 Applies static camera:
 Scale: 2^lv
-Centre: (0.5*2^lv, (sqrt(3)/4)*2^lv, 0)`
+Centre: (0.5*2^lv, sqrt(3)/4*2^lv, 0)`
             },
             {
-                title: 'Stacking s',
+                title: 'Stacking mechanisms',
                 contents:
 `[: records the turtle's position and facing onto a stack.
 ]: take the topmost element (position and facing) off the stack, and move ` +
@@ -1870,7 +1870,7 @@ let manualSystems =
     sierpinski:
     {
         system: new LSystem('X', ['X=+Y-X-Y+', 'Y=-X+Y+X-'], 60),
-        config: ['2^lv', '0.5*2^lv', '(sqrt(3)/4)*2^lv', 0, false]
+        config: ['2^lv', '0.5*2^lv', 'sqrt(3)/4*2^lv', 0, false]
     },
     stocWeed:
     {
@@ -3588,6 +3588,7 @@ let createManualMenu = () =>
     ({
         title: Localization.format(getLoc('menuManual'), page + 1,
         getLoc('manual').length),
+        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
