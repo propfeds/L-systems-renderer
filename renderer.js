@@ -127,7 +127,7 @@ const locStrings =
         btnMenuLSystem: 'L-system menu',
         btnMenuRenderer: 'Renderer menu',
         btnMenuSave: 'Save/load',
-        btnMenuTheory: 'Theory settings',
+        btnMenuTheory: 'Settings',
         btnMenuManual: 'Manual',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
@@ -153,7 +153,7 @@ const locStrings =
         labelCamMode: 'Camera mode: {0}',
         camModes: ['Fixed', 'Linear', 'Quadratic'],
         labelCamCentre: 'Fixed camera centre (x,): ',
-        labelCamOffset: '...(y, z): ',
+        labelCamOffset: '... centre (y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
@@ -285,8 +285,8 @@ X=F[+X][-X]FX
 Turning angle: 30°
 
 Applies static camera:
-Scale: 1, 2
-Centre: (1, 0, 0)`
+Scale: 2^lv
+Centre: (2^lv, 0, 0)`
             },
             {
                 system: 'dragon',
@@ -300,7 +300,7 @@ X=X+YF+
 Turning angle: 90°
 
 Applies static camera:
-Scale: 4, sqrt(2)
+Scale: 4*sqrt(2)^lv
 Centre: (0, 0, 0)`
             },
             {
@@ -316,8 +316,8 @@ X=F-[[X]+X]+F[+FX]-X,
 Turning angle: 22.5°
 
 Applies static camera:
-Scale: 1, 2
-Centre: (1, 0, 0)
+Scale: 1.5*2^lv
+Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
@@ -345,8 +345,8 @@ F=[---[I+I]--I+I][+++[I-I]++I-I]II
 Turning angle: 12°
 
 Applies static camera:
-Scale: 6, 1
-Centre: (1, 0, 0)
+Scale: 6
+Centre: (6, 0, 0)
 Upright`
             },
             {
@@ -366,8 +366,8 @@ Z=ZZ
 Turning angle: 8°
 
 Applies static camera:
-Scale: 2, 2
-Centre: (1.5, 0, 0)
+Scale: 2*2^lv
+Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
@@ -382,9 +382,8 @@ Turning angle: 90°
 Ignore: X
 
 Applies static camera:
-Scale: 1, 2
-Centre: (0.5, 0.5, 0.5)
-Offset: (-0.5, -0.5, -0.5)`
+Scale: 2^lv
+Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
             },
             {
                 system: 'fern',
@@ -399,8 +398,8 @@ D=[---------FF][+++++++++FF]B&&-D
 Turning angle: 4°
 
 Applies static camera: (mathematically unproven)
-Scale: 3, 1.3
-Centre: (0.6, 0, 0)
+Scale: 3*1.3^lv
+Centre: (1.8*1.3^lv, 0, 0)
 Upright`
             },
             {
@@ -415,8 +414,8 @@ X=F-[[X]+X]+F[-X]-X
 Turning angle: 15°
 
 Applies static camera:
-Scale: 1, 2
-Centre: (1, 0, 0)
+Scale: 2^lv
+Centre: (2^lv, 0, 0)
 Upright`
             },
             {
@@ -433,8 +432,8 @@ X=F-[[X]+X]+F[-FX]-X
 Turning angle: 27°
 
 Applies static camera: (mathematically unproven)
-Scale: 1.5, 2
-Centre: (0.15, -0.5, 0)`
+Scale: 1.5*2^lv
+Centre: (0.225*2^lv, -0.75*2^lv, 0)`
             },
             {
                 system: 'cultXEXF',
@@ -451,8 +450,8 @@ X=F-[X+[X[++E]F]]+F[X+FX]-X
 Turning angle: 22.5°
 
 Applies static camera: (mathematically unproven)
-Scale: 1, 3
-Centre: (0,75, -0,25, 0)
+Scale: 3^lv
+Centre: (0.75*3^lv, -0.25*3^lv, 0)
 Upright`
             }
         ]
@@ -1498,6 +1497,12 @@ class VariableControls
         this.quickbuyAmount = quickbuyAmount;
     }
 
+    updateAllButtons()
+    {
+        this.updateDescription();
+        this.updateRefundButton();
+        this.updateBuyButton();
+    }
     updateDescription()
     {
         this.varBtn.content.text = this.variable.getDescription();
@@ -1595,9 +1600,6 @@ class VariableControls
                 {
                     Sound.playClick();
                     this.variable.refund(1);
-
-                    this.updateRefundButton();
-                    this.updateBuyButton();
                 }
                 else if(e.type == TouchType.LONGPRESS)
                 {
@@ -1609,9 +1611,6 @@ class VariableControls
                             this.anchor = this.variable.level;
                     }
                     this.variable.refund(this.quickbuyAmount);
-
-                    this.updateRefundButton();
-                    this.updateBuyButton();
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
@@ -1669,9 +1668,6 @@ class VariableControls
                 {
                     Sound.playClick();
                     this.variable.buy(1);
-
-                    this.updateBuyButton();
-                    this.updateRefundButton();
                 }
                 else if(e.type == TouchType.LONGPRESS)
                 {
@@ -1686,9 +1682,6 @@ class VariableControls
                     }
                     for(let i = 0; i < q; ++i)
                         this.variable.buy(1);
-                    
-                    this.updateBuyButton();
-                    this.updateRefundButton();
                 }
                 else if(e.type == TouchType.CANCELLED)
                 {
@@ -1803,7 +1796,7 @@ let manualSystems =
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
         ], 22.5),
-        config: ['2^lv', '2^lv', 0, 0, true]
+        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
     },
     luckyFlower:
     {
@@ -1893,7 +1886,7 @@ var init = () =>
         l.canBeRefunded = (_) => true;
         l.boughtOrRefunded = (_) =>
         {
-            lvlControls.updateDescription();
+            lvlControls.updateAllButtons();
             renderer.update(l.level);
         }
         lvlControls = new VariableControls(l);
@@ -1920,7 +1913,7 @@ var init = () =>
         ts.canBeRefunded = (_) => true;
         ts.boughtOrRefunded = (_) =>
         {
-            tsControls.updateDescription();
+            tsControls.updateAllButtons();
             time = 0;
         }
         tsControls = new VariableControls(ts, true);
@@ -2093,14 +2086,14 @@ var getUpgradeListDelegate = () =>
     createSaveMenu().show());
     slButton.row = 1;
     slButton.column = 0;
-    let theoryButton = createButton(getLoc('btnMenuTheory'), () =>
-    createWorldMenu().show());
-    theoryButton.row = 1;
-    theoryButton.column = 1;
     let manualButton = createButton(getLoc('btnMenuManual'), () =>
     createManualMenu().show());
-    manualButton.row = 2;
-    manualButton.column = 0;
+    manualButton.row = 1;
+    manualButton.column = 1;
+    let theoryButton = createButton(getLoc('btnMenuTheory'), () =>
+    createWorldMenu().show());
+    theoryButton.row = 2;
+    theoryButton.column = 0;
 
     let stack = ui.createScrollView
     ({
@@ -2264,7 +2257,7 @@ let createConfigMenu = () =>
                 text: getLoc('labelCamOffset'),
                 row: 0,
                 column: 0,
-                horizontalOptions: LayoutOptions.END,
+                // horizontalOptions: LayoutOptions.END,
                 verticalOptions: LayoutOptions.CENTER
             }),
             ui.createEntry
@@ -2312,6 +2305,24 @@ let createConfigMenu = () =>
             tmpFF = Number(nt);
         }
     });
+    let tmpUpright = renderer.upright;
+    let uprightSwitch = ui.createSwitch
+    ({
+        isToggled: tmpUpright,
+        row: 4,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+            e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpUpright = !tmpUpright;
+                uprightSwitch.isToggled = tmpUpright;
+            }
+        }
+    });
     let tmpLM = renderer.loopMode;
     let LMLabel = ui.createLatexLabel
     ({
@@ -2343,30 +2354,12 @@ let createConfigMenu = () =>
             LMSlider.value = tmpLM;
         }
     });
-    let tmpUpright = renderer.upright;
-    let uprightSwitch = ui.createSwitch
-    ({
-        isToggled: tmpUpright,
-        row: 1,
-        column: 1,
-        horizontalOptions: LayoutOptions.END,
-        onTouched: (e) =>
-        {
-            if(e.type == TouchType.SHORTPRESS_RELEASED ||
-            e.type == TouchType.LONGPRESS_RELEASED)
-            {
-                Sound.playClick();
-                tmpUpright = !tmpUpright;
-                uprightSwitch.isToggled = tmpUpright;
-            }
-        }
-    });
     let tmpModel = renderer.loadModels;
     let modelSwitch = ui.createSwitch
     ({
         isVisible: false,
         isToggled: tmpModel,
-        row: 2,
+        row: 1,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2384,7 +2377,7 @@ let createConfigMenu = () =>
     let QDSwitch = ui.createSwitch
     ({
         isToggled: tmpQD,
-        row: 3,
+        row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2402,7 +2395,7 @@ let createConfigMenu = () =>
     let QBSwitch = ui.createSwitch
     ({
         isToggled: tmpQB,
-        row: 4,
+        row: 3,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2420,14 +2413,14 @@ let createConfigMenu = () =>
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
-        row: 5,
+        row: 4,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let EXBEntry = ui.createEntry
     ({
         text: tmpEXB,
-        row: 5,
+        row: 4,
         column: 1,
         onTextChanged: (ot, nt) =>
         {
@@ -2470,7 +2463,15 @@ let createConfigMenu = () =>
                                     camOffLabel,
                                     camOffGrid,
                                     FFLabel,
-                                    FFEntry
+                                    FFEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelUpright'),
+                                        row: 4,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    uprightSwitch,
                                 ]
                             }),
                             ui.createBox
@@ -2488,16 +2489,8 @@ let createConfigMenu = () =>
                                     LMSlider,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelUpright'),
-                                        row: 1,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
-                                    uprightSwitch,
-                                    ui.createLatexLabel
-                                    ({
                                         text: getLoc('labelLoadModels'),
-                                        row: 2,
+                                        row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2505,7 +2498,7 @@ let createConfigMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickdraw'),
-                                        row: 3,
+                                        row: 2,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2513,7 +2506,7 @@ let createConfigMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickBT'),
-                                        row: 4,
+                                        row: 3,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -3023,7 +3016,7 @@ let createViewMenu = (title) =>
                 text: getLoc('labelCamOffset'),
                 row: 0,
                 column: 0,
-                horizontalOptions: LayoutOptions.END,
+                // horizontalOptions: LayoutOptions.END,
                 verticalOptions: LayoutOptions.CENTER
             }),
             ui.createEntry
@@ -3929,7 +3922,7 @@ var setInternalState = (stateStr) =>
         if(worldValues.length > 4)
             altTerEq = Boolean(Number(worldValues[4]));
         if(worldValues.length > 5)
-            tickDelayMode = Boolean(Number(worldValues[5]));
+            tickDelayMode = Boolean(Number(worldValues[5]));        
         if(worldValues.length > 6)
             resetLvlOnConstruct = Boolean(Number(worldValues[6]));
         let noofSystems = 0;
