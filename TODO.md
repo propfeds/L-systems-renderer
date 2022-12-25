@@ -2,6 +2,10 @@
 
 ## 0.20
 
+- [ ] Redesign manual
+  - Add more systems to the manual (algae, or like, mistletoe)
+  - Add tutorial-like flows that explain concepts
+
 - [x] Rewrite a little bit of the manual according to new changea
 - [x] Optimise using the API's profiler
   - The profiler is very limited in functionality.
@@ -40,9 +44,6 @@ parameters
 
 ## Planned
 
-- [ ] Redesign manual
-  - Add more systems to the manual (algae, or like, mistletoe)
-  - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options

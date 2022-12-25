@@ -143,7 +143,7 @@ const locStrings =
         menuLSystem: 'L-system Menu',
         labelAxiom: 'Axiom: ',
         labelAngle: 'Turning angle (°): ',
-        labelRules: 'Production rules: ',
+        labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
         labelSeed: 'Seed (for stochastic systems): ',
 
@@ -166,7 +166,7 @@ const locStrings =
 
         menuSave: 'Save/Load Menu',
         labelCurrentSystem: 'Current system: ',
-        labelSavedSystems: 'Saved systems: ',
+        labelSavedSystems: 'Saved systems: {0}',
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
@@ -190,45 +190,134 @@ const locStrings =
         manual:
         [
             {
-                title: 'A Primer on L-systems',
+                title: 'Introduction',
                 contents:
-`Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
-`grammar that describes the growth of a sequence (string). It is often used ` +
-`to model plants and draw fractal figures.
+`Welcome to the L-systems Renderer! This manual aims to help you understand ` +
+`the basics of L-systems, as well as instructions on how to effectively use ` +
+`this theory to construct and render them.
 
-Terms:
-Axiom: the starting sequence.
-Rules: how each symbol in the sequence is derived per level. Each rule is ` +
-`written in the form of: {symbol}={derivation(s)}
-
-Symbols:
-Any letter: moves cursor forward to draw.
-+ -: rotates cursor on the z-axis (yaw), counter-/clockwise respectively.
-& ^: rotates cursor on the y-axis (pitch).
-\\ /: rotates cursor on the x-axis (roll).
-|: reverses cursor direction.
-[ ]: allows for branches by queueing cursor positions on a stack.
-, : separates between derivations (for stochastic systems).`
+Let's start discovering the wonders of L-systems.`
             },
             {
                 title: 'Controls: Main theory screen',
                 contents:
-`The main screen consists of the renderer and its controls.
-
-Level: the system's level. Pressing + or - will derive/revert the system ` +
-`respectively. Pressing the Level button will reveal all levels of the system.
-(Tip: holding + or - will buy/refund the variable in bulks of 10.)
+`Level: the system's level. Pressing + or - will grow/revert the system ` +
+`respectively.
+Pressing the Level button will reveal all levels of the system.
+Holding + or - will buy/refund levels in bulks of 10.
 
 Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `produces less accurate lines).
 Pressing the Tickspeed button will toggle between Tickspeed and Tick delay ` +
 `modes.
-(Tip: holding - on Tickspeed will create an 'anchor' and pause the renderer. ` +
-`Holding + afterwards will return the renderer to the previously 'anchored' ` +
-`speed.)
+Holding - on Tickspeed will create an 'anchor' on the current speed and ` +
+`pause the renderer. Holding + afterwards will return the renderer to the ` +
+`previously anchored speed.
 
 Reroll: located on the top right. Pressing this button will reroll the ` +
-`system's seed (for stochastic systems).`
+`system's seed (only applicable for stochastic systems).
+
+Menu buttons: You pressed on one of them to get here, did you?
+- L-system menu: allows you to edit the currently displayed system.
+- Renderer menu: configures the camera along with other renderer behaviour.
+- Save/load: store your favourite L-systems here.
+- Settings: configure general options for the theory.`
+            },
+            {
+                title: 'A primer on L-systems',
+                contents:
+`Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
+`grammar that describes the growth of a sequence (string). It is often used ` +
+`to model plants and draw fractal figures.
+
+Every L-system starts with a sequence, called the axiom. From the axiom, the ` +
+`sequence grows according to a set of production rules that describe how ` +
+`each symbol (character) in the sequence would be rewritten in the next level.
+Each rule is represented in the form of:
+{symbol} = {derivations}, or
+{symbol} → {derivations}.
+
+Considering a simple system with the axiom 'b' and the rules:
+b → a
+a → ab,
+the sequence will grow as follows:
+Level 0: b
+Level 1: a
+Level 2: ab
+Level 3: aba
+Level 4: abaab
+Level 5: abaababa`
+            },
+            {
+                title: 'L-system and turtle graphics',
+                contents:
+`Owing to its sequential nature, an L-system can be represented as a list of ` +
+`instructions when read by a turtle. Not that the turtle can actually ` +
+`comprehend this crap though.
+
+Here are a few basic symbols and their instructions:
+F: moves turtle forward to draw a line of length 1 (usually).
++: rotates turtle counter-clockwise by an angle.
+-: rotates turtle clockwise by an angle.
+
+Note: In the original grammar, the lower-case f is used to move the turtle ` +
+`forward without drawing anything, but that is simply impossible with this ` +
+`game's 3D graph. So in this theory, any non-reserved symbol will draw a ` +
+`line. This includes both upper- and lower-case letters, and potentially ` +
+`anything you can throw at it.
+
+Note 2: In this theory, unlike other L-system implementations, the turtle ` +
+`starts by heading to the right instead of upwards.`
+            },
+            {
+                system: 'dragon',       // Please do not translate this line.
+                title: 'Example: The dragon curve',
+                contents:
+`Also known as the Heighway dragon, the curve was first discovered by John ` +
+`Heighway in 1966, along with two fellow physicists in NASA, William Harter ` +
+`and Bruce Banks.
+
+Legends have it, that when you fold a thin piece of paper at the middle over ` +
+`and over again, and then release it while making sure every fold is exactly ` +
+`90°, a dragon would spawn. But be careful, as every time you fold, although ` +
+`the dragon gets thicker, its 'length' would shrink by a factor of sqrt(2).
+
+Press 'Construct' to see the dragon in action.
+
+Axiom: FX
+Y=-FX-Y
+X=X+YF+
+Turning angle: 90°
+
+Applies static camera:
+Scale: 4*sqrt(2)^lv
+Centre: (0, 0, 0)`
+            },
+            {
+                system: 'sierpinski',   // Please do not translate this line.
+                title: 'Example: Sierpiński triangle',
+                contents:
+`The Sierpiński triangle (or gasket/sieve) is a fractal of an equilateral ` +
+`triangle containing equilateral triangles inside it, containing equilateral ` +
+`triangles inside it, containing equilateral triangles.
+Did you know that when you take Pascal's triangle and then select only even ` +
+`numbers, the Sierpiński triangle will appear?
+
+Axiom: X
+X=+Y-X-Y+
+Y=-X+Y+X-
+Turning angle: 60°
+
+Applies static camera:
+Scale: 2^lv
+Centre: (0.5*2^lv, (sqrt(3)/4)*2^lv, 0)`
+            },
+            {
+                title: 'Stacking s',
+                contents:
+`[: records the turtle's position and facing onto a stack.
+]: take the topmost element (position and facing) off the stack, and move ` +
+`the turtle there.`
             },
             {
                 title: 'Controls: Configuring the renderer',
@@ -274,7 +363,10 @@ Generally, to keep a degree of uniformity in the system, it is advised for ` +
 `the derivations to be similar in shape.`
             },
             {
-                system: 'arrow',
+                system: 'arrow',    // Please do not translate this line. I'm
+                                    // sorry to say this, but I'm an idiot and
+                                    // I can't think of a better way to link the
+                                    // manual entries' text and systems.
                 title: 'Example: Arrow weed',
                 contents:
 `Meet the default system. It tastes like mint.
@@ -289,22 +381,7 @@ Scale: 2^lv
 Centre: (2^lv, 0, 0)`
             },
             {
-                system: 'dragon',
-                title: 'Example: Dragon curve',
-                contents:
-`Also known as the Heighway dragon.
-
-Axiom: FX
-Y=-FX-Y
-X=X+YF+
-Turning angle: 90°
-
-Applies static camera:
-Scale: 4*sqrt(2)^lv
-Centre: (0, 0, 0)`
-            },
-            {
-                system: 'stocWeed',
+                system: 'stocWeed',     // Please do not translate this line.
                 title: 'Example: Stochastic weed',
                 contents:
 `It generates a random shape every time it rolls!
@@ -321,7 +398,7 @@ Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'luckyFlower',
+                system: 'luckyFlower',  // Please do not translate this line.
                 title: 'Example: Lucky flower',
                 contents:
 `How tall can it grow until it sprouts a flower? Reroll to find out!
@@ -350,7 +427,7 @@ Centre: (6, 0, 0)
 Upright`
             },
             {
-                system: 'blackboard',
+                system: 'blackboard',   // Please do not translate this line.
                 title: 'Example: Blackboard tree (3D)',
                 contents:
 `A blackboard tree (Alstonia scholaris) when it's still tiny.
@@ -371,7 +448,7 @@ Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'hilbert3D',
+                system: 'hilbert3D',    // Please do not translate this line.
                 title: 'Example: Hilbert curve (3D)',
                 contents:
 `If you set to high tickspeed, it look like brainz.
@@ -386,7 +463,7 @@ Scale: 2^lv
 Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
             },
             {
-                system: 'fern',
+                system: 'fern',         // Please do not translate this line.
                 title: 'Example: Fern (3D)',
                 contents:
 `Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
@@ -403,7 +480,7 @@ Centre: (1.8*1.3^lv, 0, 0)
 Upright`
             },
             {
-                system: 'cultFF',
+                system: 'cultFF',       // Please do not translate this line.
                 title: 'Appendix: Cultivar FF (Botched)',
                 contents:
 `Represents a common source of carbohydrates.
@@ -419,7 +496,7 @@ Centre: (2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'cultFXF',
+                system: 'cultFXF',      // Please do not translate this line.
                 title: 'Appendix: Cultivar FXF (Botched)',
                 contents:
 `Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
@@ -436,7 +513,7 @@ Scale: 1.5*2^lv
 Centre: (0.225*2^lv, -0.75*2^lv, 0)`
             },
             {
-                system: 'cultXEXF',
+                system: 'cultXEXF',     // Please do not translate this line.
                 title: 'Appendix: Cultivar XEXF (Botched)',
                 contents:
 `Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
@@ -1790,6 +1867,11 @@ let manualSystems =
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: ['4*sqrt(2)^lv', 0, 0, 0, false]
     },
+    sierpinski:
+    {
+        system: new LSystem('X', ['X=+Y-X-Y+', 'Y=-X+Y+X-'], 60),
+        config: ['2^lv', '0.5*2^lv', '(sqrt(3)/4)*2^lv', 0, false]
+    },
     stocWeed:
     {
         system: new LSystem('X', [
@@ -2613,6 +2695,12 @@ let createSystemMenu = () =>
             }
         }));
     }
+    let rulesLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        verticalOptions: LayoutOptions.CENTER,
+        margin: new Thickness(0, 12)
+    });
     let ruleStack = ui.createStackLayout
     ({
         children: ruleEntries
@@ -2635,6 +2723,8 @@ let createSystemMenu = () =>
                     tmpRules[i + 1] = nt;
                 }
             }));
+            rulesLabel.text = Localization.format(getLoc('labelRules'),
+            ruleEntries.length);
             ruleStack.children = ruleEntries;
         }
     });
@@ -2704,12 +2794,7 @@ let createSystemMenu = () =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelRules'),
-                                        verticalOptions: LayoutOptions.CENTER,
-                                        margin: new Thickness(0, 12)
-                                    }),
+                                    rulesLabel,
                                     addRuleButton
                                 ]
                             }),
@@ -2880,7 +2965,8 @@ let createNamingMenu = () =>
                 }),
                 ui.createLatexLabel
                 ({
-                    text: getLoc('labelSavedSystems'),
+                    text: Localization.format(getLoc('labelSavedSystems'),
+                    savedSystems.size),
                     // horizontalOptions: LayoutOptions.CENTER,
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 12)
@@ -3111,6 +3197,12 @@ let createViewMenu = (title) =>
             }));
         }
     }
+    let rulesLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        verticalOptions: LayoutOptions.CENTER,
+        margin: new Thickness(0, 12)
+    });
     let ruleStack = ui.createStackLayout
     ({
         children: ruleEntries
@@ -3133,6 +3225,8 @@ let createViewMenu = (title) =>
                     tmpRules[i + 1] = nt;
                 }
             }));
+            rulesLabel.text = Localization.format(getLoc('labelRules'),
+            ruleEntries.length);
             ruleStack.children = ruleEntries;
         }
     });
@@ -3210,12 +3304,7 @@ let createViewMenu = (title) =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelRules'),
-                                        verticalOptions: LayoutOptions.CENTER,
-                                        margin: new Thickness(0, 12)
-                                    }),
+                                    rulesLabel,
                                     addRuleButton
                                 ]
                             }),
@@ -3460,7 +3549,8 @@ let createSaveMenu = () =>
                 }),
                 ui.createLatexLabel
                 ({
-                    text: getLoc('labelSavedSystems'),
+                    text: Localization.format(getLoc('labelSavedSystems'),
+                    savedSystems.size),
                     // horizontalOptions: LayoutOptions.CENTER,
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 12)
