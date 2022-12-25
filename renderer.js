@@ -128,7 +128,7 @@ const locStrings =
         btnMenuRenderer: 'Renderer menu',
         btnMenuSave: 'Save/load',
         btnMenuTheory: 'Settings',
-        btnMenuManual: 'Manual',
+        btnMenuManual: 'User guide',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
 
@@ -185,14 +185,14 @@ const locStrings =
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
 
-        menuManual: 'Manual ({0}/{1})',
-        manualSystemDesc: 'Taken from page {0} of the manual.',
+        menuManual: 'User Guide ({0}/{1})',
+        manualSystemDesc: 'Taken from page {0} of the guide.',
         manual:
         [
             {
                 title: 'Introduction',
                 contents:
-`Welcome to the L-systems Renderer! This manual aims to help you understand ` +
+`Welcome to the L-systems Renderer! This guide aims to help you understand ` +
 `the basics of L-systems, as well as instructions on how to effectively use ` +
 `this theory to construct and render them.
 
@@ -237,7 +237,7 @@ Each rule is represented in the form of:
 {symbol} = {derivations}, or
 {symbol} → {derivations}.
 
-Considering a simple system with the axiom 'b' and the rules:
+Considering a simple system with the axiom of b and the rules:
 b → a
 a → ab,
 the sequence will grow as follows:
@@ -255,7 +255,7 @@ Level 5: abaababa`
 `instructions when read by a turtle. Not that the turtle can actually ` +
 `comprehend this crap though.
 
-Here are a few basic symbols and their instructions:
+Here are the basic symbols and their respective instructions:
 F: moves turtle forward to draw a line of length 1 (usually).
 +: rotates turtle counter-clockwise by an angle.
 -: rotates turtle clockwise by an angle.
@@ -300,7 +300,7 @@ Centre: (0, 0, 0)`
 `The Sierpiński triangle (or gasket/sieve) is a fractal of an equilateral ` +
 `triangle containing equilateral triangles inside it, containing equilateral ` +
 `triangles inside it, containing equilateral triangles.
-Did you know that when you take Pascal's triangle and then select only even ` +
+Did you know that when you take Pascal's triangle then select only the even ` +
 `numbers, the Sierpiński triangle will appear?
 
 Axiom: X
@@ -313,11 +313,46 @@ Scale: 2^lv
 Centre: (0.5*2^lv, sqrt(3)/4*2^lv, 0)`
             },
             {
-                title: 'Stacking mechanisms',
+                title: 'Stacking mechanism',
                 contents:
-`[: records the turtle's position and facing onto a stack.
+`Although numerous fractals can be created using only the basic symbols, ` +
+`when it comes to modelling branching structures such as trees, the turtle ` +
+`wishes it could be split in two... Using a stack mechanism, we can ` +
+`essentially allow the turtle to return to a point in the past, and take on ` +
+`a new path.
+
+Stack operations are represented with square brackets:
+[: records the turtle's position and facing onto a stack.
 ]: take the topmost element (position and facing) off the stack, and move ` +
-`the turtle there.`
+`the turtle there.
+
+Note: Due to the game's 3D graph only allowing one continuous path to be ` +
+`drawn, the turtle does not actually divide itself, but instead backtrack ` +
+`through the old path, and then start a new path.`
+            },
+            {
+                system: 'arrow',    // Please do not translate this line. I'm
+                                    // sorry to say this, but I'm an idiot and
+                                    // I can't think of a better way to link the
+                                    // pages' text content and their systems.
+                title: 'Example: Arrow weed',
+                contents:
+`Meet the default system. The symbol F here represents the stem and ` +
+`branches, which expand to twice their size every level. Meanwhile X, ` +
+`sitting at the top of each branch, represents what's called a vegetative ` +
+`apex, which is to say the part of the axis (plant or branch) that grows ` +
+`into new branches.
+This one tastes like fennel, but oddly enough does not grow leaves.
+
+Axiom: X
+F=FF
+X=F[+X][-X]FX
+Turning angle: 30°
+
+Applies static camera:
+Scale: 2^lv
+Centre: (2^lv, 0, 0)
+Upright`
             },
             {
                 title: 'Controls: Configuring the renderer',
@@ -361,24 +396,6 @@ To create a stochastic system, simply list several derivations in the same ` +
 `selected per symbol whenever the system is derived.
 Generally, to keep a degree of uniformity in the system, it is advised for ` +
 `the derivations to be similar in shape.`
-            },
-            {
-                system: 'arrow',    // Please do not translate this line. I'm
-                                    // sorry to say this, but I'm an idiot and
-                                    // I can't think of a better way to link the
-                                    // manual entries' text and systems.
-                title: 'Example: Arrow weed',
-                contents:
-`Meet the default system. It tastes like mint.
-
-Axiom: X
-F=FF
-X=F[+X][-X]FX
-Turning angle: 30°
-
-Applies static camera:
-Scale: 2^lv
-Centre: (2^lv, 0, 0)`
             },
             {
                 system: 'stocWeed',     // Please do not translate this line.
@@ -1860,7 +1877,7 @@ let manualSystems =
     arrow:
     {
         system: arrow,
-        config: ['2^lv', '2^lv', 0, 0, false]
+        config: ['2^lv', '2^lv', 0, 0, true]
     },
     dragon:
     {
