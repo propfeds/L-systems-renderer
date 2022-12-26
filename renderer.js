@@ -1333,12 +1333,78 @@ class Renderer
 
         if(onlyUpdate)
             return;
-
+            
         if(this.elapsed == 0)
             return;
 
-        if(this.i >= this.levels[this.lv].length)
+        // Don't worry, it'll not run forever.
+        for(let i = 0; i < 2; ++i)
         {
+            for(; this.i < this.levels[this.lv].length; ++this.i)
+            {
+                switch(this.levels[this.lv][this.i])
+                {
+                    case '+':
+                        this.ori = this.system.rotations.get('+').mul(this.ori);
+                        break;
+                    case '-':
+                        this.ori = this.system.rotations.get('-').mul(this.ori);
+                        break;
+                    case '&':
+                        this.ori = this.system.rotations.get('&').mul(this.ori);
+                        break;
+                    case '^':
+                        this.ori = this.system.rotations.get('^').mul(this.ori);
+                        break;
+                    case '\\':
+                        this.ori = this.system.rotations.get('\\').mul(
+                        this.ori);
+                        break;
+                    case '/':
+                        this.ori = this.system.rotations.get('/').mul(this.ori);
+                        break;
+                    case '|':
+                        this.reverse = !this.reverse;
+                        break;
+                    case '[':
+                        this.idxStack.push(this.stack.length);
+                        this.stack.push([this.state, this.ori]);
+                        break;
+                    case ']':
+                        if(this.stack.length == 0)
+                        {
+                            log('You\'ve clearly made a bracket error.');
+                            break;
+                        }
+
+                        let t = this.stack.pop();
+                        this.state = t[0];
+                        this.ori = t[1];
+                        if(this.stack.length ==
+                        this.idxStack[this.idxStack.length - 1])
+                        {
+                            this.idxStack.pop();
+                            break;
+                        }
+                        return;
+                    default:
+                        if(this.system.ignoreList.includes(
+                        this.levels[this.lv][this.i]))
+                            break;
+                        let breakAhead = this.backtrackList.includes(
+                        this.levels[this.lv][this.i + 1]);
+                        if(!this.quickBacktrack || breakAhead)
+                            this.stack.push([this.state, this.ori]);
+                        this.forward();
+                        if(this.quickDraw && !breakAhead)
+                            break;
+                        else
+                        {
+                            ++this.i;
+                            return;
+                        }
+                }
+            }
             if(!this.backtrackTail || this.stack.length == 0)
             {
                 switch(this.loopMode)
@@ -1358,68 +1424,6 @@ class Renderer
                 let t = this.stack.pop();
                 this.state = t[0];
                 this.ori = t[1];
-            }
-        }
-
-        for(; this.i < this.levels[this.lv].length; ++this.i)
-        {
-            switch(this.levels[this.lv][this.i])
-            {
-                case '+':
-                    this.ori = this.system.rotations.get('+').mul(this.ori);
-                    break;
-                case '-':
-                    this.ori = this.system.rotations.get('-').mul(this.ori);
-                    break;
-                case '&':
-                    this.ori = this.system.rotations.get('&').mul(this.ori);
-                    break;
-                case '^':
-                    this.ori = this.system.rotations.get('^').mul(this.ori);
-                    break;
-                case '\\':
-                    this.ori = this.system.rotations.get('\\').mul(this.ori);
-                    break;
-                case '/':
-                    this.ori = this.system.rotations.get('/').mul(this.ori);
-                    break;
-                case '|':
-                    this.reverse = !this.reverse;
-                    break;
-                case '[':
-                    this.idxStack.push(this.stack.length);
-                    this.stack.push([this.state, this.ori]);
-                    break;
-                case ']':
-                    if(this.stack.length == 0)
-                        return;
-
-                    let t = this.stack.pop();
-                    this.state = t[0];
-                    this.ori = t[1];
-                    if(this.stack.length ==
-                    this.idxStack[this.idxStack.length - 1])
-                    {
-                        this.idxStack.pop();
-                        ++this.i;
-                    }
-                    return;
-                default:
-                    if(this.system.ignoreList.includes(
-                    this.levels[this.lv][this.i]))
-                        break;
-                    let breakAhead = this.backtrackList.includes(
-                    this.levels[this.lv][this.i + 1]);
-                    if(!this.quickBacktrack || breakAhead)
-                        this.stack.push([this.state, this.ori]);
-                    this.forward();
-                    if(this.quickDraw && !breakAhead)
-                        break;
-                    else
-                    {
-                        ++this.i;
-                        return;
-                    }
             }
         }
     }
