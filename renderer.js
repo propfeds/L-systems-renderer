@@ -1345,18 +1345,20 @@ class Renderer
                 {
                     case 2:
                         l.buy(1);
-                        return;
+                        break;
                     case 1:
                         this.reset(false);
-                        return;
+                        break;
                     case 0:
                         return;
                 }
             }
-
-            let t = this.stack.pop();
-            this.state = t[0];
-            this.ori = t[1];
+            else
+            {
+                let t = this.stack.pop();
+                this.state = t[0];
+                this.ori = t[1];
+            }
         }
 
         for(; this.i < this.levels[this.lv].length; ++this.i)
