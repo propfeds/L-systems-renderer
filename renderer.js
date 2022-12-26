@@ -100,8 +100,8 @@ const locStrings =
         currencyTime: ' (elapsed)',
 
         varLvDesc: '\\text{{Level: }}{0}{1}',
-        varTdDesc: '\\text{{Tick delay: }}{0}\\text{{ sec}}',
-        varTdDescInf: '\\text{{Tick delay: }}\\infty',
+        varTdDesc: '\\text{{Tick length: }}{0}\\text{{ sec}}',
+        varTdDescInf: '\\text{{Tick length: }}\\infty',
         varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
 
         saPatienceTitle: 'Watching Grass Grow',
@@ -156,8 +156,9 @@ const locStrings =
         labelCamOffset: '... centre (y, z): ',
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
-        loopModes: ['Off', 'Off (tailed)', 'Level', 'Playlist'],
+        loopModes: ['Off', 'Level', 'Playlist'],
         labelUpright: 'Upright x-axis: * ',
+        labelBTTail: 'Backtrack at tail end: ',
         labelLoadModels: '(Teaser!) Load models: * ',
         labelQuickdraw: 'Quickdraw straight lines: * ',
         labelQuickBT: 'Quick backtrack: * ',
@@ -199,19 +200,21 @@ const locStrings =
 Let's start discovering the wonders of L-systems.`
             },
             {
-                title: 'Controls: Main theory screen',
+                title: 'Theory controls',
                 contents:
-`Level: the system's level. Pressing + or - will grow/revert the system ` +
+`The theory screen consists of the renderer and its controls.
+
+Level: the system's iteration. Pressing + or - will grow/revert the system ` +
 `respectively.
 Pressing the Level button will reveal all levels of the system.
 Holding + or - will buy/refund levels in bulks of 10.
 
 Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `produces less accurate lines).
-Pressing the Tickspeed button will toggle between Tickspeed and Tick delay ` +
-`modes.
-Holding - on Tickspeed will create an 'anchor' on the current speed and ` +
-`pause the renderer. Holding + afterwards will return the renderer to the ` +
+Pressing the Tickspeed button will toggle between the Tickspeed and Tick ` +
+`length modes.
+Holding - will create an 'anchor' on the current level then set it to 0, ` +
+`pausing the renderer. Holding + afterwards will return the renderer to the ` +
 `previously anchored speed.
 
 Reroll: located on the top right. Pressing this button will reroll the ` +
@@ -318,7 +321,7 @@ Centre: (0.5*2^lv, sqrt(3)/4*2^lv, 0)`
 `Although numerous fractals can be created using only the basic symbols, ` +
 `when it comes to modelling branching structures such as trees, the turtle ` +
 `wishes it could be split in two... Using a stack mechanism, we can ` +
-`essentially allow the turtle to return to a point in the past, and take on ` +
+`essentially allow the turtle to return to a point in the past and take on ` +
 `a new path.
 
 Stack operations are represented with square brackets:
@@ -327,7 +330,7 @@ Stack operations are represented with square brackets:
 `the turtle there.
 
 Note: Due to the game's 3D graph only allowing one continuous path to be ` +
-`drawn, the turtle does not actually divide itself, but instead backtrack ` +
+`drawn, the turtle will not actually divide itself, but instead backtrack ` +
 `through the old path, and then start a new path.`
             },
             {
@@ -339,10 +342,10 @@ Note: Due to the game's 3D graph only allowing one continuous path to be ` +
                 contents:
 `Meet the default system. The symbol F here represents the stem and ` +
 `branches, which expand to twice their size every level. Meanwhile X, ` +
-`sitting at the top of each branch, represents what's called a vegetative ` +
-`apex, which is to say the part of the axis (plant or branch) that grows ` +
-`into new branches.
-This one tastes like fennel, but oddly enough does not grow leaves.
+`sitting at the tip of each branch, represents what's called a vegetative ` +
+`apex, which is to say the part of an axis (stem or branch) that grows into ` +
+`new branches and leaves.
+This one tastes like fennel, but oddly enough, it does not grow leaves.
 
 Axiom: X
 F=FF
@@ -396,6 +399,11 @@ To create a stochastic system, simply list several derivations in the same ` +
 `selected per symbol whenever the system is derived.
 Generally, to keep a degree of uniformity in the system, it is advised for ` +
 `the derivations to be similar in shape.`
+            },
+            {
+                title: 'Using stroke options artistically',
+                contents: 
+``
             },
             {
                 system: 'stocWeed',     // Please do not translate this line.
@@ -941,7 +949,7 @@ class Renderer
      * @param {number} camZ (default: 0) the camera's z-axis centre.
      * @param {number} followFactor (default: 0.1; between 0 and 1) the
      * camera's cursor-following speed.
-     * @param {number} loopMode (default: 0; between 0 and 3) the renderer's
+     * @param {number} loopMode (default: 0; between 0 and 2) the renderer's
      * looping mode.
      * @param {boolean} upright (default: false) whether to rotate the system
      * around the z-axis by 90 degrees.
@@ -955,7 +963,7 @@ class Renderer
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
     quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]',
-    loadModels = false)
+    loadModels = false, backtrackTail = false)
     {
         /**
          * @type {LSystem} the L-system being handled.
@@ -990,7 +998,7 @@ class Renderer
          * @type {number} the looping mode.
          * @public
          */
-        this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 3));
+        this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 2));
         /**
          * @type {boolean} the x-axis' orientation.
          * @public
@@ -1014,6 +1022,7 @@ class Renderer
          */
         this.backtrackList = backtrackList;
         this.loadModels = loadModels;
+        this.backtrackTail = backtrackTail;
         /**
          * @type {Vector3} the cursor's position.
          * @public but shouldn't be.
@@ -1090,7 +1099,7 @@ class Renderer
      */
     update(level, seedChanged = false)
     {
-        let clearGraph = this.loopMode != 3 || level < this.lv || seedChanged;
+        let clearGraph = this.loopMode != 2 || level < this.lv || seedChanged;
 
         if(this.lv != level)
         {
@@ -1178,7 +1187,8 @@ class Renderer
      * backtracking.
      */
     configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
-    loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels)
+    loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels,
+    backtrackTail)
     {
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
@@ -1210,6 +1220,7 @@ class Renderer
         this.quickBacktrack = quickBacktrack;
         this.backtrackList = backtrackList;
         this.loadModels = loadModels;
+        this.backtrackTail = backtrackTail;
 
         if(requireReset)
             this.reset();
@@ -1297,9 +1308,9 @@ class Renderer
         typeof this.levels[this.lv] == 'undefined')
             return;
 
-        if(this.i >= this.levels[this.lv].length && (this.loopMode == 0 ||
-        (this.loopMode == 1 && this.stack.length == 0)))
-            return;
+        if(this.i >= this.levels[this.lv].length && this.loopMode == 0)
+            if(!this.backtrackTail || this.stack.length == 0)
+                return;
 
         this.elapsed += dt;
     }
@@ -1328,20 +1339,17 @@ class Renderer
 
         if(this.i >= this.levels[this.lv].length)
         {
-            if(this.loopMode == 0)
-                return;
-
-            if(this.stack.length == 0)
+            if(!this.backtrackTail || this.stack.length == 0)
             {
                 switch(this.loopMode)
                 {
-                    case 3:
+                    case 2:
                         l.buy(1);
                         return;
-                    case 2:
+                    case 1:
                         this.reset(false);
                         return;
-                    case 1:
+                    case 0:
                         return;
                 }
             }
@@ -1572,7 +1580,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0}`;
     }
 }
 
@@ -1977,7 +1985,7 @@ var init = () =>
     // l (Level)
     {
         let getDesc = (level) => Localization.format(getLoc('varLvDesc'),
-        level.toString(), renderer.loopMode == 3 ? '+' : '');
+        level.toString(), renderer.loopMode == 2 ? '+' : '');
         let getInfo = (level) => `\\text{Lv. }${level.toString()}`;
         l = theory.createUpgrade(0, progress, new FreeCost);
         l.getDescription = (_) => Utils.getMath(getDesc(l.level));
@@ -2437,7 +2445,7 @@ let createConfigMenu = () =>
         row: 0,
         column: 1,
         minimum: 0,
-        maximum: 3,
+        maximum: 2,
         value: tmpLM,
         // minimumTrackColor: Color.BORDER,
         // maximumTrackColor: Color.TRANSPARENT,
@@ -2454,11 +2462,10 @@ let createConfigMenu = () =>
             LMSlider.value = tmpLM;
         }
     });
-    let tmpModel = renderer.loadModels;
-    let modelSwitch = ui.createSwitch
+    let tmpTail = renderer.backtrackTail;
+    let tailSwitch = ui.createSwitch
     ({
-        isVisible: false,
-        isToggled: tmpModel,
+        isToggled: tmpTail,
         row: 1,
         column: 1,
         horizontalOptions: LayoutOptions.END,
@@ -2468,8 +2475,27 @@ let createConfigMenu = () =>
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
+                tmpTail = !tmpTail;
+                tailSwitch.isToggled = tmpTail;
+            }
+        }
+    });
+    let tmpModel = renderer.loadModels;
+    let modelSwitch = ui.createSwitch
+    ({
+        isVisible: false,
+        isToggled: tmpModel,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
                 tmpModel = !tmpModel;
-                uprightSwitch.isToggled = tmpModel;
+                modelSwitch.isToggled = tmpModel;
             }
         }
     });
@@ -2477,7 +2503,7 @@ let createConfigMenu = () =>
     let QDSwitch = ui.createSwitch
     ({
         isToggled: tmpQD,
-        row: 2,
+        row: 3,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2495,7 +2521,7 @@ let createConfigMenu = () =>
     let QBSwitch = ui.createSwitch
     ({
         isToggled: tmpQB,
-        row: 3,
+        row: 4,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2513,14 +2539,14 @@ let createConfigMenu = () =>
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
-        row: 4,
+        row: 5,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let EXBEntry = ui.createEntry
     ({
         text: tmpEXB,
-        row: 4,
+        row: 5,
         column: 1,
         onTextChanged: (ot, nt) =>
         {
@@ -2589,8 +2615,16 @@ let createConfigMenu = () =>
                                     LMSlider,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelLoadModels'),
+                                        text: getLoc('labelBTTail'),
                                         row: 1,
+                                        column: 0,
+                                        verticalOptions: LayoutOptions.CENTER
+                                    }),
+                                    tailSwitch,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelLoadModels'),
+                                        row: 2,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2598,7 +2632,7 @@ let createConfigMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickdraw'),
-                                        row: 2,
+                                        row: 3,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2606,7 +2640,7 @@ let createConfigMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickBT'),
-                                        row: 3,
+                                        row: 4,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2645,7 +2679,8 @@ let createConfigMenu = () =>
                                 Sound.playClick();
                                 let requireReset = renderer.configure(tmpZE,
                                 tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel);
+                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel,
+                                tmpTail);
                                 lvlControls.updateDescription();
                                 if(requireReset)
                                     menu.hide();
@@ -3957,7 +3992,8 @@ var getInternalState = () => JSON.stringify
         loadModels: renderer.loadModels,
         quickDraw: renderer.quickDraw,
         quickBacktrack: renderer.quickBacktrack,
-        backtrackList: renderer.backtrackList
+        backtrackList: renderer.backtrackList,
+        backtrackTail: renderer.backtrackTail
     },
     system:
     {
@@ -4011,7 +4047,8 @@ var setInternalState = (stateStr) =>
             state.renderer.camZ, state.renderer.followFactor,
             state.renderer.loopMode, state.renderer.upright,
             state.renderer.quickDraw, state.renderer.quickBacktrack,
-            state.renderer.backtrackList, state.renderer.loadModels);
+            state.renderer.backtrackList, state.renderer.loadModels,
+            state.renderer.backtrackTail);
         }
         else
             renderer = new Renderer(system);
@@ -4061,8 +4098,11 @@ var setInternalState = (stateStr) =>
             if(rv.length > 14)
                 rv[5] = `${rv[5]}*${rv[0]}*${rv[1]}^lv+${rv[14]}`;
                 rv[1] = `${rv[0]}*${rv[1]}^lv`;
-            if(rv.length > 15)  // 13 through 15 are discarded
+            if(rv.length > 15)
                 rv[12] = Boolean(Number(rv[15]));
+            
+            for(let i = 13; i < rv.length; ++i)
+                rv[i] = undefined;
 
             if(stateVersion < 0.2)
             {
@@ -4121,8 +4161,11 @@ var setInternalState = (stateStr) =>
                     rv[4] = `${rv[4]}*${rv[0]}*${rv[1]}^lv+${rv[7]}`;
                     rv[1] = `${rv[0]}*${rv[1]}^lv`;
                 }
-                if(rv.length > 8)   // 6 through 8 are discarded
+                if(rv.length > 8)
                     rv[5] = Boolean(Number(rv[8]));
+                
+                for(let i = 6; i < rv.length; ++i)
+                    rv[i] = undefined;
 
                 savedSystems.set(values[6 + i * 5], {
                     desc: values[7 + i * 5],
