@@ -110,7 +110,7 @@ const locStrings =
         saPatienceHint: 'Be patient.',
 
         btnSave: 'Save',
-        btnDefault: 'Reset to Defaults*',
+        btnDefault: '* Reset to Defaults',
         btnAdd: 'Add',
         btnConstruct: 'Construct',
         btnDelete: 'Delete',
@@ -148,8 +148,8 @@ const locStrings =
         labelSeed: 'Seed (for stochastic systems): ',
 
         menuRenderer: 'Renderer Menu',
-        labelInitScale: 'Initial scale: * ',
-        labelFigScale: 'Figure scale: * ',
+        labelInitScale: '* Initial scale: ',
+        labelFigScale: '* Figure scale: ',
         labelCamMode: 'Camera mode: {0}',
         camModes: ['Fixed', 'Linear', 'Quadratic'],
         labelCamCentre: 'Fixed camera centre (x,): ',
@@ -157,13 +157,13 @@ const locStrings =
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Level', 'Playlist'],
-        labelUpright: 'Upright x-axis: * ',
+        labelUpright: '* Upright x-axis: ',
         labelBTTail: 'Draw tail end: ',
-        labelLoadModels: '(Teaser!) Load models: * ',
-        labelQuickdraw: 'Quickdraw straight lines: * ',
-        labelQuickBT: 'Quick backtrack: * ',
-        labelHesitate: 'Pause after backtrack: * ',
-        labelBTList: 'Backtrack list: * ',
+        labelLoadModels: '* (Teaser) Load models: ',
+        labelQuickdraw: '* Quickdraw straight lines: ',
+        labelQuickBT: '* Quick backtrack: ',
+        labelHesitate: '* Pause after backtrack: ',
+        labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
         menuSave: 'Save/Load Menu',
@@ -2523,7 +2523,7 @@ let createConfigMenu = () =>
     let QDSwitch = ui.createSwitch
     ({
         isToggled: tmpQD,
-        row: 3,
+        row: 0,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2541,7 +2541,7 @@ let createConfigMenu = () =>
     let QBSwitch = ui.createSwitch
     ({
         isToggled: tmpQB,
-        row: 4,
+        row: 1,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2559,14 +2559,14 @@ let createConfigMenu = () =>
     let hesLabel = ui.createLatexLabel
     ({
         text: getLoc('labelHesitate'),
-        row: 5,
+        row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let hesSwitch = ui.createSwitch
     ({
         isToggled: tmpHes,
-        row: 5,
+        row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
         onTouched: (e) =>
@@ -2584,14 +2584,14 @@ let createConfigMenu = () =>
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
-        row: 6,
+        row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let EXBEntry = ui.createEntry
     ({
         text: tmpEXB,
-        row: 6,
+        row: 3,
         column: 1,
         onTextChanged: (ot, nt) =>
         {
@@ -2652,7 +2652,7 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                // rowDefinitions: [40, 40, 40, 40, 40],
+                                rowDefinitions: [40, 40, 40],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -2673,11 +2673,24 @@ let createConfigMenu = () =>
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    modelSwitch,
+                                    modelSwitch
+                                ]
+                            }),
+                            ui.createBox
+                            ({
+                                heightRequest: 1,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createGrid
+                            ({
+                                // rowDefinitions: [40, 40, 40, 40, 40],
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickdraw'),
-                                        row: 3,
+                                        row: 0,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
@@ -2685,7 +2698,7 @@ let createConfigMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelQuickBT'),
-                                        row: 4,
+                                        row: 1,
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
