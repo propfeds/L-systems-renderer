@@ -561,7 +561,7 @@ Note: does not contain camera configurations, or models.
             {
                 title: 'Appendix: Advanced artistry in LSR (1)',
                 contents:
-`Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way.
+`Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way!
 And today's class: Tick length.
 
 Now, while tickspeed might be more of a familiar concept to the idle ` +
@@ -581,7 +581,7 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 - 0.3 sec: with loose slanted lines, tick length 0.3 is generally is a solid ` +
 `option for any figure requiring some playfulness. However, it is fairly ` +
 `unknown that tick length 0.3 holds the most powerful secret in this whole ` +
-`universe: it can create the straightest lines out of this family. As ` +
+`universe: it can truly create the straightest lines out of this family. As ` +
 `always, some tricks are needed here:
     + First, create an anchor at this speed by holding -.
     + Switch back and forth between levels to reset the turtle.
@@ -601,7 +601,7 @@ Note: This trick is not guaranteed to work every time, so it is advised to ` +
 Backtrack options, or why Hesitation is Not Defeat.
 
 Now, open your renderer menu textbook to the last section. There are about 4 ` +
-`options here as you can see, each of them with advantages and, non-advantages!
+`options here as you can see - each of them with advantages and, non-advantages!
 
 - Quickdraw: is generally a decent option when it comes to saving some time, ` +
 `but when compared to quick backtrack, it poses a greater drawback when it ` +
