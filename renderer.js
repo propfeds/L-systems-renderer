@@ -240,12 +240,11 @@ Every L-system starts with a sequence, called the axiom. From the axiom, the ` +
 `sequence grows according to a set of production rules that describe how ` +
 `each symbol (character) in the sequence would be rewritten in the next level.
 Each rule is represented in the form of:
-{symbol} = {derivations}, or
-{symbol} → {derivations}.
+{symbol} = {derivation(s)}
 
 Considering a simple system with the axiom of b and the rules:
-b → a
-a → ab,
+b = a
+a = ab,
 the sequence will grow as follows:
 Level 0: b
 Level 1: a
@@ -291,8 +290,8 @@ Legends have it, that when you fold a thin piece of paper at the middle over ` +
 Press 'Construct' to see the dragon in action.
 
 Axiom: FX
-Y=-FX-Y
-X=X+YF+
+Y = -FX-Y
+X = X+YF+
 Turning angle: 90°
 
 Applies static camera:
@@ -310,8 +309,8 @@ Did you know that when you take Pascal's triangle then select only the even ` +
 `numbers, the Sierpiński triangle will appear?
 
 Axiom: X
-X=+Y-X-Y+
-Y=-X+Y+X-
+X = +Y-X-Y+
+Y = -X+Y+X-
 Turning angle: 60°
 
 Applies static camera:
@@ -324,8 +323,8 @@ Centre: (0.5*2^lv, sqrt(3)/4*2^lv, 0)`
 `Although numerous fractals can be created using only the basic symbols, ` +
 `when it comes to modelling branching structures such as trees, the turtle ` +
 `wishes it could be split in two... Using a stack mechanism, we can ` +
-`essentially allow the turtle to return to a point in the past and take on ` +
-`a new path.
+`essentially allow the turtle to return to a point in the past to take on a ` +
+`new path.
 
 Stack operations are represented with square brackets:
 [: records the turtle's position and facing onto a stack.
@@ -351,8 +350,8 @@ Note: Due to the game's 3D graph only allowing one continuous path to be ` +
 This one tastes like fennel, but oddly enough, does not have leaves.
 
 Axiom: X
-F=FF
-X=F[+X][-X]FX
+F = FF
+X = F[+X][-X]FX
 Turning angle: 30°
 
 Applies static camera:
@@ -361,20 +360,32 @@ Centre: (2^lv, 0, 0)
 Upright`
             },
             {
-                title: 'Stochastic systems',
+                title: 'Stochastic L-systems',
                 contents:
-``
+`Stochastic L-systems are systems that introduce randomness to the layouts ` +
+`they generate. When it comes to modelling vegetative structures, stochastic ` +
+`systems mimic a simplification of environment variables in growth processes.
+
+To create a stochastic rule for an L-system, simply list several derivations ` +
+`within the rule, separated by commas:
+,: separates between stochastic derivations.
+
+When the system is grown, one of the possible derivations will be randomly ` +
+`selected (with equal chance) for each symbol. The selection process is ` +
+`controlled by the system's seed.
+This seed can either be changed manually within the L-systems menu, or ` +
+`randomly reassigned using the 'Reroll' button on the top right corner of ` +
+`the theory screen.`
             },
             {
                 system: 'stocWeed',     // Please do not translate this line.
-                title: 'Example: Stochastic weed',
+                title: 'Example: Stochastic tree',
                 contents:
-`It generates a random shape every time it rolls!
+`This tree generates a random shape every time it rolls.
 
 Axiom: X
-F=FF
-X=F-[[X]+X]+F[+FX]-X,
-     F+[[X]-X]-F[-FX]+X
+F = FF
+X = F-[[X]+X]+F[+FX]-X, F+[[X]-X]-F[-FX]+X
 Turning angle: 22.5°
 
 Applies static camera:
@@ -383,50 +394,90 @@ Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'luckyFlower',  // Please do not translate this line.
-                title: 'Example: Lucky flower',
-                contents:
-`How tall can it grow until it sprouts a flower? Reroll to find out!
-
-Axiom: A
-A=I[L]B,
-     I[L]A,
-     I[L][R]B,
-     IF
-B=I[R]A,
-     I[R]B,
-     I[L][R]A,
-     IF
-L=---I,
-     --I,
-     ----I
-R=+++I,
-     ++I,
-     ++++I
-F=[---[I+I]--I+I][+++[I-I]++I-I]II
-Turning angle: 12°
-
-Applies static camera:
-Scale: 6
-Centre: (6, 0, 0)
-Upright`
-            },
-            {
                 system: 'snowflake',    // Please do not translate this line.
                 title: 'Example: Snowflake',
                 contents:
-`Honey I told you every snowflake is different can you please stop licking them?
+`Honey I told you every snowflake is different can you stop licking them please
 
 Axiom: [X]+[X]+[X]+[X]+[X]+[X]
-X=F[+F][-F]X
-F=F[+i][-i]F
-i=Ii,IIi
+X = F[+F][-F]X
+F = F[+i][-i]F
+i = Ii, IIi
 Turning angle: 60°
 Ignore: i
 
 Applies static camera:
 Scale: 2*2^lv
 Centre: (0, 0, 0)`
+            },
+            {
+                title: 'L-systems in 3D',
+                contents:
+`Using a yaw-pitch-roll orientation system, we can also generate figures in 3D.
+
++ -: rotate cursor on the z-axis (yaw).
+& ^: rotate cursor on the y-axis (pitch).
+\\ /: rotate cursor on the x-axis (roll).
+|: reverses cursor direction.
+
+Note: In other L-system implementations, < and > may be used instead of \\ ` +
+`and / like in this theory.`
+            },
+            {
+                system: 'blackboard',   // Please do not translate this line.
+                title: 'Example: Blackboard tree',
+                contents:
+`Source: https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf
+Modelled after a blackboard tree (Alstonia scholaris) in its infant state.
+
+Axiom: F
+F = Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]
+M = Z-M
+N = Z+N
+O = Z&O
+P = Z^P
+Y = Z-ZY+
+Z = ZZ
+Turning angle: 8°
+
+Applies static camera:
+Scale: 2*2^lv
+Centre: (1.2*2^lv, 0, 0)
+Upright`
+            },
+            {
+                system: 'hilbert3D',    // Please do not translate this line.
+                title: 'Example: Hilbert curve (3D)',
+                contents:
+`The Hilbert curve is a fractal figure that fills the space of a 2D plane ` +
+`using only a single line. This is the 3D version.
+It's recommended to draw this at a low tickspeed (high tick length).
+
+Axiom: X
+X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
+Turning angle: 90°
+Ignore: X
+
+Applies static camera:
+Scale: 2^lv
+Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
+            },
+            {
+                system: 'fern',         // Please do not translate this line.
+                title: 'Example: Fern',
+                contents:
+`Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
+
+Axiom: FFFA
+A=[++++++++++++++FC]B^+B[--------------FD]B+BA
+C=[---------FF][+++++++++FF]B&&+C
+D=[---------FF][+++++++++FF]B&&-D
+Turning angle: 4°
+
+Applies static camera: (mathematically unproven)
+Scale: 3*1.3^lv
+Centre: (1.8*1.3^lv, 0, 0)
+Upright`
             },
             {
                 title: 'Controls: Configuring the renderer',
@@ -457,77 +508,12 @@ Backtrack list: sets stopping symbols for quickdraw/backtrack.`
                 contents:
 `Although traditionally F is used to go forward, each letter can be used to ` +
 `mean different things, such as drawing a flower, emulating growth stages, ` +
-`alternating between patterns, etc.
-
-For some simple systems, a symbol (often X) is used to resemble the ` +
-`fractal's shape.
-
-Brackets work in a stack mechanism, therefore every [ has to be properly ` +
-`followed by a ] in the same production rule.
-
-To create a stochastic system, simply list several derivations in the same ` +
-`rule, separated by a , (comma). One of those derivations will be randomly ` +
-`selected per symbol whenever the system is derived.
-Generally, to keep a degree of uniformity in the system, it is advised for ` +
-`the derivations to be similar in shape.`
+`alternating between patterns, etc.`
             },
             {
                 title: 'Using stroke options artistically',
                 contents: 
 ``
-            },
-            {
-                system: 'blackboard',   // Please do not translate this line.
-                title: 'Example: Blackboard tree (3D)',
-                contents:
-`A blackboard tree (Alstonia scholaris) when it's still tiny.
-
-Axiom: F
-F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]
-M=Z-M
-N=Z+N
-O=Z&O
-P=Z^P
-Y=Z-ZY+
-Z=ZZ
-Turning angle: 8°
-
-Applies static camera:
-Scale: 2*2^lv
-Centre: (1.2*2^lv, 0, 0)
-Upright`
-            },
-            {
-                system: 'hilbert3D',    // Please do not translate this line.
-                title: 'Example: Hilbert curve (3D)',
-                contents:
-`If you set to high tickspeed, it look like brainz.
-
-Axiom: X
-X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
-Turning angle: 90°
-Ignore: X
-
-Applies static camera:
-Scale: 2^lv
-Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
-            },
-            {
-                system: 'fern',         // Please do not translate this line.
-                title: 'Example: Fern (3D)',
-                contents:
-`Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
-
-Axiom: FFFA
-A=[++++++++++++++FC]B^+B[--------------FD]B+BA
-C=[---------FF][+++++++++FF]B&&+C
-D=[---------FF][+++++++++FF]B&&-D
-Turning angle: 4°
-
-Applies static camera: (mathematically unproven)
-Scale: 3*1.3^lv
-Centre: (1.8*1.3^lv, 0, 0)
-Upright`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
@@ -1959,6 +1945,16 @@ let manualSystems =
             'F=[---[I+I]--I+I][+++[I-I]++I-I]II'
         ], 12),
         config: [6, 6, 0, 0, true]
+    },
+    snowflake:
+    {
+        system: new LSystem('[X]+[X]+[X]+[X]+[X]+[X]', [
+            'i',
+            'X=F[+F][-F]X',
+            'F=F[+i][-i]F',
+            'i=Ii,IIi'
+        ], 60),
+        config: ["2*2^lv", 0, 0, 0,false]
     },
     blackboard:
     {
