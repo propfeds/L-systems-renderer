@@ -412,6 +412,23 @@ Centre: (6, 0, 0)
 Upright`
             },
             {
+                system: 'snowflake',    // Please do not translate this line.
+                title: 'Example: Snowflake',
+                contents:
+`Honey I told you every snowflake is different can you please stop licking them?
+
+Axiom: [X]+[X]+[X]+[X]+[X]+[X]
+X=F[+F][-F]X
+F=F[+i][-i]F
+i=Ii,IIi
+Turning angle: 60°
+Ignore: i
+
+Applies static camera:
+Scale: 2*2^lv
+Centre: (0, 0, 0)`
+            },
+            {
                 title: 'Controls: Configuring the renderer',
                 contents:
 `Configure the visual representation of your L-system with the renderer menu.
@@ -826,7 +843,7 @@ class LSystem
                     this.rules.set(rs[0], rs[1]);
                 else
                 {
-                    for(let i = 0; i < rder; ++i)
+                    for(let i = 0; i < rder.length; ++i)
                         rder[i] = rder[i].trim();
                     this.rules.set(rs[0], rder);
                 }
