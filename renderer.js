@@ -541,10 +541,18 @@ Note: does not contain camera configurations, or models.
 - View: allows you to edit, load and delete saved systems.`
             },
             {
-                title: 'Advanced artistry',
-                contents: 
-`- Tickspeed vs. tick length
+                title: 'Appendix: Advanced artistry in LSR',
+                contents:
+`Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way.
+Today's lesson consists of several main points:
+
+1. Tickspeed vs. tick length.
+While tickspeed might be more of a familiar concept to the fellow idlers, it ` +
+`posesses a flaw: it is not consistent. At 9 tickspeed, the renderer would ` +
+`skip one tick out of every 10, making the line quality inconsistent. There ` +
+`are several drawing styles 
 - Backtrack options
+- Hesitation is defeat?
 - Closed loop figures
 - Such art`
             },
@@ -1491,6 +1499,7 @@ class Renderer
                 let t = this.stack.pop();
                 this.state = t[0];
                 this.ori = t[1];
+                return;
             }
         }
     }
