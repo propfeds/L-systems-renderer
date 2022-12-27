@@ -416,7 +416,8 @@ Centre: (0, 0, 0)`
             {
                 title: 'L-systems in 3D',
                 contents:
-`Using a yaw-pitch-roll orientation system, we can also generate figures in 3D:
+`Using a yaw-pitch-roll orientation system, we can also generate figures in 3D.
+
 + -: rotate cursor on the z-axis (yaw).
 & ^: rotate cursor on the y-axis (pitch).
 \\ /: rotate cursor on the x-axis (roll).
@@ -499,7 +500,7 @@ Note: Any whitespace in the rules will be trimmed afterwards.`
             {
                 title: 'Controls: Configuring the renderer',
                 contents:
-`Configure the visual representation of your L-system with the renderer menu.
+`Configure the visual representation of your L-system with the Renderer menu.
 
 Camera options:
 - Figure scale: determines the zoom level's inverse using a formula. For ` +
@@ -518,7 +519,7 @@ Renderer logic:
 `mode draws levels consecutively.
 - Draw tail end: whether to draw the last backtrack after finishing the ` +
 `sequence.
-- Load models: whether to load models.
+- Load models: whether to load models. (Coming in a future update!)
 
 Advanced stroke options:
 - Quickdraw straight lines: skips over straight consecutive segments.
@@ -530,7 +531,7 @@ Advanced stroke options:
             {
                 title: 'Controls: Saving and loading',
                 contents:
-`The save/load menu allows you to save your favourite L-systems along with 
+`The Save/load menu allows you to save your favourite L-systems along with 
 their camera configurations.
 
 - Clipboard: allows you to export the system as a string to share with the ` +
@@ -541,20 +542,63 @@ Note: does not contain camera configurations, or models.
 - View: allows you to edit, load and delete saved systems.`
             },
             {
-                title: 'Appendix: Advanced artistry in LSR',
+                title: 'Controls: Theory settings',
+                contents:
+`The Settings menu contain several general options for the theory.
+
+- Reset graph after tabbing in: when this option is turned off, the graph ` +
+`will resume the current drawing after the game enters focus, assuming it ` +
+`does not close itself by then. The theory will not draw when the game is ` +
+`not in focus, regardless of this setting.
+- Reset level on construction: this option is generally turned on for ` +
+`safety, however, if you are trying to design and edit systems for a while, ` +
+`it is recommended to turn it off for convenience.
+- Tertiary equation: switches between the display of turtle coordinates and ` +
+`orientation (quaternion).
+- Measure performance: displays performance statistics at the top of the ` +
+`screen.`
+            },
+            {
+                title: 'Appendix: Advanced artistry in LSR (1)',
                 contents:
 `Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way.
-Today's lesson consists of several main points:
+Today's lecture consists of several main points:
 
 1. Tickspeed vs. tick length.
-While tickspeed might be more of a familiar concept to the fellow idlers, it ` +
-`posesses a flaw: it is not consistent. At 9 tickspeed, the renderer would ` +
-`skip one tick out of every 10, making the line quality inconsistent. There ` +
-`are several drawing styles 
+While tickspeed might be more of a familiar concept to the idle fellows, it ` +
+`posesses a flaw: it is not consistent. For instance, t 9 tickspeed, the ` +
+`renderer would skip one tick out of every 10, making the line quality ` +
+`inconsistent.
+Although there might be value in mixing drawing styles this way, we will ` +
+`not be going into details about it today. Instead, we will be discussing ` +
+`the various tick lengths and their artistic applications.
+
+- 0.1 sec: the quickest stroke in the West. This is the equivalent of 10 ` +
+`tickspeed. Figures drawn at this speed are jumbled and chaotic, making it ` +
+`suitable for large-scale figures, where errors become tiny and hard to notice.
+- 0.2 sec: characterised by quick but elegant strokes, this speed oozes with ` +
+`'drip'. It offers a good compromise between speed and precision, although ` +
+`even 0.1 would be too slow for large scale figures.
+- 0.3 sec: with loose slanted lines, tick length 0.3 is generally is a solid ` +
+`option for any figure requiring some playfulness. However, it is fairly ` +
+`unknown that tick length 0.3 holds the most powerful secret in this whole ` +
+`universe: it can create the straightest lines out of this family. As ` +
+`always, some tricks are needed here:
+    + First, create an anchor at this speed by holding -.
+    + Switch back and forth between levels to reset the turtle.
+    + Activate the anchor by holding +, and marvel at the beauty of it all.
+Note: This trick is not guaranteed to work every time, so it is advised to ` +
+`try again multiple times.
+- 0.4 sec: a good cousin to tick length 0.5, 0.4 can really spice the figure ` +
+`up by tying up cute knots between corners occasionally.
+- 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
+`of use when it comes to bringing that rough sketch feeling to a figure.
+- 0.6 sec and above: don't care, class dismissed.
+
+Stay tune for the next lectures:
 - Backtrack options
 - Hesitation is defeat?
-- Closed loop figures
-- Such art`
+- Closed loop figures`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
