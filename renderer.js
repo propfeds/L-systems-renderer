@@ -158,10 +158,11 @@ const locStrings =
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Level', 'Playlist'],
         labelUpright: 'Upright x-axis: * ',
-        labelBTTail: 'Backtrack at tail end: ',
+        labelBTTail: 'Draw tail end: ',
         labelLoadModels: '(Teaser!) Load models: * ',
         labelQuickdraw: 'Quickdraw straight lines: * ',
         labelQuickBT: 'Quick backtrack: * ',
+        labelHesitate: 'Pause after backtrack: * ',
         labelBTList: 'Backtrack list: * ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -963,7 +964,7 @@ class Renderer
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
     quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]',
-    loadModels = false, backtrackTail = false)
+    loadModels = true, backtrackTail = false, hesitate = true)
     {
         /**
          * @type {LSystem} the L-system being handled.
@@ -1023,6 +1024,7 @@ class Renderer
         this.backtrackList = backtrackList;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
+        this.hesitate = hesitate;
         /**
          * @type {Vector3} the cursor's position.
          * @public but shouldn't be.
@@ -1188,13 +1190,13 @@ class Renderer
      */
     configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
     loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels,
-    backtrackTail)
+    backtrackTail, hesitate)
     {
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
         (backtrackList != this.backtrackList) ||
-        (loadModels != this.loadModels);
+        (loadModels != this.loadModels) || (hesitate != this.hesitate);
 
         this.figScaleStr = figureScale.toString();
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
@@ -1221,6 +1223,7 @@ class Renderer
         this.backtrackList = backtrackList;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
+        this.hesitate = hesitate;
 
         if(requireReset)
             this.reset();
@@ -1327,18 +1330,24 @@ class Renderer
         if(level > this.loaded)
             this.update(level);
 
+        // You can't believe how many times I have to type this typeof clause.
         if(level > this.loaded + 1 ||
         typeof this.levels[this.lv] == 'undefined')
             return;
 
         if(onlyUpdate)
             return;
-            
+        
+        // This is to prevent the renderer from skipping the first point.
         if(this.elapsed == 0)
             return;
 
-        // Don't worry, it'll not run forever.
-        for(let i = 0; i < 2; ++i)
+        /*
+        Don't worry, it'll not run forever. This is just to prevent the renderer
+        from hesitating for 1 tick every loop.
+        */
+        let j;
+        for(j = 0; j < 2; ++j)
         {
             for(; this.i < this.levels[this.lv].length; ++this.i)
             {
@@ -1384,7 +1393,10 @@ class Renderer
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            break;
+                            if(this.hesitate)
+                                ++this.i;
+                            else
+                                break;
                         }
                         return;
                     default:
@@ -1416,6 +1428,8 @@ class Renderer
                         this.reset(false);
                         break;
                     case 0:
+                        if(this.quickBacktrack)
+                            this.state = new Vector3(0, 0, 0);
                         return;
                 }
             }
@@ -1586,7 +1600,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
     }
 }
 
@@ -2541,18 +2555,43 @@ let createConfigMenu = () =>
             }
         }
     });
+    let tmpHes = renderer.hesitate;
+    let hesLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelHesitate'),
+        row: 5,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
+    let hesSwitch = ui.createSwitch
+    ({
+        isToggled: tmpHes,
+        row: 5,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpHes = !tmpHes;
+                hesSwitch.isToggled = tmpHes;
+            }
+        }
+    });
     let tmpEXB = renderer.backtrackList;
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
-        row: 5,
+        row: 6,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
     let EXBEntry = ui.createEntry
     ({
         text: tmpEXB,
-        row: 5,
+        row: 6,
         column: 1,
         onTextChanged: (ot, nt) =>
         {
@@ -2651,6 +2690,8 @@ let createConfigMenu = () =>
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     QBSwitch,
+                                    hesLabel,
+                                    hesSwitch,
                                     EXBLabel,
                                     EXBEntry
                                 ]
@@ -2686,7 +2727,7 @@ let createConfigMenu = () =>
                                 let requireReset = renderer.configure(tmpZE,
                                 tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
                                 tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel,
-                                tmpTail);
+                                tmpTail, tmpHes);
                                 lvlControls.updateDescription();
                                 if(requireReset)
                                     menu.hide();
@@ -3999,7 +4040,8 @@ var getInternalState = () => JSON.stringify
         quickDraw: renderer.quickDraw,
         quickBacktrack: renderer.quickBacktrack,
         backtrackList: renderer.backtrackList,
-        backtrackTail: renderer.backtrackTail
+        backtrackTail: renderer.backtrackTail,
+        hesitate: renderer.hesitate
     },
     system:
     {
@@ -4054,7 +4096,7 @@ var setInternalState = (stateStr) =>
             state.renderer.loopMode, state.renderer.upright,
             state.renderer.quickDraw, state.renderer.quickBacktrack,
             state.renderer.backtrackList, state.renderer.loadModels,
-            state.renderer.backtrackTail);
+            state.renderer.backtrackTail, state.renderer.hesitate);
         }
         else
             renderer = new Renderer(system);
