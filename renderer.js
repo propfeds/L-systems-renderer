@@ -25,8 +25,10 @@ import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
 import { ui } from '../api/ui/UI';
 import { Color } from '../api/ui/properties/Color';
+import { FontFamily } from '../api/ui/properties/FontFamily';
 import { Keyboard } from '../api/ui/properties/Keyboard';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
+import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
@@ -188,7 +190,7 @@ const locStrings =
         labelMeasure: 'Measure performance: ',
 
         menuManual: 'User Guide ({0}/{1})',
-        manualSystemDesc: 'Taken from page {0} of the guide.',
+        manualSystemDesc: 'From user guide, page {0}.',
         manual:
         [
             {
@@ -341,12 +343,12 @@ Note: Due to the game's 3D graph only allowing one continuous path to be ` +
                                     // pages' text content and their systems.
                 title: 'Example: Arrow weed',
                 contents:
-`Meet the default system. The symbol F here represents the stem and ` +
-`branches, which expand to twice their size every level. Meanwhile X, ` +
-`sitting at the tip of each branch, represents what's called a vegetative ` +
-`apex, which is to say the part of an axis (stem or branch) that grows into ` +
-`new branches and leaves.
-This one tastes like fennel, but oddly enough, it does not grow leaves.
+`Meet the default system, now standing upright like a real tree. The symbol ` +
+`F here represents the stem and branches, which expand to twice their size ` +
+`every level. Meanwhile X, sitting at the tip of each branch, represents ` +
+`what's called a vegetative apex, which is to say the part of an axis (stem ` +
+`or branch) that grows into new branches and leaves.
+This one tastes like fennel, but oddly enough, does not have leaves.
 
 Axiom: X
 F=FF
@@ -356,6 +358,57 @@ Turning angle: 30°
 Applies static camera:
 Scale: 2^lv
 Centre: (2^lv, 0, 0)
+Upright`
+            },
+            {
+                title: 'Stochastic systems',
+                contents:
+``
+            },
+            {
+                system: 'stocWeed',     // Please do not translate this line.
+                title: 'Example: Stochastic weed',
+                contents:
+`It generates a random shape every time it rolls!
+
+Axiom: X
+F=FF
+X=F-[[X]+X]+F[+FX]-X,
+     F+[[X]-X]-F[-FX]+X
+Turning angle: 22.5°
+
+Applies static camera:
+Scale: 1.5*2^lv
+Centre: (1.2*2^lv, 0, 0)
+Upright`
+            },
+            {
+                system: 'luckyFlower',  // Please do not translate this line.
+                title: 'Example: Lucky flower',
+                contents:
+`How tall can it grow until it sprouts a flower? Reroll to find out!
+
+Axiom: A
+A=I[L]B,
+     I[L]A,
+     I[L][R]B,
+     IF
+B=I[R]A,
+     I[R]B,
+     I[L][R]A,
+     IF
+L=---I,
+     --I,
+     ----I
+R=+++I,
+     ++I,
+     ++++I
+F=[---[I+I]--I+I][+++[I-I]++I-I]II
+Turning angle: 12°
+
+Applies static camera:
+Scale: 6
+Centre: (6, 0, 0)
 Upright`
             },
             {
@@ -405,52 +458,6 @@ Generally, to keep a degree of uniformity in the system, it is advised for ` +
                 title: 'Using stroke options artistically',
                 contents: 
 ``
-            },
-            {
-                system: 'stocWeed',     // Please do not translate this line.
-                title: 'Example: Stochastic weed',
-                contents:
-`It generates a random shape every time it rolls!
-
-Axiom: X
-F=FF
-X=F-[[X]+X]+F[+FX]-X,
-     F+[[X]-X]-F[-FX]+X
-Turning angle: 22.5°
-
-Applies static camera:
-Scale: 1.5*2^lv
-Centre: (1.2*2^lv, 0, 0)
-Upright`
-            },
-            {
-                system: 'luckyFlower',  // Please do not translate this line.
-                title: 'Example: Lucky flower',
-                contents:
-`How tall can it grow until it sprouts a flower? Reroll to find out!
-
-Axiom: A
-A=I[L]B,
-     I[L]A,
-     I[L][R]B,
-     IF
-B=I[R]A,
-     I[R]B,
-     I[L][R]A,
-     IF
-L=---I,
-     --I,
-     ----I
-R=+++I,
-     ++I,
-     ++++I
-F=[---[I+I]--I+I][+++[I-I]++I-I]II
-Turning angle: 12°
-
-Applies static camera:
-Scale: 6
-Centre: (6, 0, 0)
-Upright`
             },
             {
                 system: 'blackboard',   // Please do not translate this line.
@@ -2309,6 +2316,7 @@ let createConfigMenu = () =>
         text: tmpZE,
         row: 0,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpZE = nt;
@@ -2367,6 +2375,7 @@ let createConfigMenu = () =>
         isVisible: tmpCM == 0,
         row: 2,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpCX = nt;
@@ -2393,6 +2402,7 @@ let createConfigMenu = () =>
                 text: tmpCY,
                 row: 0,
                 column: 1,
+                horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
                     tmpCY = nt;
@@ -2406,6 +2416,7 @@ let createConfigMenu = () =>
         isVisible: tmpCM == 0,
         row: 3,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpCZ = nt;
@@ -2593,6 +2604,7 @@ let createConfigMenu = () =>
         text: tmpEXB,
         row: 3,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpEXB = nt;
@@ -2845,6 +2857,7 @@ let createSystemMenu = () =>
         text: tmpRules[0],
         row: 0,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpRules[0] = nt;
@@ -3181,6 +3194,7 @@ let createViewMenu = (title) =>
         text: tmpZE,
         row: 0,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpZE = nt;
@@ -3198,6 +3212,7 @@ let createViewMenu = (title) =>
         text: tmpCX,
         row: 1,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpCX = nt;
@@ -3223,6 +3238,7 @@ let createViewMenu = (title) =>
                 text: tmpCY,
                 row: 0,
                 column: 1,
+                horizontalTextAlignment: TextAlignment.END,
                 onTextChanged: (ot, nt) =>
                 {
                     tmpCY = nt;
@@ -3235,6 +3251,7 @@ let createViewMenu = (title) =>
         text: tmpCZ,
         row: 2,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpCZ = nt;
@@ -3347,6 +3364,7 @@ let createViewMenu = (title) =>
         text: tmpRules[0],
         row: 0,
         column: 1,
+        horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
             tmpRules[0] = nt;
@@ -3691,7 +3709,7 @@ let createManualMenu = () =>
     });
     let pageContents = ui.createLabel
     ({
-        // fontFamily: FontFamily.CMU_REGULAR,
+        fontFamily: FontFamily.CMU_REGULAR,
         fontSize: 16,
         text: manualPages[page].contents
     });
@@ -4067,7 +4085,7 @@ var getInternalState = () => JSON.stringify
         rules: renderer.system.getRulesStrings()
     },
     savedSystems: Object.fromEntries(savedSystems)
-}, undefined, 4);
+});
 
 var setInternalState = (stateStr) =>
 {

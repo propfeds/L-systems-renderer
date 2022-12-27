@@ -49,6 +49,7 @@ parameters
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
+- Decorate with colours? Maybe only start doing it in LG else wasting time
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
