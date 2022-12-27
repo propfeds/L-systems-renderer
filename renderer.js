@@ -190,6 +190,7 @@ const locStrings =
         labelMeasure: 'Measure performance: ',
 
         menuManual: 'User Guide ({0}/{1})',
+        labelSource: 'Source: ',
         manualSystemDesc: 'From user guide, page {0}.',
         manual:
         [
@@ -209,14 +210,14 @@ Let's start discovering the wonders of L-systems.`
 
 Level: the system's iteration. Pressing + or - will grow/revert the system ` +
 `respectively.
-Pressing the Level button will reveal all levels of the system.
-Holding + or - will buy/refund levels in bulks of 10.
+- Pressing the Level button will reveal all levels of the system.
+- Holding + or - will buy/refund levels in bulks of 10.
 
 Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `produces less accurate lines).
-Pressing the Tickspeed button will toggle between the Tickspeed and Tick ` +
+- Pressing the Tickspeed button will toggle between the Tickspeed and Tick ` +
 `length modes.
-Holding - will create an 'anchor' on the current level then set it to 0, ` +
+- Holding - will create an 'anchor' on the current level then set it to 0, ` +
 `pausing the renderer. Holding + afterwards will return the renderer to the ` +
 `previously anchored speed.
 
@@ -333,7 +334,7 @@ Stack operations are represented with square brackets:
 
 Note: Due to the game's 3D graph only allowing one continuous path to be ` +
 `drawn, the turtle will not actually divide itself, but instead backtrack ` +
-`through the old path, and then start a new path.`
+`through the old path.`
             },
             {
                 system: 'arrow',    // Please do not translate this line. I'm
@@ -342,12 +343,12 @@ Note: Due to the game's 3D graph only allowing one continuous path to be ` +
                                     // pages' text content and their systems.
                 title: 'Example: Arrow weed',
                 contents:
-`Meet the default system, now standing upright like a real tree. The symbol ` +
-`F here represents the stem and branches, which expand to twice their size ` +
-`every level. Meanwhile X, sitting at the tip of each branch, represents ` +
-`what's called a vegetative apex, which is to say the part of an axis (stem ` +
-`or branch) that grows into new branches and leaves.
-This one tastes like fennel, but oddly enough, does not have leaves.
+`Meet the default system, now standing upright like a real tree.
+The symbol F here represents the stem and branches, which expand to twice ` +
+`their size every level. Meanwhile X, sitting at the top of each branch, ` +
+`represents what's known as a vegetative apex - the tip of an axis (stem or ` +
+`branch) that grows into new branches and leaves.
+This one though, oddly enough, does not have leaves.
 
 Axiom: X
 F = FF
@@ -362,18 +363,20 @@ Upright`
             {
                 title: 'Stochastic L-systems',
                 contents:
-`Stochastic L-systems are systems that introduce randomness to the layouts ` +
-`they generate. When it comes to modelling vegetative structures, stochastic ` +
-`systems mimic a simplification of environment variables in growth processes.
+`When it comes to modelling vegetative structures, sometimes the mimicking ` +
+`of environment variables in their growth process is needed. Stochastic ` +
+`L-systems offer a simplified approach to this by introducing randomness to ` +
+`a plant's shape.
 
 To create a stochastic rule for an L-system, simply list several derivations ` +
 `within the rule, separated by commas:
-,: separates between stochastic derivations.
+{symbol} = {derivation_0}, {derivation_1}, ...
 
 When the system is grown, one of the possible derivations will be randomly ` +
 `selected (with equal chance) for each symbol. The selection process is ` +
 `controlled by the system's seed.
-This seed can either be changed manually within the L-systems menu, or ` +
+
+A system's seed can either be changed manually within the L-systems menu, or ` +
 `randomly reassigned using the 'Reroll' button on the top right corner of ` +
 `the theory screen.`
             },
@@ -413,8 +416,7 @@ Centre: (0, 0, 0)`
             {
                 title: 'L-systems in 3D',
                 contents:
-`Using a yaw-pitch-roll orientation system, we can also generate figures in 3D.
-
+`Using a yaw-pitch-roll orientation system, we can also generate figures in 3D:
 + -: rotate cursor on the z-axis (yaw).
 & ^: rotate cursor on the y-axis (pitch).
 \\ /: rotate cursor on the x-axis (roll).
@@ -427,8 +429,7 @@ Note: In other L-system implementations, < and > may be used instead of \\ ` +
                 system: 'blackboard',   // Please do not translate this line.
                 title: 'Example: Blackboard tree',
                 contents:
-`Source: https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf
-Modelled after a blackboard tree (Alstonia scholaris) in its infant state.
+`Modelled after a blackboard tree (Alstonia scholaris) in its infant state.
 
 Axiom: F
 F = Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]
@@ -443,7 +444,8 @@ Turning angle: 8°
 Applies static camera:
 Scale: 2*2^lv
 Centre: (1.2*2^lv, 0, 0)
-Upright`
+Upright`,
+                source: 'https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf'
             },
             {
                 system: 'hilbert3D',    // Please do not translate this line.
@@ -454,7 +456,7 @@ Upright`
 It's recommended to draw this at a low tickspeed (high tick length).
 
 Axiom: X
-X=^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
+X = ^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
 Turning angle: 90°
 Ignore: X
 
@@ -466,54 +468,77 @@ Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
                 system: 'fern',         // Please do not translate this line.
                 title: 'Example: Fern',
                 contents:
-`Source: https://observablehq.com/@kelleyvanevert/3d-l-systems
+`A 3D fern.
 
 Axiom: FFFA
-A=[++++++++++++++FC]B^+B[--------------FD]B+BA
-C=[---------FF][+++++++++FF]B&&+C
-D=[---------FF][+++++++++FF]B&&-D
+A = [++++++++++++++FC]B^+B[--------------FD]B+BA
+C = [---------FF][+++++++++FF]B&&+C
+D = [---------FF][+++++++++FF]B&&-D
 Turning angle: 4°
 
 Applies static camera: (mathematically unproven)
 Scale: 3*1.3^lv
 Centre: (1.8*1.3^lv, 0, 0)
-Upright`
+Upright`,
+                source: 'http://jobtalle.com/lindenmayer_systems.html'
+            },
+            {
+                title: 'Controls: Configuring the L-system',
+                contents:
+`Design your L-system using the L-systems menu.
+
+- Axiom: the system's starting sequence.
+- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
+- Production rules: an unlimited number of rules can be added using the ` +
+`'Add' button.
+- Ignored symbols: the turtle will stand still when encountering these symbols.
+- Seed: sets the seed of a stochastic system.
+
+Note: Any whitespace in the rules will be trimmed afterwards.`
             },
             {
                 title: 'Controls: Configuring the renderer',
                 contents:
 `Configure the visual representation of your L-system with the renderer menu.
 
-Initial scale: zooms out by this much for every figure.
-Figure scale: zooms the figure out by a multiplier per level.
-
-Camera mode: toggles between static and cursor-focused.
-Centre: sets camera position for level 0 (this follows figure scale, and is ` +
-`based on non-upright coordinates).
-Camera follow factor: changes how quickly the camera chases the cursor.
-(Note: figure scale and camera centre needs to be experimented manually for ` +
-`each individual L-system.)
-
-Looping mode: Level mode repeats a single level, while the Playlist mode ` +
-`draws levels consecutively.
-Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
+Camera options:
+- Figure scale: determines the zoom level's inverse using a formula. For ` +
+`instance, a figure scale of 2^lv will zoom the figure out by a factor of ` +
+`2 every level.
+- Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
+`modes follow the turtle.
+- Fixed camera centre: determines camera position in Fixed mode using a ` +
+`formula, similar to figure scale.
+- Follow factor: changes how quickly the camera follows the turtle.
+- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
 `z-axis.
 
-Quickdraw: skips over consecutive straight lines.
-Quick backtrack: similarly, but on the way back.
-Backtrack list: sets stopping symbols for quickdraw/backtrack.`
+Renderer logic:
+- Looping mode: the Level mode repeats a single level, while the Playlist ` +
+`mode draws levels consecutively.
+- Draw tail end: whether to draw the last backtrack after finishing the ` +
+`sequence.
+- Load models: whether to load models.
+
+Advanced stroke options:
+- Quickdraw straight lines: skips over straight consecutive segments.
+- Quick backtrack: works similarly, but on the way back.
+- Pause after backtrack: pause for one tick after backtracking for more ` +
+`accurate figures.
+- Backtrack list: sets stopping symbols for backtracking.`
             },
             {
-                title: 'Tips on Constructing an L-system',
+                title: 'Controls: Saving and loading',
                 contents:
-`Although traditionally F is used to go forward, each letter can be used to ` +
-`mean different things, such as drawing a flower, emulating growth stages, ` +
-`alternating between patterns, etc.`
+`The save menu is full of surprises.`
             },
             {
-                title: 'Using stroke options artistically',
+                title: 'Advanced artistry',
                 contents: 
-``
+`- Tickspeed vs. tick length
+- Backtrack options
+- Closed loop figures
+- Such art`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
@@ -522,8 +547,8 @@ Backtrack list: sets stopping symbols for quickdraw/backtrack.`
 `Represents a common source of carbohydrates.
 
 Axiom: X
-F=FF
-X=F-[[X]+X]+F[-X]-X
+F = FF
+X = F-[[X]+X]+F[-X]-X
 Turning angle: 15°
 
 Applies static camera:
@@ -540,8 +565,8 @@ Upright`
 `born unto the tattered husk, and from there, it stretches.
 
 Axiom: X
-F=F[+F]XF
-X=F-[[X]+X]+F[-FX]-X
+F = F[+F]XF
+X = F-[[X]+X]+F[-FX]-X
 Turning angle: 27°
 
 Applies static camera: (mathematically unproven)
@@ -557,9 +582,9 @@ Centre: (0.225*2^lv, -0.75*2^lv, 0)`
 `really, really good.
 
 Axiom: X
-E=XEXF-
-F=FX+[E]X
-X=F-[X+[X[++E]F]]+F[X+FX]-X
+E = XEXF-
+F = FX+[E]X
+X = F-[X+[X[++E]F]]+F[X+FX]-X
 Turning angle: 22.5°
 
 Applies static camera: (mathematically unproven)
@@ -3715,8 +3740,9 @@ let createManualMenu = () =>
 
     let pageTitle = ui.createLatexLabel
     ({
-        margin: new Thickness(0, 6),
         text: manualPages[page].title,
+        margin: new Thickness(0, 4),
+        heightRequest: 20,
         horizontalOptions: LayoutOptions.CENTER,
         verticalOptions: LayoutOptions.CENTER
     });
@@ -3725,6 +3751,29 @@ let createManualMenu = () =>
         fontFamily: FontFamily.CMU_REGULAR,
         fontSize: 16,
         text: manualPages[page].contents
+    });
+    let sourceEntry = ui.createEntry
+    ({
+        row: 0,
+        column: 1,
+        text: 'source' in manualPages[page] ? manualPages[page].source : ''
+    });
+    let sourceGrid = ui.createGrid
+    ({
+        isVisible: 'source' in manualPages[page],
+        columnDefinitions: ['20*', '80*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelSource'),
+                row: 0,
+                column: 0,
+                horizontalOptions: LayoutOptions.END_AND_EXPAND,
+                verticalOptions: LayoutOptions.CENTER
+            }),
+            sourceEntry
+        ]
     });
 
     let menu = ui.createPopup
@@ -3743,7 +3792,14 @@ let createManualMenu = () =>
                     heightRequest: ui.screenHeight * 0.32,
                     content: ui.createScrollView
                     ({
-                        content: pageContents
+                        content: ui.createStackLayout
+                        ({
+                            children:
+                            [
+                                pageContents,
+                                sourceGrid
+                            ]
+                        })
                     })
                 }),
                 ui.createBox
@@ -3775,6 +3831,12 @@ let createManualMenu = () =>
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
+                                    
+                                    sourceGrid.isVisible = 'source' in
+                                    manualPages[page];
+                                    sourceEntry.text = 'source' in
+                                    manualPages[page] ?
+                                    manualPages[page].source : '';
                                 }
                             }
                         }),
@@ -3818,6 +3880,12 @@ let createManualMenu = () =>
                                     pageTitle.text = manualPages[page].title;
                                     pageContents.text =
                                     manualPages[page].contents;
+                                    
+                                    sourceGrid.isVisible = 'source' in
+                                    manualPages[page];
+                                    sourceEntry.text = 'source' in
+                                    manualPages[page] ?
+                                    manualPages[page].source : '';
                                 }
                             }
                         })
