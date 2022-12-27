@@ -356,8 +356,8 @@ X = F[+X][-X]FX
 Turning angle: 30°
 
 Applies static camera:
-Scale: 2^lv
-Centre: (2^lv, 0, 0)
+Scale: 1.5*2^lv
+Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
@@ -562,16 +562,15 @@ Note: does not contain camera configurations, or models.
                 title: 'Appendix: Advanced artistry in LSR (1)',
                 contents:
 `Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way.
-Today's lecture consists of several main points:
+And today's class: Tick length.
 
-1. Tickspeed vs. tick length.
-While tickspeed might be more of a familiar concept to the idle fellows, it ` +
-`posesses a flaw: it is not consistent. For instance, t 9 tickspeed, the ` +
-`renderer would skip one tick out of every 10, making the line quality ` +
-`inconsistent.
-Although there might be value in mixing drawing styles this way, we will ` +
-`not be going into details about it today. Instead, we will be discussing ` +
-`the various tick lengths and their artistic applications.
+Now, while tickspeed might be more of a familiar concept to the idle ` +
+`fellows, in LSR it posesses a flaw: it is not consistent. For instance, at ` +
+`9 tickspeed, the renderer would skip one tick out of every 10, making the ` +
+`line quality really inconsistent. And although there might be value in ` +
+`mixing drawing styles this way, we will not be going into details about it ` +
+`in this lecture. Instead, we will be discussing the various tick lengths ` +
+`and their artistic applications.
 
 - 0.1 sec: the quickest stroke in the West. This is the equivalent of 10 ` +
 `tickspeed. Figures drawn at this speed are jumbled and chaotic, making it ` +
@@ -589,16 +588,36 @@ Although there might be value in mixing drawing styles this way, we will ` +
     + Activate the anchor by holding +, and marvel at the beauty of it all.
 Note: This trick is not guaranteed to work every time, so it is advised to ` +
 `try again multiple times.
-- 0.4 sec: a good cousin to tick length 0.5, 0.4 can really spice the figure ` +
-`up by tying up cute knots between corners occasionally.
+- 0.4 sec: this one can really spice the figure up by tying up cute knots ` +
+`between corners occasionally, mimicking leaf shapes on a tree.
 - 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
 `of use when it comes to bringing that rough sketch feeling to a figure.
-- 0.6 sec and above: don't care, class dismissed.
+- 0.6 sec and above: don't care, class dismissed.`
+            },
+            {
+                title: 'Appendix: Advanced artistry in LSR (2)',
+                contents:
+`Welcome back, class! We're learning about something simple today, by the way:
+Backtrack options, or why Hesitation is Not Defeat.
 
-Stay tune for the next lectures:
-- Backtrack options
-- Hesitation is defeat?
-- Closed loop figures`
+Now, open your renderer menu textbook to the last section. There are about 4 ` +
+`options here as you can see, each of them with advantages and, non-advantages!
+
+- Quickdraw: is generally a decent option when it comes to saving some time, ` +
+`but when compared to quick backtrack, it poses a greater drawback when it ` +
+`comes to both precision and aesthetics.
+- Quick backtrack: this one's a reliable one, trading only a little beauty ` +
+`for some extra speed.
+- Pause after backtrack: now, this is what I mean when I say hesitation is ` +
+`not defeat. Pausing for even just one tick can give your figure just enough ` +
+`cohesion it really needs. To prove this, try loading the Arrow weed then ` +
+`alternate between drawing with this option on and off, while on tick length ` +
+`0.1, or 10 tickspeed. There is a noticeable difference, even from afar.
+- Backtrack list: usually, I would say that if you are here to draw ` +
+`L-systems, I recommend not to edit this option, but for the brave and ` +
+`worthy, you could create truly mesmerising results with this.
+
+Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
@@ -2011,7 +2030,7 @@ let manualSystems =
     arrow:
     {
         system: arrow,
-        config: ['2^lv', '2^lv', 0, 0, true]
+        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
     },
     dragon:
     {
