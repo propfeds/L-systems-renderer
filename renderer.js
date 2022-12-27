@@ -960,6 +960,16 @@ class LSystem
         }
         return result;
     }
+    get object()
+    {
+        return {
+            axiom: this.axiom,
+            rules: this.getRulesStrings(),
+            turnAngle: this.turnAngle,
+            ignoreList: this.ignoreList,
+            seed: this.seed
+        };
+    }
     /**
      * Returns the system's string representation.
      * @returns {string} the string.
@@ -3076,7 +3086,7 @@ let createNamingMenu = () =>
                 Sound.playClick();
                 savedSystems.set(title, {
                     desc: savedSystems.get(title).desc,
-                    system: renderer.system.toString(),
+                    system: JSON.stringify(renderer.system.object),
                     config: renderer.staticCamera
                 });
                 tmpSystemName = title;
@@ -3164,7 +3174,7 @@ let createNamingMenu = () =>
                             tmpName += getLoc('duplicateSuffix');
                         savedSystems.set(tmpName, {
                             desc: tmpDesc,
-                            system: renderer.system.toString(),
+                            system: renderer.system.object,
                             config: renderer.staticCamera
                         });
                         tmpSystemName = tmpName;
@@ -3208,10 +3218,10 @@ let createClipboardMenu = (values) =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        let systemValues = tmpSys.split(' ');
-                        renderer.applySystem = new LSystem(systemValues[0],
-                        systemValues.slice(3), Number(systemValues[1]),
-                        Number(systemValues[2]));
+                        let systemValues = JSON.parse(tmpSys);
+                        renderer.applySystem = new LSystem(systemValues.axiom,
+                        systemValues.rules, systemValues.turnAngle,
+                        systemValues.seed, systemValues.ignoreList);
                         menu.hide();
                     }
                 })
@@ -3321,10 +3331,7 @@ let createViewMenu = (title) =>
         }
     });
 
-    let systemValues = values.split(' ');
-
-    let menu;
-    let tmpAxiom = systemValues[0];
+    let tmpAxiom = values.axiom;
     let axiomEntry = ui.createEntry
     ({
         text: tmpAxiom,
@@ -3335,7 +3342,7 @@ let createViewMenu = (title) =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = Number(systemValues[1]);
+    let tmpAngle = values.turnAngle;
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
@@ -3348,29 +3355,19 @@ let createViewMenu = (title) =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = systemValues.slice(3);
+    let tmpRules = values.rules;
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
-        if(i == 0)
-        {
-            let rs = tmpRules[i].split('=');
-            if(rs.length >= 2)
+        ruleEntries.push(ui.createEntry
+        ({
+            text: tmpRules[i],
+            onTextChanged: (ot, nt) =>
             {
-                tmpRules.unshift('');
+                tmpRules[i] = nt;
+                log(tmpRules.toString())
             }
-        }
-        else
-        {
-            ruleEntries.push(ui.createEntry
-            ({
-                text: tmpRules[i],
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpRules[i] = nt;
-                }
-            }));
-        }
+        }));
     }
     let rulesLabel = ui.createLatexLabel
     ({
@@ -3397,7 +3394,8 @@ let createViewMenu = (title) =>
                 text: '',
                 onTextChanged: (ot, nt) =>
                 {
-                    tmpRules[i + 1] = nt;
+                    tmpRules[i] = nt;
+                    log(tmpRules.toString())
                 }
             }));
             rulesLabel.text = Localization.format(getLoc('labelRules'),
@@ -3405,18 +3403,19 @@ let createViewMenu = (title) =>
             ruleStack.children = ruleEntries;
         }
     });
+    let tmpIgnore = values.ignoreList;
     let ignoreEntry = ui.createEntry
     ({
-        text: tmpRules[0],
+        text: tmpIgnore,
         row: 0,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpRules[0] = nt;
+            tmpIgnore = nt;
         }
     });
-    let tmpSeed = Number(systemValues[2]);
+    let tmpSeed = values.seed;
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
@@ -3430,7 +3429,7 @@ let createViewMenu = (title) =>
         }
     });
 
-    menu = ui.createPopup
+    let menu = ui.createPopup
     ({
         title: title,
         isPeekable: true,
@@ -3570,7 +3569,7 @@ let createViewMenu = (title) =>
                             {
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
-                                tmpRules, tmpAngle, tmpSeed);
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore);
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
                                 tmpSystemName = title;
@@ -3590,7 +3589,7 @@ let createViewMenu = (title) =>
                                 {
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
-                                    tmpAngle, tmpSeed).toString(),
+                                    tmpAngle, tmpSeed, tmpIgnore).object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
@@ -3695,7 +3694,7 @@ let createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 let clipMenu = createClipboardMenu(
-                                    renderer.system.toString());
+                                JSON.stringify(renderer.system.object));
                                 clipMenu.show();
                             }
                         }),
@@ -4168,10 +4167,10 @@ var getInternalState = () => JSON.stringify
         title: tmpSystemName,
         desc: tmpSystemDesc,
         axiom: renderer.system.axiom,
+        rules: renderer.system.getRulesStrings(),
         turnAngle: renderer.system.turnAngle,
         ignoreList: renderer.system.ignoreList,
-        seed: renderer.system.seed,
-        rules: renderer.system.getRulesStrings()
+        seed: renderer.system.seed
     },
     savedSystems: Object.fromEntries(savedSystems)
 });
@@ -4222,6 +4221,26 @@ var setInternalState = (stateStr) =>
             renderer = new Renderer(system);
 
         savedSystems = new Map(Object.entries(state.savedSystems));
+        
+        // for(let [key, value] of savedSystems)
+        // {
+        //     if(typeof value.system != 'string')
+        //         continue;
+        //     let systemValues = value.system.split(' ');
+        //     let tmpAxiom = systemValues[0];
+        //     let tmpAngle = Number(systemValues[1]);
+        //     let tmpSeed = Number(systemValues[2]);
+        //     let tmpRules = systemValues.slice(3);
+            
+        //     value.system =
+        //     {
+        //         axiom: tmpAxiom,
+        //         rules: tmpRules.slice(1),
+        //         turnAngle: tmpAngle,
+        //         ignoreList: tmpRules[0],
+        //         seed: tmpSeed
+        //     };
+        // }
     }
     // Doesn't even need checking the version number; if it appears at all then
     // it's definitely written before switching to JSON
