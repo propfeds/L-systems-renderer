@@ -530,7 +530,15 @@ Advanced stroke options:
             {
                 title: 'Controls: Saving and loading',
                 contents:
-`The save menu is full of surprises.`
+`The save/load menu allows you to save your favourite L-systems along with 
+their camera configurations.
+
+- Clipboard: allows you to export the system as a string to share with the ` +
+`fellow gardeners, or import one from them for your personal consumption.
+Note: does not contain camera configurations, or models.
+- Save: set the title and description for a new system, or overwrite one of ` +
+`your existing ones.
+- View: allows you to edit, load and delete saved systems.`
             },
             {
                 title: 'Advanced artistry',
