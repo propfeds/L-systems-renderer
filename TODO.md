@@ -7,7 +7,7 @@
   options are changed
   - [x] Reset to Defaults should not actually close the menu
 
-- [ ] Investigate quickdraw backtrack logic
+- [x] Investigate quickdraw backtrack logic
   - Doesn't work with branching currently?
   - Doesn't work with angle-changing symbols?
 - [ ] Add more comments in the code
@@ -17,38 +17,67 @@
   - Like a blog post, sort of
 - Decorate with colours? Maybe only start doing it in LG else wasting time
 
+- [ ] For these two things: context sensitivity and parametricity, a system
+needs to store two boolean properties `isContextSensitive` and `isParametric`.
+
 - [ ] Context sensitivity
   - `b < a > c → aa`
-  - How to store? Maps?
-    ```js
-    let contextRules =
-    {
-        // Outer level: middle (current) character
-        B: {
-            // Middle layer: left character
-            A: {
-                // Inner layer: right character
-                // Two ways: A<B>C = D
-                C: 'D',
-                // One way: A<B = E
-                none: 'E'
-            },
-            F: {
-                // Inner layer: right character
-                // F<B>G = H
-                G: 'H'
-            },
-            none: {
-                // Inner layer: right character
-                // One way: B>A = E
-                A: 'E'
-            }
-        }
-    }
-    // Why do I check the left side first? Because it sort of makes sense.
-    ```
+  - Skipping over brackets? hmm, difficult
+    - Mapping 'branching levels' onto an array? Excluding reserved symbols!
+    `0  0  1  1  1  2  2  1  1  2  1  0  0`
+    - Then, run algo to check nearest left element's idx using last spotted idx
+    `∞  1  ∞  1  1  ∞  1  3  1  3  2 10  1`
+    - And right element?
+    `1 10  1  1  3  1  3  1  2  ∞  ∞  1  ∞`
+    - Might be able to check both at once? Also, `∞` could be replaced with `-1`
+  - Compatibility with stochastic? Maybe don't need extra processing
+  - If a system is of level `n`, these maps will be loaded for `n-1` levels
+  - Renderer will not start drawing level `n` while loading, until the maps for
+  level `n-1` have finished
+  - How much of the right list can be inferred from the left list?
+    - *All* of it!
+    `0  0  1  1  1  2  2  1  1  2  1  0  0`
+    `   1     1  1     1  3  1  3  2 10  1`
+    `1 10  1  1  3  1  3  1  2        1   `
+  - Wait. How do we define branch order again? Dang it. My maths might be wrong.
+    - Actually it's less branch order but 'height', which can still be checked
+    by tracking brackets and stacks.
+    `0  0  1  1  1  2  2  1  1  2  1  0  0` smells like:
+    `[X][X[Y][Y][Y[Z]Z]`
+    - Actually it's pretty hard to make an algo for this, because it could be:
+    `01[23[456][45][4]][234]2`, and you would have to find all the 2s if you
+    want to find a right element of 1, and what if those 2s were on different
+    branches and it wouldn't count as adjacent?
+    - GRAPH ALGO?!? The power of dfs.
+    - We can store each symbol's ancestor (there's only one), then reflect it
+    back to another list containing children of each symbol.
+    - Ancestor means the index of whomever the fuck is on top of the idx stack.
+    - Does this work with the dynamic loading system with all the data passing?
+  - If stored by maps: Keys can be any data type.
+  - If stored by objects:
+  ```js
+  // v2
+  let contextRulesLR =
+  {
+    'ABC': 'D', // Two ways: A<B>C = D
+    'FBG': 'H'  // F<B>G = H
+  };
+  let contextRulesL =
+  {
+    'AB': 'E'   // One way: A<B = E
+  };
+  let contextRulesR =
+  {
+    'BA': 'E'   // One way: B>A = E
+  };
+  ```
 - [ ] Parametric systems
+  - Store as an extra array?
+  - Round brackets gonna make it hard for actual drawing - although maybe it
+  would've been already stripped down by the time it gets to the turtle
 - [ ] Custom models for each symbol
+  - Honestly this one might be easiest out of the 3, but the modelling without
+  polygons afterwards would be pain
   - Petals, leaves and such
   - Array of Vector3s denoting vertices
   - Bool to determine whether the model is a terminal node
