@@ -193,7 +193,7 @@ const locStrings =
 
         menuManual: 'User Guide ({0}/{1})',
         labelSource: 'Source: ',
-        manualSystemDesc: 'From user guide, page {0}.',
+        manualSystemDesc: 'User guide, page {0}.',
         manual:
         [
             {
@@ -3293,10 +3293,14 @@ let createSystemClipboardMenu = (values) =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        let systemValues = JSON.parse(tmpSys);
-                        renderer.applySystem = new LSystem(systemValues.axiom,
-                        systemValues.rules, systemValues.turnAngle,
-                        systemValues.seed, systemValues.ignoreList);
+                        let sv = JSON.parse(tmpSys);
+                        tmpSystemName = sv.title;
+                        tmpSystemDesc = sv.desc;
+                        renderer.applySystem = new LSystem(sv.system.axiom,
+                        sv.system.rules, sv.system.turnAngle,
+                        sv.system.seed, sv.system.ignoreList);
+                        if('config' in sv)
+                            renderer.configureStaticCamera(...sv.config);
                         menu.hide();
                     }
                 })
@@ -3809,7 +3813,13 @@ let createSaveMenu = () =>
                             onClicked: () =>
                             {
                                 let clipMenu = createSystemClipboardMenu(
-                                JSON.stringify(renderer.system.object));
+                                JSON.stringify(
+                                {
+                                    title: tmpSystemName,
+                                    desc: tmpSystemDesc,
+                                    system: renderer.system.object,
+                                    config: renderer.staticCamera
+                                }));
                                 clipMenu.show();
                             }
                         }),
