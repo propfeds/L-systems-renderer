@@ -538,7 +538,7 @@ Advanced stroke options:
 
 - Clipboard: allows you to export the system as a string to share with the ` +
 `fellow gardeners, or import one from them for your personal consumption.
-Note: does not contain models.
+Note: Does not contain models.
 - Save: set the title and description for a new system, or overwrite one of ` +
 `your existing ones.
 - View: allows you to edit, load and delete saved systems.`
