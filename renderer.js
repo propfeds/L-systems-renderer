@@ -125,6 +125,7 @@ const locStrings =
         btnPrev: 'Previous',
         btnNext: 'Next',
         btnClose: 'Close',
+        btnImport: 'Import',
 
         btnMenuLSystem: 'L-system menu',
         btnMenuRenderer: 'Renderer menu',
@@ -188,6 +189,7 @@ const locStrings =
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
+        labelInternalState: 'Internal state: ',
 
         menuManual: 'User Guide ({0}/{1})',
         labelSource: 'Source: ',
@@ -575,9 +577,10 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 - 0.1 sec: the quickest stroke in the West. This is the equivalent of 10 ` +
 `tickspeed. Figures drawn at this speed are jumbled and chaotic, making it ` +
 `suitable for large-scale figures, where errors become tiny and hard to notice.
-- 0.2 sec: characterised by quick but elegant strokes, this speed oozes with ` +
-`'drip'. It offers a good compromise between speed and precision, although ` +
-`even 0.1 would be too slow for large scale figures.
+- 0.2 sec: characterised by quick but elegant strokes, accompanied by motifs ` +
+`of leaves and flowers, this speed feels at home with plant modelling. It ` +
+`offers a good compromise between speed and precision, although even 0.1 ` +
+`would be too slow for large scale figures.
 - 0.3 sec: with loose slanted lines, tick length 0.3 is generally is a solid ` +
 `option for any figure requiring some playfulness. However, it is fairly ` +
 `unknown that tick length 0.3 holds the most powerful secret in this whole ` +
@@ -3260,7 +3263,7 @@ let createNamingMenu = () =>
     return menu;
 }
 
-let createClipboardMenu = (values) =>
+let createSystemClipboardMenu = (values) =>
 {
     let tmpSys = values;
     let sysEntry = ui.createEntry
@@ -3294,6 +3297,46 @@ let createClipboardMenu = (values) =>
                         renderer.applySystem = new LSystem(systemValues.axiom,
                         systemValues.rules, systemValues.turnAngle,
                         systemValues.seed, systemValues.ignoreList);
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createStateClipboardMenu = (values) =>
+{
+    let tmpState = values;
+    let sysEntry = ui.createEntry
+    ({
+        text: tmpState,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpState = nt;
+        }
+    });
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuClipboard'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                sysEntry,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: getLoc('btnImport'),
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        setInternalState(tmpState);
                         menu.hide();
                     }
                 })
@@ -3765,7 +3808,7 @@ let createSaveMenu = () =>
                             heightRequest: 40,
                             onClicked: () =>
                             {
-                                let clipMenu = createClipboardMenu(
+                                let clipMenu = createSystemClipboardMenu(
                                 JSON.stringify(renderer.system.object));
                                 clipMenu.show();
                             }
@@ -4147,7 +4190,7 @@ let createWorldMenu = () =>
                 ui.createGrid
                 ({
                     columnDefinitions: ['70*', '30*'],
-                    rowDefinitions: [40, 40, 40, 40],
+                    // rowDefinitions: [40, 40, 40, 40],
                     children:
                     [
                         ui.createLatexLabel
@@ -4175,7 +4218,27 @@ let createWorldMenu = () =>
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
-                        MPSwitch
+                        MPSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelInternalState'),
+                            row: 4,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnClipboard'),
+                            row: 4,
+                            column: 1,
+                            heightRequest: 40,
+                            onClicked: () =>
+                            {
+                                let clipMenu = createStateClipboardMenu(
+                                getInternalState());
+                                clipMenu.show();
+                            }
+                        }),
                     ]
                 }),
                 ui.createBox
