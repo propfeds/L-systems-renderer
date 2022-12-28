@@ -1540,15 +1540,16 @@ class Renderer
                         }
                         return;
                     default:
+                        if(this.system.ignoreList.includes(
+                        this.levels[this.lv][this.i]))
+                            break;
+
                         let breakAhead = this.backtrackList.includes(
                         this.levels[this.lv][this.i + 1]);
                         if(!this.quickBacktrack || breakAhead)
                             this.stack.push([this.state, this.ori]);
                         
-                        if(!this.system.ignoreList.includes(
-                        this.levels[this.lv][this.i]))
-                            this.forward();
-                        else break;
+                        this.forward();
 
                         if(this.quickDraw && !breakAhead && this.stack.length >
                         0 && this.ori === this.stack[this.stack.length - 1][1])
