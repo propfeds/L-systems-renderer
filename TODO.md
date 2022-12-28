@@ -1,41 +1,85 @@
 # L-systems Renderer
 
-## 0.19.1
+## Planned
 
-- Just those bugfixes
-
-## 0.20: It Depends
-
-- [ ] Context sensitivity
-  - `b < a > c → aa`
-  - How to store? Maps?
-- [ ] Redesign manual
-  - Add more systems to the manual (algae)
-  - Add tutorial-like flows that explain concepts
 - [ ] Add more comments in the code
-- [ ] Getters and setters in JavaScript
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
-- [ ] New main screen controls idea
-  - Line 1: Player controls: `<< - P + >>`
-  - https://en.wikipedia.org/wiki/Media_control_symbols
-  - Line 2: Level, loop, tickspeed
-  - This will do away with the fucking anchor
-- [ ] Optimise using the API's profiler
+- Decorate with colours? Maybe only start doing it in LG else wasting time
 
-## Currently Impossible
+- [ ] Context sensitivity
+  - `b < a > c → aa`
+  - How to store? Maps?
+- [ ] Parametric systems
+- [ ] Custom models for each symbol
+  - Petals, leaves and such
+  - Array of Vector3s denoting vertices
+  - Bool to determine whether the model is a terminal node
+    - If terminal, has only one path of going from (0, 0, 0) through the list
+    then back to (0, 0, 0), does not draw the forward line
+    - If not terminal, has two paths:
+      - From (0, 0, 0) through the first path to (1, 0, 0)
+      - From (1, 0, 0) through the second path back to (0, 0, 0)
+  - [x] Renderer option to disable models
+  - Can models' names contain spaces?
+    - How are they referenced in systems? As a list of names? An ID that is the
+    index of an array?
+
+## 0.20: Completed
+
+- [x] Redesign manual
+  - Add more systems to the manual (algae, or like, mistletoe)
+  - Add tutorial-like flows that explain concepts
+- [x] Rewrite a little bit of the manual according to new changea
+- [x] Optimise using the API's profiler
+  - The profiler is very limited in functionality.
+  - [x] Instead, implemented a rough profiler using Date.now()
+- [x] Renderer camera zoom using MathExpressions instead of a hundred parameters
+- [x] Renderer camera centre using MathExpressions instead of a hundred
+parameters
+- [x] Internal state using JSON
+- [x] Custom class that stores variable controls?
+  - [x] Solves weird logic with anchor
+  - [x] Update updating method to make a more responsive UI?
+- [x] Change entries' keyboards into numeric format
+- [x] Saved systems
+  - [x] Choice to overwrite or create copy
+    - Include list of saved systems in naming menu
+  - [x] Edit existing systems
+  - [x] Store static camera configs and description
+    - We have the power of version number
+    - Don't change the current system's internal state format
+      - Instead, store a temp system name in global to show up in naming menu
+      - Systems adopted from the manual will bear the entry's title, like that
+    - Internal state: store the number of systems (and then models...) in the
+    first line
+      - To prepare for LG (models)
+    - Testing: keep the new version number in global, add version-dependent
+    processing in internal state code, while loading old backup file
+- [x] Get rid of the brackets and the -2s
+- [x] Get rid of i
+- [x] Getters and setters in JavaScript
+- [x] UI touch-ups
+  - [x] Border colours
+  - [x] Text colour changes when hitting buttons
+  - [x] Shrink the buttons again to look better?
+- [x] Redesign anchor logic
+  - Only register anchor level before longpressing minus and level > 0
+
+## Impossible or Scrapped
 
 - Remove the add button, every rule is bunched into one field
   - Entry.keyboard? (`Keyboard.TEXT`) doesn't work
   - https://andyp.dev/posts/xamarin-forms-essentials-keyboard-master-guide
   - Which means, adding extra processing in view menu and system menu
-- Saved systems can also store static camera configs like manual pages?
-  - Technically not possible currently
-  - Storing descriptions is also probably not possible
-  - Unless we have the power of version number
 - Anchor to be internally processed by the ts var, not the level button
   - Can it work both ways or just downwards?
   - It does not work currently due to the fact that variable purchase callbacks
   are post-processing, and not pre-
+- Main screen controls idea
+  - Line 1: Player controls: `<< - P + >>`
+  - https://en.wikipedia.org/wiki/Media_control_symbols
+  - Line 2: Level, loop, tickspeed
+  - This will do away with the fucking anchor
