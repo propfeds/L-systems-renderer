@@ -3484,7 +3484,7 @@ let createViewMenu = (title) =>
             onTextChanged: (ot, nt) =>
             {
                 tmpRules[i] = nt;
-                log(tmpRules.toString())
+                // log(tmpRules.toString())
             }
         }));
     }
@@ -3514,7 +3514,7 @@ let createViewMenu = (title) =>
                 onTextChanged: (ot, nt) =>
                 {
                     tmpRules[i] = nt;
-                    log(tmpRules.toString())
+                    // log(tmpRules.toString())
                 }
             }));
             rulesLabel.text = Localization.format(getLoc('labelRules'),

@@ -2,6 +2,11 @@
 
 ## Planned
 
+- [ ] Renderer menu:
+  - [ ] Is it better to close the menu every time, or only when asterisk options
+  are changed?
+  - [ ] Reset to Defaults should not actually close the menu
+
 - [ ] Add more comments in the code
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
@@ -12,6 +17,33 @@
 - [ ] Context sensitivity
   - `b < a > c → aa`
   - How to store? Maps?
+    ```js
+    let contextRules =
+    {
+        // Outer level: middle (current) character
+        B: {
+            // Middle layer: left character
+            A: {
+                // Inner layer: right character
+                // Two ways: A<B>C = D
+                C: 'D',
+                // One way: A<B = E
+                none: 'E'
+            },
+            F: {
+                // Inner layer: right character
+                // F<B>G = H
+                G: 'H'
+            },
+            none: {
+                // Inner layer: right character
+                // One way: B>A = E
+                A: 'E'
+            }
+        }
+    }
+    // Why do I check the left side first? Because it sort of makes sense.
+    ```
 - [ ] Parametric systems
 - [ ] Custom models for each symbol
   - Petals, leaves and such
@@ -26,6 +58,7 @@
   - Can models' names contain spaces?
     - How are they referenced in systems? As a list of names? An ID that is the
     index of an array?
+- [ ] backtrackList and ignoreList using js Set instead of array
 
 ## 0.20: Completed
 
