@@ -56,13 +56,13 @@ var getDescription = (language) =>
 `An educational tool that lets you model various fractal figures and plants.
 
 Features:
-- Can store a whole army of systems!
+- Can save a whole army of systems!
 - Stochastic (randomised) and 3D systems
-- Camera modes: static and cursor-centred
-- Drawing speed and stroke options
+- Camera modes: fixed and turtle-following
+- Drawing speed and advanced stroke options!
 
-Warning: v0.20 might break your internal state. Be sure to back it up to ` +
-`another save, and in case it's corrupted, please contact me.`,
+Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
+`in case it's corrupted, please contact me.`,
     };
 
     if(language in descs)
@@ -420,10 +420,10 @@ Centre: (0, 0, 0)`
                 contents:
 `Using a yaw-pitch-roll orientation system, we can also generate figures in 3D.
 
-+ -: rotate cursor on the z-axis (yaw).
-& ^: rotate cursor on the y-axis (pitch).
-\\ /: rotate cursor on the x-axis (roll).
-|: reverses cursor direction.
++ -: rotate turtle on the z-axis (yaw).
+& ^: rotate turtle on the y-axis (pitch).
+\\ /: rotate turtle on the x-axis (roll).
+|: reverses turtle direction.
 
 Note: In other L-system implementations, < and > may be used instead of \\ ` +
 `and / like in this theory.`

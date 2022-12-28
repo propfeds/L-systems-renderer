@@ -4,17 +4,23 @@ L-systems renderer in Exponential Idle.
 
 ## Features
 
-- Can store a whole army of systems!
+- Can save a whole army of systems!
 - Stochastic (randomised) and 3D systems
-- Camera modes: static and cursor-focused (lerp)
-- Speed and stroke options
+- Camera modes: fixed and turtle-following
+- Drawing speed and advanced stroke options!
 
-Warning: As of v0.18, the renderer's configuration will `be messed up` due to
-format changes to the internal state.
+In 0.18, the renderer's configuration was slightly messed up due to format
+changes to the internal state.
+
+In 0.20, more care has been taken with regards to the internal state, as it's
+been converted to JSON instead of pure text. However, it still might break.
+Be sure to back it up to another save before updating, and in case it's
+corrupted, please contact me. From now on, there's also an option to export the
+internal state in the theory menu, so please back it up.
 
 ## Installation
 
-Current version: 0.19.1
+Current version: 0.20
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to this theory's raw code. Copy the page's URL.
