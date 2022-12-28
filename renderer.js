@@ -73,7 +73,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.2;
+var version = 0.201;
 
 let time = 0;
 let page = 0;
@@ -93,7 +93,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.20 - Miscalculator',
+        versionName: 'v0.20.1 - Miscalculator',
         equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -1516,6 +1516,19 @@ class Renderer
                         let t = this.stack.pop();
                         this.state = t[0];
                         this.ori = t[1];
+                        // Fastest backtrack but ruins figure quality
+                        // if(this.quickBacktrack)
+                        // {
+                        //     while(this.stack.length >
+                        //     this.idxStack[this.idxStack.length - 1] &&
+                        //     this.stack[this.stack.length - 1][1] ===
+                        //     this.ori)
+                        //     {
+                        //         let t = this.stack.pop();
+                        //         this.state = t[0];
+                        //         this.ori = t[1];
+                        //     }
+                        // }
                         if(this.stack.length ==
                         this.idxStack[this.idxStack.length - 1])
                         {
@@ -1527,15 +1540,18 @@ class Renderer
                         }
                         return;
                     default:
-                        if(this.system.ignoreList.includes(
-                        this.levels[this.lv][this.i]))
-                            break;
                         let breakAhead = this.backtrackList.includes(
                         this.levels[this.lv][this.i + 1]);
                         if(!this.quickBacktrack || breakAhead)
                             this.stack.push([this.state, this.ori]);
-                        this.forward();
-                        if(this.quickDraw && !breakAhead)
+                        
+                        if(!this.system.ignoreList.includes(
+                        this.levels[this.lv][this.i]))
+                            this.forward();
+                        else break;
+
+                        if(this.quickDraw && !breakAhead && this.stack.length >
+                        0 && this.ori === this.stack[this.stack.length - 1][1])
                             break;
                         else
                         {
@@ -1555,7 +1571,7 @@ class Renderer
                         this.reset(false);
                         break;
                     case 0:
-                        if(this.quickBacktrack)
+                        if(this.quickBacktrack && this.backtrackTail)
                             this.state = new Vector3(0, 0, 0);
                         return;
                 }
@@ -2512,6 +2528,17 @@ let createConfigMenu = () =>
             tmpCX = nt;
         }
     });
+    let CYEntry = ui.createEntry
+    ({
+        text: tmpCY,
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCY = nt;
+        }
+    });
     let camOffLabel = ui.createGrid
     ({
         row: 3,
@@ -2528,17 +2555,7 @@ let createConfigMenu = () =>
                 // horizontalOptions: LayoutOptions.END,
                 verticalOptions: LayoutOptions.CENTER
             }),
-            ui.createEntry
-            ({
-                text: tmpCY,
-                row: 0,
-                column: 1,
-                horizontalTextAlignment: TextAlignment.END,
-                onTextChanged: (ot, nt) =>
-                {
-                    tmpCY = nt;
-                }
-            })
+            CYEntry
         ]
     });
     let camOffGrid = ui.createEntry
@@ -2885,8 +2902,7 @@ let createConfigMenu = () =>
                                 tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel,
                                 tmpTail, tmpHes);
                                 lvlControls.updateDescription();
-                                if(requireReset)
-                                    menu.hide();
+                                menu.hide();
                             }
                         }),
                         ui.createButton
@@ -2897,10 +2913,29 @@ let createConfigMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let currentSystem = renderer.system;
-                                renderer = new Renderer(currentSystem);
+                                let rx = new Renderer();
+                                zoomEntry.text = rx.figScaleStr;
+                                CMSlider.value = rx.cameraMode;
+                                camGrid.text = rx.camXStr;
+                                CYEntry.text = rx.camYStr;
+                                camOffGrid.text = rx.camZStr;
+                                FFEntry.text = rx.followFactor.toString();
+                                LMSlider.value = rx.loopMode;
+                                tmpUpright = rx.upright;
+                                uprightSwitch.isToggled = rx.upright;
+                                tmpQD = rx.quickDraw;
+                                QDSwitch.isToggled = rx.quickDraw;
+                                tmpQB = rx.quickBacktrack;
+                                QBSwitch.isToggled = rx.quickBacktrack;
+                                EXBEntry.text = rx.backtrackList;
+                                tmpModel = rx.loadModels;
+                                modelSwitch.isToggled = rx.loadModels;
+                                tmpTail = rx.backtrackTail;
+                                tailSwitch.isToggled = rx.backtrackTail;
+                                tmpHes = rx.hesitate;
+                                hesSwitch.isToggled = rx.hesitate;
                                 lvlControls.updateDescription();
-                                menu.hide();
+                                // menu.hide();
                             }
                         })
                     ]

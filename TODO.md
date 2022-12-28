@@ -2,11 +2,14 @@
 
 ## Planned
 
-- [ ] Renderer menu:
-  - [ ] Is it better to close the menu every time, or only when asterisk options
-  are changed?
-  - [ ] Reset to Defaults should not actually close the menu
+- [x] Renderer menu:
+  - [x] It is better to close the menu every time, than only when asterisk
+  options are changed
+  - [x] Reset to Defaults should not actually close the menu
 
+- [ ] Investigate quickdraw backtrack logic
+  - Doesn't work with branching currently?
+  - Doesn't work with angle-changing symbols?
 - [ ] Add more comments in the code
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
