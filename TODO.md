@@ -1,13 +1,13 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [Near future plans](#near-future-plans)
+  - [Currently Digesting](#currently-digesting)
   - [0.21 - Hocus Crocus](#021---hocus-crocus)
   - [0.22 - Mistletoe Edition](#022---mistletoe-edition)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## Near future plans
+## Currently Digesting
 
 - [x] Renderer menu:
   - [x] It is better to close the menu every time, than only when asterisk
@@ -17,28 +17,21 @@
 - [x] Investigate quickdraw backtrack logic
   - Doesn't work with branching currently?
   - Doesn't work with angle-changing symbols?
-- [ ] Add more comments in the code
-- [ ] A more detailed README
-  - Showcases the power of tickspeed and stroke options
-  - Discusses limitations of the game
-  - Like a blog post, sort of
-- [ ] backtrackList and ignoreList using js Set instead of array
+- [x] backtrackList and ignoreList using js Set instead of array
+- [x] Stop trimming the user inputs! Store original strings within the systems
+and show them in the menu. This way, if they're invalid you can show a syntax
+error instead of stripping it!
 
 - [ ] For these two things: context sensitivity and parametricity, a system
 needs to store two boolean properties `isContextSensitive` and `isParametric`.
 - [ ] Pick your battles if you want to make LG
   - [ ] How to simulate plant colonies?
 
-
 ## 0.21 - Hocus Crocus
 
 - Contain a new default system for the update, like some flowers
 
-- [x] Stop trimming the user inputs! Store original strings within the systems
-and show them in the menu. This way, if they're invalid you can show a syntax
-error instead of stripping it!
-
-- [ ] Investigate Houdini stochastic syntax: weighted!
+- [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
 
 - [ ] % symbol: Cut off branch's remainder
@@ -73,6 +66,12 @@ error instead of stripping it!
 - [x] Renderer option to disable models
 
 ## 0.22 - Mistletoe Edition
+
+- [ ] Add more comments in the code
+- [ ] A more detailed README
+  - Showcases the power of tickspeed and stroke options
+  - Discusses limitations of the game
+  - Like a blog post, sort of
 
 - [ ] Context sensitivity
   - `b < a > c → aa`

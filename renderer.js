@@ -917,7 +917,7 @@ class LSystem
          * @type {string} a list of symbols ignored by the renderer.
          * @public
          */
-        this.ignoreList = ignoreList;
+        this.ignoreList = new Set(ignoreList);
         for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
@@ -926,7 +926,11 @@ class LSystem
                 if(rs.length < 2)
                 {
                     if(i == 0)
-                        this.ignoreList += rs[0];
+                        this.ignoreList = new Set
+                        ([
+                            ...rs[0],
+                            ...this.ignoreList
+                        ]);
                     continue;
                 }
                 for(let i = 0; i < 2; ++i)
@@ -1037,7 +1041,7 @@ class LSystem
             axiom: this.axiom,
             rules: this.rulesStrings,
             turnAngle: this.turnAngle,
-            ignoreList: this.ignoreList,
+            ignoreList: [...this.ignoreList].join(''),
             seed: this.seed
         };
     }
@@ -1047,7 +1051,7 @@ class LSystem
      */
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${this.ignoreList}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${[...this.ignoreList].join('')}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -1145,7 +1149,7 @@ class Renderer
          * @type {string} a list of symbols to act as stoppers for backtracking.
          * @public
          */
-        this.backtrackList = backtrackList;
+        this.backtrackList = new Set(backtrackList);
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
         this.hesitate = hesitate;
@@ -1315,7 +1319,7 @@ class Renderer
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
-        (backtrackList != this.backtrackList) ||
+        (backtrackList != [...this.backtrackList].join('')) ||
         (loadModels != this.loadModels) || (hesitate != this.hesitate);
 
         this.figScaleStr = figureScale.toString();
@@ -1342,7 +1346,7 @@ class Renderer
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
-        this.backtrackList = backtrackList;
+        this.backtrackList = new Set(backtrackList);
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
         this.hesitate = hesitate;
@@ -1474,6 +1478,9 @@ class Renderer
             {
                 switch(this.levels[this.lv][this.i])
                 {
+                    case ' ':
+                        log('blank space')
+                        break;
                     case '+':
                         this.ori = this.system.rotations.get('+').mul(this.ori);
                         break;
@@ -1547,11 +1554,11 @@ class Renderer
                         else
                             break;
                     default:
-                        if(this.system.ignoreList.includes(
+                        if(this.system.ignoreList.has(
                         this.levels[this.lv][this.i]))
                             break;
 
-                        let breakAhead = this.backtrackList.includes(
+                        let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
                         if(!this.quickBacktrack || breakAhead)
                             this.stack.push([this.state, this.ori]);
@@ -1752,7 +1759,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
     }
 }
 
@@ -2748,7 +2755,7 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpEXB = renderer.backtrackList;
+    let tmpEXB = [...renderer.backtrackList].join('');
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
@@ -2936,7 +2943,7 @@ let createConfigMenu = () =>
                                 QDSwitch.isToggled = rx.quickDraw;
                                 tmpQB = rx.quickBacktrack;
                                 QBSwitch.isToggled = rx.quickBacktrack;
-                                EXBEntry.text = rx.backtrackList;
+                                EXBEntry.text = [...rx.backtrackList].join('');
                                 tmpModel = rx.loadModels;
                                 modelSwitch.isToggled = rx.loadModels;
                                 tmpTail = rx.backtrackTail;
@@ -3027,7 +3034,7 @@ let createSystemMenu = () =>
             ruleStack.children = ruleEntries;
         }
     });
-    let tmpIgnore = renderer.system.ignoreList;
+    let tmpIgnore = [...renderer.system.ignoreList].join('');
     let ignoreEntry = ui.createEntry
     ({
         text: tmpIgnore,
@@ -4348,7 +4355,7 @@ var getInternalState = () => JSON.stringify
         loadModels: renderer.loadModels,
         quickDraw: renderer.quickDraw,
         quickBacktrack: renderer.quickBacktrack,
-        backtrackList: renderer.backtrackList,
+        backtrackList: [...renderer.backtrackList].join(''),
         backtrackTail: renderer.backtrackTail,
         hesitate: renderer.hesitate
     },
@@ -4359,7 +4366,7 @@ var getInternalState = () => JSON.stringify
         axiom: renderer.system.axiom,
         rules: renderer.system.rulesStrings,
         turnAngle: renderer.system.turnAngle,
-        ignoreList: renderer.system.ignoreList,
+        ignoreList: [...renderer.system.ignoreList].join(''),
         seed: renderer.system.seed
     },
     savedSystems: Object.fromEntries(savedSystems)
@@ -4411,26 +4418,6 @@ var setInternalState = (stateStr) =>
             renderer = new Renderer(system);
 
         savedSystems = new Map(Object.entries(state.savedSystems));
-        
-        // for(let [key, value] of savedSystems)
-        // {
-        //     if(typeof value.system != 'string')
-        //         continue;
-        //     let systemValues = value.system.split(' ');
-        //     let tmpAxiom = systemValues[0];
-        //     let tmpAngle = Number(systemValues[1]);
-        //     let tmpSeed = Number(systemValues[2]);
-        //     let tmpRules = systemValues.slice(3);
-            
-        //     value.system =
-        //     {
-        //         axiom: tmpAxiom,
-        //         rules: tmpRules.slice(1),
-        //         turnAngle: tmpAngle,
-        //         ignoreList: tmpRules[0],
-        //         seed: tmpSeed
-        //     };
-        // }
     }
     // Doesn't even need checking the version number; if it appears at all then
     // it's definitely written before switching to JSON
