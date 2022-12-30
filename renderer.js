@@ -912,6 +912,7 @@ class LSystem
          */
         this.rules = new Map();
         this.contextRules = new Map();
+        this.rawRules = rules;
         /**
          * @type {string} a list of symbols ignored by the renderer.
          * @public
@@ -1020,17 +1021,13 @@ class LSystem
         this.seed = seed;
         this.random = new LCG(this.seed);
     }
-    getRulesStrings(containsIgnoreList = false)
+    get rulesStrings()
     {
         let result = [];
-        if(containsIgnoreList)
-            result.push(this.ignoreList);
-        for(let [key, value] of this.rules)
+        for(let i = 0; i < this.rawRules.length; ++i)
         {
-            if(typeof value === 'string')
-                result.push(`${key}=${value}`);
-            else
-                result.push(`${key}=${value.join(',')}`);
+            // I hope this deep-copies
+            result[i] = this.rawRules[i];
         }
         return result;
     }
@@ -1038,7 +1035,7 @@ class LSystem
     {
         return {
             axiom: this.axiom,
-            rules: this.getRulesStrings(),
+            rules: this.rulesStrings,
             turnAngle: this.turnAngle,
             ignoreList: this.ignoreList,
             seed: this.seed
@@ -2978,9 +2975,9 @@ let createSystemMenu = () =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = renderer.system.getRulesStrings(true);
+    let tmpRules = renderer.system.rulesStrings;
     let ruleEntries = [];
-    for(let i = 1; i < tmpRules.length; ++i)
+    for(let i = 0; i < tmpRules.length; ++i)
     {
         ruleEntries.push(ui.createEntry
         ({
@@ -3016,7 +3013,7 @@ let createSystemMenu = () =>
                 text: '',
                 onTextChanged: (ot, nt) =>
                 {
-                    tmpRules[i + 1] = nt;
+                    tmpRules[i] = nt;
                 }
             }));
             rulesLabel.text = Localization.format(getLoc('labelRules'),
@@ -3024,15 +3021,16 @@ let createSystemMenu = () =>
             ruleStack.children = ruleEntries;
         }
     });
+    let tmpIgnore = renderer.system.ignoreList;
     let ignoreEntry = ui.createEntry
     ({
-        text: tmpRules[0],
+        text: tmpIgnore,
         row: 0,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpRules[0] = nt;
+            tmpIgnore = nt;
         }
     });
     let tmpSeed = renderer.system.seed;
@@ -3134,7 +3132,7 @@ let createSystemMenu = () =>
                     {
                         Sound.playClick();
                         renderer.applySystem = new LSystem(tmpAxiom, tmpRules,
-                        tmpAngle, tmpSeed);
+                        tmpAngle, tmpSeed, tmpIgnore);
                         menu.hide();
                     }
                 })
@@ -4353,7 +4351,7 @@ var getInternalState = () => JSON.stringify
         title: tmpSystemName,
         desc: tmpSystemDesc,
         axiom: renderer.system.axiom,
-        rules: renderer.system.getRulesStrings(),
+        rules: renderer.system.rulesStrings,
         turnAngle: renderer.system.turnAngle,
         ignoreList: renderer.system.ignoreList,
         seed: renderer.system.seed

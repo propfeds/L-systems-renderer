@@ -32,14 +32,19 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
 
 ## 0.21 - Hocus Crocus
 
+- Contain a new default system for the update, like some flowers
+
+- Stop trimming the user inputs! Store the original strings within the systems
+and show them in the menu. This way, if they're invalid you can show a syntax
+error instead of stripping it!
+
 - [ ] Investigate Houdini stochastic syntax: weighted!
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
 
 - [ ] % symbol: Cut off branch's remainder
-- [ ] Upright option: swap to the Y axis instead of rotating X?
 
 - [ ] Parametric systems
-  - Store as an extra array?
+  - Store as an extra array of objects
   - Round brackets gonna make it hard for actual drawing - although maybe it
   would've been already stripped down by the time it gets to the turtle
 
@@ -47,23 +52,25 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
 - [ ] Custom models for each symbol
   - Honestly this one might be easiest out of the 3, but the modelling without
   polygons afterwards would be pain
-  - Contain a new default system for the update, like some flowers
-  - Petals, leaves and such
-  - Array of Vector3s denoting vertices
-  - Bool to determine whether the model is a terminal node
-    - If terminal, has only one path of going from (0, 0, 0) through the list
-    then back to (0, 0, 0), does not draw the forward line
-    - If not terminal, has two paths:
-      - From (0, 0, 0) through the first path to (1, 0, 0)
-      - From (1, 0, 0) through the second path back to (0, 0, 0)
-  - [x] Renderer option to disable models
+- Abop page 221: `~`: Incorporate a predefined surface.
+  - This can be used to store a model for each symbol
+  - `.`: Record a vertex. This can be used for faster renderering.
+  - Array of Vector3s denoting a path of vertices
+    - Don't write `(0, 0, 0)` at start or end
+    - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
+    through the model's queue one by one until we reach the end. But we won't
+    go back to `(0, 0, 0)`, we go forward to the next symbol. This would allow
+    us to draw different lengthed lines if we defined the model to include only
+    one point: `(L, 0, 0)`. But... that would delay processing by one turn?
+  - Well, we can't include the tilde then. Hardcoded models can still be a thing
+  but tildes need more investigation.
+  - Still keeping the idea of two paths?
   - Can models' names contain spaces?
     - How are they referenced in systems? As a list of names? An ID that is the
     index of an array?
-  - Models are accessed using bracket syntax? `{12}` loads model #12 in system
-    - Model names are separate!
   - [ ] Model storage
     - How to load? How to edit?
+- [x] Renderer option to disable models
 
 ## 0.22 - Mistletoe Edition
 
@@ -176,3 +183,5 @@ parameters
   - This will do away with the fucking anchor
   - Admittedly though, that'd be a bit cliche and not as quirky as the current
   layout, even though it's pretty much a solid idea
+- Upright option: swap to the Y axis instead of rotating X?
+  - Does not work! It breaks everything.
