@@ -966,6 +966,7 @@ class LSystem
         this.rotations.set('^', new Quaternion(c, 0, s, 0));
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
+        this.rotations.set('|', new Quaternion(0, 0, 0, 1));
         /**
          * @type {number} the seed (for stochastic systems).
          * @public
@@ -1163,11 +1164,6 @@ class Renderer
          */
         this.ori = new Quaternion();
         /**
-         * @type {boolean} whether the cursor's orientation is reversed.
-         * @public please leave this be.
-         */
-        this.reverse = false;
-        /**
          * @type {string[]} stores the system's every level.
          * @public don't touch me.
          */
@@ -1286,7 +1282,6 @@ class Renderer
     {
         this.state = new Vector3(0, 0, 0);
         this.ori = new Quaternion();
-        this.reverse = false;
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
@@ -1424,10 +1419,7 @@ class Renderer
      */
     forward()
     {
-        if(this.reverse)
-            this.state -= this.ori.rotVector;
-        else
-            this.state += this.ori.rotVector;
+        this.state += this.ori.rotVector;
     }
     /**
      * Ticks the clock.
@@ -1500,7 +1492,7 @@ class Renderer
                         this.ori = this.system.rotations.get('/').mul(this.ori);
                         break;
                     case '|':
-                        this.reverse = !this.reverse;
+                        this.ori = this.system.rotations.get('|').mul(this.ori);
                         break;
                     case '[':
                         this.idxStack.push(this.stack.length);

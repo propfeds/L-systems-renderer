@@ -1,6 +1,13 @@
-# L-systems Renderer
+# LSR: To-do List
 
-## Planned
+- [LSR: To-do List](#lsr-to-do-list)
+  - [Near future plans](#near-future-plans)
+  - [0.21 - Hocus Crocus](#021---hocus-crocus)
+  - [0.22 - Mistletoe Edition](#022---mistletoe-edition)
+  - [0.20: Completed](#020-completed)
+  - [Impossible or Scrapped](#impossible-or-scrapped)
+
+## Near future plans
 
 - [x] Renderer menu:
   - [x] It is better to close the menu every time, than only when asterisk
@@ -15,10 +22,50 @@
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
-- Decorate with colours? Maybe only start doing it in LG else wasting time
+- [ ] backtrackList and ignoreList using js Set instead of array
 
 - [ ] For these two things: context sensitivity and parametricity, a system
 needs to store two boolean properties `isContextSensitive` and `isParametric`.
+- [ ] Pick your battles if you want to make LG
+  - [ ] How to simulate plant colonies?
+
+
+## 0.21 - Hocus Crocus
+
+- [ ] Investigate Houdini stochastic syntax: weighted!
+`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
+
+- [ ] % symbol: Cut off branch's remainder
+- [ ] Upright option: swap to the Y axis instead of rotating X?
+
+- [ ] Parametric systems
+  - Store as an extra array?
+  - Round brackets gonna make it hard for actual drawing - although maybe it
+  would've been already stripped down by the time it gets to the turtle
+
+- [ ] Alternate modelling scheme: using symbols? (chapter 5 of abop)
+- [ ] Custom models for each symbol
+  - Honestly this one might be easiest out of the 3, but the modelling without
+  polygons afterwards would be pain
+  - Contain a new default system for the update, like some flowers
+  - Petals, leaves and such
+  - Array of Vector3s denoting vertices
+  - Bool to determine whether the model is a terminal node
+    - If terminal, has only one path of going from (0, 0, 0) through the list
+    then back to (0, 0, 0), does not draw the forward line
+    - If not terminal, has two paths:
+      - From (0, 0, 0) through the first path to (1, 0, 0)
+      - From (1, 0, 0) through the second path back to (0, 0, 0)
+  - [x] Renderer option to disable models
+  - Can models' names contain spaces?
+    - How are they referenced in systems? As a list of names? An ID that is the
+    index of an array?
+  - Models are accessed using bracket syntax? `{12}` loads model #12 in system
+    - Model names are separate!
+  - [ ] Model storage
+    - How to load? How to edit?
+
+## 0.22 - Mistletoe Edition
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
@@ -71,26 +118,6 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
     'BA': 'E'   // One way: B>A = E
   };
   ```
-- [ ] Parametric systems
-  - Store as an extra array?
-  - Round brackets gonna make it hard for actual drawing - although maybe it
-  would've been already stripped down by the time it gets to the turtle
-- [ ] Custom models for each symbol
-  - Honestly this one might be easiest out of the 3, but the modelling without
-  polygons afterwards would be pain
-  - Petals, leaves and such
-  - Array of Vector3s denoting vertices
-  - Bool to determine whether the model is a terminal node
-    - If terminal, has only one path of going from (0, 0, 0) through the list
-    then back to (0, 0, 0), does not draw the forward line
-    - If not terminal, has two paths:
-      - From (0, 0, 0) through the first path to (1, 0, 0)
-      - From (1, 0, 0) through the second path back to (0, 0, 0)
-  - [x] Renderer option to disable models
-  - Can models' names contain spaces?
-    - How are they referenced in systems? As a list of names? An ID that is the
-    index of an array?
-- [ ] backtrackList and ignoreList using js Set instead of array
 
 ## 0.20: Completed
 
@@ -147,3 +174,5 @@ parameters
   - https://en.wikipedia.org/wiki/Media_control_symbols
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
+  - Admittedly though, that'd be a bit cliche and not as quirky as the current
+  layout, even though it's pretty much a solid idea
