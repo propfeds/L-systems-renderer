@@ -34,7 +34,7 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
 
 - Contain a new default system for the update, like some flowers
 
-- Stop trimming the user inputs! Store the original strings within the systems
+- [x] Stop trimming the user inputs! Store original strings within the systems
 and show them in the menu. This way, if they're invalid you can show a syntax
 error instead of stripping it!
 

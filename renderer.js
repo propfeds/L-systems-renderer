@@ -1228,6 +1228,8 @@ class Renderer
             this.lv = level;
             this.figureScale = this.figScaleExpr.evaluate(
             v => this.getVariable(v)).toNumber();
+            if(this.figureScale == 0)
+                this.figureScale = 1;
             this.camCentre = new Vector3
             (
                 this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
@@ -1320,6 +1322,8 @@ class Renderer
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
         this.figureScale = this.figScaleExpr.evaluate(
         v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
         this.cameraMode = cameraMode;
         this.camXStr = camX.toString();
         this.camYStr = camY.toString();
@@ -1366,6 +1370,8 @@ class Renderer
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
         this.figureScale = this.figScaleExpr.evaluate(
         v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
         this.camXStr = camX.toString();
         this.camYStr = camY.toString();
         this.camZStr = camZ.toString();
