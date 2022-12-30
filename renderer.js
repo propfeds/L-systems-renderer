@@ -1465,7 +1465,7 @@ class Renderer
         Don't worry, it'll not run forever. This is just to prevent the renderer
         from hesitating for 1 tick every loop.
         */
-        let j;
+        let j, t;
         for(j = 0; j < 2; ++j)
         {
             for(; this.i < this.levels[this.lv].length; ++this.i)
@@ -1505,22 +1505,9 @@ class Renderer
                             break;
                         }
 
-                        let t = this.stack.pop();
+                        t = this.stack.pop();
                         this.state = t[0];
                         this.ori = t[1];
-                        // Fastest backtrack but ruins figure quality
-                        // if(this.quickBacktrack)
-                        // {
-                        //     while(this.stack.length >
-                        //     this.idxStack[this.idxStack.length - 1] &&
-                        //     this.stack[this.stack.length - 1][1] ===
-                        //     this.ori)
-                        //     {
-                        //         let t = this.stack.pop();
-                        //         this.state = t[0];
-                        //         this.ori = t[1];
-                        //     }
-                        // }
                         if(this.stack.length ==
                         this.idxStack[this.idxStack.length - 1])
                         {
@@ -1531,6 +1518,32 @@ class Renderer
                                 break;
                         }
                         return;
+                    case '{':
+                        this.idxStack.push(this.stack.length);
+                        this.stack.push([this.state, this.ori]);
+                        break;
+                    case '}':
+                        if(this.stack.length == 0)
+                        {
+                            log('You\'ve clearly made a bracket error.');
+                            break;
+                        }
+
+                        while(this.stack.length >
+                        this.idxStack[this.idxStack.length - 1])
+                        {
+                            t = this.stack.pop();
+                            this.state = t[0];
+                            this.ori = t[1];
+                        }
+                        this.idxStack.pop();
+                        if(this.hesitate)
+                        {
+                            ++this.i;
+                            return;
+                        }
+                        else
+                            break;
                     default:
                         if(this.system.ignoreList.includes(
                         this.levels[this.lv][this.i]))
