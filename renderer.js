@@ -160,7 +160,8 @@ const locStrings =
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Level', 'Playlist'],
-        labelUpright: '* Upright x-axis: ',
+        labelUpright: '* Starting axis: {0}',
+        axes: ['x', 'y', 'z'],
         labelBTTail: 'Draw tail end: ',
         labelLoadModels: '* (Teaser) Load models: ',
         labelQuickdraw: '* Quickdraw straight lines: ',
@@ -513,8 +514,8 @@ Camera options:
 - Fixed camera centre: determines camera position in Fixed mode using a ` +
 `formula, similar to figure scale.
 - Follow factor: changes how quickly the camera follows the turtle.
-- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
-`z-axis.
+- Starting axis: changes the starting axis from x to y. Upright figures ` +
+`start on the y-axis.
 
 Renderer logic:
 - Looping mode: the Level mode repeats a single level, while the Playlist ` +
@@ -872,9 +873,9 @@ class Quaternion
      * Returns a rotation vector from the quaternion.
      * @returns {Vector3} the rotation vector.
      */
-    get rotVector()
+    getRotVector(upright)
     {
-        let r = this.neg.mul(xAxisQuat).mul(this);
+        let r = this.neg.mul(upright ? YAxisQuat : XAxisQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**
@@ -966,7 +967,6 @@ class LSystem
         this.rotations.set('^', new Quaternion(c, 0, s, 0));
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
-        this.rotations.set('|', new Quaternion(0, 0, 0, 1));
         /**
          * @type {number} the seed (for stochastic systems).
          * @public
@@ -1419,7 +1419,7 @@ class Renderer
      */
     forward()
     {
-        this.state += this.ori.rotVector;
+        this.state += this.ori.getRotVector(this.upright);
     }
     /**
      * Ticks the clock.
@@ -1492,7 +1492,7 @@ class Renderer
                         this.ori = this.system.rotations.get('/').mul(this.ori);
                         break;
                     case '|':
-                        this.ori = this.system.rotations.get('|').mul(this.ori);
+                        this.ori = ZAxisQuat.mul(this.ori);
                         break;
                     case '[':
                         this.idxStack.push(this.stack.length);
@@ -1594,8 +1594,8 @@ class Renderer
     swizzle(coords)
     {
         // The game uses left-handed Y-up, I mean Y-down coordinates.
-        if(this.upright)
-            return new Vector3(-coords.y, -coords.x, coords.z);
+        // if(this.upright)
+        //     return new Vector3(-coords.y, -coords.x, coords.z);
 
         return new Vector3(coords.x, -coords.y, coords.z);
     }
@@ -2045,7 +2045,9 @@ class Measurer
     }
 }
 
-const xAxisQuat = new Quaternion(0, 1, 0, 0);
+const XAxisQuat = new Quaternion(0, 1, 0, 0);
+const YAxisQuat = new Quaternion(0, 0, 1, 0);
+const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
@@ -2599,6 +2601,14 @@ let createConfigMenu = () =>
         }
     });
     let tmpUpright = renderer.upright;
+    let uprightLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelUpright'),
+        getLoc('axes')[Number(tmpUpright)]),
+        row: 4,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
     let uprightSwitch = ui.createSwitch
     ({
         isToggled: tmpUpright,
@@ -2613,6 +2623,8 @@ let createConfigMenu = () =>
                 Sound.playClick();
                 tmpUpright = !tmpUpright;
                 uprightSwitch.isToggled = tmpUpright;
+                uprightLabel.text = Localization.format(getLoc('labelUpright'),
+                getLoc('axes')[Number(tmpUpright)])
             }
         }
     });
@@ -2801,13 +2813,7 @@ let createConfigMenu = () =>
                                     camOffGrid,
                                     FFLabel,
                                     FFEntry,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelUpright'),
-                                        row: 4,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
+                                    uprightLabel,
                                     uprightSwitch,
                                 ]
                             }),
@@ -3473,6 +3479,14 @@ let createViewMenu = (title) =>
             tmpCZ = nt;
         }
     });
+    let uprightLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelUpright'),
+        getLoc('axes')[Number(tmpUpright)]),
+        row: 3,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
     let uprightSwitch = ui.createSwitch
     ({
         isToggled: tmpUpright,
@@ -3487,6 +3501,8 @@ let createViewMenu = (title) =>
                 Sound.playClick();
                 tmpUpright = !tmpUpright;
                 uprightSwitch.isToggled = tmpUpright;
+                uprightLabel.text = Localization.format(getLoc('labelUpright'),
+                getLoc('axes')[Number(tmpUpright)])
             }
         }
     });
@@ -3696,13 +3712,7 @@ let createViewMenu = (title) =>
                                     camGrid,
                                     camOffLabel,
                                     camOffGrid,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelUpright'),
-                                        row: 3,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
+                                    uprightLabel,
                                     uprightSwitch
                                 ]
                             })
