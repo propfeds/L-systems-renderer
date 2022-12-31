@@ -2,8 +2,7 @@
 
 - [LSR: To-do List](#lsr-to-do-list)
   - [Currently Digesting](#currently-digesting)
-  - [0.21 - Hocus Crocus](#021---hocus-crocus)
-  - [0.22 - Mistletoe Edition](#022---mistletoe-edition)
+  - [1.00 - Mistletoe Edition](#100---mistletoe-edition)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
@@ -18,16 +17,19 @@
   - Doesn't work with branching currently?
   - Doesn't work with angle-changing symbols?
 - [x] backtrackList and ignoreList using js Set instead of array
+  - [ ] Change the configure functions to not change backtrack list when the new
+  set is the same as the old one, instead of comparing strings
 - [x] Stop trimming the user inputs! Store original strings within the systems
 and show them in the menu. This way, if they're invalid you can show a syntax
 error instead of stripping it!
 
-- [ ] For these two things: context sensitivity and parametricity, a system
-needs to store two boolean properties `isContextSensitive` and `isParametric`.
-- [ ] Pick your battles if you want to make LG
-  - [ ] How to simulate plant colonies?
+- [ ] Add more comments in the code
+- [ ] A more detailed README
+  - Showcases the power of tickspeed and stroke options
+  - Discusses limitations of the game
+  - Like a blog post, sort of
 
-## 0.21 - Hocus Crocus
+## 1.00 - Mistletoe Edition
 
 - Contain a new default system for the update, like some flowers
 
@@ -35,8 +37,12 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
 
 - [ ] % symbol: Cut off branch's remainder
+  - Simple regex search
 
 - [ ] Parametric systems
+  - Regex magic to separate string to actual sequence of symbols?
+  - Equal comparison changed to `==` instead of `=` in abop to differentiate
+  from the syntax
   - Store as an extra array of objects
   - Round brackets gonna make it hard for actual drawing - although maybe it
   would've been already stripped down by the time it gets to the turtle
@@ -64,14 +70,6 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
   - [ ] Model storage
     - How to load? How to edit?
 - [x] Renderer option to disable models
-
-## 0.22 - Mistletoe Edition
-
-- [ ] Add more comments in the code
-- [ ] A more detailed README
-  - Showcases the power of tickspeed and stroke options
-  - Discusses limitations of the game
-  - Like a blog post, sort of
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
@@ -184,3 +182,10 @@ parameters
   layout, even though it's pretty much a solid idea
 - Upright option: swap to the Y axis instead of rotating X?
   - Does not work! It breaks everything.
+- For these two things: context sensitivity and parametricity, a system
+needs to store two boolean properties `isContextSensitive` and `isParametric`.
+  - Scrapped. Just make a new class.
+- Houdini's stochastic syntax means getting rid of the old comma syntax?
+  - Or, we could just make LG immediately... or a sequel named
+  `Parametric L-systems Renderer`, with a better randomiser lol
+  - Scrapped. Just make a new class.
