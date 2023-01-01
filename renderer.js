@@ -899,7 +899,7 @@ class LSystem
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
      * @param {number} seed (default: 0) the seed (for stochastic systems).
      */
-    constructor(axiom = 'F', rules = ['F=F'], turnAngle = 30, seed = 0,
+    constructor(axiom = '', rules = [], turnAngle = 30, seed = 0,
     ignoreList = '')
     {
         /**
@@ -1322,7 +1322,6 @@ class Renderer
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
-        (backtrackList != [...this.backtrackList].join('')) ||
         (loadModels != this.loadModels) || (hesitate != this.hesitate);
 
         this.figScaleStr = figureScale.toString();
@@ -1349,7 +1348,10 @@ class Renderer
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
-        this.backtrackList = new Set(backtrackList);
+        let btl = new Set(backtrackList);
+        if(btl !== this.backtrackList)
+            requireReset = true;
+        this.backtrackList = btl;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
         this.hesitate = hesitate;

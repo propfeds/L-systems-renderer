@@ -3,17 +3,12 @@ const LS_SYMBOL_PATTERN = /(.)(\(([^\)]+)\))?/g;
 
 class ParametricLSystem
 {
-    constructor(axiom = 'F', rules = ['F=F'], turnAngle = 30, seed = 0,
+    constructor(axiom = '', rules = [], turnAngle = 30, seed = 0,
     ignoreList = '', models = {})
     {
-        this.userInput =
-        {
-            axiom: axiom,
-            rules: rules,
-            turnAngle: turnAngle,
-            seed: seed,
-            ignoreList: ignoreList
-        };
+        // User input
+        this.rawAxiom = axiom;
+        this.rawRules = rules;
         // First, let's use rules to determine the variable declarations
         let rulesMatches = [];
         for(let i = 0; i < rules.length; ++i)

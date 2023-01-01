@@ -17,11 +17,13 @@
   - Doesn't work with branching currently?
   - Doesn't work with angle-changing symbols?
 - [x] backtrackList and ignoreList using js Set instead of array
-  - [ ] Change the configure functions to not change backtrack list when the new
+  - [x] Change the configure functions to not change backtrack list when the new
   set is the same as the old one, instead of comparing strings
 - [x] Stop trimming the user inputs! Store original strings within the systems
 and show them in the menu. This way, if they're invalid you can show a syntax
 error instead of stripping it!
+- [ ] Compress internal state? LZW, LZP
+- [ ] Button to clear LS menu (equivalent to renderer reset)
 
 - [ ] Add more comments in the code
 - [ ] A more detailed README
