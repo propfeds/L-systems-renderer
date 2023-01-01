@@ -3213,7 +3213,7 @@ let createNamingMenu = () =>
                 Sound.playClick();
                 savedSystems.set(title, {
                     desc: savedSystems.get(title).desc,
-                    system: JSON.stringify(renderer.system.object),
+                    system: renderer.system.object,
                     config: renderer.staticCamera
                 });
                 tmpSystemName = title;
