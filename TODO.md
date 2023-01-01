@@ -31,6 +31,8 @@ error instead of stripping it!
 
 ## 1.00 - Mistletoe Edition
 
+- Alternate name: Parastichy
+
 - Contain a new default system for the update, like some flowers
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations

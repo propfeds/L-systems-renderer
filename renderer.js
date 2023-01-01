@@ -73,7 +73,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.201;
+var version = 0.202;
 
 let time = 0;
 let page = 0;
@@ -85,7 +85,7 @@ let resetLvlOnConstruct = true;
 let measurePerformance = false;
 
 let savedSystems = new Map();
-let savedModels = [];
+let savedModels = new Map();
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
 const MAX_CHARS_PER_TICK = 10000;
@@ -93,7 +93,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.20.1 - Miscalculator',
+        versionName: 'v0.20.2 - Work in Progress',
         equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -899,7 +899,8 @@ class LSystem
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
      * @param {number} seed (default: 0) the seed (for stochastic systems).
      */
-    constructor(axiom, rules, turnAngle = 30, seed = 0, ignoreList = '')
+    constructor(axiom = 'F', rules = ['F=F'], turnAngle = 30, seed = 0,
+    ignoreList = '')
     {
         /**
          * @type {string} the starting sequence.
@@ -1214,6 +1215,7 @@ class Renderer
          * @public I told you so many times that you shouldn't access these.
          */
         this.nextDeriveIdx = 0;
+        this.polygonMode = false;
     }
 
     /**
@@ -1287,6 +1289,7 @@ class Renderer
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
+        this.polygonMode = false;
         if(clearGraph)
         {
             this.elapsed = 0;
@@ -1521,38 +1524,34 @@ class Renderer
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            if(this.hesitate)
+                            if(this.hesitate && !this.polygonMode)
+                            {
                                 ++this.i;
+                                return;
+                            }
                             else
                                 break;
                         }
-                        return;
-                    case '{':
-                        this.idxStack.push(this.stack.length);
-                        this.stack.push([this.state, this.ori]);
+                        if(!this.polygonMode)
+                            return;
+                        else
+                        {
+                            --this.i;
+                            break;
+                        }
+                    case '{':        
+                        this.polygonMode = true;
                         break;
                     case '}':
-                        if(this.stack.length == 0)
-                        {
-                            log('You\'ve clearly made a bracket error.');
-                            break;
-                        }
-
-                        while(this.stack.length >
-                        this.idxStack[this.idxStack.length - 1])
-                        {
-                            t = this.stack.pop();
-                            this.state = t[0];
-                            this.ori = t[1];
-                        }
-                        this.idxStack.pop();
-                        if(this.hesitate)
-                        {
-                            ++this.i;
-                            return;
-                        }
+                        this.polygonMode = false;
+                        break;
+                    case '.':
+                        if(!this.polygonMode)
+                            log('You\'re making a polygon outside of one?');
                         else
-                            break;
+                            ++this.i;
+
+                        return;
                     default:
                         if(this.system.ignoreList.has(
                         this.levels[this.lv][this.i]))
@@ -1568,11 +1567,13 @@ class Renderer
                         if(this.quickDraw && !breakAhead && this.stack.length >
                         0 && this.ori === this.stack[this.stack.length - 1][1])
                             break;
-                        else
+                        else if(!this.polygonMode)
                         {
                             ++this.i;
                             return;
                         }
+                        else
+                            break;
                 }
             }
             if(!this.backtrackTail || this.stack.length == 0)

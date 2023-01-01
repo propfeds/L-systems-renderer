@@ -3,8 +3,8 @@ const LS_SYMBOL_PATTERN = /(.)(\(([^\)]+)\))?/g;
 
 class ParametricLSystem
 {
-    constructor(axiom, rules, turnAngle = 30, seed = 0, ignoreList = '',
-    models = {})
+    constructor(axiom = 'F', rules = ['F=F'], turnAngle = 30, seed = 0,
+    ignoreList = '', models = {})
     {
         this.userInput =
         {
