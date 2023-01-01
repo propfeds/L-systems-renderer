@@ -20,6 +20,7 @@ class ParametricLSystem
         {
             rulesMatches.push([...rules[i].matchAll(LS_RULE_PATTERN)]);
             log(rulesMatches[i].toString());
+            // Indices 1, 2, 3, 5 are context, condition, derivation and chance
         }
         // Use regex magic to separate
         let axiomMatches = [...axiom.matchAll(LS_SYMBOL_PATTERN)];
