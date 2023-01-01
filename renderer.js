@@ -706,6 +706,14 @@ let getCoordString = (x) => x.toFixed(x >= -0.01 ?
 );
 
 /**
+ * Compares for every member of two sets.
+ * @param {Set} xs set 1.
+ * @param {Set} ys set 2.
+ * @returns {boolean} whether two sets are the exact same (disregarding order).
+ */
+let eqSet = (xs, ys) => xs.size === ys.size && [...xs].every((x) => ys.has(x));
+
+/**
  * Represents a linear congruential generator.
  */
 class LCG
@@ -1349,7 +1357,7 @@ class Renderer
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
         let btl = new Set(backtrackList);
-        if(btl !== this.backtrackList)
+        if(!eqSet(btl, this.backtrackList))
             requireReset = true;
         this.backtrackList = btl;
         this.loadModels = loadModels;
