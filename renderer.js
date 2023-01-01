@@ -359,7 +359,7 @@ Turning angle: 30°
 
 Applies static camera:
 Scale: 1.5*2^lv
-Centre: (0, 1.2*2^lv, 0)
+Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
@@ -395,7 +395,7 @@ Turning angle: 22.5°
 
 Applies static camera:
 Scale: 1.5*2^lv
-Centre: (0, 1.2*2^lv, 0)
+Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
@@ -446,7 +446,7 @@ Turning angle: 8°
 
 Applies static camera:
 Scale: 2*2^lv
-Centre: (0, 1.2*2^lv, 0)
+Centre: (1.2*2^lv, 0, 0)
 Upright`,
                 source: 'https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf'
             },
@@ -481,7 +481,7 @@ Turning angle: 4°
 
 Applies static camera: (mathematically unproven)
 Scale: 3*1.3^lv
-Centre: (0, 1.8*1.3^lv, 0)
+Centre: (1.8*1.3^lv, 0, 0)
 Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
@@ -635,7 +635,7 @@ Turning angle: 15°
 
 Applies static camera:
 Scale: 2^lv
-Centre: (0, 2^lv, 0)
+Centre: (2^lv, 0, 0)
 Upright`
             },
             {
@@ -671,7 +671,7 @@ Turning angle: 22.5°
 
 Applies static camera: (mathematically unproven)
 Scale: 3^lv
-Centre: (0.25*3^lv, 0.75*3^lv, 0)
+Centre: (0.75*3^lv, -0.25*3^lv, 0)
 Upright`
             }
         ]
@@ -2065,7 +2065,7 @@ let manualSystems =
     arrow:
     {
         system: arrow,
-        config: ['1.5*2^lv', 0, '1.2*2^lv', 0, true]
+        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
     },
     dragon:
     {
@@ -2083,7 +2083,7 @@ let manualSystems =
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
         ], 22.5),
-        config: ['1.5*2^lv', 0, '1.2*2^lv', 0, true]
+        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
     },
     luckyFlower:
     {
@@ -2117,7 +2117,7 @@ let manualSystems =
             'Y=Z-ZY+',
             'Z=ZZ'
         ], 8),
-        config: ['2*2^lv', 0, '1.2*2^lv', 0, true]
+        config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
     },
     hilbert3D:
     {
@@ -2134,12 +2134,12 @@ let manualSystems =
             'C=[---------FF][+++++++++FF]B&&+C',
             'D=[---------FF][+++++++++FF]B&&-D'
         ], 4),
-        config: ['3*1.3^lv', 0, '1.8*1.3^lv', 0, true]
+        config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
     },
     cultFF:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
-        config: ['2^lv', 0, '2^lv', 0, true]
+        config: ['2^lv', '2^lv', 0, 0, true]
     },
     cultFXF:
     {
@@ -2153,7 +2153,7 @@ let manualSystems =
             'F=FX+[E]X',
             'X=F-[X+[X[++E]F]]+F[X+FX]-X'
         ], 22.5),
-        config: ['3^lv', '0.25*3^lv', '0.75*3^lv', 0, true]
+        config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
     }
 };
 let tmpSystemName = getLoc('defaultSystemName');
