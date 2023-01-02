@@ -561,7 +561,7 @@ Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
             {
-                title: 'Modelling with the polygon tool',
+                title: 'Modelling: Polygon tool',
                 contents:
 `To keep up with demands for higher levels of detail pertaining flowers, ` +
 `leaves and other organs, the classic L-system syntax was extended to ` +
@@ -574,13 +574,30 @@ Upright`,
 
 Normal commands inside a polygon block will not draw lines, making it great ` +
 `for hiding away any scaffolding in the creation of models.
-Note: Due to the rendering engine's quirks, the polygon tool in LSR works ` +
+Note: Due to how the rendering engine works, the polygon tool in LSR works ` +
 `a bit differently from that described in The Algorithmic Beauty of Plants. ` +
-`Therefore, it is advised to take measurements to adopt schemes from the ` +
-`book into LSR.`
+`Therefore it is advised to make some adjustments when adopting schemes ` +
+`from the book into LSR.`
             },
             {
-                title: 'Assigning dedicated models to symbols',
+                title: 'Modelling: Dedicated models for symbols',
+                contents:
+`While the polygon mode is useful when it comes to building custom models, ` +
+`the problem of separating between models and growth processing rules still ` +
+`remains, as writing the model in a different rule will delay its drawing by ` +
+`one level. With a special kind of rule, we can assign dedicated models to ` +
+`each symbol to be drawn instantly.
+To declare a model rule, attach a tilde in front of the symbol on the left side:
+~{symbol} = {model}
+
+To reference a model in another rule, attach a tilde in front of the symbol ` +
+`in the same way it was declared.
+Note: The symbol will not disappear from the rule after the model has been ` +
+`drawn.`
+            },
+            {
+                system: '',
+                title: 'Example: ',
                 contents:
 ``
             },
