@@ -12,7 +12,6 @@
   - [x] It is better to close the menu every time, than only when asterisk
   options are changed
   - [x] Reset to Defaults should not actually close the menu
-
 - [x] Investigate quickdraw backtrack logic
   - Doesn't work with branching currently?
   - Doesn't work with angle-changing symbols?
@@ -22,9 +21,9 @@
 - [x] Stop trimming the user inputs! Store original strings within the systems
 and show them in the menu. This way, if they're invalid you can show a syntax
 error instead of stripping it!
-- [ ] Compress internal state? LZW, LZP
-- [ ] Button to clear LS menu (equivalent to renderer reset)
+- [x] Button to clear LS menu (equivalent to renderer reset)
 
+- [ ] Compress internal state? LZW, LZP
 - [ ] Add more comments in the code
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options

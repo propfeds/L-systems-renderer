@@ -73,7 +73,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.202;
+var version = 0.21;
 
 let time = 0;
 let page = 0;
@@ -93,7 +93,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.20.2 - Work in Progress',
+        versionName: 'v0.21 - Work in Progress',
         equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -112,6 +112,7 @@ const locStrings =
         saPatienceHint: 'Be patient.',
 
         btnSave: 'Save',
+        btnClear: 'Clear',
         btnDefault: '* Reset to Defaults',
         btnAdd: 'Add',
         btnConstruct: 'Construct',
@@ -953,7 +954,7 @@ class LSystem
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
      * @param {number} seed (default: 0) the seed (for stochastic systems).
      */
-    constructor(axiom = '', rules = [], turnAngle = 30, seed = 0,
+    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
     ignoreList = '', models = {})
     {
         this.userInput =
@@ -1115,7 +1116,7 @@ class LSystem
                 deriv = this.getRecursiveModels(
                 this.models.get(sequence[i + 1]));
             else if(this.rules.has(sequence[i]))
-                deriv = this.rules.get(sequence[i]);
+                deriv = this.getRecursiveModels(this.rules.get(sequence[i]));
             else
                 deriv = sequence[i];
 
@@ -3251,16 +3252,46 @@ let createSystemMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createButton
+                ui.createGrid
                 ({
-                    text: getLoc('btnConstruct'),
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        renderer.applySystem = new LSystem(tmpAxiom, tmpRules,
-                        tmpAngle, tmpSeed, tmpIgnore);
-                        menu.hide();
-                    }
+                    minimumHeightRequest: 64,
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: getLoc('btnConstruct'),
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.applySystem = new LSystem(tmpAxiom,
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnClear'),
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let values = new LSystem().object;
+                                axiomEntry.text = values.axiom;
+                                angleEntry.text = values.turnAngle.toString();
+                                tmpRules = values.rules;
+                                ruleEntries = [];
+                                rulesLabel.text = Localization.format(
+                                getLoc('labelRules'), ruleEntries.length);
+                                ruleStack.children = ruleEntries;
+                                ignoreEntry.text = values.ignoreList;
+                                seedEntry.text = values.seed.toString();
+                            }
+                        })
+                    ]
                 })
             ]
         })
@@ -3877,7 +3908,7 @@ let createViewMenu = (title) =>
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
-                                // menu.hide();
+                                menu.hide();
                             }
                         }),
                         ui.createButton
