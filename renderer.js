@@ -577,8 +577,26 @@ Normal commands inside a polygon block will not draw lines, making it great ` +
 `for hiding away any scaffolding in the creation of models.
 Note: Due to how the rendering engine works, the polygon tool in LSR works ` +
 `a bit differently from that described in The Algorithmic Beauty of Plants. ` +
-`Therefore it is advised to make some adjustments when adopting schemes ` +
+`Therefore, it is advised to make some adjustments when adopting schemes ` +
 `from the book into LSR.`
+            },
+            {
+                system: 'lilyPad',
+                title: 'Example: Lily pad (hollow)',
+                contents:
+`This is a hollow lily pad. Can you make it draw some lines on the periphery?
+Tip: Open the sequence menu to see which points are being dotted.
+
+Axiom: {[A}]{[B}]
+A = [+A]C.
+B = [-B]C.
+C = GC
+Turning angle: 27°
+
+Applies static camera:
+Scale: lv
+Centre: (lv/2-1, 0, 0)
+Upright`
             },
             {
                 title: 'Modelling: Dedicated models for symbols',
@@ -597,10 +615,24 @@ Note: The symbol will not disappear from the rule after the model has been ` +
 `drawn.`
             },
             {
-                system: '',
-                title: 'Example: ',
+                system: 'lilac',
+                title: 'Example: Lilac branch',
                 contents:
-``
+`Ripped straight off of page 92 of The Algorithmic Beauty of Plants. But I ` +
+`made the model myself.
+
+Axiom: A~K
+A = [--//~K][++//~K]I///A
+I = Fi
+i = Fj
+j = J[--FFA][++FFA]
+~K = F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]
+Turning angle: 30°
+
+Applies static camera:
+Scale: 3*lv
+Centre: (1.5*lv, 0, 0)
+Upright`
             },
             {
                 title: 'Appendix: Advanced artistry in LSR (1)',
@@ -667,7 +699,7 @@ Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             {
                 title: 'Appendix: Advanced artistry in LSR (3)',
                 contents:
-``
+`The art of looping: draw tail end, polygon blocks, backtracking.`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
@@ -2248,6 +2280,26 @@ let manualSystems =
             'D=[---------FF][+++++++++FF]B&&-D'
         ], 4),
         config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
+    },
+    lilyPad:
+    {
+        system: new LSystem('{[A}]{[B}]', [
+            'A=[+A]C.',
+            'B=[-B]C.',
+            'C=GC'
+        ], 27),
+        config: ['lv', 'lv/2-1', 0, 0, true]
+    },
+    lilac:
+    {
+        system: new LSystem('A~K', [
+            'A=[--//~K][++//~K]I///A',
+            'I=Fi',
+            'i=Fj',
+            'j=J[--FFA][++FFA]',
+            '~K=F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]'
+        ], 30),
+        config: ['3*lv', '1.5*lv', 0, 0, true]
     },
     cultFF:
     {
