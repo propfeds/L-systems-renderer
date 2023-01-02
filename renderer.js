@@ -913,7 +913,7 @@ class LSystem
         this.userInput =
         {
             axiom: axiom,
-            rules: rules,
+            rules: this.getPurged(rules),
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
@@ -1025,7 +1025,6 @@ class LSystem
             else
                 deriv = sequence[i];
 
-            log(deriv)
             if(typeof deriv === 'string')
                 result += deriv;
             else
@@ -1078,13 +1077,14 @@ class LSystem
         this.seed = seed;
         this.random = new LCG(this.seed);
     }
-    get rulesStrings()
+    getPurged(rules)
     {
         let result = [];
-        for(let i = 0; i < this.userInput.rules.length; ++i)
+        for(let i = 0; i < rules.length; ++i)
         {
             // I hope this deep-copies
-            result[i] = this.userInput.rules[i];
+            if(rules[i])
+                result.push(rules[i]);
         }
         return result;
     }
