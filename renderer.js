@@ -561,7 +561,26 @@ Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
             {
-                title: 'Modelling',
+                title: 'Modelling with the polygon tool',
+                contents:
+`To keep up with demands for higher levels of detail pertaining flowers, ` +
+`leaves and other organs, the classic L-system syntax was extended to ` +
+`accomplish this. Introducing the polygon tool, designed to hide away ` +
+`unneeded points and draw contours by connecting the dots, literally.
+
+{: initiates polygon drawing mode.
+.: sets a polygon vertex.
+}: ends the polygon drawing mode.
+
+Normal commands inside a polygon block will not draw lines, making it great ` +
+`for hiding away any scaffolding in the creation of models.
+Note: Due to the rendering engine's quirks, the polygon tool in LSR works ` +
+`a bit differently from that described in The Algorithmic Beauty of Plants. ` +
+`Therefore, it is advised to take measurements to adopt schemes from the ` +
+`book into LSR.`
+            },
+            {
+                title: 'Assigning dedicated models to symbols',
                 contents:
 ``
             },
@@ -626,6 +645,11 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 `worthy, you could create truly mesmerising results with this.
 
 Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
+            },
+            {
+                title: 'Appendix: Advanced artistry in LSR (3)',
+                contents:
+``
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
