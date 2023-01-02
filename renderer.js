@@ -206,7 +206,7 @@ const locStrings =
 Let's start discovering the wonders of L-systems.`
             },
             {
-                title: 'Theory controls',
+                title: 'Controls: Theory screen',
                 contents:
 `The theory screen consists of the renderer and its controls.
 
@@ -231,6 +231,81 @@ Menu buttons: You pressed on one of them to get here, did you?
 - Renderer menu: configures the camera along with other renderer behaviour.
 - Save/load: store your favourite L-systems here.
 - Settings: configure general options for the theory.`
+            },
+            {
+                title: 'Controls: Configuring the L-system',
+                contents:
+`Design your L-system using the L-systems menu.
+
+- Axiom: the system's starting sequence.
+- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
+- Production rules: an unlimited number of rules can be added using the ` +
+`'Add' button.
+- Ignored symbols: the turtle will stand still when encountering these symbols.
+- Seed: sets the seed of a stochastic system.
+
+Note: Any blank rules will be trimmed afterwards.`
+            },
+            {
+                title: 'Controls: Configuring the renderer',
+                contents:
+`Configure the visual representation of your L-system with the Renderer menu.
+
+Camera options:
+- Figure scale: determines the zoom level's inverse using a formula. For ` +
+`instance, a figure scale of 2^lv will zoom the figure out by a factor of ` +
+`2 every level.
+- Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
+`modes follow the turtle.
+- Fixed camera centre: determines camera position in Fixed mode using a ` +
+`formula, similar to figure scale.
+- Follow factor: changes how quickly the camera follows the turtle.
+- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
+`z-axis.
+
+Renderer logic:
+- Looping mode: the Level mode repeats a single level, while the Playlist ` +
+`mode draws levels consecutively.
+- Draw tail end: whether to draw the last backtrack after finishing the ` +
+`sequence.
+- Load models: whether to load models. (Coming in a future update!)
+
+Advanced stroke options:
+- Quickdraw straight lines: skips over straight consecutive segments.
+- Quick backtrack: works similarly, but on the way back.
+- Pause after backtrack: pause for one tick after backtracking for more ` +
+`accurate figures.
+- Backtrack list: sets stopping symbols for backtracking.`
+            },
+            {
+                title: 'Controls: Saving and loading',
+                contents:
+`The Save/load menu allows you to save your favourite L-systems along with ` +
+`their camera configurations.
+
+- Clipboard: allows you to export the system as a string to share with your ` +
+`fellow gardeners, or import one from them for personal consumption.
+Note: Does not contain models.
+- Save: set the title and description for a new system, or overwrite one of ` +
+`the existing ones.
+- View: allows you to edit, load and delete saved systems.`
+            },
+            {
+                title: 'Controls: Theory settings',
+                contents:
+`The Settings menu contain several general options for the theory.
+
+- Reset graph after tabbing in: when this option is turned off, the graph ` +
+`will resume the current drawing after the game enters focus, assuming it ` +
+`does not close itself by then. The theory will not draw when the game is ` +
+`not in focus, regardless of this setting.
+- Reset level on construction: this option is generally turned on for ` +
+`safety, however, if you are trying to design and edit systems for a while, ` +
+`it is recommended to turn it off for convenience.
+- Tertiary equation: switches between the display of turtle coordinates and ` +
+`orientation (quaternion).
+- Measure performance: displays performance statistics at the top of the ` +
+`screen.`
             },
             {
                 title: 'A primer on L-systems',
@@ -409,7 +484,7 @@ X = F[+F][-F]X
 F = F[+i][-i]F
 i = Ii, IIi
 Turning angle: 60°
-Ignore: i
+Ignored: i
 
 Applies static camera:
 Scale: 2*2^lv
@@ -456,7 +531,7 @@ Upright`,
                 contents:
 `The Hilbert curve is a fractal figure that fills the space of a 2D plane ` +
 `using only a single line. This is the 3D version.
-It's recommended to draw this at a low tickspeed (high tick length).
+It's recommended to draw at a low tickspeed (high tick length).
 
 Axiom: X
 X = ^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
@@ -486,79 +561,9 @@ Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
             {
-                title: 'Controls: Configuring the L-system',
+                title: 'Modelling',
                 contents:
-`Design your L-system using the L-systems menu.
-
-- Axiom: the system's starting sequence.
-- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
-- Production rules: an unlimited number of rules can be added using the ` +
-`'Add' button.
-- Ignored symbols: the turtle will stand still when encountering these symbols.
-- Seed: sets the seed of a stochastic system.
-
-Note: Any whitespace in the rules will be trimmed afterwards.`
-            },
-            {
-                title: 'Controls: Configuring the renderer',
-                contents:
-`Configure the visual representation of your L-system with the Renderer menu.
-
-Camera options:
-- Figure scale: determines the zoom level's inverse using a formula. For ` +
-`instance, a figure scale of 2^lv will zoom the figure out by a factor of ` +
-`2 every level.
-- Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
-`modes follow the turtle.
-- Fixed camera centre: determines camera position in Fixed mode using a ` +
-`formula, similar to figure scale.
-- Follow factor: changes how quickly the camera follows the turtle.
-- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
-`z-axis.
-
-Renderer logic:
-- Looping mode: the Level mode repeats a single level, while the Playlist ` +
-`mode draws levels consecutively.
-- Draw tail end: whether to draw the last backtrack after finishing the ` +
-`sequence.
-- Load models: whether to load models. (Coming in a future update!)
-
-Advanced stroke options:
-- Quickdraw straight lines: skips over straight consecutive segments.
-- Quick backtrack: works similarly, but on the way back.
-- Pause after backtrack: pause for one tick after backtracking for more ` +
-`accurate figures.
-- Backtrack list: sets stopping symbols for backtracking.`
-            },
-            {
-                title: 'Controls: Saving and loading',
-                contents:
-`The Save/load menu allows you to save your favourite L-systems along with ` +
-`their camera configurations.
-
-- Clipboard: allows you to export the system as a string to share with the ` +
-`fellow gardeners, or import one from them for your personal consumption.
-Note: Does not contain models.
-- Save: set the title and description for a new system, or overwrite one of ` +
-`your existing ones.
-- View: allows you to edit, load and delete saved systems.`
-            },
-            {
-                title: 'Controls: Theory settings',
-                contents:
-`The Settings menu contain several general options for the theory.
-
-- Reset graph after tabbing in: when this option is turned off, the graph ` +
-`will resume the current drawing after the game enters focus, assuming it ` +
-`does not close itself by then. The theory will not draw when the game is ` +
-`not in focus, regardless of this setting.
-- Reset level on construction: this option is generally turned on for ` +
-`safety, however, if you are trying to design and edit systems for a while, ` +
-`it is recommended to turn it off for convenience.
-- Tertiary equation: switches between the display of turtle coordinates and ` +
-`orientation (quaternion).
-- Measure performance: displays performance statistics at the top of the ` +
-`screen.`
+``
             },
             {
                 title: 'Appendix: Advanced artistry in LSR (1)',
@@ -1013,24 +1018,39 @@ class LSystem
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
     }
+    rerollAxiom()
+    {
+        this.axiom = this.getRecursiveModels(this.userInput.axiom);
+    }
     getRecursiveModels(sequence)
     {
-        let result = '';
-        for(let i = 0; i < sequence.length; ++i)
+        if(typeof sequence === 'string')
         {
-            let deriv;
-            if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
-                deriv = this.getRecursiveModels(
-                this.models.get(sequence[i + 1]));
-            else
-                deriv = sequence[i];
+            let result = '';
+            for(let i = 0; i < sequence.length; ++i)
+            {
+                let deriv;
+                if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
+                    deriv = this.getRecursiveModels(
+                    this.models.get(sequence[i + 1]));
+                else
+                    deriv = sequence[i];
 
-            if(typeof deriv === 'string')
-                result += deriv;
-            else
-                result += deriv[this.random.nextRange(0, deriv.length)];
+                if(typeof deriv === 'string')
+                    result += deriv;
+                else
+                    result += deriv[this.random.nextRange(0, deriv.length)];
+            }
+            return result;
         }
-        return result;
+        else
+        {
+            let result = [];
+            for(let i = 0; i < sequence.length; ++i)
+                result.push(this.getRecursiveModels(sequence[i]));
+            
+            return result;
+        }
     }
     /**
      * Derive a sequence from the input string.
@@ -1075,6 +1095,7 @@ class LSystem
     set rerollSeed(seed)
     {
         this.seed = seed;
+        this.userInput.seed = seed;
         this.random = new LCG(this.seed);
     }
     getPurged(rules)
@@ -1466,6 +1487,7 @@ class Renderer
     set seed(seed)
     {
         this.system.rerollSeed = seed;
+        this.system.rerollAxiom();
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = this.lv;
