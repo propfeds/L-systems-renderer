@@ -908,25 +908,32 @@ class LSystem
      * @param {number} seed (default: 0) the seed (for stochastic systems).
      */
     constructor(axiom = '', rules = [], turnAngle = 30, seed = 0,
-    ignoreList = '')
+    ignoreList = '', models = {})
     {
-        /**
-         * @type {string} the starting sequence.
-         * @public
-         */
-        this.axiom = axiom;
+        this.userInput =
+        {
+            axiom: axiom,
+            rules: rules,
+            turnAngle: turnAngle,
+            seed: seed,
+            ignoreList: ignoreList,
+            models: models
+        };
         /**
          * @type {string[]} the production rules.
          * @public
          */
         this.rules = new Map();
         this.contextRules = new Map();
-        this.rawRules = rules;
         /**
          * @type {string} a list of symbols ignored by the renderer.
          * @public
          */
         this.ignoreList = new Set(ignoreList);
+        this.models = new Map();
+        for(let key in models)
+            this.models.set(key, models[key]);
+
         for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
@@ -947,15 +954,40 @@ class LSystem
 
                 let rder = rs[1].split(',');
                 if(rder.length == 1)
-                    this.rules.set(rs[0], rs[1]);
+                {
+                    if(rs[0].length == 1)
+                        this.rules.set(rs[0], rs[1]);
+                    else if(rs[0].length == 2 && rs[0][0] == '~')
+                        this.models.set(rs[0][1], rs[1]);
+                }
                 else
                 {
+                    // Models can't have stochastic rules sadly, due to how
+                    // derivations work.
                     for(let i = 0; i < rder.length; ++i)
                         rder[i] = rder[i].trim();
-                    this.rules.set(rs[0], rder);
+                    if(rs[0].length == 1)
+                        this.rules.set(rs[0], rder);
+                    else if(rs[0].length == 2 && rs[0][0] == '~')
+                        this.models.set(rs[0][1], rder);
                 }
             }
         }
+        /**
+         * @type {number} the seed (for stochastic systems).
+         * @public
+         */
+        this.seed = seed;
+        /**
+         * @type {LCG} the LCG used for random number generation.
+         * @public not sure, ask Itsuki.
+         */
+        this.random = new LCG(this.seed);
+        /**
+         * @type {string} the starting sequence.
+         * @public
+         */
+        this.axiom = this.getRecursiveModels(axiom);
         /**
          * @type {number} the turning angle (in degrees).
          * @public
@@ -980,18 +1012,27 @@ class LSystem
         this.rotations.set('^', new Quaternion(c, 0, s, 0));
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
-        /**
-         * @type {number} the seed (for stochastic systems).
-         * @public
-         */
-        this.seed = seed;
-        /**
-         * @type {LCG} the LCG used for random number generation.
-         * @public not sure, ask Itsuki.
-         */
-        this.random = new LCG(this.seed);
     }
+    getRecursiveModels(sequence)
+    {
+        let result = '';
+        for(let i = 0; i < sequence.length; ++i)
+        {
+            let deriv;
+            if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
+                deriv = this.getRecursiveModels(
+                this.models.get(sequence[i + 1]));
+            else
+                deriv = sequence[i];
 
+            log(deriv)
+            if(typeof deriv === 'string')
+                result += deriv;
+            else
+                result += deriv[this.random.nextRange(0, deriv.length)];
+        }
+        return result;
+    }
     /**
      * Derive a sequence from the input string.
      * @param {string} state the input string.
@@ -1009,16 +1050,19 @@ class LSystem
                     result: result
                 };
             }
-            if(this.rules.has(sequence[i]))
-            {
-                let rder = this.rules.get(sequence[i]);
-                if(typeof rder === 'string')
-                    result += rder;
-                else
-                    result += rder[this.random.nextRange(0, rder.length)];
-            }
+            let deriv;
+            if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
+                deriv = this.getRecursiveModels(
+                this.models.get(sequence[i + 1]));
+            else if(this.rules.has(sequence[i]))
+                deriv = this.rules.get(sequence[i]);
             else
-                result += sequence[i];
+                deriv = sequence[i];
+
+            if(typeof deriv === 'string')
+                result += deriv;
+            else
+                result += deriv[this.random.nextRange(0, deriv.length)];
         }
         return {
             next: 0,
@@ -1037,22 +1081,16 @@ class LSystem
     get rulesStrings()
     {
         let result = [];
-        for(let i = 0; i < this.rawRules.length; ++i)
+        for(let i = 0; i < this.userInput.rules.length; ++i)
         {
             // I hope this deep-copies
-            result[i] = this.rawRules[i];
+            result[i] = this.userInput.rules[i];
         }
         return result;
     }
     get object()
     {
-        return {
-            axiom: this.axiom,
-            rules: this.rulesStrings,
-            turnAngle: this.turnAngle,
-            ignoreList: [...this.ignoreList].join(''),
-            seed: this.seed
-        };
+        return this.userInput;
     }
     /**
      * Returns the system's string representation.
@@ -1223,7 +1261,7 @@ class Renderer
          * @public I told you so many times that you shouldn't access these.
          */
         this.nextDeriveIdx = 0;
-        this.polygonMode = false;
+        this.polygonMode = 0;
     }
 
     /**
@@ -1297,7 +1335,7 @@ class Renderer
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
-        this.polygonMode = false;
+        this.polygonMode = 0;
         if(clearGraph)
         {
             this.elapsed = 0;
@@ -1534,7 +1572,7 @@ class Renderer
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            if(this.hesitate && !this.polygonMode)
+                            if(this.hesitate && this.polygonMode <= 0)
                             {
                                 ++this.i;
                                 return;
@@ -1542,7 +1580,7 @@ class Renderer
                             else
                                 break;
                         }
-                        if(!this.polygonMode)
+                        if(this.polygonMode <= 0)
                             return;
                         else
                         {
@@ -1550,13 +1588,13 @@ class Renderer
                             break;
                         }
                     case '{':        
-                        this.polygonMode = true;
+                        ++this.polygonMode;
                         break;
                     case '}':
-                        this.polygonMode = false;
+                        --this.polygonMode;
                         break;
                     case '.':
-                        if(!this.polygonMode)
+                        if(this.polygonMode <= 0)
                             log('You\'re making a polygon outside of one?');
                         else
                             ++this.i;
@@ -1577,7 +1615,7 @@ class Renderer
                         if(this.quickDraw && !breakAhead && this.stack.length >
                         0 && this.ori === this.stack[this.stack.length - 1][1])
                             break;
-                        else if(!this.polygonMode)
+                        else if(this.polygonMode <= 0)
                         {
                             ++this.i;
                             return;
@@ -2975,7 +3013,8 @@ let createConfigMenu = () =>
 
 let createSystemMenu = () =>
 {
-    let tmpAxiom = renderer.system.axiom;
+    let values = renderer.system.object;
+    let tmpAxiom = values.axiom;
     let axiomEntry = ui.createEntry
     ({
         text: tmpAxiom,
@@ -2986,7 +3025,7 @@ let createSystemMenu = () =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = renderer.system.turnAngle;
+    let tmpAngle = values.turnAngle;
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
@@ -2999,7 +3038,7 @@ let createSystemMenu = () =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = renderer.system.rulesStrings;
+    let tmpRules = values.rules;
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
@@ -3045,7 +3084,7 @@ let createSystemMenu = () =>
             ruleStack.children = ruleEntries;
         }
     });
-    let tmpIgnore = [...renderer.system.ignoreList].join('');
+    let tmpIgnore = values.ignoreList;
     let ignoreEntry = ui.createEntry
     ({
         text: tmpIgnore,
@@ -3057,7 +3096,7 @@ let createSystemMenu = () =>
             tmpIgnore = nt;
         }
     });
-    let tmpSeed = renderer.system.seed;
+    let tmpSeed = values.seed;
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
@@ -4374,11 +4413,7 @@ var getInternalState = () => JSON.stringify
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
-        axiom: renderer.system.axiom,
-        rules: renderer.system.rulesStrings,
-        turnAngle: renderer.system.turnAngle,
-        ignoreList: [...renderer.system.ignoreList].join(''),
-        seed: renderer.system.seed
+        ...renderer.system.object
     },
     savedSystems: Object.fromEntries(savedSystems)
 });
