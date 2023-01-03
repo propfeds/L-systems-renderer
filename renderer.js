@@ -53,12 +53,16 @@ var getDescription = (language) =>
     let descs =
     {
         en:
-`An educational tool that lets you model various fractal figures and plants.
+`An educational tool that allows you to model plants and other fractal figures.
 
-Features:
+Supported L-system features:
+- Stochastic (randomised) rules
+- 3D turtle controls
+- Polygon modelling
+
+Other features:
 - Can save a whole army of systems!
-- Stochastic (randomised) and 3D systems
-- Camera modes: fixed and turtle-following
+- Camera modes: static and turtle-following
 - Drawing speed and advanced stroke options!
 
 Warning: v0.20 might break your internal state. Be sure to back it up, and ` +

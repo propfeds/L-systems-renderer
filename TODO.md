@@ -1,12 +1,12 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [Currently Digesting](#currently-digesting)
+  - [0.21 - no version name](#021---no-version-name)
   - [1.00 - Mistletoe Edition](#100---mistletoe-edition)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## Currently Digesting
+## 0.21 - no version name
 
 - [x] Renderer menu:
   - [x] It is better to close the menu every time, than only when asterisk
@@ -22,22 +22,26 @@
 and show them in the menu. This way, if they're invalid you can show a syntax
 error instead of stripping it!
 - [x] Button to clear LS menu (equivalent to renderer reset)
+- [x] Modelling
+  - [x] `~`: Incorporate a predefined surface - used to store a model for each
+  symbol
+  - [x] `{}`: The polygon tool
+    - `.`: Record a vertex - can be used for faster renderering
+
+## 1.00 - Mistletoe Edition
 
 - [ ] Add more comments in the code
+- [ ] Turtle controls summary page in guide
+- [ ] Table of Contents in guide (replaces Construct on non-example pages)
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
+- [ ] Localisation
 
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
-
-## 1.00 - Mistletoe Edition
-
-- Alternate name: Parastichy
-
-- Contain a new default system for the update, like some flowers
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
@@ -54,12 +58,7 @@ error instead of stripping it!
   would've been already stripped down by the time it gets to the turtle
 
 - [ ] Alternate modelling scheme: using symbols? (chapter 5 of abop)
-- [ ] Custom models for each symbol
-  - Honestly this one might be easiest out of the 3, but the modelling without
-  polygons afterwards would be pain
-- Abop page 221: `~`: Incorporate a predefined surface.
-  - This can be used to store a model for each symbol
-  - `.`: Record a vertex. This can be used for faster renderering.
+- [ ] Another model format for each symbol
   - Array of Vector3s denoting a path of vertices
     - Don't write `(0, 0, 0)` at start or end
     - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
