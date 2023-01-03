@@ -134,6 +134,7 @@ const locStrings =
         btnMenuSave: 'Save/load',
         btnMenuTheory: 'Settings',
         btnMenuManual: 'User guide',
+        btnResume: 'Resume: {0}',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
 
@@ -1889,7 +1890,11 @@ class Renderer
             return 0;
 
         let pf = this.progressFrac;
-        return pf[0] * 100 / pf[1];
+        let result = pf[0] * 100 / pf[1];
+        if(isNaN(result))
+            result = 0;
+
+        return result;
     }
     /**
      * Returns the current progress as a string.
@@ -2356,6 +2361,7 @@ let manualSystems =
         config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
     }
 };
+let tmpSystem = null;
 let tmpSystemName = getLoc('defaultSystemName');
 let tmpSystemDesc = getLoc('noDescription');
 
@@ -2592,6 +2598,15 @@ var getUpgradeListDelegate = () =>
     createWorldMenu().show());
     theoryButton.row = 2;
     theoryButton.column = 0;
+    let resumeButton = createButton(Localization.format(getLoc('btnResume'),
+    tmpSystemName), () =>
+    {
+        renderer.applySystem = tmpSystem;
+        tmpSystem = null;
+        resumeButton.isVisible = false;
+    });
+    resumeButton.row = 2;
+    resumeButton.column = 1;
 
     let stack = ui.createScrollView
     ({
@@ -2661,8 +2676,9 @@ var getUpgradeListDelegate = () =>
                         sysButton,
                         cfgButton,
                         slButton,
+                        manualButton,
                         theoryButton,
-                        manualButton
+                        resumeButton
                     ]
                 })
             ]
@@ -4612,7 +4628,12 @@ var getInternalState = () => JSON.stringify
         backtrackTail: renderer.backtrackTail,
         hesitate: renderer.hesitate
     },
-    system:
+    system: tmpSystem ?
+    {
+        title: tmpSystemName,
+        desc: tmpSystemDesc,
+        ...tmpSystem.object
+    } :
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
@@ -4642,20 +4663,17 @@ var setInternalState = (stateStr) =>
         resetLvlOnConstruct = state.resetLvlOnConstruct;
         measurePerformance = state.measurePerformance;
         
-        tmpSystemName = state.system.title;
-        tmpSystemDesc = state.system.desc;
-        let system;
         if('system' in state)
         {
-            system = new LSystem(state.system.axiom, state.system.rules,
+            tmpSystemName = state.system.title;
+            tmpSystemDesc = state.system.desc;
+            tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList);
         }
-        else
-            system = arrow;
         
         if('renderer' in state)
         {
-            renderer = new Renderer(system, state.renderer.figureScale,
+            renderer = new Renderer(new LSystem(), state.renderer.figureScale,
             state.renderer.cameraMode, state.renderer.camX, state.renderer.camY,
             state.renderer.camZ, state.renderer.followFactor,
             state.renderer.loopMode, state.renderer.upright,
