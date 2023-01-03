@@ -2603,10 +2603,10 @@ var getUpgradeListDelegate = () =>
     {
         renderer.applySystem = tmpSystem;
         tmpSystem = null;
-        resumeButton.isVisible = false;
     });
     resumeButton.row = 2;
     resumeButton.column = 1;
+    resumeButton.isVisible = () => tmpSystem ? true : false;
 
     let stack = ui.createScrollView
     ({
@@ -3371,6 +3371,7 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                tmpSystem = null;
                                 menu.hide();
                             }
                         }),
@@ -3609,6 +3610,7 @@ let createSystemClipboardMenu = (values) =>
                         renderer.applySystem = new LSystem(sv.system.axiom,
                         sv.system.rules, sv.system.turnAngle,
                         sv.system.seed, sv.system.ignoreList);
+                        tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
                         menu.hide();
@@ -4010,6 +4012,7 @@ let createViewMenu = (title) =>
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
                                 tmpSystemName = title;
@@ -4304,7 +4307,7 @@ let createManualMenu = () =>
                                 let s = manualSystems[manualPages[page].system];
                                 Sound.playClick();
                                 renderer.applySystem = s.system;
-
+                                tmpSystem = null;
                                 if('config' in s)
                                     renderer.configureStaticCamera(...s.config);
 
