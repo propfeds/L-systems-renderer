@@ -11,7 +11,7 @@ Supported L-system features:
 
 Other features:
 - Can save a whole army of systems!
-- Camera modes: fixed and turtle-following
+- Camera modes: static and turtle-following
 - Drawing speed and advanced stroke options!
 
 In 0.20, more care has been taken with regards to the internal state, as it's

@@ -2505,8 +2505,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        displacementX: 6,
-        displacementY: 5,
+        margin: new Thickness(4, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
@@ -2614,14 +2613,14 @@ var getUpgradeListDelegate = () =>
 
     let stack = ui.createScrollView
     ({
-        padding: new Thickness(4, 6),
+        padding: new Thickness(6, 8),
         content: ui.createStackLayout
         ({
             children:
             [
                 ui.createGrid
                 ({
-                    columnSpacing: 6,
+                    columnSpacing: 8,
                     rowSpacing: 6,
                     rowDefinitions:
                     [
@@ -2662,11 +2661,11 @@ var getUpgradeListDelegate = () =>
                 ui.createBox
                 ({
                     heightRequest: 0,
-                    // margin: new Thickness(0, 2)
+                    // margin: new Thickness(0, 6)
                 }),
                 ui.createGrid
                 ({
-                    columnSpacing: 6,
+                    columnSpacing: 8,
                     rowSpacing: 6,
                     rowDefinitions:
                     [
