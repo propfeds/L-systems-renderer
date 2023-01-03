@@ -20,7 +20,7 @@ internal state in the theory menu, so please back it up.
 
 ## Installation
 
-Current version: 0.20.2
+Current version: 0.21
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to this theory's raw code. Copy the page's URL.

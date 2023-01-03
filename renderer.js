@@ -89,6 +89,7 @@ let savedModels = new Map();
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
 const MAX_CHARS_PER_TICK = 10000;
+const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
     en:
@@ -176,6 +177,7 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
+        labelEntryCharLimit: 'Warning: The entry is longer than {0} chars and cannot be exported.',
 
         menuNaming: 'Save System',
         labelName: 'Title: ',
@@ -599,7 +601,7 @@ Centre: (lv/2-1, 0, 0)
 Upright`
             },
             {
-                title: 'Modelling: Dedicated models for symbols',
+                title: 'Modelling: Dedicated symbol models',
                 contents:
 `While the polygon mode is useful when it comes to building custom models, ` +
 `the problem of separating between models and growth processing rules still ` +
@@ -1175,17 +1177,28 @@ class LSystem
     getPurged(rules)
     {
         let result = [];
+        let idx = 0;
         for(let i = 0; i < rules.length; ++i)
         {
             // I hope this deep-copies
             if(rules[i])
-                result.push(rules[i]);
+            {
+                result[idx] = rules[i];
+                ++idx;
+            }
         }
         return result;
     }
     get object()
     {
-        return this.userInput;
+        return {
+            axiom: this.userInput.axiom,
+            rules: this.getPurged(this.userInput.rules),
+            turnAngle: this.userInput.turnAngle,
+            seed: this.userInput.seed,
+            ignoreList: this.userInput.ignoreList,
+            models: this.userInput.models
+        };
     }
     /**
      * Returns the system's string representation.
@@ -3520,8 +3533,18 @@ let createSystemClipboardMenu = (values) =>
         onTextChanged: (ot, nt) =>
         {
             tmpSys = nt;
+            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
         }
     });
+    let warningEntry = ui.createLatexLabel
+    ({
+        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
+        text: Localization.format(getLoc('labelEntryCharLimit'),
+        ENTRY_CHAR_LIMIT),
+        margin: new Thickness(0, 0, 0, 4),
+        verticalOptions: LayoutOptions.CENTER
+    });
+
     let menu = ui.createPopup
     ({
         title: getLoc('menuClipboard'),
@@ -3535,6 +3558,7 @@ let createSystemClipboardMenu = (values) =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
+                warningEntry,
                 ui.createButton
                 ({
                     text: getLoc('btnConstruct'),
@@ -3567,8 +3591,18 @@ let createStateClipboardMenu = (values) =>
         onTextChanged: (ot, nt) =>
         {
             tmpState = nt;
+            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
         }
     });
+    let warningEntry = ui.createLatexLabel
+    ({
+        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
+        text: Localization.format(getLoc('labelEntryCharLimit'),
+        ENTRY_CHAR_LIMIT),
+        margin: new Thickness(0, 0, 0, 4),
+        verticalOptions: LayoutOptions.CENTER
+    });
+
     let menu = ui.createPopup
     ({
         title: getLoc('menuClipboard'),
@@ -3582,6 +3616,7 @@ let createStateClipboardMenu = (values) =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
+                warningEntry,
                 ui.createButton
                 ({
                     text: getLoc('btnImport'),
@@ -3603,7 +3638,7 @@ let createViewMenu = (title) =>
     let systemObj = savedSystems.get(title);
     let values = systemObj.system;
     let tmpDesc = systemObj.desc;
-    if(tmpDesc in [null, undefined])
+    if(!tmpDesc)
         tmpDesc = getLoc('noDescription');
     let rendererValues = systemObj.config;
     let tmpZE = rendererValues[0];
@@ -3722,7 +3757,9 @@ let createViewMenu = (title) =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = values.rules;
+    let tmpRules = [];
+    for(let i = 0; i < values.rules.length; ++i)
+        tmpRules[i] = values.rules[i];
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
@@ -3960,7 +3997,7 @@ let createViewMenu = (title) =>
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
-                                menu.hide();
+                                // menu.hide();
                             }
                         }),
                         ui.createButton

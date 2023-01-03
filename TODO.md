@@ -23,12 +23,15 @@ and show them in the menu. This way, if they're invalid you can show a syntax
 error instead of stripping it!
 - [x] Button to clear LS menu (equivalent to renderer reset)
 
-- [ ] Compress internal state? LZW, LZP
 - [ ] Add more comments in the code
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
+
+- [ ] Compress internal state? LZW, LZP
+- [ ] Ask Gilles about changing the spline used in 3D graph
+- [ ] How about locking rotation? (for Navier Stokes)
 
 ## 1.00 - Mistletoe Edition
 
