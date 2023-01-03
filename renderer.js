@@ -98,7 +98,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.21 - Work in Progress',
+        versionName: 'v0.21 beta',
         equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -509,7 +509,11 @@ Centre: (0, 0, 0)`
 |: reverses turtle direction.
 
 Note: In other L-system implementations, < and > may be used instead of \\ ` +
-`and / like in this theory.`
+`and / like in this theory.
+
+Note 2: Other L-system implementations may also start the turtle facing the ` +
+`y-axis or z-axis instead of the x-axis. To adopt those systems into LSR, ` +
+`swap the axes around until the desired results are achieved.`
             },
             {
                 system: 'blackboard',   // Please do not translate this line.
@@ -4064,6 +4068,14 @@ let createViewMenu = (title) =>
 
 let createSaveMenu = () =>
 {
+    let savedSystemsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelSavedSystems'),
+        savedSystems.size),
+        // horizontalOptions: LayoutOptions.CENTER,
+        verticalOptions: LayoutOptions.CENTER,
+        margin: new Thickness(0, 12)
+    });
     let getSystemGrid = () =>
     {
         let children = [];
@@ -4083,6 +4095,8 @@ let createSaveMenu = () =>
             children.push(btn);
             ++i;
         }
+        savedSystemsLabel.text = Localization.format(
+        getLoc('labelSavedSystems'), savedSystems.size);
         return children;
     };
     let createViewButton = (title) =>
@@ -4174,14 +4188,7 @@ let createSaveMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createLatexLabel
-                ({
-                    text: Localization.format(getLoc('labelSavedSystems'),
-                    savedSystems.size),
-                    // horizontalOptions: LayoutOptions.CENTER,
-                    verticalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 12)
-                }),
+                savedSystemsLabel,
                 ui.createScrollView
                 ({
                     heightRequest: ui.screenHeight * 0.32,
