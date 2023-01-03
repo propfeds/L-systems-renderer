@@ -4,13 +4,15 @@ L-systems renderer in Exponential Idle.
 
 ## Features
 
+Supported L-system features:
+- Stochastic (randomised) rules
+- 3D turtle controls
+- Polygon modelling
+
+Other features:
 - Can save a whole army of systems!
-- Stochastic (randomised) and 3D systems
 - Camera modes: fixed and turtle-following
 - Drawing speed and advanced stroke options!
-
-In 0.18, the renderer's configuration was slightly messed up due to format
-changes to the internal state.
 
 In 0.20, more care has been taken with regards to the internal state, as it's
 been converted to JSON instead of pure text. However, it still might break.

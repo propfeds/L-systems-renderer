@@ -88,7 +88,7 @@ let savedSystems = new Map();
 let savedModels = new Map();
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
-const MAX_CHARS_PER_TICK = 10000;
+const MAX_CHARS_PER_TICK = 5000;
 const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
@@ -1068,7 +1068,7 @@ class LSystem
          * @type {string} the starting sequence.
          * @public
          */
-        this.axiom = this.getRecursiveModels(axiom);
+        this.axiom = this.getRecursiveModels(axiom).result;
         /**
          * @type {number} the turning angle (in degrees).
          * @public
@@ -1096,19 +1096,25 @@ class LSystem
     }
     rerollAxiom()
     {
-        this.axiom = this.getRecursiveModels(this.userInput.axiom);
+        this.axiom = this.getRecursiveModels(this.userInput.axiom).result;
     }
     getRecursiveModels(sequence)
     {
+        let result;
+        let count = 0;
         if(typeof sequence === 'string')
         {
-            let result = '';
+            result = '';
             for(let i = 0; i < sequence.length; ++i)
             {
                 let deriv;
                 if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
-                    deriv = this.getRecursiveModels(
+                {
+                    let r = this.getRecursiveModels(
                     this.models.get(sequence[i + 1]));
+                    deriv = r.result;
+                    count += r.count;
+                }
                 else
                     deriv = sequence[i];
 
@@ -1116,17 +1122,24 @@ class LSystem
                     result += deriv;
                 else
                     result += deriv[this.random.nextRange(0, deriv.length)];
+                
+                count += deriv.length;
             }
-            return result;
         }
         else
         {
-            let result = [];
+            result = [];
             for(let i = 0; i < sequence.length; ++i)
-                result.push(this.getRecursiveModels(sequence[i]));
-            
-            return result;
+            {
+                let r = this.getRecursiveModels(sequence[i]);
+                result.push(r.result);
+                count += r.count;
+            }
         }
+        return {
+            count: count,
+            result: result
+        };
     }
     /**
      * Derive a sequence from the input string.
@@ -1136,9 +1149,10 @@ class LSystem
     derive(sequence, start = 0)
     {
         let result = '';
+        let count = 0;
         for(let i = start; i < sequence.length; ++i)
         {
-            if(result.length > MAX_CHARS_PER_TICK)
+            if(result.length + count > MAX_CHARS_PER_TICK)
             {
                 return {
                     next: i,
@@ -1147,10 +1161,18 @@ class LSystem
             }
             let deriv;
             if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
-                deriv = this.getRecursiveModels(
+            {
+                let r = this.getRecursiveModels(
                 this.models.get(sequence[i + 1]));
+                deriv = r.result;
+                count += r.count - r.result.length;
+            }
             else if(this.rules.has(sequence[i]))
-                deriv = this.getRecursiveModels(this.rules.get(sequence[i]));
+            {
+                let r = this.getRecursiveModels(this.rules.get(sequence[i]));
+                deriv = r.result;
+                count += r.count - r.result.length;
+            }
             else
                 deriv = sequence[i];
 
@@ -3769,7 +3791,6 @@ let createViewMenu = (title) =>
             onTextChanged: (ot, nt) =>
             {
                 tmpRules[i] = nt;
-                // log(tmpRules.toString())
             }
         }));
     }
@@ -3799,7 +3820,6 @@ let createViewMenu = (title) =>
                 onTextChanged: (ot, nt) =>
                 {
                     tmpRules[i] = nt;
-                    // log(tmpRules.toString())
                 }
             }));
             rulesLabel.text = Localization.format(getLoc('labelRules'),
