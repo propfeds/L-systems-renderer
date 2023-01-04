@@ -170,7 +170,7 @@ const locStrings =
         labelUpright: '* Upright x-axis: ',
         labelBTTail: 'Draw tail end: ',
         labelLoadModels: '* (Teaser) Load models: ',
-        labelQuickdraw: '* Quickdraw straight lines: ',
+        labelQuickdraw: '* Quickdraw (unstable): ',
         labelQuickBT: '* Quick backtrack: ',
         labelHesitate: '* Stutter on backtrack: ',
         labelBTList: '* Backtrack list: ',
@@ -276,10 +276,9 @@ Renderer logic:
 `mode draws levels consecutively.
 - Draw tail end: whether to draw the last backtrack after finishing the ` +
 `sequence.
-- Load models: whether to load models. (Coming in a future update!)
 
 Advanced stroke options:
-- Quickdraw straight lines: skips over straight consecutive segments.
+- Quickdraw: skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
 - Stutter on backtrack: pause for one tick after backtracking for more ` +
 `accurate figures.
@@ -707,9 +706,9 @@ Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             {
                 title: 'Appendix: Advanced artistry in LSR (3)',
                 contents:
-`Welcome back, class! Today's class includes an extension of last class, and ` +
-`I'll be going through the concept of looping. This relates to last week's ` +
-`class' backtrack options, as you will see.
+`Welcome back, class! Today is only an extension of last class, and so we'll ` +
+`be going through the concept of looping. This relates to last week's class ` +
+`about backtracking.
 
 First, I want everybody to construct a Cantor set as follows:
 Axiom: X++F
@@ -727,8 +726,12 @@ Now, enter the Level looping mode, turn 'Draw tail end' on and draw the ` +
 `forth when it meets the bottom left corner. Can anybody confirm that? Good.
 Now, turn 'Draw tail end' off. Can anyone tell me what would happen?
 That's right. The turtle will keep going around in a loop of this delicious ` +
-`Cantor bread. It loves it.
-The art of looping: draw tail end, polygon blocks, backtracking.`
+`Cantor bread. It really loves it.
+
+Generally, in figures such as this or the Koch snowflake, it'd be better to ` +
+`loop than to eat your own tail. Fortunately for you, there aren't many ` +
+`figures like these. Do note though, that quick backtrack will not trigger, ` +
+`due to the tail end being a backtrack itself, of course.`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
@@ -2933,9 +2936,15 @@ let createConfigMenu = () =>
         }
     });
     let tmpModel = renderer.loadModels;
+    let modelLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelLoadModels'),
+        row: 2,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
     let modelSwitch = ui.createSwitch
     ({
-        isVisible: false,
         isToggled: tmpModel,
         row: 2,
         column: 1,
@@ -3085,7 +3094,7 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                rowDefinitions: [40, 40, 40],
+                                rowDefinitions: [40, 40],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -3098,15 +3107,7 @@ let createConfigMenu = () =>
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    tailSwitch,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelLoadModels'),
-                                        row: 2,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
-                                    modelSwitch
+                                    tailSwitch
                                 ]
                             }),
                             ui.createBox

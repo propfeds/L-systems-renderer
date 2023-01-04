@@ -29,6 +29,7 @@ error instead of stripping it!
     - `.`: Record a vertex - can be used for faster renderering
 - [ ] % symbol: Cut off branch's remainder
   - Simple search
+- [ ] Rework quickdraw / BT logic entirely
 
 ## 1.00 - Mistletoe Edition
 
