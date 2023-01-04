@@ -172,7 +172,7 @@ const locStrings =
         labelLoadModels: '* (Teaser) Load models: ',
         labelQuickdraw: '* Quickdraw straight lines: ',
         labelQuickBT: '* Quick backtrack: ',
-        labelHesitate: '* Pause after backtrack: ',
+        labelHesitate: '* Stutter on backtrack: ',
         labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -182,7 +182,7 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
-        labelEntryCharLimit: 'Warning: The entry is longer than {0} chars and cannot be exported.',
+        labelEntryCharLimit: 'Warning: This entry has been capped at {0} chars. Proceed with caution.',
 
         menuNaming: 'Save System',
         labelName: 'Title: ',
@@ -192,7 +192,7 @@ const locStrings =
         duplicateSuffix: ' (copy)',
 
         menuTheory: 'Theory Settings',
-        labelOfflineReset: 'Reset graph after tabbing in: ',
+        labelOfflineReset: 'Reset graph on tabbing in: ',
         labelResetLvl: 'Reset level on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
@@ -281,7 +281,7 @@ Renderer logic:
 Advanced stroke options:
 - Quickdraw straight lines: skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
-- Pause after backtrack: pause for one tick after backtracking for more ` +
+- Stutter on backtrack: pause for one tick after backtracking for more ` +
 `accurate figures.
 - Backtrack list: sets stopping symbols for backtracking.`
             },
@@ -696,11 +696,11 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 `comes to both precision and aesthetics.
 - Quick backtrack: this one's a reliable one, trading only a little beauty ` +
 `for some extra speed.
-- Pause after backtrack: now, this is what I mean when I say hesitation is ` +
+- Stutter on backtrack: now, this is what I mean when I say hesitation is ` +
 `not defeat. Pausing for even just one tick can give your figure just enough ` +
 `cohesion it really needs. To prove this, try loading the Arrow weed then ` +
 `alternate between drawing with this option on and off, while on tick length ` +
-`0.1, or 10 tickspeed. There is a noticeable difference, even from afar.
+`0.1, or 10 tickspeed. There will be a noticeable difference, even from afar.
 - Backtrack list: usually, I would say that if you are here to draw ` +
 `L-systems, I recommend not to edit this option, but for the brave and ` +
 `worthy, you could create truly mesmerising results with this.
@@ -2509,7 +2509,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        margin: new Thickness(4, 4),
+        margin: new Thickness(5, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
@@ -2639,7 +2639,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 0,
                             column: 1,
-                            columnSpacing: 6,
+                            columnSpacing: 7,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -2652,7 +2652,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 1,
                             column: 1,
-                            columnSpacing: 6,
+                            columnSpacing: 7,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
