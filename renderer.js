@@ -355,10 +355,7 @@ Note: In the original grammar, the lower-case f is used to move the turtle ` +
 `forward without drawing anything, but that is simply impossible with this ` +
 `game's 3D graph. So in this theory, any non-reserved symbol will draw a ` +
 `line. This includes both upper- and lower-case letters, and potentially ` +
-`anything you can throw at it.
-
-Note 2: In this theory, unlike other L-system implementations, the turtle ` +
-`starts by heading to the right instead of upwards.`
+`anything you can throw at it.`
             },
             {
                 system: 'dragon',       // Please do not translate this line.
@@ -710,7 +707,28 @@ Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             {
                 title: 'Appendix: Advanced artistry in LSR (3)',
                 contents:
-`The art of looping: draw tail end, polygon blocks, backtracking.`
+`Welcome back, class! Today's class includes an extension of last class, and ` +
+`I'll be going through the concept of looping. This relates to last week's ` +
+`class' backtrack options, as you will see.
+
+First, I want everybody to manually construct a Cantor set as follows:
+Axiom: X++F
+X = +Y-XFX-Y+
+F = FFF
+Y = YY
+Turning angle: 90°
+
+Then, apply the following static camera:
+Scale: 0.5*3^lv
+Centre: (0.5*3^lv, 2^(lv-1)-.5, 0)
+
+Now, enter the Level looping mode, turn 'Draw tail end' on and draw the ` +
+`Cantor set at level 2 or higher. You will see that the turtle goes back and ` +
+`forth when it meets the bottom left corner. Can anybody confirm that? Good.
+Now, turn 'Draw tail end' off. Can anyone tell me what would happen?
+That's right. The turtle will keep going around in a loop of this delicious ` +
+`Cantor bread. It loves it.
+The art of looping: draw tail end, polygon blocks, backtracking.`
             },
             {
                 system: 'cultFF',       // Please do not translate this line.
@@ -1747,13 +1765,14 @@ class Renderer
 
                         let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
+
+                        this.forward();
                         if(!this.quickBacktrack || breakAhead)
                             this.stack.push([this.state, this.ori]);
-                        
-                        this.forward();
 
                         if(this.quickDraw && !breakAhead && this.stack.length >
-                        0 && this.ori === this.stack[this.stack.length - 1][1])
+                        0 && this.ori === this.stack[this.stack.length - 1][1]
+                        && this.i < this.levels[this.lv].length - 1)
                             break;
                         else if(this.polygonMode <= 0)
                         {
@@ -1775,7 +1794,7 @@ class Renderer
                         this.reset(false);
                         break;
                     case 0:
-                        if(this.quickBacktrack && this.backtrackTail)
+                        if(this.backtrackTail)
                             this.state = new Vector3(0, 0, 0);
                         return;
                 }

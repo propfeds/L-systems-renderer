@@ -27,6 +27,8 @@ error instead of stripping it!
   symbol
   - [x] `{}`: The polygon tool
     - `.`: Record a vertex - can be used for faster renderering
+- [ ] % symbol: Cut off branch's remainder
+  - Simple search
 
 ## 1.00 - Mistletoe Edition
 
@@ -45,9 +47,6 @@ error instead of stripping it!
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
-
-- [ ] % symbol: Cut off branch's remainder
-  - Simple regex search
 
 - [ ] Parametric systems
   - Regex magic to separate string to actual sequence of symbols?
