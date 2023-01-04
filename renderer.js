@@ -711,7 +711,7 @@ Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
 `I'll be going through the concept of looping. This relates to last week's ` +
 `class' backtrack options, as you will see.
 
-First, I want everybody to manually construct a Cantor set as follows:
+First, I want everybody to construct a Cantor set as follows:
 Axiom: X++F
 X = +Y-XFX-Y+
 F = FFF
@@ -1759,20 +1759,31 @@ class Renderer
 
                         return;
                     default:
-                        if(this.system.ignoreList.has(
-                        this.levels[this.lv][this.i]))
+                        let ignored = this.system.ignoreList.has(
+                        this.levels[this.lv][this.i]);
+
+                        if(ignored)
+                        {
+                            if(this.quickDraw && this.stack.length > 0 &&
+                            this.ori === this.stack[this.stack.length - 1][1])
+                                this.stack.push([this.state, this.ori]);
                             break;
+                        }
+
+                        if(!this.quickBacktrack)
+                            this.stack.push([this.state, this.ori]);
+
+                        this.forward();
 
                         let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
-
-                        this.forward();
-                        if(!this.quickBacktrack || breakAhead)
+                        if(this.quickBacktrack && breakAhead)
                             this.stack.push([this.state, this.ori]);
 
-                        if(this.quickDraw && !breakAhead && this.stack.length >
-                        0 && this.ori === this.stack[this.stack.length - 1][1]
-                        && this.i < this.levels[this.lv].length - 1)
+                        if(this.quickDraw && !breakAhead &&
+                        (this.quickBacktrack || this.stack.length > 0 &&
+                        this.ori === this.stack[this.stack.length - 1][1]) &&
+                        this.i < this.levels[this.lv].length - 1)
                             break;
                         else if(this.polygonMode <= 0)
                         {
@@ -1785,13 +1796,18 @@ class Renderer
             }
             if(!this.backtrackTail || this.stack.length == 0)
             {
+                // log(this.stateString)
                 switch(this.loopMode)
                 {
                     case 2:
                         l.buy(1);
+                        if(this.backtrackTail)
+                            return;
                         break;
                     case 1:
                         this.reset(false);
+                        if(this.backtrackTail)
+                            return;
                         break;
                     case 0:
                         if(this.backtrackTail)
@@ -2311,11 +2327,10 @@ let manualSystems =
     snowflake:
     {
         system: new LSystem('[X]+[X]+[X]+[X]+[X]+[X]', [
-            'i',
             'X=F[+F][-F]X',
             'F=F[+i][-i]F',
             'i=Ii,IIi'
-        ], 60),
+        ], 60, 0, 'i'),
         config: ["2*2^lv", 0, 0, 0, false]
     },
     blackboard:
