@@ -100,7 +100,7 @@ const locStrings =
         versionName: 'v0.21',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
-        equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
+        equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
@@ -142,7 +142,7 @@ const locStrings =
         btnMenuSave: 'Save/load',
         btnMenuTheory: 'Settings',
         btnMenuManual: 'User guide',
-        btnResume: 'Resume: {0}',
+        btnResume: 'Resume – {0}',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
 
