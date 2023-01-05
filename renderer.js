@@ -86,12 +86,12 @@ let altTerEq = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let measurePerformance = false;
+let maxCharsPerTick = 5000;
 
 let savedSystems = new Map();
 let savedModels = new Map();
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
-const MAX_CHARS_PER_TICK = 5000;
 const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
@@ -200,6 +200,7 @@ const locStrings =
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
+        labelMaxCharsPerTick: 'Maximum loaded chars/tick: ',
         labelInternalState: 'Internal state: ',
 
         menuManual: 'User Guide ({0}/{1})',
@@ -317,6 +318,8 @@ Warning: The entry can only hold up to 5000 characters.
 `orientation (quaternion).
 - Measure performance: displays performance statistics at the top of the ` +
 `screen.
+- Maximum loaded chars/tick: adjusts how fast a system loads, in order to ` +
+`prevent 'Maximum statements' errors from occuring.
 - Internal state: allows you to export the entire save data.
 Warning: The entry can only hold up to 5000 characters.`
             },
@@ -1182,7 +1185,7 @@ class LSystem
         let count = 0;
         for(let i = start; i < sequence.length; ++i)
         {
-            if(result.length + count > MAX_CHARS_PER_TICK)
+            if(result.length + count > maxCharsPerTick)
             {
                 return {
                     next: i,
@@ -1456,7 +1459,7 @@ class Renderer
         for(let i = this.loaded + 1; i <= this.loadTarget; ++i)
         {
             // Threshold to prevent maximum statements error
-            if(charCount > MAX_CHARS_PER_TICK)
+            if(charCount > maxCharsPerTick)
                 return;
 
             if(i == 0)
@@ -3522,6 +3525,7 @@ let createNamingMenu = () =>
     let systemGrid = ui.createGrid
     ({
         columnDefinitions: ['70*', '30*'],
+        verticalOptions: LayoutOptions.START,
         children: getSystemGrid() 
     });
 
@@ -4164,6 +4168,7 @@ let createSaveMenu = () =>
     let systemGrid = ui.createGrid
     ({
         columnDefinitions: ['70*', '30*'],
+        verticalOptions: LayoutOptions.START,
         children: getSystemGrid() 
     });
 
@@ -4232,7 +4237,7 @@ let createSaveMenu = () =>
                 savedSystemsLabel,
                 ui.createScrollView
                 ({
-                    heightRequest: ui.screenHeight * 0.32,
+                    heightRequest: ui.screenHeight * 0.28,
                     content: systemGrid
                 })
             ]
@@ -4604,6 +4609,19 @@ let createWorldMenu = () =>
             }
         }
     });
+    let tmpMCPT = maxCharsPerTick;
+    let MCPTEntry = ui.createEntry
+    ({
+        text: tmpMCPT.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 4,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpMCPT = Number(nt);
+        }
+    });
 
     let menu = ui.createPopup
     ({
@@ -4647,15 +4665,23 @@ let createWorldMenu = () =>
                         MPSwitch,
                         ui.createLatexLabel
                         ({
-                            text: getLoc('labelInternalState'),
+                            text: getLoc('labelMaxCharsPerTick'),
                             row: 4,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        MCPTEntry,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelInternalState'),
+                            row: 5,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         ui.createButton
                         ({
                             text: getLoc('btnClipboard'),
-                            row: 4,
+                            row: 5,
                             column: 1,
                             heightRequest: 40,
                             onClicked: () =>
@@ -4687,6 +4713,7 @@ let createWorldMenu = () =>
                             camMeasurer.reset();
                         }
                         measurePerformance = tmpMP;
+                        maxCharsPerTick = tmpMCPT;
                         // menu.hide();
                     }
                 })
@@ -4706,6 +4733,7 @@ var getInternalState = () => JSON.stringify
     tickDelayMode: tickDelayMode,
     resetLvlOnConstruct: resetLvlOnConstruct,
     measurePerformance: measurePerformance,
+    maxCharsPerTick: maxCharsPerTick,
     renderer:
     {
         figureScale: renderer.figScaleStr,
@@ -4750,13 +4778,22 @@ var setInternalState = (stateStr) =>
     {
         let state = JSON.parse(stateStr);
         log(`Loading JSON state (version: ${state.version})`);
-        time = state.time;
-        page = state.page;
-        offlineReset = state.offlineReset;
-        altTerEq = state.altTerEq;
-        tickDelayMode = state.tickDelayMode;
-        resetLvlOnConstruct = state.resetLvlOnConstruct;
-        measurePerformance = state.measurePerformance;
+        if('time' in state)
+            time = state.time;
+        if('page' in state)
+            page = state.page;
+        if('offlineReset' in state)
+            offlineReset = state.offlineReset;
+        if('altTerEq' in state)
+            altTerEq = state.altTerEq;
+        if('tickDelayMode' in state)
+            tickDelayMode = state.tickDelayMode;
+        if('resetLvlOnConstruct' in state)
+            resetLvlOnConstruct = state.resetLvlOnConstruct;
+        if('measurePerformance' in state)
+            measurePerformance = state.measurePerformance;
+        if('maxCharsPerTick' in state)
+            maxCharsPerTick = state.maxCharsPerTick;
         
         if('system' in state)
         {
@@ -4779,7 +4816,8 @@ var setInternalState = (stateStr) =>
         else
             renderer = new Renderer(system);
 
-        savedSystems = new Map(Object.entries(state.savedSystems));
+        if('savedSystems' in state)
+            savedSystems = new Map(Object.entries(state.savedSystems));
     }
     // Doesn't even need checking the version number; if it appears at all then
     // it's definitely written before switching to JSON
