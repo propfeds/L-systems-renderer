@@ -435,7 +435,7 @@ The symbol F here represents the stem and branches, which expand to twice ` +
 `their size every level. Meanwhile X, sitting at the top of each branch, ` +
 `represents what's known as a vegetative apex - the tip of an axis (stem or ` +
 `branch) that grows into new branches and leaves.
-This one though, oddly enough, does not have leaves.
+Let's try cutting its branches off using %!
 
 Axiom: X
 F = FF
