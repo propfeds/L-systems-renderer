@@ -3528,6 +3528,12 @@ let createNamingMenu = () =>
         verticalOptions: LayoutOptions.START,
         children: getSystemGrid() 
     });
+    let systemGridScroll = ui.createScrollView
+    ({
+        heightRequest: () => Math.max(1, Math.min(ui.screenHeight * 0.2,
+        systemGrid.height)),
+        content: systemGrid
+    });
 
     let menu = ui.createPopup
     ({
@@ -3579,11 +3585,7 @@ let createNamingMenu = () =>
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 12)
                 }),
-                ui.createScrollView
-                ({
-                    heightRequest: ui.screenHeight * 0.2,
-                    content: systemGrid
-                }),
+                systemGridScroll,
                 ui.createBox
                 ({
                     heightRequest: 1,
@@ -4107,7 +4109,7 @@ let createViewMenu = (title) =>
                 })
             ]
         })
-    })
+    });
     return menu;
 }
 
@@ -4169,9 +4171,14 @@ let createSaveMenu = () =>
     ({
         columnDefinitions: ['70*', '30*'],
         verticalOptions: LayoutOptions.START,
-        children: getSystemGrid() 
+        children: getSystemGrid()
     });
-
+    let systemGridScroll = ui.createScrollView
+    ({
+        heightRequest: () => Math.max(1, Math.min(ui.screenHeight * 0.32,
+        systemGrid.height)),
+        content: systemGrid
+    });
     let menu = ui.createPopup
     ({
         title: getLoc('menuSave'),
@@ -4235,14 +4242,10 @@ let createSaveMenu = () =>
                     margin: new Thickness(0, 6)
                 }),
                 savedSystemsLabel,
-                ui.createScrollView
-                ({
-                    heightRequest: ui.screenHeight * 0.28,
-                    content: systemGrid
-                })
+                systemGridScroll
             ]
         })
-    })
+    });
     return menu;
 }
 
@@ -4446,7 +4449,7 @@ let createManualMenu = () =>
                 })
             ]
         })
-    })
+    });
     return menu;
 }
 
@@ -4626,7 +4629,6 @@ let createWorldMenu = () =>
     let menu = ui.createPopup
     ({
         title: getLoc('menuTheory'),
-        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
@@ -4714,7 +4716,7 @@ let createWorldMenu = () =>
                         }
                         measurePerformance = tmpMP;
                         maxCharsPerTick = tmpMCPT;
-                        // menu.hide();
+                        menu.hide();
                     }
                 })
             ]
