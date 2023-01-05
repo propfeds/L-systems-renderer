@@ -111,6 +111,7 @@ const locStrings =
         varTdDesc: '\\text{{Tick length: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick length: }}\\infty',
         varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
+        upgResumeInfo: 'Resumes the last rendered system',
 
         saPatienceTitle: 'Watching Grass Grow',
         saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
@@ -2441,7 +2442,7 @@ var init = () =>
         {
             lvlControls.updateAllButtons();
             renderer.update(l.level);
-        }
+        };
         lvlControls = new VariableControls(l);
     }
     // ts (Tickspeed)
@@ -2456,7 +2457,7 @@ var init = () =>
                 (level / 10).toString());
             }
             return Localization.format(getLoc('varTsDesc'), level.toString());
-        }
+        };
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, progress, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
@@ -2468,9 +2469,23 @@ var init = () =>
         {
             tsControls.updateAllButtons();
             time = 0;
-        }
+        };
         tsControls = new VariableControls(ts, true);
     }
+    // Resume last system (upgrade idea)
+    // { 
+    //     rs = theory.createSingularUpgrade(0, progress, new FreeCost);
+    //     rs.getDescription = (_) => Localization.format(getLoc('btnResume'),
+    //     tmpSystemName);
+    //     rs.info = getLoc('upgResumeInfo');
+    //     rs.boughtOrRefunded = (_) =>
+    //     {
+    //         renderer.applySystem = tmpSystem;
+    //         tmpSystem = null;
+    //         rs.level = 0;
+    //         rs.isAvailable = false;
+    //     };
+    // }
 
     theory.createSecretAchievement(0, null,
         getLoc('saPatienceTitle'),
@@ -2651,10 +2666,10 @@ var getUpgradeListDelegate = () =>
     {
         renderer.applySystem = tmpSystem;
         tmpSystem = null;
-    });
-    resumeButton.row = 2;
-    resumeButton.column = 1;
+    }, ui.screenHeight * 0.05);
+    resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
     resumeButton.isVisible = () => tmpSystem ? true : false;
+    resumeButton.margin = new Thickness(0, 0, 0, 2);
 
     let stack = ui.createScrollView
     ({
@@ -2663,6 +2678,7 @@ var getUpgradeListDelegate = () =>
         ({
             children:
             [
+                resumeButton,
                 ui.createGrid
                 ({
                     columnSpacing: 8,
@@ -2725,8 +2741,7 @@ var getUpgradeListDelegate = () =>
                         cfgButton,
                         slButton,
                         manualButton,
-                        theoryButton,
-                        resumeButton
+                        theoryButton
                     ]
                 })
             ]
@@ -3530,7 +3545,7 @@ let createNamingMenu = () =>
     });
     let systemGridScroll = ui.createScrollView
     ({
-        heightRequest: () => Math.max(1, Math.min(ui.screenHeight * 0.2,
+        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.2,
         systemGrid.height)),
         content: systemGrid
     });
@@ -4175,7 +4190,7 @@ let createSaveMenu = () =>
     });
     let systemGridScroll = ui.createScrollView
     ({
-        heightRequest: () => Math.max(1, Math.min(ui.screenHeight * 0.32,
+        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.32,
         systemGrid.height)),
         content: systemGrid
     });
