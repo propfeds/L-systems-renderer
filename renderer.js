@@ -420,6 +420,8 @@ Stack operations are represented with square brackets:
 [: records the turtle's position and facing onto a stack.
 ]: take the topmost element (position and facing) off the stack, and move ` +
 `the turtle there.
+%: cuts off the remainder of its branch by searching for the closing bracket ` +
+`] in the branch.
 
 Note: Due to the game's 3D graph only allowing one continuous path to be ` +
 `drawn, the turtle will not actually divide itself, but instead backtrack ` +
@@ -1194,7 +1196,29 @@ class LSystem
                 };
             }
             let deriv;
-            if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
+            if(sequence[i] == '%')
+            {
+                let branchLvl = 0;
+                for(; i < sequence.length; ++i)
+                {
+                    switch(sequence[i])
+                    {
+                        case '[':
+                            ++branchLvl;
+                            break;
+                        case ']':
+                            --branchLvl;
+                            break;
+                    }
+                    if(branchLvl < 0)
+                        break;
+                }
+                if(sequence[i] == ']')
+                    deriv = sequence[i];
+                else
+                    continue;
+            }
+            else if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
             {
                 let r = this.getRecursiveModels(
                 this.models.get(sequence[i + 1]));

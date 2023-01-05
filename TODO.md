@@ -27,10 +27,9 @@ error instead of stripping it!
   symbol
   - [x] `{}`: The polygon tool
     - `.`: Record a vertex - can be used for faster renderering
-- [ ] % symbol: Cut off branch's remainder
+- [x] % symbol: Cut off branch's remainder
   - Simple search
 - [x] Configurable max chars per tick
-
 - [x] Table of Contents in guide (replaces Construct on non-example pages)
 
 ## 1.00 - Mistletoe Edition
