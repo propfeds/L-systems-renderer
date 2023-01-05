@@ -29,13 +29,13 @@ error instead of stripping it!
     - `.`: Record a vertex - can be used for faster renderering
 - [ ] % symbol: Cut off branch's remainder
   - Simple search
-- [ ] Rework quickdraw / BT logic entirely
+
+- [x] Table of Contents in guide (replaces Construct on non-example pages)
 
 ## 1.00 - Mistletoe Edition
 
 - [ ] Add more comments in the code
 - [ ] Turtle controls summary page in guide
-- [ ] Table of Contents in guide (replaces Construct on non-example pages)
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -45,6 +45,7 @@ error instead of stripping it!
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
+- [ ] Rework quickdraw / BT logic
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`

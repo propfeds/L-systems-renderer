@@ -28,7 +28,6 @@ import { Color } from '../api/ui/properties/Color';
 import { FontFamily } from '../api/ui/properties/FontFamily';
 import { Keyboard } from '../api/ui/properties/Keyboard';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
-import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
@@ -98,7 +97,9 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.21 beta',
+        versionName: 'v0.21',
+        welcomeSystemName: 'Arrow',
+        welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -132,6 +133,8 @@ const locStrings =
         btnNext: 'Next',
         btnClose: 'Close',
         btnImport: 'Import',
+        btnContents: 'Table of\nContents',
+        btnPage: '{0}',
 
         btnMenuLSystem: 'L-system menu',
         btnMenuRenderer: 'Renderer menu',
@@ -182,7 +185,7 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
-        labelEntryCharLimit: 'Warning: This entry has been capped at {0} chars. Proceed with caution.',
+        labelEntryCharLimit: 'Warning: This entry has been capped at {0} characters. Proceed with caution.',
 
         menuNaming: 'Save System',
         labelName: 'Title: ',
@@ -200,6 +203,7 @@ const locStrings =
         labelInternalState: 'Internal state: ',
 
         menuManual: 'User Guide ({0}/{1})',
+        menuTOC: 'Table of Contents',
         labelSource: 'Source: ',
         manualSystemDesc: 'User guide, page {0}.',
         manual:
@@ -241,7 +245,7 @@ Menu buttons: You pressed on one of them to get here, did you?
 - Settings: configure general options for the theory.`
             },
             {
-                title: 'Controls: Configuring the L-system',
+                title: 'Configuring the L-system',
                 contents:
 `Design your L-system using the L-systems menu.
 
@@ -255,7 +259,7 @@ Menu buttons: You pressed on one of them to get here, did you?
 Note: Any blank rules will be trimmed afterwards.`
             },
             {
-                title: 'Controls: Configuring the renderer',
+                title: 'Configuring the renderer',
                 contents:
 `Configure the visual representation of your L-system with the Renderer menu.
 
@@ -278,44 +282,46 @@ Renderer logic:
 `sequence.
 
 Advanced stroke options:
-- Quickdraw: skips over straight consecutive segments.
+- Quickdraw (unstable): skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
 - Stutter on backtrack: pause for one tick after backtracking for more ` +
 `accurate figures.
 - Backtrack list: sets stopping symbols for backtracking.`
             },
             {
-                title: 'Controls: Saving and loading',
+                title: 'Saving and loading',
                 contents:
 `The Save/load menu allows you to save your favourite L-systems along with ` +
 `their camera configurations.
 
 - Clipboard: allows you to export the system as a string to share with your ` +
 `fellow gardeners, or import one from them for personal consumption.
-Note: Does not contain models.
+Warning: The entry can only hold up to 5000 characters.
 - Save: set the title and description for a new system, or overwrite one of ` +
 `the existing ones.
 - View: allows you to edit, load and delete saved systems.`
             },
             {
-                title: 'Controls: Theory settings',
+                title: 'Theory settings',
                 contents:
 `The Settings menu contain several general options for the theory.
 
-- Reset graph after tabbing in: when this option is turned off, the graph ` +
-`will resume the current drawing after the game enters focus, assuming it ` +
-`does not close itself by then. The theory will not draw when the game is ` +
-`not in focus, regardless of this setting.
+- Reset graph on tabbing in: when this option is turned off, the graph will ` +
+`resume the current drawing after the game enters focus, assuming it does ` +
+`not close itself by then. The theory will not draw when the game is not in ` +
+`focus, regardless of this setting.
 - Reset level on construction: this option is generally turned on for ` +
 `safety, however, if you are trying to design and edit systems for a while, ` +
 `it is recommended to turn it off for convenience.
 - Tertiary equation: switches between the display of turtle coordinates and ` +
 `orientation (quaternion).
 - Measure performance: displays performance statistics at the top of the ` +
-`screen.`
+`screen.
+- Internal state: allows you to export the entire save data.
+Warning: The entry can only hold up to 5000 characters.`
             },
             {
-                title: 'A primer on L-systems',
+                title: 'L-systems: A primer',
                 contents:
 `Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
 `grammar that describes the growth of a sequence (string). It is often used ` +
@@ -357,7 +363,6 @@ Note: In the original grammar, the lower-case f is used to move the turtle ` +
 `anything you can throw at it.`
             },
             {
-                system: 'dragon',       // Please do not translate this line.
                 title: 'Example: The dragon curve',
                 contents:
 `Also known as the Heighway dragon, the curve was first discovered by John ` +
@@ -381,7 +386,6 @@ Scale: 4*sqrt(2)^lv
 Centre: (0, 0, 0)`
             },
             {
-                system: 'sierpinski',   // Please do not translate this line.
                 title: 'Example: Sierpiński triangle',
                 contents:
 `The Sierpiński triangle (or gasket/sieve) is a fractal of an equilateral ` +
@@ -418,10 +422,6 @@ Note: Due to the game's 3D graph only allowing one continuous path to be ` +
 `through the old path.`
             },
             {
-                system: 'arrow',    // Please do not translate this line. I'm
-                                    // sorry to say this, but I'm an idiot and
-                                    // I can't think of a better way to link the
-                                    // pages' text content and their systems.
                 title: 'Example: Arrow weed',
                 contents:
 `Meet the default system, now standing upright like a real tree.
@@ -462,7 +462,6 @@ A system's seed can either be changed manually within the L-systems menu, or ` +
 `the theory screen.`
             },
             {
-                system: 'stocWeed',     // Please do not translate this line.
                 title: 'Example: Stochastic tree',
                 contents:
 `This tree generates a random shape every time it rolls.
@@ -478,7 +477,6 @@ Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'snowflake',    // Please do not translate this line.
                 title: 'Example: Snowflake',
                 contents:
 `Honey I told you every snowflake is different can you stop licking them please
@@ -512,7 +510,6 @@ Note 2: Other L-system implementations may also start the turtle facing the ` +
 `swap the axes around until the desired results are achieved.`
             },
             {
-                system: 'blackboard',   // Please do not translate this line.
                 title: 'Example: Blackboard tree',
                 contents:
 `Modelled after a blackboard tree (Alstonia scholaris) in its infant state.
@@ -534,7 +531,6 @@ Upright`,
                 source: 'https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf'
             },
             {
-                system: 'hilbert3D',    // Please do not translate this line.
                 title: 'Example: Hilbert curve (3D)',
                 contents:
 `The Hilbert curve is a fractal figure that fills the space of a 2D plane ` +
@@ -551,7 +547,6 @@ Scale: 2^lv
 Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
             },
             {
-                system: 'fern',         // Please do not translate this line.
                 title: 'Example: Fern',
                 contents:
 `A 3D fern.
@@ -588,7 +583,6 @@ Note: Due to how the rendering engine works, the polygon tool in LSR works ` +
 `from the book into LSR.`
             },
             {
-                system: 'lilyPad',
                 title: 'Example: Lily pad (hollow)',
                 contents:
 `This is a hollow lily pad. Can you make it draw some lines on the periphery?
@@ -606,7 +600,7 @@ Centre: (lv/2-1, 0, 0)
 Upright`
             },
             {
-                title: 'Modelling: Dedicated symbol models',
+                title: 'Dedicated models for symbols',
                 contents:
 `While the polygon mode is useful when it comes to building custom models, ` +
 `the problem of separating between models and growth processing rules still ` +
@@ -622,7 +616,6 @@ Note: The symbol will not disappear from the rule after the model has been ` +
 `drawn.`
             },
             {
-                system: 'lilac',
                 title: 'Example: Lilac branch',
                 contents:
 `Ripped straight off of page 92 of The Algorithmic Beauty of Plants. But I ` +
@@ -642,7 +635,7 @@ Centre: (1.5*lv, 0, 0)
 Upright`
             },
             {
-                title: 'Appendix: Advanced artistry in LSR (1)',
+                title: 'Appendix: Advanced artistry in LSR',
                 contents:
 `Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way!
 And today's class: Tick length.
@@ -679,7 +672,7 @@ Note: This trick is not guaranteed to work every time, so it is advised to ` +
 - 0.6 sec and above: don't care, class dismissed.`
             },
             {
-                title: 'Appendix: Advanced artistry in LSR (2)',
+                title: 'Advanced artistry in LSR (2)',
                 contents:
 `Welcome back, class! We're learning about something simple today, by the way:
 Backtrack options, or why Hesitation is Not Defeat.
@@ -704,7 +697,7 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             },
             {
-                title: 'Appendix: Advanced artistry in LSR (3)',
+                title: 'Advanced artistry in LSR (3)',
                 contents:
 `Welcome back, class! Today is only an extension of last class, and so we'll ` +
 `be going through the concept of looping. This relates to last week's class ` +
@@ -734,8 +727,12 @@ Generally, in figures such as this or the Koch snowflake, it'd be better to ` +
 `due to the tail end being a backtrack itself, of course.`
             },
             {
-                system: 'cultFF',       // Please do not translate this line.
-                title: 'Appendix: Cultivar FF (Botched)',
+                title: 'Appendix: Botched L-systems',
+                contents:
+`Here are the systems created for another theory of mine, Botched L-system.`
+            },
+            {
+                title: 'Botched Cultivar FF',
                 contents:
 `Represents a common source of carbohydrates.
 
@@ -750,8 +747,7 @@ Centre: (2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'cultFXF',      // Please do not translate this line.
-                title: 'Appendix: Cultivar FXF (Botched)',
+                title: 'Botched Cultivar FXF',
                 contents:
 `Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
 `Legends have it, once a snake moult has weathered enough, a new life is ` +
@@ -767,8 +763,7 @@ Scale: 1.5*2^lv
 Centre: (0.225*2^lv, -0.75*2^lv, 0)`
             },
             {
-                system: 'cultXEXF',     // Please do not translate this line.
-                title: 'Appendix: Cultivar XEXF (Botched)',
+                title: 'Botched Cultivar XEXF',
                 contents:
 `Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
 `resilience of nature against the harsh logarithm drop-off. It also smells ` +
@@ -784,6 +779,11 @@ Applies static camera: (mathematically unproven)
 Scale: 3^lv
 Centre: (0.75*3^lv, -0.25*3^lv, 0)
 Upright`
+            },
+            {
+                title: 'Appendix: LG',
+                contents:
+`Here's to LG.`
             }
         ]
     }
@@ -2291,24 +2291,25 @@ const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalSeed = new LCG(Date.now());
+let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 26];
 let manualSystems =
 {
-    arrow:
+    11:
     {
         system: arrow,
         config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
     },
-    dragon:
+    8:
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: ['4*sqrt(2)^lv', 0, 0, 0, false]
     },
-    sierpinski:
+    9:
     {
         system: new LSystem('X', ['X=+Y-X-Y+', 'Y=-X+Y+X-'], 60),
         config: ['2^lv', '0.5*2^lv', 'sqrt(3)/4*2^lv', 0, false]
     },
-    stocWeed:
+    13:
     {
         system: new LSystem('X', [
             'F=FF',
@@ -2327,7 +2328,7 @@ let manualSystems =
         ], 12),
         config: [6, 6, 0, 0, true]
     },
-    snowflake:
+    14:
     {
         system: new LSystem('[X]+[X]+[X]+[X]+[X]+[X]', [
             'X=F[+F][-F]X',
@@ -2336,7 +2337,7 @@ let manualSystems =
         ], 60, 0, 'i'),
         config: ["2*2^lv", 0, 0, 0, false]
     },
-    blackboard:
+    16:
     {
         system: new LSystem('F', [
             'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
@@ -2349,7 +2350,7 @@ let manualSystems =
         ], 8),
         config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
     },
-    hilbert3D:
+    17:
     {
         system: new LSystem('X', [
             'X',
@@ -2357,7 +2358,7 @@ let manualSystems =
         ], 90),
         config: ['2^lv', '0.5*2^lv-0.5', '0.5*2^lv-0.5', '0.5*2^lv-0.5', false]
     },
-    fern:
+    18:
     {
         system: new LSystem('FFFA', [
             'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
@@ -2366,7 +2367,7 @@ let manualSystems =
         ], 4),
         config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
     },
-    lilyPad:
+    20:
     {
         system: new LSystem('{[A}]{[B}]', [
             'A=[+A]C.',
@@ -2375,7 +2376,7 @@ let manualSystems =
         ], 27),
         config: ['lv', 'lv/2-1', 0, 0, true]
     },
-    lilac:
+    22:
     {
         system: new LSystem('A~K', [
             'A=[--//~K][++//~K]I///A',
@@ -2386,17 +2387,17 @@ let manualSystems =
         ], 30),
         config: ['3*lv', '1.5*lv', 0, 0, true]
     },
-    cultFF:
+    27:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: ['2^lv', '2^lv', 0, 0, true]
     },
-    cultFXF:
+    28:
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: ['1.5*2^lv', '0.225*2^lv', '-0.75*2^lv', 0, false]
     },
-    cultXEXF:
+    29:
     {
         system: new LSystem('X', [
             'E=XEXF-',
@@ -2407,8 +2408,8 @@ let manualSystems =
     }
 };
 let tmpSystem = null;
-let tmpSystemName = getLoc('defaultSystemName');
-let tmpSystemDesc = getLoc('noDescription');
+let tmpSystemName = getLoc('welcomeSystemName');
+let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
 var l, ts;
 // Variable controls
@@ -3335,7 +3336,7 @@ let createSystemMenu = () =>
                         [
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '30*', '30*', '20*'],
+                                columnDefinitions: ['20*', '40*', '25*', '15*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -3413,7 +3414,12 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore);
-                                tmpSystem = null;
+                                if(tmpSystem)
+                                {
+                                    tmpSystem = null;
+                                    tmpSystemName = getLoc('defaultSystemName');
+                                    tmpSystemDesc = getLoc('noDescription');
+                                }
                                 menu.hide();
                             }
                         }),
@@ -3937,7 +3943,7 @@ let createViewMenu = (title) =>
                             }),
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '30*', '30*', '20*'],
+                                columnDefinitions: ['20*', '40*', '25*', '15*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -4276,6 +4282,65 @@ let createManualMenu = () =>
             sourceEntry
         ]
     });
+    let setPage = (p) =>
+    {
+        page = p;
+        menu.title = Localization.format(
+            getLoc('menuManual'), page + 1,
+            getLoc('manual').length
+        );
+        pageTitle.text = manualPages[page].title;
+        pageContents.text =
+        manualPages[page].contents;
+        
+        sourceGrid.isVisible = 'source' in
+        manualPages[page];
+        sourceEntry.text = 'source' in
+        manualPages[page] ?
+        manualPages[page].source : '';
+    };
+    let getContentsTable = () =>
+    {
+        let children = [];
+        for(let i = 0; i < contentsTable.length; ++i)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: manualPages[contentsTable[i]].title,
+                row: i,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }));
+            children.push(ui.createButton
+            ({
+                text: Localization.format(getLoc('btnPage'),
+                contentsTable[i] + 1),
+                row: i,
+                column: 1,
+                heightRequest: 40,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    setPage(contentsTable[i]);
+                    TOCMenu.hide();
+                }
+            }));
+        }
+        return children;
+    };
+    let TOCMenu = ui.createPopup
+    ({
+        title: getLoc('menuTOC'),
+        content: ui.createScrollView
+        ({
+            heightRequest: ui.screenHeight * 0.36,
+            content: ui.createGrid
+            ({
+                columnDefinitions: ['80*', '20*'],
+                children: getContentsTable()
+            })
+        })
+    });
 
     let menu = ui.createPopup
     ({
@@ -4321,24 +4386,9 @@ let createManualMenu = () =>
                             isVisible: () => page > 0,
                             onClicked: () =>
                             {
+                                Sound.playClick();
                                 if(page > 0)
-                                {
-                                    Sound.playClick();
-                                    --page;
-                                    menu.title = Localization.format(
-                                        getLoc('menuManual'), page + 1,
-                                        getLoc('manual').length
-                                    );
-                                    pageTitle.text = manualPages[page].title;
-                                    pageContents.text =
-                                    manualPages[page].contents;
-                                    
-                                    sourceGrid.isVisible = 'source' in
-                                    manualPages[page];
-                                    sourceEntry.text = 'source' in
-                                    manualPages[page] ?
-                                    manualPages[page].source : '';
-                                }
+                                    setPage(page - 1);
                             }
                         }),
                         ui.createButton
@@ -4346,11 +4396,11 @@ let createManualMenu = () =>
                             text: getLoc('btnConstruct'),
                             row: 0,
                             column: 1,
-                            isVisible: () => 'system' in manualPages[page],
+                            isVisible: () => page in manualSystems,
                             onClicked: () =>
                             {
-                                let s = manualSystems[manualPages[page].system];
                                 Sound.playClick();
+                                let s = manualSystems[page];
                                 renderer.applySystem = s.system;
                                 tmpSystem = null;
                                 if('config' in s)
@@ -4364,6 +4414,18 @@ let createManualMenu = () =>
                         }),
                         ui.createButton
                         ({
+                            text: getLoc('btnContents'),
+                            row: 0,
+                            column: 1,
+                            isVisible: () => !(page in manualSystems),
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                TOCMenu.show();
+                            }
+                        }),
+                        ui.createButton
+                        ({
                             text: getLoc('btnNext'),
                             row: 0,
                             column: 2,
@@ -4372,22 +4434,7 @@ let createManualMenu = () =>
                             {
                                 Sound.playClick();
                                 if(page < manualPages.length - 1)
-                                {
-                                    ++page;
-                                    menu.title = Localization.format(
-                                        getLoc('menuManual'), page + 1,
-                                        getLoc('manual').length
-                                    );
-                                    pageTitle.text = manualPages[page].title;
-                                    pageContents.text =
-                                    manualPages[page].contents;
-                                    
-                                    sourceGrid.isVisible = 'source' in
-                                    manualPages[page];
-                                    sourceEntry.text = 'source' in
-                                    manualPages[page] ?
-                                    manualPages[page].source : '';
-                                }
+                                    setPage(page + 1);
                             }
                         })
                     ]
@@ -4794,7 +4841,7 @@ var setInternalState = (stateStr) =>
                     renderer = new Renderer(system, ...rv.slice(1));
                 }
                 else
-                    renderer = new Renderer(arrow, ...rv.slice(1));
+                    renderer = new Renderer(new LSystem(), ...rv.slice(1));
             }
             else
             {
@@ -4811,7 +4858,7 @@ var setInternalState = (stateStr) =>
                     renderer = new Renderer(system, ...rv.slice(1));
                 }
                 else
-                    renderer = new Renderer(arrow, ...rv.slice(1));
+                    renderer = new Renderer(new LSystem(), ...rv.slice(1));
             }
         }
         
