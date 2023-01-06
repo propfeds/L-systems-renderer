@@ -1,67 +1,133 @@
-# L-systems Renderer
+# LSR: To-do List
 
-## Planned
+- [LSR: To-do List](#lsr-to-do-list)
+  - [0.21 - no version name](#021---no-version-name)
+  - [1.00 - Mistletoe Edition](#100---mistletoe-edition)
+  - [0.20: Completed](#020-completed)
+  - [Impossible or Scrapped](#impossible-or-scrapped)
+
+## 0.21 - no version name
 
 - [x] Renderer menu:
   - [x] It is better to close the menu every time, than only when asterisk
   options are changed
   - [x] Reset to Defaults should not actually close the menu
-
-- [ ] Investigate quickdraw backtrack logic
+- [x] Investigate quickdraw backtrack logic
   - Doesn't work with branching currently?
   - Doesn't work with angle-changing symbols?
+- [x] backtrackList and ignoreList using js Set instead of array
+  - [x] Change the configure functions to not change backtrack list when the new
+  set is the same as the old one, instead of comparing strings
+- [x] Stop trimming the user inputs! Store original strings within the systems
+and show them in the menu. This way, if they're invalid you can show a syntax
+error instead of stripping it!
+- [x] Button to clear LS menu (equivalent to renderer reset)
+- [x] Modelling
+  - [x] `~`: Incorporate a predefined surface - used to store a model for each
+  symbol
+  - [x] `{}`: The polygon tool
+    - `.`: Record a vertex - can be used for faster renderering
+- [x] `%`: Cut off branch's remainder
+  - Simple search
+- [x] Configurable max chars per tick
+- [x] Table of Contents in guide (replaces Construct on non-example pages)
+
+## 1.00 - Mistletoe Edition
+
 - [ ] Add more comments in the code
+- [ ] Turtle controls summary page in guide
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
-- Decorate with colours? Maybe only start doing it in LG else wasting time
+- [ ] Localisation
 
-- [ ] Context sensitivity
-  - `b < a > c → aa`
-  - How to store? Maps?
-    ```js
-    let contextRules =
-    {
-        // Outer level: middle (current) character
-        B: {
-            // Middle layer: left character
-            A: {
-                // Inner layer: right character
-                // Two ways: A<B>C = D
-                C: 'D',
-                // One way: A<B = E
-                none: 'E'
-            },
-            F: {
-                // Inner layer: right character
-                // F<B>G = H
-                G: 'H'
-            },
-            none: {
-                // Inner layer: right character
-                // One way: B>A = E
-                A: 'E'
-            }
-        }
-    }
-    // Why do I check the left side first? Because it sort of makes sense.
-    ```
+- [ ] Compress internal state? LZW, LZP
+- [ ] Ask Gilles about changing the spline used in 3D graph
+- [ ] How about locking rotation? (for Navier Stokes)
+- [ ] Rework quickdraw / BT logic
+
+- [ ] Investigate Houdini stochastic syntax for weighted derivations
+`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
+
 - [ ] Parametric systems
-- [ ] Custom models for each symbol
-  - Petals, leaves and such
-  - Array of Vector3s denoting vertices
-  - Bool to determine whether the model is a terminal node
-    - If terminal, has only one path of going from (0, 0, 0) through the list
-    then back to (0, 0, 0), does not draw the forward line
-    - If not terminal, has two paths:
-      - From (0, 0, 0) through the first path to (1, 0, 0)
-      - From (1, 0, 0) through the second path back to (0, 0, 0)
-  - [x] Renderer option to disable models
+  - Regex magic to separate string to actual sequence of symbols?
+  - Equal comparison changed to `==` instead of `=` in abop to differentiate
+  from the syntax
+  - Store as an extra array of objects
+  - Round brackets gonna make it hard for actual drawing - although maybe it
+  would've been already stripped down by the time it gets to the turtle
+
+- [ ] Alternate modelling scheme: using symbols? (chapter 5 of abop)
+- [ ] Another model format for each symbol
+  - Array of Vector3s denoting a path of vertices
+    - Don't write `(0, 0, 0)` at start or end
+    - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
+    through the model's queue one by one until we reach the end. But we won't
+    go back to `(0, 0, 0)`, we go forward to the next symbol. This would allow
+    us to draw different lengthed lines if we defined the model to include only
+    one point: `(L, 0, 0)`. But... that would delay processing by one turn?
+  - Well, we can't include the tilde then. Hardcoded models can still be a thing
+  but tildes need more investigation.
+  - Still keeping the idea of two paths?
   - Can models' names contain spaces?
     - How are they referenced in systems? As a list of names? An ID that is the
     index of an array?
-- [ ] backtrackList and ignoreList using js Set instead of array
+  - [ ] Model storage
+    - How to load? How to edit?
+- [x] Renderer option to disable models
+
+- [ ] Context sensitivity
+  - `b < a > c → aa`
+  - Skipping over brackets? hmm, difficult
+    - Mapping 'branching levels' onto an array? Excluding reserved symbols!
+    `0  0  1  1  1  2  2  1  1  2  1  0  0`
+    - Then, run algo to check nearest left element's idx using last spotted idx
+    `∞  1  ∞  1  1  ∞  1  3  1  3  2 10  1`
+    - And right element?
+    `1 10  1  1  3  1  3  1  2  ∞  ∞  1  ∞`
+    - Might be able to check both at once? Also, `∞` could be replaced with `-1`
+  - Compatibility with stochastic? Maybe don't need extra processing
+  - If a system is of level `n`, these maps will be loaded for `n-1` levels
+  - Renderer will not start drawing level `n` while loading, until the maps for
+  level `n-1` have finished
+  - How much of the right list can be inferred from the left list?
+    - *All* of it!
+    `0  0  1  1  1  2  2  1  1  2  1  0  0`
+    `   1     1  1     1  3  1  3  2 10  1`
+    `1 10  1  1  3  1  3  1  2        1   `
+  - Wait. How do we define branch order again? Dang it. My maths might be wrong.
+    - Actually it's less branch order but 'height', which can still be checked
+    by tracking brackets and stacks.
+    `0  0  1  1  1  2  2  1  1  2  1  0  0` smells like:
+    `[X][X[Y][Y][Y[Z]Z]`
+    - Actually it's pretty hard to make an algo for this, because it could be:
+    `01[23[456][45][4]][234]2`, and you would have to find all the 2s if you
+    want to find a right element of 1, and what if those 2s were on different
+    branches and it wouldn't count as adjacent?
+    - GRAPH ALGO?!? The power of dfs.
+    - We can store each symbol's ancestor (there's only one), then reflect it
+    back to another list containing children of each symbol.
+    - Ancestor means the index of whomever the fuck is on top of the idx stack.
+    - Does this work with the dynamic loading system with all the data passing?
+  - If stored by maps: Keys can be any data type.
+  - If stored by objects:
+  ```js
+  // v2
+  let contextRulesLR =
+  {
+    'ABC': 'D', // Two ways: A<B>C = D
+    'FBG': 'H'  // F<B>G = H
+  };
+  let contextRulesL =
+  {
+    'AB': 'E'   // One way: A<B = E
+  };
+  let contextRulesR =
+  {
+    'BA': 'E'   // One way: B>A = E
+  };
+  ```
 
 ## 0.20: Completed
 
@@ -118,3 +184,14 @@ parameters
   - https://en.wikipedia.org/wiki/Media_control_symbols
   - Line 2: Level, loop, tickspeed
   - This will do away with the fucking anchor
+  - Admittedly though, that'd be a bit cliche and not as quirky as the current
+  layout, even though it's pretty much a solid idea
+- Upright option: swap to the Y axis instead of rotating X?
+  - Does not work! It breaks everything.
+- For these two things: context sensitivity and parametricity, a system
+needs to store two boolean properties `isContextSensitive` and `isParametric`.
+  - Scrapped. Just make a new class.
+- Houdini's stochastic syntax means getting rid of the old comma syntax?
+  - Or, we could just make LG immediately... or a sequel named
+  `Parametric L-systems Renderer`, with a better randomiser lol
+  - Scrapped. Just make a new class.

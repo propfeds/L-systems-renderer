@@ -28,7 +28,6 @@ import { Color } from '../api/ui/properties/Color';
 import { FontFamily } from '../api/ui/properties/FontFamily';
 import { Keyboard } from '../api/ui/properties/Keyboard';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
-import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
@@ -53,12 +52,16 @@ var getDescription = (language) =>
     let descs =
     {
         en:
-`An educational tool that lets you model various fractal figures and plants.
+`An educational tool that allows you to model plants and other fractal figures.
 
-Features:
+Supported L-system features:
+- Stochastic (randomised) rules
+- 3D turtle controls
+- Polygon modelling
+
+Other features:
 - Can save a whole army of systems!
-- Stochastic (randomised) and 3D systems
-- Camera modes: fixed and turtle-following
+- Camera modes: static and turtle-following
 - Drawing speed and advanced stroke options!
 
 Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
@@ -73,7 +76,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.201;
+var version = 0.21;
 
 let time = 0;
 let page = 0;
@@ -83,18 +86,21 @@ let altTerEq = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let measurePerformance = false;
+let maxCharsPerTick = 5000;
 
 let savedSystems = new Map();
-let savedModels = [];
+let savedModels = new Map();
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
-const MAX_CHARS_PER_TICK = 10000;
+const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
     en:
     {
-        versionName: 'v0.20.1 - Miscalculator',
-        equationOverlayLong: '{0} — {1}\n\n{2}\n\n{3}',
+        versionName: 'v0.21',
+        welcomeSystemName: 'Arrow',
+        welcomeSystemDesc: 'Welcome to L-systems Renderer!',
+        equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
         rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
@@ -105,6 +111,7 @@ const locStrings =
         varTdDesc: '\\text{{Tick length: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick length: }}\\infty',
         varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
+        upgResumeInfo: 'Resumes the last rendered system',
 
         saPatienceTitle: 'Watching Grass Grow',
         saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
@@ -112,6 +119,7 @@ const locStrings =
         saPatienceHint: 'Be patient.',
 
         btnSave: 'Save',
+        btnClear: 'Clear',
         btnDefault: '* Reset to Defaults',
         btnAdd: 'Add',
         btnConstruct: 'Construct',
@@ -126,12 +134,15 @@ const locStrings =
         btnNext: 'Next',
         btnClose: 'Close',
         btnImport: 'Import',
+        btnContents: 'Table of\nContents',
+        btnPage: '{0}',
 
         btnMenuLSystem: 'L-system menu',
         btnMenuRenderer: 'Renderer menu',
         btnMenuSave: 'Save/load',
         btnMenuTheory: 'Settings',
         btnMenuManual: 'User guide',
+        btnResume: 'Resume – {0}',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
 
@@ -163,9 +174,9 @@ const locStrings =
         labelUpright: '* Upright x-axis: ',
         labelBTTail: 'Draw tail end: ',
         labelLoadModels: '* (Teaser) Load models: ',
-        labelQuickdraw: '* Quickdraw straight lines: ',
+        labelQuickdraw: '* Quickdraw (unstable): ',
         labelQuickBT: '* Quick backtrack: ',
-        labelHesitate: '* Pause after backtrack: ',
+        labelHesitate: '* Stutter on backtrack: ',
         labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -175,6 +186,7 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
+        labelEntryCharLimit: 'Warning: This entry has been capped at {0} characters. Proceed with caution.',
 
         menuNaming: 'Save System',
         labelName: 'Title: ',
@@ -184,14 +196,16 @@ const locStrings =
         duplicateSuffix: ' (copy)',
 
         menuTheory: 'Theory Settings',
-        labelOfflineReset: 'Reset graph after tabbing in: ',
+        labelOfflineReset: 'Reset graph on tabbing in: ',
         labelResetLvl: 'Reset level on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
+        labelMaxCharsPerTick: 'Maximum loaded chars/tick: ',
         labelInternalState: 'Internal state: ',
 
         menuManual: 'User Guide ({0}/{1})',
+        menuTOC: 'Table of Contents',
         labelSource: 'Source: ',
         manualSystemDesc: 'User guide, page {0}.',
         manual:
@@ -206,7 +220,7 @@ const locStrings =
 Let's start discovering the wonders of L-systems.`
             },
             {
-                title: 'Theory controls',
+                title: 'Controls: Theory screen',
                 contents:
 `The theory screen consists of the renderer and its controls.
 
@@ -233,7 +247,85 @@ Menu buttons: You pressed on one of them to get here, did you?
 - Settings: configure general options for the theory.`
             },
             {
-                title: 'A primer on L-systems',
+                title: 'Configuring the L-system',
+                contents:
+`Design your L-system using the L-systems menu.
+
+- Axiom: the system's starting sequence.
+- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
+- Production rules: an unlimited number of rules can be added using the ` +
+`'Add' button.
+- Ignored symbols: the turtle will stand still when encountering these symbols.
+- Seed: sets the seed of a stochastic system.
+
+Note: Any blank rules will be trimmed afterwards.`
+            },
+            {
+                title: 'Configuring the renderer',
+                contents:
+`Configure the visual representation of your L-system with the Renderer menu.
+
+Camera options:
+- Figure scale: determines the zoom level's inverse using a formula. For ` +
+`instance, a figure scale of 2^lv will zoom the figure out by a factor of ` +
+`2 every level.
+- Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
+`modes follow the turtle.
+- Fixed camera centre: determines camera position in Fixed mode using a ` +
+`formula, similar to figure scale.
+- Follow factor: changes how quickly the camera follows the turtle.
+- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
+`z-axis.
+
+Renderer logic:
+- Looping mode: the Level mode repeats a single level, while the Playlist ` +
+`mode draws levels consecutively.
+- Draw tail end: whether to draw the last backtrack after finishing the ` +
+`sequence.
+
+Advanced stroke options:
+- Quickdraw (unstable): skips over straight consecutive segments.
+- Quick backtrack: works similarly, but on the way back.
+- Stutter on backtrack: pause for one tick after backtracking for more ` +
+`accurate figures.
+- Backtrack list: sets stopping symbols for backtracking.`
+            },
+            {
+                title: 'Saving and loading',
+                contents:
+`The Save/load menu allows you to save your favourite L-systems along with ` +
+`their camera configurations.
+
+- Clipboard: allows you to export the system as a string to share with your ` +
+`fellow gardeners, or import one from them for personal consumption.
+Warning: The entry can only hold up to 5000 characters.
+- Save: set the title and description for a new system, or overwrite one of ` +
+`the existing ones.
+- View: allows you to edit, load and delete saved systems.`
+            },
+            {
+                title: 'Theory settings',
+                contents:
+`The Settings menu contain several general options for the theory.
+
+- Reset graph on tabbing in: when this option is turned off, the graph will ` +
+`resume the current drawing after the game enters focus, assuming it does ` +
+`not close itself by then. The theory will not draw when the game is not in ` +
+`focus, regardless of this setting.
+- Reset level on construction: this option is generally turned on for ` +
+`safety, however, if you are trying to design and edit systems for a while, ` +
+`it is recommended to turn it off for convenience.
+- Tertiary equation: switches between the display of turtle coordinates and ` +
+`orientation (quaternion).
+- Measure performance: displays performance statistics at the top of the ` +
+`screen.
+- Maximum loaded chars/tick: adjusts how fast a system loads, in order to ` +
+`prevent 'Maximum statements' errors from occuring.
+- Internal state: allows you to export the entire save data.
+Warning: The entry can only hold up to 5000 characters.`
+            },
+            {
+                title: 'L-systems: A primer',
                 contents:
 `Developed in 1968 by biologist Aristid Lindenmayer, an L-system is a formal ` +
 `grammar that describes the growth of a sequence (string). It is often used ` +
@@ -272,13 +364,9 @@ Note: In the original grammar, the lower-case f is used to move the turtle ` +
 `forward without drawing anything, but that is simply impossible with this ` +
 `game's 3D graph. So in this theory, any non-reserved symbol will draw a ` +
 `line. This includes both upper- and lower-case letters, and potentially ` +
-`anything you can throw at it.
-
-Note 2: In this theory, unlike other L-system implementations, the turtle ` +
-`starts by heading to the right instead of upwards.`
+`anything you can throw at it.`
             },
             {
-                system: 'dragon',       // Please do not translate this line.
                 title: 'Example: The dragon curve',
                 contents:
 `Also known as the Heighway dragon, the curve was first discovered by John ` +
@@ -302,7 +390,6 @@ Scale: 4*sqrt(2)^lv
 Centre: (0, 0, 0)`
             },
             {
-                system: 'sierpinski',   // Please do not translate this line.
                 title: 'Example: Sierpiński triangle',
                 contents:
 `The Sierpiński triangle (or gasket/sieve) is a fractal of an equilateral ` +
@@ -333,16 +420,14 @@ Stack operations are represented with square brackets:
 [: records the turtle's position and facing onto a stack.
 ]: take the topmost element (position and facing) off the stack, and move ` +
 `the turtle there.
+%: cuts off the remainder of its branch by searching for the closing bracket ` +
+`] in the branch.
 
 Note: Due to the game's 3D graph only allowing one continuous path to be ` +
 `drawn, the turtle will not actually divide itself, but instead backtrack ` +
 `through the old path.`
             },
             {
-                system: 'arrow',    // Please do not translate this line. I'm
-                                    // sorry to say this, but I'm an idiot and
-                                    // I can't think of a better way to link the
-                                    // pages' text content and their systems.
                 title: 'Example: Arrow weed',
                 contents:
 `Meet the default system, now standing upright like a real tree.
@@ -350,7 +435,7 @@ The symbol F here represents the stem and branches, which expand to twice ` +
 `their size every level. Meanwhile X, sitting at the top of each branch, ` +
 `represents what's known as a vegetative apex - the tip of an axis (stem or ` +
 `branch) that grows into new branches and leaves.
-This one though, oddly enough, does not have leaves.
+Let's try cutting its branches off using %!
 
 Axiom: X
 F = FF
@@ -383,7 +468,6 @@ A system's seed can either be changed manually within the L-systems menu, or ` +
 `the theory screen.`
             },
             {
-                system: 'stocWeed',     // Please do not translate this line.
                 title: 'Example: Stochastic tree',
                 contents:
 `This tree generates a random shape every time it rolls.
@@ -399,7 +483,6 @@ Centre: (1.2*2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'snowflake',    // Please do not translate this line.
                 title: 'Example: Snowflake',
                 contents:
 `Honey I told you every snowflake is different can you stop licking them please
@@ -409,7 +492,7 @@ X = F[+F][-F]X
 F = F[+i][-i]F
 i = Ii, IIi
 Turning angle: 60°
-Ignore: i
+Ignored: i
 
 Applies static camera:
 Scale: 2*2^lv
@@ -426,10 +509,13 @@ Centre: (0, 0, 0)`
 |: reverses turtle direction.
 
 Note: In other L-system implementations, < and > may be used instead of \\ ` +
-`and / like in this theory.`
+`and / like in this theory.
+
+Note 2: Other L-system implementations may also start the turtle facing the ` +
+`y-axis or z-axis instead of the x-axis. To adopt those systems into LSR, ` +
+`swap the axes around until the desired results are achieved.`
             },
             {
-                system: 'blackboard',   // Please do not translate this line.
                 title: 'Example: Blackboard tree',
                 contents:
 `Modelled after a blackboard tree (Alstonia scholaris) in its infant state.
@@ -451,12 +537,11 @@ Upright`,
                 source: 'https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf'
             },
             {
-                system: 'hilbert3D',    // Please do not translate this line.
                 title: 'Example: Hilbert curve (3D)',
                 contents:
 `The Hilbert curve is a fractal figure that fills the space of a 2D plane ` +
 `using only a single line. This is the 3D version.
-It's recommended to draw this at a low tickspeed (high tick length).
+It's recommended to draw at a low tickspeed (high tick length).
 
 Axiom: X
 X = ^/XF^/XFX-F^\\\\XFX&F+\\\\XFX-F\\X-\\
@@ -468,7 +553,6 @@ Scale: 2^lv
 Centre: (0.5*2^lv-0.5, 0.5*2^lv-0.5, 0.5*2^lv-0.5)`
             },
             {
-                system: 'fern',         // Please do not translate this line.
                 title: 'Example: Fern',
                 contents:
 `A 3D fern.
@@ -486,82 +570,78 @@ Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
             {
-                title: 'Controls: Configuring the L-system',
+                title: 'Modelling: Polygon tool',
                 contents:
-`Design your L-system using the L-systems menu.
+`To keep up with demands for higher levels of detail pertaining flowers, ` +
+`leaves and other organs, the classic L-system syntax was extended to ` +
+`accomplish this. Introducing the polygon tool, designed to hide away ` +
+`unneeded points and draw contours by connecting the dots, literally.
 
-- Axiom: the system's starting sequence.
-- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
-- Production rules: an unlimited number of rules can be added using the ` +
-`'Add' button.
-- Ignored symbols: the turtle will stand still when encountering these symbols.
-- Seed: sets the seed of a stochastic system.
+{: initiates polygon drawing mode.
+.: sets a polygon vertex.
+}: ends the polygon drawing mode.
 
-Note: Any whitespace in the rules will be trimmed afterwards.`
+Normal commands inside a polygon block will not draw lines, making it great ` +
+`for hiding away any scaffolding in the creation of models.
+Note: Due to how the rendering engine works, the polygon tool in LSR works ` +
+`a bit differently from that described in The Algorithmic Beauty of Plants. ` +
+`Therefore, it is advised to make some adjustments when adopting schemes ` +
+`from the book into LSR.`
             },
             {
-                title: 'Controls: Configuring the renderer',
+                title: 'Example: Lily pad (hollow)',
                 contents:
-`Configure the visual representation of your L-system with the Renderer menu.
+`This is a hollow lily pad. Can you make it draw some lines on the periphery?
+Tip: Open the sequence menu to see which points are being dotted.
 
-Camera options:
-- Figure scale: determines the zoom level's inverse using a formula. For ` +
-`instance, a figure scale of 2^lv will zoom the figure out by a factor of ` +
-`2 every level.
-- Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
-`modes follow the turtle.
-- Fixed camera centre: determines camera position in Fixed mode using a ` +
-`formula, similar to figure scale.
-- Follow factor: changes how quickly the camera follows the turtle.
-- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
-`z-axis.
+Axiom: {[A}]{[B}]
+A = [+A]C.
+B = [-B]C.
+C = GC
+Turning angle: 27°
 
-Renderer logic:
-- Looping mode: the Level mode repeats a single level, while the Playlist ` +
-`mode draws levels consecutively.
-- Draw tail end: whether to draw the last backtrack after finishing the ` +
-`sequence.
-- Load models: whether to load models. (Coming in a future update!)
-
-Advanced stroke options:
-- Quickdraw straight lines: skips over straight consecutive segments.
-- Quick backtrack: works similarly, but on the way back.
-- Pause after backtrack: pause for one tick after backtracking for more ` +
-`accurate figures.
-- Backtrack list: sets stopping symbols for backtracking.`
+Applies static camera:
+Scale: lv
+Centre: (lv/2-1, 0, 0)
+Upright`
             },
             {
-                title: 'Controls: Saving and loading',
+                title: 'Dedicated models for symbols',
                 contents:
-`The Save/load menu allows you to save your favourite L-systems along with ` +
-`their camera configurations.
+`While the polygon mode is useful when it comes to building custom models, ` +
+`the problem of separating between models and growth processing rules still ` +
+`remains, as writing the model in a different rule will delay its drawing by ` +
+`one level. With a special kind of rule, we can assign dedicated models to ` +
+`each symbol to be drawn instantly.
+To declare a model rule, attach a tilde in front of the symbol on the left side:
+~{symbol} = {model}
 
-- Clipboard: allows you to export the system as a string to share with the ` +
-`fellow gardeners, or import one from them for your personal consumption.
-Note: Does not contain models.
-- Save: set the title and description for a new system, or overwrite one of ` +
-`your existing ones.
-- View: allows you to edit, load and delete saved systems.`
+To reference a model in another rule, attach a tilde in front of the symbol ` +
+`in the same way it was declared.
+Note: The symbol will not disappear from the rule after the model has been ` +
+`drawn.`
             },
             {
-                title: 'Controls: Theory settings',
+                title: 'Example: Lilac branch',
                 contents:
-`The Settings menu contain several general options for the theory.
+`Ripped straight off of page 92 of The Algorithmic Beauty of Plants. But I ` +
+`made the model myself.
 
-- Reset graph after tabbing in: when this option is turned off, the graph ` +
-`will resume the current drawing after the game enters focus, assuming it ` +
-`does not close itself by then. The theory will not draw when the game is ` +
-`not in focus, regardless of this setting.
-- Reset level on construction: this option is generally turned on for ` +
-`safety, however, if you are trying to design and edit systems for a while, ` +
-`it is recommended to turn it off for convenience.
-- Tertiary equation: switches between the display of turtle coordinates and ` +
-`orientation (quaternion).
-- Measure performance: displays performance statistics at the top of the ` +
-`screen.`
+Axiom: A~K
+A = [--//~K][++//~K]I///A
+I = Fi
+i = Fj
+j = J[--FFA][++FFA]
+~K = F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]
+Turning angle: 30°
+
+Applies static camera:
+Scale: 3*lv
+Centre: (1.5*lv, 0, 0)
+Upright`
             },
             {
-                title: 'Appendix: Advanced artistry in LSR (1)',
+                title: 'Appendix: Advanced artistry in LSR',
                 contents:
 `Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way!
 And today's class: Tick length.
@@ -598,7 +678,7 @@ Note: This trick is not guaranteed to work every time, so it is advised to ` +
 - 0.6 sec and above: don't care, class dismissed.`
             },
             {
-                title: 'Appendix: Advanced artistry in LSR (2)',
+                title: 'Advanced artistry in LSR (2)',
                 contents:
 `Welcome back, class! We're learning about something simple today, by the way:
 Backtrack options, or why Hesitation is Not Defeat.
@@ -611,11 +691,11 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 `comes to both precision and aesthetics.
 - Quick backtrack: this one's a reliable one, trading only a little beauty ` +
 `for some extra speed.
-- Pause after backtrack: now, this is what I mean when I say hesitation is ` +
+- Stutter on backtrack: now, this is what I mean when I say hesitation is ` +
 `not defeat. Pausing for even just one tick can give your figure just enough ` +
 `cohesion it really needs. To prove this, try loading the Arrow weed then ` +
 `alternate between drawing with this option on and off, while on tick length ` +
-`0.1, or 10 tickspeed. There is a noticeable difference, even from afar.
+`0.1, or 10 tickspeed. There will be a noticeable difference, even from afar.
 - Backtrack list: usually, I would say that if you are here to draw ` +
 `L-systems, I recommend not to edit this option, but for the brave and ` +
 `worthy, you could create truly mesmerising results with this.
@@ -623,8 +703,42 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             },
             {
-                system: 'cultFF',       // Please do not translate this line.
-                title: 'Appendix: Cultivar FF (Botched)',
+                title: 'Advanced artistry in LSR (3)',
+                contents:
+`Welcome back, class! Today is only an extension of last class, and so we'll ` +
+`be going through the concept of looping. This relates to last week's class ` +
+`about backtracking.
+
+First, I want everybody to construct a Cantor set as follows:
+Axiom: X++F
+X = +Y-XFX-Y+
+F = FFF
+Y = YY
+Turning angle: 90°
+
+Then, apply the following static camera:
+Scale: 0.5*3^lv
+Centre: (0.5*3^lv, 2^(lv-1)-.5, 0)
+
+Now, enter the Level looping mode, turn 'Draw tail end' on and draw the ` +
+`Cantor set at level 2 or higher. You will see that the turtle goes back and ` +
+`forth when it meets the bottom left corner. Can anybody confirm that? Good.
+Now, turn 'Draw tail end' off. Can anyone tell me what would happen?
+That's right. The turtle will keep going around in a loop of this delicious ` +
+`Cantor bread. It really loves it.
+
+Generally, in figures such as this or the Koch snowflake, it'd be better to ` +
+`loop than to eat your own tail. Fortunately for you, there aren't many ` +
+`figures like these. Do note though, that quick backtrack will not trigger, ` +
+`due to the tail end being a backtrack itself, of course.`
+            },
+            {
+                title: 'Appendix: Botched L-systems',
+                contents:
+`Here are the systems created for another theory of mine, Botched L-system.`
+            },
+            {
+                title: 'Botched Cultivar FF',
                 contents:
 `Represents a common source of carbohydrates.
 
@@ -639,8 +753,7 @@ Centre: (2^lv, 0, 0)
 Upright`
             },
             {
-                system: 'cultFXF',      // Please do not translate this line.
-                title: 'Appendix: Cultivar FXF (Botched)',
+                title: 'Botched Cultivar FXF',
                 contents:
 `Commonly called the Cyclone, cultivar FXF resembles a coil of barbed wire. ` +
 `Legends have it, once a snake moult has weathered enough, a new life is ` +
@@ -656,8 +769,7 @@ Scale: 1.5*2^lv
 Centre: (0.225*2^lv, -0.75*2^lv, 0)`
             },
             {
-                system: 'cultXEXF',     // Please do not translate this line.
-                title: 'Appendix: Cultivar XEXF (Botched)',
+                title: 'Botched Cultivar XEXF',
                 contents:
 `Bearing the shape of a thistle, cultivar XEXF embodies the strength and ` +
 `resilience of nature against the harsh logarithm drop-off. It also smells ` +
@@ -673,6 +785,11 @@ Applies static camera: (mathematically unproven)
 Scale: 3^lv
 Centre: (0.75*3^lv, -0.25*3^lv, 0)
 Upright`
+            },
+            {
+                title: 'Appendix: LG',
+                contents:
+`Here's to LG.`
             }
         ]
     }
@@ -704,6 +821,14 @@ let getCoordString = (x) => x.toFixed(x >= -0.01 ?
     (x <= 9.999 ? 3 : (x <= 99.99 ? 2 : 1)) :
     (x < -9.99 ? (x < -99.9 ? 0 : 1) : 2)
 );
+
+/**
+ * Compares for every member of two sets.
+ * @param {Set} xs set 1.
+ * @param {Set} ys set 2.
+ * @returns {boolean} whether two sets are the exact same (disregarding order).
+ */
+let eqSet = (xs, ys) => xs.size === ys.size && [...xs].every((x) => ys.has(x));
 
 /**
  * Represents a linear congruential generator.
@@ -874,7 +999,7 @@ class Quaternion
      */
     get rotVector()
     {
-        let r = this.neg.mul(xAxisQuat).mul(this);
+        let r = this.neg.mul(XAxisQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**
@@ -899,13 +1024,18 @@ class LSystem
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
      * @param {number} seed (default: 0) the seed (for stochastic systems).
      */
-    constructor(axiom, rules, turnAngle = 30, seed = 0, ignoreList = '')
+    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
+    ignoreList = '', models = {})
     {
-        /**
-         * @type {string} the starting sequence.
-         * @public
-         */
-        this.axiom = axiom;
+        this.userInput =
+        {
+            axiom: axiom,
+            rules: this.getPurged(rules),
+            turnAngle: turnAngle,
+            seed: seed,
+            ignoreList: ignoreList,
+            models: models
+        };
         /**
          * @type {string[]} the production rules.
          * @public
@@ -916,7 +1046,11 @@ class LSystem
          * @type {string} a list of symbols ignored by the renderer.
          * @public
          */
-        this.ignoreList = ignoreList;
+        this.ignoreList = new Set(ignoreList);
+        this.models = new Map();
+        for(let key in models)
+            this.models.set(key, models[key]);
+
         for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
@@ -925,7 +1059,11 @@ class LSystem
                 if(rs.length < 2)
                 {
                     if(i == 0)
-                        this.ignoreList += rs[0];
+                        this.ignoreList = new Set
+                        ([
+                            ...rs[0],
+                            ...this.ignoreList
+                        ]);
                     continue;
                 }
                 for(let i = 0; i < 2; ++i)
@@ -933,15 +1071,40 @@ class LSystem
 
                 let rder = rs[1].split(',');
                 if(rder.length == 1)
-                    this.rules.set(rs[0], rs[1]);
+                {
+                    if(rs[0].length == 1)
+                        this.rules.set(rs[0], rs[1]);
+                    else if(rs[0].length == 2 && rs[0][0] == '~')
+                        this.models.set(rs[0][1], rs[1]);
+                }
                 else
                 {
+                    // Models can't have stochastic rules sadly, due to how
+                    // derivations work.
                     for(let i = 0; i < rder.length; ++i)
                         rder[i] = rder[i].trim();
-                    this.rules.set(rs[0], rder);
+                    if(rs[0].length == 1)
+                        this.rules.set(rs[0], rder);
+                    else if(rs[0].length == 2 && rs[0][0] == '~')
+                        this.models.set(rs[0][1], rder);
                 }
             }
         }
+        /**
+         * @type {number} the seed (for stochastic systems).
+         * @public
+         */
+        this.seed = seed;
+        /**
+         * @type {LCG} the LCG used for random number generation.
+         * @public not sure, ask Itsuki.
+         */
+        this.random = new LCG(this.seed);
+        /**
+         * @type {string} the starting sequence.
+         * @public
+         */
+        this.axiom = this.getRecursiveModels(axiom).result;
         /**
          * @type {number} the turning angle (in degrees).
          * @public
@@ -966,18 +1129,54 @@ class LSystem
         this.rotations.set('^', new Quaternion(c, 0, s, 0));
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
-        /**
-         * @type {number} the seed (for stochastic systems).
-         * @public
-         */
-        this.seed = seed;
-        /**
-         * @type {LCG} the LCG used for random number generation.
-         * @public not sure, ask Itsuki.
-         */
-        this.random = new LCG(this.seed);
     }
+    rerollAxiom()
+    {
+        this.axiom = this.getRecursiveModels(this.userInput.axiom).result;
+    }
+    getRecursiveModels(sequence)
+    {
+        let result;
+        let count = 0;
+        if(typeof sequence === 'string')
+        {
+            result = '';
+            for(let i = 0; i < sequence.length; ++i)
+            {
+                let deriv;
+                if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
+                {
+                    let r = this.getRecursiveModels(
+                    this.models.get(sequence[i + 1]));
+                    deriv = r.result;
+                    count += r.count;
+                }
+                else
+                    deriv = sequence[i];
 
+                if(typeof deriv === 'string')
+                    result += deriv;
+                else
+                    result += deriv[this.random.nextRange(0, deriv.length)];
+                
+                count += deriv.length;
+            }
+        }
+        else
+        {
+            result = [];
+            for(let i = 0; i < sequence.length; ++i)
+            {
+                let r = this.getRecursiveModels(sequence[i]);
+                result.push(r.result);
+                count += r.count;
+            }
+        }
+        return {
+            count: count,
+            result: result
+        };
+    }
     /**
      * Derive a sequence from the input string.
      * @param {string} state the input string.
@@ -986,25 +1185,59 @@ class LSystem
     derive(sequence, start = 0)
     {
         let result = '';
+        let count = 0;
         for(let i = start; i < sequence.length; ++i)
         {
-            if(result.length > MAX_CHARS_PER_TICK)
+            if(result.length + count > maxCharsPerTick)
             {
                 return {
                     next: i,
                     result: result
                 };
             }
-            if(this.rules.has(sequence[i]))
+            let deriv;
+            if(sequence[i] == '%')
             {
-                let rder = this.rules.get(sequence[i]);
-                if(typeof rder === 'string')
-                    result += rder;
+                let branchLvl = 0;
+                for(; i < sequence.length; ++i)
+                {
+                    switch(sequence[i])
+                    {
+                        case '[':
+                            ++branchLvl;
+                            break;
+                        case ']':
+                            --branchLvl;
+                            break;
+                    }
+                    if(branchLvl < 0)
+                        break;
+                }
+                if(sequence[i] == ']')
+                    deriv = sequence[i];
                 else
-                    result += rder[this.random.nextRange(0, rder.length)];
+                    continue;
+            }
+            else if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
+            {
+                let r = this.getRecursiveModels(
+                this.models.get(sequence[i + 1]));
+                deriv = r.result;
+                count += r.count - r.result.length;
+            }
+            else if(this.rules.has(sequence[i]))
+            {
+                let r = this.getRecursiveModels(this.rules.get(sequence[i]));
+                deriv = r.result;
+                count += r.count - r.result.length;
             }
             else
-                result += sequence[i];
+                deriv = sequence[i];
+
+            if(typeof deriv === 'string')
+                result += deriv;
+            else
+                result += deriv[this.random.nextRange(0, deriv.length)];
         }
         return {
             next: 0,
@@ -1018,30 +1251,33 @@ class LSystem
     set rerollSeed(seed)
     {
         this.seed = seed;
+        this.userInput.seed = seed;
         this.random = new LCG(this.seed);
     }
-    getRulesStrings(containsIgnoreList = false)
+    getPurged(rules)
     {
         let result = [];
-        if(containsIgnoreList)
-            result.push(this.ignoreList);
-        for(let [key, value] of this.rules)
+        let idx = 0;
+        for(let i = 0; i < rules.length; ++i)
         {
-            if(typeof value === 'string')
-                result.push(`${key}=${value}`);
-            else
-                result.push(`${key}=${value.join(',')}`);
+            // I hope this deep-copies
+            if(rules[i])
+            {
+                result[idx] = rules[i];
+                ++idx;
+            }
         }
         return result;
     }
     get object()
     {
         return {
-            axiom: this.axiom,
-            rules: this.getRulesStrings(),
-            turnAngle: this.turnAngle,
-            ignoreList: this.ignoreList,
-            seed: this.seed
+            axiom: this.userInput.axiom,
+            rules: this.getPurged(this.userInput.rules),
+            turnAngle: this.userInput.turnAngle,
+            seed: this.userInput.seed,
+            ignoreList: this.userInput.ignoreList,
+            models: this.userInput.models
         };
     }
     /**
@@ -1050,7 +1286,7 @@ class LSystem
      */
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${this.ignoreList}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${[...this.ignoreList].join('')}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -1148,7 +1384,7 @@ class Renderer
          * @type {string} a list of symbols to act as stoppers for backtracking.
          * @public
          */
-        this.backtrackList = backtrackList;
+        this.backtrackList = new Set(backtrackList);
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
         this.hesitate = hesitate;
@@ -1162,11 +1398,6 @@ class Renderer
          * @public stay away from me.
          */
         this.ori = new Quaternion();
-        /**
-         * @type {boolean} whether the cursor's orientation is reversed.
-         * @public please leave this be.
-         */
-        this.reverse = false;
         /**
          * @type {string[]} stores the system's every level.
          * @public don't touch me.
@@ -1218,6 +1449,7 @@ class Renderer
          * @public I told you so many times that you shouldn't access these.
          */
         this.nextDeriveIdx = 0;
+        this.polygonMode = 0;
     }
 
     /**
@@ -1236,6 +1468,8 @@ class Renderer
             this.lv = level;
             this.figureScale = this.figScaleExpr.evaluate(
             v => this.getVariable(v)).toNumber();
+            if(this.figureScale == 0)
+                this.figureScale = 1;
             this.camCentre = new Vector3
             (
                 this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
@@ -1250,7 +1484,7 @@ class Renderer
         for(let i = this.loaded + 1; i <= this.loadTarget; ++i)
         {
             // Threshold to prevent maximum statements error
-            if(charCount > MAX_CHARS_PER_TICK)
+            if(charCount > maxCharsPerTick)
                 return;
 
             if(i == 0)
@@ -1286,10 +1520,10 @@ class Renderer
     {
         this.state = new Vector3(0, 0, 0);
         this.ori = new Quaternion();
-        this.reverse = false;
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
+        this.polygonMode = 0;
         if(clearGraph)
         {
             this.elapsed = 0;
@@ -1322,13 +1556,14 @@ class Renderer
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
-        (backtrackList != this.backtrackList) ||
         (loadModels != this.loadModels) || (hesitate != this.hesitate);
 
         this.figScaleStr = figureScale.toString();
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
         this.figureScale = this.figScaleExpr.evaluate(
         v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
         this.cameraMode = cameraMode;
         this.camXStr = camX.toString();
         this.camYStr = camY.toString();
@@ -1347,7 +1582,10 @@ class Renderer
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
-        this.backtrackList = backtrackList;
+        let btl = new Set(backtrackList);
+        if(!eqSet(btl, this.backtrackList))
+            requireReset = true;
+        this.backtrackList = btl;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
         this.hesitate = hesitate;
@@ -1375,6 +1613,8 @@ class Renderer
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
         this.figureScale = this.figScaleExpr.evaluate(
         v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
         this.camXStr = camX.toString();
         this.camYStr = camY.toString();
         this.camZStr = camZ.toString();
@@ -1414,6 +1654,7 @@ class Renderer
     set seed(seed)
     {
         this.system.rerollSeed = seed;
+        this.system.rerollAxiom();
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = this.lv;
@@ -1424,10 +1665,7 @@ class Renderer
      */
     forward()
     {
-        if(this.reverse)
-            this.state -= this.ori.rotVector;
-        else
-            this.state += this.ori.rotVector;
+        this.state += this.ori.rotVector;
     }
     /**
      * Ticks the clock.
@@ -1473,13 +1711,16 @@ class Renderer
         Don't worry, it'll not run forever. This is just to prevent the renderer
         from hesitating for 1 tick every loop.
         */
-        let j;
+        let j, t;
         for(j = 0; j < 2; ++j)
         {
             for(; this.i < this.levels[this.lv].length; ++this.i)
             {
                 switch(this.levels[this.lv][this.i])
                 {
+                    case ' ':
+                        log('blank space')
+                        break;
                     case '+':
                         this.ori = this.system.rotations.get('+').mul(this.ori);
                         break;
@@ -1500,7 +1741,7 @@ class Renderer
                         this.ori = this.system.rotations.get('/').mul(this.ori);
                         break;
                     case '|':
-                        this.reverse = !this.reverse;
+                        this.ori = ZAxisQuat.mul(this.ori);
                         break;
                     case '[':
                         this.idxStack.push(this.stack.length);
@@ -1513,66 +1754,94 @@ class Renderer
                             break;
                         }
 
-                        let t = this.stack.pop();
+                        t = this.stack.pop();
                         this.state = t[0];
                         this.ori = t[1];
-                        // Fastest backtrack but ruins figure quality
-                        // if(this.quickBacktrack)
-                        // {
-                        //     while(this.stack.length >
-                        //     this.idxStack[this.idxStack.length - 1] &&
-                        //     this.stack[this.stack.length - 1][1] ===
-                        //     this.ori)
-                        //     {
-                        //         let t = this.stack.pop();
-                        //         this.state = t[0];
-                        //         this.ori = t[1];
-                        //     }
-                        // }
                         if(this.stack.length ==
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            if(this.hesitate)
+                            if(this.hesitate && this.polygonMode <= 0)
+                            {
                                 ++this.i;
+                                return;
+                            }
                             else
                                 break;
                         }
+                        if(this.polygonMode <= 0)
+                            return;
+                        else
+                        {
+                            --this.i;
+                            break;
+                        }
+                    case '{':        
+                        ++this.polygonMode;
+                        break;
+                    case '}':
+                        --this.polygonMode;
+                        break;
+                    case '.':
+                        if(this.polygonMode <= 0)
+                            log('You\'re making a polygon outside of one?');
+                        else
+                            ++this.i;
+
                         return;
                     default:
-                        if(this.system.ignoreList.includes(
-                        this.levels[this.lv][this.i]))
-                            break;
+                        let ignored = this.system.ignoreList.has(
+                        this.levels[this.lv][this.i]);
 
-                        let breakAhead = this.backtrackList.includes(
-                        this.levels[this.lv][this.i + 1]);
-                        if(!this.quickBacktrack || breakAhead)
+                        if(ignored)
+                        {
+                            if(this.quickDraw && this.stack.length > 0 &&
+                            this.ori === this.stack[this.stack.length - 1][1])
+                                this.stack.push([this.state, this.ori]);
+                            break;
+                        }
+
+                        if(!this.quickBacktrack)
                             this.stack.push([this.state, this.ori]);
-                        
+
                         this.forward();
 
-                        if(this.quickDraw && !breakAhead && this.stack.length >
-                        0 && this.ori === this.stack[this.stack.length - 1][1])
+                        let breakAhead = this.backtrackList.has(
+                        this.levels[this.lv][this.i + 1]);
+                        if(this.quickBacktrack && breakAhead)
+                            this.stack.push([this.state, this.ori]);
+
+                        if(this.quickDraw && !breakAhead &&
+                        (this.quickBacktrack || this.stack.length > 0 &&
+                        this.ori === this.stack[this.stack.length - 1][1]) &&
+                        this.i < this.levels[this.lv].length - 1)
                             break;
-                        else
+                        else if(this.polygonMode <= 0)
                         {
                             ++this.i;
                             return;
                         }
+                        else
+                            break;
                 }
             }
             if(!this.backtrackTail || this.stack.length == 0)
             {
+                // log(this.stateString)
                 switch(this.loopMode)
                 {
                     case 2:
                         l.buy(1);
+                        if(this.backtrackTail)
+                            return;
                         break;
                     case 1:
                         this.reset(false);
+                        if(this.backtrackTail)
+                            return;
                         break;
                     case 0:
-                        if(this.quickBacktrack && this.backtrackTail)
+                        if(this.backtrackTail)
                             this.state = new Vector3(0, 0, 0);
                         return;
                 }
@@ -1695,7 +1964,11 @@ class Renderer
             return 0;
 
         let pf = this.progressFrac;
-        return pf[0] * 100 / pf[1];
+        let result = pf[0] * 100 / pf[1];
+        if(isNaN(result))
+            result = 0;
+
+        return result;
     }
     /**
      * Returns the current progress as a string.
@@ -1745,7 +2018,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${this.backtrackList} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
     }
 }
 
@@ -2040,29 +2313,31 @@ class Measurer
     }
 }
 
-const xAxisQuat = new Quaternion(0, 1, 0, 0);
+const XAxisQuat = new Quaternion(0, 1, 0, 0);
+const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalSeed = new LCG(Date.now());
+let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 26];
 let manualSystems =
 {
-    arrow:
+    11:
     {
         system: arrow,
         config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
     },
-    dragon:
+    8:
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
         config: ['4*sqrt(2)^lv', 0, 0, 0, false]
     },
-    sierpinski:
+    9:
     {
         system: new LSystem('X', ['X=+Y-X-Y+', 'Y=-X+Y+X-'], 60),
         config: ['2^lv', '0.5*2^lv', 'sqrt(3)/4*2^lv', 0, false]
     },
-    stocWeed:
+    13:
     {
         system: new LSystem('X', [
             'F=FF',
@@ -2081,17 +2356,16 @@ let manualSystems =
         ], 12),
         config: [6, 6, 0, 0, true]
     },
-    snowflake:
+    14:
     {
         system: new LSystem('[X]+[X]+[X]+[X]+[X]+[X]', [
-            'i',
             'X=F[+F][-F]X',
             'F=F[+i][-i]F',
             'i=Ii,IIi'
-        ], 60),
-        config: ["2*2^lv", 0, 0, 0,false]
+        ], 60, 0, 'i'),
+        config: ["2*2^lv", 0, 0, 0, false]
     },
-    blackboard:
+    16:
     {
         system: new LSystem('F', [
             'F=Y[++++++MF][-----NF][^^^^^OF][&&&&&PF]',
@@ -2104,7 +2378,7 @@ let manualSystems =
         ], 8),
         config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
     },
-    hilbert3D:
+    17:
     {
         system: new LSystem('X', [
             'X',
@@ -2112,7 +2386,7 @@ let manualSystems =
         ], 90),
         config: ['2^lv', '0.5*2^lv-0.5', '0.5*2^lv-0.5', '0.5*2^lv-0.5', false]
     },
-    fern:
+    18:
     {
         system: new LSystem('FFFA', [
             'A=[++++++++++++++FC]B^+B[--------------FD]B+BA',
@@ -2121,17 +2395,37 @@ let manualSystems =
         ], 4),
         config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
     },
-    cultFF:
+    20:
+    {
+        system: new LSystem('{[A}]{[B}]', [
+            'A=[+A]C.',
+            'B=[-B]C.',
+            'C=GC'
+        ], 27),
+        config: ['lv', 'lv/2-1', 0, 0, true]
+    },
+    22:
+    {
+        system: new LSystem('A~K', [
+            'A=[--//~K][++//~K]I///A',
+            'I=Fi',
+            'i=Fj',
+            'j=J[--FFA][++FFA]',
+            '~K=F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]'
+        ], 30),
+        config: ['3*lv', '1.5*lv', 0, 0, true]
+    },
+    27:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: ['2^lv', '2^lv', 0, 0, true]
     },
-    cultFXF:
+    28:
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: ['1.5*2^lv', '0.225*2^lv', '-0.75*2^lv', 0, false]
     },
-    cultXEXF:
+    29:
     {
         system: new LSystem('X', [
             'E=XEXF-',
@@ -2141,8 +2435,9 @@ let manualSystems =
         config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
     }
 };
-let tmpSystemName = getLoc('defaultSystemName');
-let tmpSystemDesc = getLoc('noDescription');
+let tmpSystem = null;
+let tmpSystemName = getLoc('welcomeSystemName');
+let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
 var l, ts;
 // Variable controls
@@ -2171,7 +2466,7 @@ var init = () =>
         {
             lvlControls.updateAllButtons();
             renderer.update(l.level);
-        }
+        };
         lvlControls = new VariableControls(l);
     }
     // ts (Tickspeed)
@@ -2186,7 +2481,7 @@ var init = () =>
                 (level / 10).toString());
             }
             return Localization.format(getLoc('varTsDesc'), level.toString());
-        }
+        };
         let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
         ts = theory.createUpgrade(1, progress, new FreeCost);
         ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
@@ -2198,9 +2493,23 @@ var init = () =>
         {
             tsControls.updateAllButtons();
             time = 0;
-        }
+        };
         tsControls = new VariableControls(ts, true);
     }
+    // Resume last system (upgrade idea)
+    // { 
+    //     rs = theory.createSingularUpgrade(0, progress, new FreeCost);
+    //     rs.getDescription = (_) => Localization.format(getLoc('btnResume'),
+    //     tmpSystemName);
+    //     rs.info = getLoc('upgResumeInfo');
+    //     rs.boughtOrRefunded = (_) =>
+    //     {
+    //         renderer.applySystem = tmpSystem;
+    //         tmpSystem = null;
+    //         rs.level = 0;
+    //         rs.isAvailable = false;
+    //     };
+    // }
 
     theory.createSecretAchievement(0, null,
         getLoc('saPatienceTitle'),
@@ -2280,8 +2589,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        displacementX: 6,
-        displacementY: 5,
+        margin: new Thickness(5, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
@@ -2377,17 +2685,27 @@ var getUpgradeListDelegate = () =>
     createWorldMenu().show());
     theoryButton.row = 2;
     theoryButton.column = 0;
+    let resumeButton = createButton(Localization.format(getLoc('btnResume'),
+    tmpSystemName), () =>
+    {
+        renderer.applySystem = tmpSystem;
+        tmpSystem = null;
+    }, ui.screenHeight * 0.05);
+    resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
+    resumeButton.isVisible = () => tmpSystem ? true : false;
+    resumeButton.margin = new Thickness(0, 0, 0, 2);
 
     let stack = ui.createScrollView
     ({
-        padding: new Thickness(4, 6),
+        padding: new Thickness(6, 8),
         content: ui.createStackLayout
         ({
             children:
             [
+                resumeButton,
                 ui.createGrid
                 ({
-                    columnSpacing: 6,
+                    columnSpacing: 8,
                     rowSpacing: 6,
                     rowDefinitions:
                     [
@@ -2402,7 +2720,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 0,
                             column: 1,
-                            columnSpacing: 6,
+                            columnSpacing: 7,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -2415,7 +2733,7 @@ var getUpgradeListDelegate = () =>
                         ({
                             row: 1,
                             column: 1,
-                            columnSpacing: 6,
+                            columnSpacing: 7,
                             columnDefinitions: ['50*', '50*'],
                             children:
                             [
@@ -2428,11 +2746,11 @@ var getUpgradeListDelegate = () =>
                 ui.createBox
                 ({
                     heightRequest: 0,
-                    // margin: new Thickness(0, 2)
+                    // margin: new Thickness(0, 6)
                 }),
                 ui.createGrid
                 ({
-                    columnSpacing: 6,
+                    columnSpacing: 8,
                     rowSpacing: 6,
                     rowDefinitions:
                     [
@@ -2446,8 +2764,8 @@ var getUpgradeListDelegate = () =>
                         sysButton,
                         cfgButton,
                         slButton,
-                        theoryButton,
-                        manualButton
+                        manualButton,
+                        theoryButton
                     ]
                 })
             ]
@@ -2661,9 +2979,15 @@ let createConfigMenu = () =>
         }
     });
     let tmpModel = renderer.loadModels;
+    let modelLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelLoadModels'),
+        row: 2,
+        column: 0,
+        verticalOptions: LayoutOptions.CENTER
+    });
     let modelSwitch = ui.createSwitch
     ({
-        isVisible: false,
         isToggled: tmpModel,
         row: 2,
         column: 1,
@@ -2740,7 +3064,7 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpEXB = renderer.backtrackList;
+    let tmpEXB = [...renderer.backtrackList].join('');
     let EXBLabel = ui.createLatexLabel
     ({
         text: getLoc('labelBTList'),
@@ -2813,7 +3137,7 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                rowDefinitions: [40, 40, 40],
+                                rowDefinitions: [40, 40],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -2826,15 +3150,7 @@ let createConfigMenu = () =>
                                         column: 0,
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
-                                    tailSwitch,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelLoadModels'),
-                                        row: 2,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
-                                    modelSwitch
+                                    tailSwitch
                                 ]
                             }),
                             ui.createBox
@@ -2928,7 +3244,7 @@ let createConfigMenu = () =>
                                 QDSwitch.isToggled = rx.quickDraw;
                                 tmpQB = rx.quickBacktrack;
                                 QBSwitch.isToggled = rx.quickBacktrack;
-                                EXBEntry.text = rx.backtrackList;
+                                EXBEntry.text = [...rx.backtrackList].join('');
                                 tmpModel = rx.loadModels;
                                 modelSwitch.isToggled = rx.loadModels;
                                 tmpTail = rx.backtrackTail;
@@ -2949,7 +3265,8 @@ let createConfigMenu = () =>
 
 let createSystemMenu = () =>
 {
-    let tmpAxiom = renderer.system.axiom;
+    let values = renderer.system.object;
+    let tmpAxiom = values.axiom;
     let axiomEntry = ui.createEntry
     ({
         text: tmpAxiom,
@@ -2960,7 +3277,7 @@ let createSystemMenu = () =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = renderer.system.turnAngle;
+    let tmpAngle = values.turnAngle;
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
@@ -2973,9 +3290,9 @@ let createSystemMenu = () =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = renderer.system.getRulesStrings(true);
+    let tmpRules = values.rules;
     let ruleEntries = [];
-    for(let i = 1; i < tmpRules.length; ++i)
+    for(let i = 0; i < tmpRules.length; ++i)
     {
         ruleEntries.push(ui.createEntry
         ({
@@ -3011,7 +3328,7 @@ let createSystemMenu = () =>
                 text: '',
                 onTextChanged: (ot, nt) =>
                 {
-                    tmpRules[i + 1] = nt;
+                    tmpRules[i] = nt;
                 }
             }));
             rulesLabel.text = Localization.format(getLoc('labelRules'),
@@ -3019,18 +3336,19 @@ let createSystemMenu = () =>
             ruleStack.children = ruleEntries;
         }
     });
+    let tmpIgnore = values.ignoreList;
     let ignoreEntry = ui.createEntry
     ({
-        text: tmpRules[0],
+        text: tmpIgnore,
         row: 0,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpRules[0] = nt;
+            tmpIgnore = nt;
         }
     });
-    let tmpSeed = renderer.system.seed;
+    let tmpSeed = values.seed;
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
@@ -3060,7 +3378,7 @@ let createSystemMenu = () =>
                         [
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '30*', '30*', '20*'],
+                                columnDefinitions: ['20*', '40*', '25*', '15*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -3122,16 +3440,52 @@ let createSystemMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createButton
+                ui.createGrid
                 ({
-                    text: getLoc('btnConstruct'),
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        renderer.applySystem = new LSystem(tmpAxiom, tmpRules,
-                        tmpAngle, tmpSeed);
-                        menu.hide();
-                    }
+                    minimumHeightRequest: 64,
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: getLoc('btnConstruct'),
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.applySystem = new LSystem(tmpAxiom,
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                if(tmpSystem)
+                                {
+                                    tmpSystem = null;
+                                    tmpSystemName = getLoc('defaultSystemName');
+                                    tmpSystemDesc = getLoc('noDescription');
+                                }
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnClear'),
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let values = new LSystem().object;
+                                axiomEntry.text = values.axiom;
+                                angleEntry.text = values.turnAngle.toString();
+                                tmpRules = values.rules;
+                                ruleEntries = [];
+                                rulesLabel.text = Localization.format(
+                                getLoc('labelRules'), ruleEntries.length);
+                                ruleStack.children = ruleEntries;
+                                ignoreEntry.text = values.ignoreList;
+                                seedEntry.text = values.seed.toString();
+                            }
+                        })
+                    ]
                 })
             ]
         })
@@ -3197,7 +3551,7 @@ let createNamingMenu = () =>
                 Sound.playClick();
                 savedSystems.set(title, {
                     desc: savedSystems.get(title).desc,
-                    system: JSON.stringify(renderer.system.object),
+                    system: renderer.system.object,
                     config: renderer.staticCamera
                 });
                 tmpSystemName = title;
@@ -3210,7 +3564,14 @@ let createNamingMenu = () =>
     let systemGrid = ui.createGrid
     ({
         columnDefinitions: ['70*', '30*'],
+        verticalOptions: LayoutOptions.START,
         children: getSystemGrid() 
+    });
+    let systemGridScroll = ui.createScrollView
+    ({
+        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.2,
+        systemGrid.height)),
+        content: systemGrid
     });
 
     let menu = ui.createPopup
@@ -3263,11 +3624,7 @@ let createNamingMenu = () =>
                     verticalOptions: LayoutOptions.CENTER,
                     margin: new Thickness(0, 12)
                 }),
-                ui.createScrollView
-                ({
-                    heightRequest: ui.screenHeight * 0.2,
-                    content: systemGrid
-                }),
+                systemGridScroll,
                 ui.createBox
                 ({
                     heightRequest: 1,
@@ -3308,8 +3665,18 @@ let createSystemClipboardMenu = (values) =>
         onTextChanged: (ot, nt) =>
         {
             tmpSys = nt;
+            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
         }
     });
+    let warningEntry = ui.createLatexLabel
+    ({
+        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
+        text: Localization.format(getLoc('labelEntryCharLimit'),
+        ENTRY_CHAR_LIMIT),
+        margin: new Thickness(0, 0, 0, 4),
+        verticalOptions: LayoutOptions.CENTER
+    });
+
     let menu = ui.createPopup
     ({
         title: getLoc('menuClipboard'),
@@ -3323,6 +3690,7 @@ let createSystemClipboardMenu = (values) =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
+                warningEntry,
                 ui.createButton
                 ({
                     text: getLoc('btnConstruct'),
@@ -3335,6 +3703,7 @@ let createSystemClipboardMenu = (values) =>
                         renderer.applySystem = new LSystem(sv.system.axiom,
                         sv.system.rules, sv.system.turnAngle,
                         sv.system.seed, sv.system.ignoreList);
+                        tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
                         menu.hide();
@@ -3355,8 +3724,18 @@ let createStateClipboardMenu = (values) =>
         onTextChanged: (ot, nt) =>
         {
             tmpState = nt;
+            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
         }
     });
+    let warningEntry = ui.createLatexLabel
+    ({
+        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
+        text: Localization.format(getLoc('labelEntryCharLimit'),
+        ENTRY_CHAR_LIMIT),
+        margin: new Thickness(0, 0, 0, 4),
+        verticalOptions: LayoutOptions.CENTER
+    });
+
     let menu = ui.createPopup
     ({
         title: getLoc('menuClipboard'),
@@ -3370,6 +3749,7 @@ let createStateClipboardMenu = (values) =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
+                warningEntry,
                 ui.createButton
                 ({
                     text: getLoc('btnImport'),
@@ -3391,7 +3771,7 @@ let createViewMenu = (title) =>
     let systemObj = savedSystems.get(title);
     let values = systemObj.system;
     let tmpDesc = systemObj.desc;
-    if(tmpDesc in [null, undefined])
+    if(!tmpDesc)
         tmpDesc = getLoc('noDescription');
     let rendererValues = systemObj.config;
     let tmpZE = rendererValues[0];
@@ -3510,7 +3890,9 @@ let createViewMenu = (title) =>
             tmpAngle = Number(nt);
         }
     });
-    let tmpRules = values.rules;
+    let tmpRules = [];
+    for(let i = 0; i < values.rules.length; ++i)
+        tmpRules[i] = values.rules[i];
     let ruleEntries = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
@@ -3520,7 +3902,6 @@ let createViewMenu = (title) =>
             onTextChanged: (ot, nt) =>
             {
                 tmpRules[i] = nt;
-                // log(tmpRules.toString())
             }
         }));
     }
@@ -3550,7 +3931,6 @@ let createViewMenu = (title) =>
                 onTextChanged: (ot, nt) =>
                 {
                     tmpRules[i] = nt;
-                    // log(tmpRules.toString())
                 }
             }));
             rulesLabel.text = Localization.format(getLoc('labelRules'),
@@ -3608,7 +3988,7 @@ let createViewMenu = (title) =>
                             }),
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '30*', '30*', '20*'],
+                                columnDefinitions: ['20*', '40*', '25*', '15*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -3725,6 +4105,7 @@ let createViewMenu = (title) =>
                                 Sound.playClick();
                                 renderer.applySystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
                                 tmpSystemName = title;
@@ -3767,12 +4148,20 @@ let createViewMenu = (title) =>
                 })
             ]
         })
-    })
+    });
     return menu;
 }
 
 let createSaveMenu = () =>
 {
+    let savedSystemsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelSavedSystems'),
+        savedSystems.size),
+        // horizontalOptions: LayoutOptions.CENTER,
+        verticalOptions: LayoutOptions.CENTER,
+        margin: new Thickness(0, 12)
+    });
     let getSystemGrid = () =>
     {
         let children = [];
@@ -3792,6 +4181,8 @@ let createSaveMenu = () =>
             children.push(btn);
             ++i;
         }
+        savedSystemsLabel.text = Localization.format(
+        getLoc('labelSavedSystems'), savedSystems.size);
         return children;
     };
     let createViewButton = (title) =>
@@ -3818,9 +4209,15 @@ let createSaveMenu = () =>
     let systemGrid = ui.createGrid
     ({
         columnDefinitions: ['70*', '30*'],
-        children: getSystemGrid() 
+        verticalOptions: LayoutOptions.START,
+        children: getSystemGrid()
     });
-
+    let systemGridScroll = ui.createScrollView
+    ({
+        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.32,
+        systemGrid.height)),
+        content: systemGrid
+    });
     let menu = ui.createPopup
     ({
         title: getLoc('menuSave'),
@@ -3883,22 +4280,11 @@ let createSaveMenu = () =>
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                ui.createLatexLabel
-                ({
-                    text: Localization.format(getLoc('labelSavedSystems'),
-                    savedSystems.size),
-                    // horizontalOptions: LayoutOptions.CENTER,
-                    verticalOptions: LayoutOptions.CENTER,
-                    margin: new Thickness(0, 12)
-                }),
-                ui.createScrollView
-                ({
-                    heightRequest: ui.screenHeight * 0.32,
-                    content: systemGrid
-                })
+                savedSystemsLabel,
+                systemGridScroll
             ]
         })
-    })
+    });
     return menu;
 }
 
@@ -3942,6 +4328,65 @@ let createManualMenu = () =>
             }),
             sourceEntry
         ]
+    });
+    let setPage = (p) =>
+    {
+        page = p;
+        menu.title = Localization.format(
+            getLoc('menuManual'), page + 1,
+            getLoc('manual').length
+        );
+        pageTitle.text = manualPages[page].title;
+        pageContents.text =
+        manualPages[page].contents;
+        
+        sourceGrid.isVisible = 'source' in
+        manualPages[page];
+        sourceEntry.text = 'source' in
+        manualPages[page] ?
+        manualPages[page].source : '';
+    };
+    let getContentsTable = () =>
+    {
+        let children = [];
+        for(let i = 0; i < contentsTable.length; ++i)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: manualPages[contentsTable[i]].title,
+                row: i,
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }));
+            children.push(ui.createButton
+            ({
+                text: Localization.format(getLoc('btnPage'),
+                contentsTable[i] + 1),
+                row: i,
+                column: 1,
+                heightRequest: 40,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    setPage(contentsTable[i]);
+                    TOCMenu.hide();
+                }
+            }));
+        }
+        return children;
+    };
+    let TOCMenu = ui.createPopup
+    ({
+        title: getLoc('menuTOC'),
+        content: ui.createScrollView
+        ({
+            heightRequest: ui.screenHeight * 0.36,
+            content: ui.createGrid
+            ({
+                columnDefinitions: ['80*', '20*'],
+                children: getContentsTable()
+            })
+        })
     });
 
     let menu = ui.createPopup
@@ -3988,24 +4433,9 @@ let createManualMenu = () =>
                             isVisible: () => page > 0,
                             onClicked: () =>
                             {
+                                Sound.playClick();
                                 if(page > 0)
-                                {
-                                    Sound.playClick();
-                                    --page;
-                                    menu.title = Localization.format(
-                                        getLoc('menuManual'), page + 1,
-                                        getLoc('manual').length
-                                    );
-                                    pageTitle.text = manualPages[page].title;
-                                    pageContents.text =
-                                    manualPages[page].contents;
-                                    
-                                    sourceGrid.isVisible = 'source' in
-                                    manualPages[page];
-                                    sourceEntry.text = 'source' in
-                                    manualPages[page] ?
-                                    manualPages[page].source : '';
-                                }
+                                    setPage(page - 1);
                             }
                         }),
                         ui.createButton
@@ -4013,13 +4443,13 @@ let createManualMenu = () =>
                             text: getLoc('btnConstruct'),
                             row: 0,
                             column: 1,
-                            isVisible: () => 'system' in manualPages[page],
+                            isVisible: () => page in manualSystems,
                             onClicked: () =>
                             {
-                                let s = manualSystems[manualPages[page].system];
                                 Sound.playClick();
+                                let s = manualSystems[page];
                                 renderer.applySystem = s.system;
-
+                                tmpSystem = null;
                                 if('config' in s)
                                     renderer.configureStaticCamera(...s.config);
 
@@ -4027,6 +4457,18 @@ let createManualMenu = () =>
                                 tmpSystemDesc = Localization.format(
                                 getLoc('manualSystemDesc'), page + 1);
                                 menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnContents'),
+                            row: 0,
+                            column: 1,
+                            isVisible: () => !(page in manualSystems),
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                TOCMenu.show();
                             }
                         }),
                         ui.createButton
@@ -4039,29 +4481,14 @@ let createManualMenu = () =>
                             {
                                 Sound.playClick();
                                 if(page < manualPages.length - 1)
-                                {
-                                    ++page;
-                                    menu.title = Localization.format(
-                                        getLoc('menuManual'), page + 1,
-                                        getLoc('manual').length
-                                    );
-                                    pageTitle.text = manualPages[page].title;
-                                    pageContents.text =
-                                    manualPages[page].contents;
-                                    
-                                    sourceGrid.isVisible = 'source' in
-                                    manualPages[page];
-                                    sourceEntry.text = 'source' in
-                                    manualPages[page] ?
-                                    manualPages[page].source : '';
-                                }
+                                    setPage(page + 1);
                             }
                         })
                     ]
                 })
             ]
         })
-    })
+    });
     return menu;
 }
 
@@ -4224,11 +4651,23 @@ let createWorldMenu = () =>
             }
         }
     });
+    let tmpMCPT = maxCharsPerTick;
+    let MCPTEntry = ui.createEntry
+    ({
+        text: tmpMCPT.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 4,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpMCPT = Number(nt);
+        }
+    });
 
     let menu = ui.createPopup
     ({
         title: getLoc('menuTheory'),
-        isPeekable: true,
         content: ui.createStackLayout
         ({
             children:
@@ -4267,15 +4706,23 @@ let createWorldMenu = () =>
                         MPSwitch,
                         ui.createLatexLabel
                         ({
-                            text: getLoc('labelInternalState'),
+                            text: getLoc('labelMaxCharsPerTick'),
                             row: 4,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        MCPTEntry,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelInternalState'),
+                            row: 5,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         ui.createButton
                         ({
                             text: getLoc('btnClipboard'),
-                            row: 4,
+                            row: 5,
                             column: 1,
                             heightRequest: 40,
                             onClicked: () =>
@@ -4307,7 +4754,8 @@ let createWorldMenu = () =>
                             camMeasurer.reset();
                         }
                         measurePerformance = tmpMP;
-                        // menu.hide();
+                        maxCharsPerTick = tmpMCPT;
+                        menu.hide();
                     }
                 })
             ]
@@ -4326,6 +4774,7 @@ var getInternalState = () => JSON.stringify
     tickDelayMode: tickDelayMode,
     resetLvlOnConstruct: resetLvlOnConstruct,
     measurePerformance: measurePerformance,
+    maxCharsPerTick: maxCharsPerTick,
     renderer:
     {
         figureScale: renderer.figScaleStr,
@@ -4339,19 +4788,20 @@ var getInternalState = () => JSON.stringify
         loadModels: renderer.loadModels,
         quickDraw: renderer.quickDraw,
         quickBacktrack: renderer.quickBacktrack,
-        backtrackList: renderer.backtrackList,
+        backtrackList: [...renderer.backtrackList].join(''),
         backtrackTail: renderer.backtrackTail,
         hesitate: renderer.hesitate
     },
-    system:
+    system: tmpSystem ?
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
-        axiom: renderer.system.axiom,
-        rules: renderer.system.getRulesStrings(),
-        turnAngle: renderer.system.turnAngle,
-        ignoreList: renderer.system.ignoreList,
-        seed: renderer.system.seed
+        ...tmpSystem.object
+    } :
+    {
+        title: tmpSystemName,
+        desc: tmpSystemDesc,
+        ...renderer.system.object
     },
     savedSystems: Object.fromEntries(savedSystems)
 });
@@ -4369,28 +4819,34 @@ var setInternalState = (stateStr) =>
     {
         let state = JSON.parse(stateStr);
         log(`Loading JSON state (version: ${state.version})`);
-        time = state.time;
-        page = state.page;
-        offlineReset = state.offlineReset;
-        altTerEq = state.altTerEq;
-        tickDelayMode = state.tickDelayMode;
-        resetLvlOnConstruct = state.resetLvlOnConstruct;
-        measurePerformance = state.measurePerformance;
+        if('time' in state)
+            time = state.time;
+        if('page' in state)
+            page = state.page;
+        if('offlineReset' in state)
+            offlineReset = state.offlineReset;
+        if('altTerEq' in state)
+            altTerEq = state.altTerEq;
+        if('tickDelayMode' in state)
+            tickDelayMode = state.tickDelayMode;
+        if('resetLvlOnConstruct' in state)
+            resetLvlOnConstruct = state.resetLvlOnConstruct;
+        if('measurePerformance' in state)
+            measurePerformance = state.measurePerformance;
+        if('maxCharsPerTick' in state)
+            maxCharsPerTick = state.maxCharsPerTick;
         
-        tmpSystemName = state.system.title;
-        tmpSystemDesc = state.system.desc;
-        let system;
         if('system' in state)
         {
-            system = new LSystem(state.system.axiom, state.system.rules,
+            tmpSystemName = state.system.title;
+            tmpSystemDesc = state.system.desc;
+            tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList);
         }
-        else
-            system = arrow;
         
         if('renderer' in state)
         {
-            renderer = new Renderer(system, state.renderer.figureScale,
+            renderer = new Renderer(new LSystem(), state.renderer.figureScale,
             state.renderer.cameraMode, state.renderer.camX, state.renderer.camY,
             state.renderer.camZ, state.renderer.followFactor,
             state.renderer.loopMode, state.renderer.upright,
@@ -4401,27 +4857,8 @@ var setInternalState = (stateStr) =>
         else
             renderer = new Renderer(system);
 
-        savedSystems = new Map(Object.entries(state.savedSystems));
-        
-        // for(let [key, value] of savedSystems)
-        // {
-        //     if(typeof value.system != 'string')
-        //         continue;
-        //     let systemValues = value.system.split(' ');
-        //     let tmpAxiom = systemValues[0];
-        //     let tmpAngle = Number(systemValues[1]);
-        //     let tmpSeed = Number(systemValues[2]);
-        //     let tmpRules = systemValues.slice(3);
-            
-        //     value.system =
-        //     {
-        //         axiom: tmpAxiom,
-        //         rules: tmpRules.slice(1),
-        //         turnAngle: tmpAngle,
-        //         ignoreList: tmpRules[0],
-        //         seed: tmpSeed
-        //     };
-        // }
+        if('savedSystems' in state)
+            savedSystems = new Map(Object.entries(state.savedSystems));
     }
     // Doesn't even need checking the version number; if it appears at all then
     // it's definitely written before switching to JSON
@@ -4483,7 +4920,7 @@ var setInternalState = (stateStr) =>
                     renderer = new Renderer(system, ...rv.slice(1));
                 }
                 else
-                    renderer = new Renderer(arrow, ...rv.slice(1));
+                    renderer = new Renderer(new LSystem(), ...rv.slice(1));
             }
             else
             {
@@ -4500,7 +4937,7 @@ var setInternalState = (stateStr) =>
                     renderer = new Renderer(system, ...rv.slice(1));
                 }
                 else
-                    renderer = new Renderer(arrow, ...rv.slice(1));
+                    renderer = new Renderer(new LSystem(), ...rv.slice(1));
             }
         }
         

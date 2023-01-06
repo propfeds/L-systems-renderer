@@ -4,13 +4,15 @@ L-systems renderer in Exponential Idle.
 
 ## Features
 
-- Can save a whole army of systems!
-- Stochastic (randomised) and 3D systems
-- Camera modes: fixed and turtle-following
-- Drawing speed and advanced stroke options!
+Supported L-system features:
+- Stochastic (randomised) rules
+- 3D turtle controls
+- Polygon modelling
 
-In 0.18, the renderer's configuration was slightly messed up due to format
-changes to the internal state.
+Other features:
+- Can save a whole army of systems!
+- Camera modes: static and turtle-following
+- Drawing speed and advanced stroke options!
 
 In 0.20, more care has been taken with regards to the internal state, as it's
 been converted to JSON instead of pure text. However, it still might break.
@@ -20,7 +22,7 @@ internal state in the theory menu, so please back it up.
 
 ## Installation
 
-Current version: 0.20.1
+Current version: 0.21
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to this theory's raw code. Copy the page's URL.
