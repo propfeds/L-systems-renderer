@@ -1719,7 +1719,7 @@ class Renderer
                 switch(this.levels[this.lv][this.i])
                 {
                     case ' ':
-                        log('blank space')
+                        log('Blank space detected.')
                         break;
                     case '+':
                         this.ori = this.system.rotations.get('+').mul(this.ori);
@@ -1776,6 +1776,9 @@ class Renderer
                             --this.i;
                             break;
                         }
+                    case '%':
+                        // Nothing to do here, all handled by LSystem derivation
+                        break;
                     case '{':        
                         ++this.polygonMode;
                         break;
