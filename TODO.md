@@ -20,9 +20,26 @@
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
 - [ ] Rework quickdraw / BT logic
+  - [ ] Add a cooldown system
+  - [ ] Hesitate on both ends if hesitation is on?
+  - [ ] If the stack hasn't detected any movement, just don't do anything
+  (because of the ignored stuff)
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
+  - Can multiple derivations on the same rule still be made?
+
+- [ ] Change how models work:
+  - Stochastic models are no longer available
+    - Please define stochastic rules for the actual symbol instead, pre-model 
+  - Models are no longer recursively derived
+    - This will remove their permanence
+  - Instead, they will be processed by the renderer using a queue
+    - The processing code will be positioned below (?) the main renderer loop
+    - Almost the exact same code as main loop, but with `~` queue controls
+  - Having a model also means that symbol should be ignored (no extra F)
+    - Easy, just add the model map's keys to the set
+    - Update the manual
 
 - [ ] Parametric systems
   - Regex magic to separate string to actual sequence of symbols?
