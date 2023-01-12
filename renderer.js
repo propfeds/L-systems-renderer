@@ -76,7 +76,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.21;
+var version = 0.211;
 
 let time = 0;
 let page = 0;
@@ -97,7 +97,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.21',
+        versionName: 'v0.21.1',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
