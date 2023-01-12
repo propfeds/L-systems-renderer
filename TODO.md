@@ -1,12 +1,12 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [1.00, Mistletoe Edition](#100-mistletoe-edition)
+  - [1.00, the Mistletoe Update](#100-the-mistletoe-update)
   - [0.21: Completed](#021-completed)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## 1.00, Mistletoe Edition
+## 1.00, the Mistletoe Update
 
 - [ ] Add more comments in the code
 - [ ] Turtle controls summary page in guide
@@ -15,7 +15,8 @@
   - Discusses limitations of the game
   - Like a blog post, sort of
 - [ ] Localisation
-
+- [ ] Folders for saved systems?
+  - Directory separator?
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
@@ -24,10 +25,13 @@
   - [ ] Hesitate on both ends if hesitation is on?
   - [ ] If the stack hasn't detected any movement, just don't do anything
   (because of the ignored stuff)
+  - [ ] Remove the backtrack list option
+    - Also, backtrack on the way back and forward needs different lists?
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
-  - Can multiple derivations on the same rule still be made?
+  - Can multiple derivations on the same rule still be made? Ruins parity
+  - Allow both modes to exist
 
 - [ ] Change how models work:
   - Stochastic models are no longer available
@@ -40,31 +44,18 @@
   - Having a model also means that symbol should be ignored (no extra F)
     - Easy, just add the model map's keys to the set
     - Update the manual
+  - Backtrack models?
 
 - [ ] Parametric systems
+  - Different classes or merge into regular?
+    - Different classes means less overhead processing for regular systems
   - Regex magic to separate string to actual sequence of symbols?
   - Equal comparison changed to `==` instead of `=` in abop to differentiate
   from the syntax
   - Store as an extra array of objects
   - Round brackets gonna make it hard for actual drawing - although maybe it
   would've been already stripped down by the time it gets to the turtle
-
-- [ ] Another model format for each symbol
-  - Array of Vector3s denoting a path of vertices
-    - Don't write `(0, 0, 0)` at start or end
-    - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
-    through the model's queue one by one until we reach the end. But we won't
-    go back to `(0, 0, 0)`, we go forward to the next symbol. This would allow
-    us to draw different lengthed lines if we defined the model to include only
-    one point: `(L, 0, 0)`. But... that would delay processing by one turn?
-  - Well, we can't include the tilde then. Hardcoded models can still be a thing
-  but tildes need more investigation.
-  - Still keeping the idea of two paths?
-  - Can models' names contain spaces?
-    - How are they referenced in systems? As a list of names? An ID that is the
-    index of an array?
-  - [ ] Model storage
-    - How to load? How to edit?
+  - `~`: Parameters of the following symbol can control model size in rule
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
@@ -189,3 +180,19 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
   - Or, we could just make LG immediately... or a sequel named
   `Parametric L-systems Renderer`, with a better randomiser lol
   - Scrapped. Just make a new class.
+- Strict model format for each symbol
+  - Array of Vector3s denoting a path of vertices
+    - Don't write `(0, 0, 0)` at start or end
+    - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
+    through the model's queue one by one until we reach the end. But we won't
+    go back to `(0, 0, 0)`, we go forward to the next symbol. This would allow
+    us to draw different lengthed lines if we defined the model to include only
+    one point: `(L, 0, 0)`. But... that would delay processing by one turn?
+  - Well, we can't include the tilde then. Hardcoded models can still be a thing
+  but tildes need more investigation.
+  - Still keeping the idea of two paths?
+  - Can models' names contain spaces?
+    - How are they referenced in systems? As a list of names? An ID that is the
+    index of an array?
+  - Model storage
+    - How to load? How to edit?

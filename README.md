@@ -33,12 +33,12 @@ paste the URL in.
 
 ## Screenshots
 
-![ss1](screenshots/23.jpg "Hilbert curve")
+![ss1](screenshots/33.jpg "Lilac branch")
 
-![ss2](screenshots/24.jpg "Fern")
+![ss2](screenshots/34.jpg "Single lilac model")
 
-![ss3](screenshots/29.jpg "Manual")
+![ss3](screenshots/32.jpg "Clover model")
 
-![ss3](screenshots/25.jpg "Lucky flower")
+![ss3](screenshots/31.jpg "3D Hilbert curve")
 
-![ss3](screenshots/28.jpg "Storage")
+![ss3](screenshots/30.jpg "Sierpinski triangle")
