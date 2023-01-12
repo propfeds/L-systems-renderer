@@ -22,7 +22,7 @@ internal state in the theory menu, so please back it up.
 
 ## Installation
 
-Current version: 0.21
+Current version: 0.21.1
 
 Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to this theory's raw code. Copy the page's URL.
@@ -33,12 +33,12 @@ paste the URL in.
 
 ## Screenshots
 
-![ss1](screenshots/23.jpg "Hilbert curve")
+![ss1](screenshots/33.jpg "Lilac branch")
 
-![ss2](screenshots/24.jpg "Fern")
+![ss2](screenshots/34.jpg "Single lilac model")
 
-![ss3](screenshots/29.jpg "Manual")
+![ss3](screenshots/32.jpg "Clover model")
 
-![ss3](screenshots/25.jpg "Lucky flower")
+![ss3](screenshots/31.jpg "3D Hilbert curve")
 
-![ss3](screenshots/28.jpg "Storage")
+![ss3](screenshots/30.jpg "Sierpinski triangle")
