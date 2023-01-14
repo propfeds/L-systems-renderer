@@ -12,6 +12,7 @@
   - Ask if people would be interested
 
 - [ ] Add more comments in the code
+- [ ] Update docstrings
 - [ ] Turtle controls summary page in guide
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
@@ -40,8 +41,7 @@
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Can multiple derivations on the same rule still be made? Ruins parity
-  - Allow both modes to exist
-  - Difficulty: multiple derivations
+  - [ ] Allow both modes to exist
 
 - [ ] Investigate tropism (capital T) only available for parametric
 
@@ -64,9 +64,9 @@
     - This makes more sense thematically, as cut wounds will leave scars
       - Lemma's Garden: this will slightly slow down growth
   - If models were to be processed by renderer, then they cannot evolve
-  - Having a model also means that symbol should be ignored (no extra F)
+  - [x] Having a model also means that symbol should be ignored (no extra F)
     - Easy, just add the model map's keys to the set
-    - Update the manual
+    - [x] Update the manual
   - Lemma's Garden: Complex models such as flowers will bog down the growth cost
 
 - [ ] Parametric systems

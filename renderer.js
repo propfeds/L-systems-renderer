@@ -83,7 +83,6 @@ let measurePerformance = false;
 let maxCharsPerTick = 5000;
 
 let savedSystems = new Map();
-let savedModels = new Map();
 
 const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
 const ENTRY_CHAR_LIMIT = 5000;
@@ -107,7 +106,7 @@ const locStrings =
         varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
         upgResumeInfo: 'Resumes the last rendered system',
 
-        saPatienceTitle: 'Watching Grass Grow',
+        saPatienceTitle: 'You\'re watching grass grow.',
         saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
         'playlist.',
         saPatienceHint: 'Be patient.',
@@ -613,7 +612,7 @@ To declare a model rule, attach a tilde in front of the symbol on the left side:
 To reference a model in another rule, attach a tilde in front of the symbol ` +
 `in the same way it was declared.
 Note: The symbol will not disappear from the rule after the model has been ` +
-`drawn.`
+`drawn, but it will be ignored by the turtle.`
             },
             {
                 title: 'Example: Lilac branch',
