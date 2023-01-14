@@ -13,7 +13,7 @@
 
 - [ ] Add more comments in the code
 - [ ] Update docstrings
-- [ ] Turtle controls summary page in guide
+- [x] Turtle controls summary page in guide
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -27,7 +27,13 @@
 - [ ] Rework quickdraw / BT logic
   - [ ] Add a cooldown system
   - [ ] Hesitate on both ends if hesitation is on?
-  - [ ] If the stack hasn't detected any movement, just don't do anything
+  - [ ] When just pushing onto the stack normally (on an F point), don't push
+  if the position hasn't changed, because the orientation doesn't matter if
+  the stack point isn't a `[` bracket point
+  - [ ] If the `]]]]]` are stacked, hesitation time is massive
+    - [ ] If the stack hasn't detected any movement, just don't do anything
+    - [ ] Hesitate only when the turtle was moved compared to last time?
+    - [ ] Does it work with ignored?
   (because of the ignored stuff)
   - [ ] Remove the backtrack list option
     - Also, backtrack on the way back and forward needs different lists?
@@ -41,7 +47,7 @@
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Can multiple derivations on the same rule still be made? Ruins parity
-  - [ ] Allow both modes to exist
+  - [x] Allow both modes to exist (implemented in Classic)
 
 - [ ] Investigate tropism (capital T) only available for parametric
 

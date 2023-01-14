@@ -1087,25 +1087,56 @@ class LSystem
                     rs[i] = rs[i].trim();
 
                 let rder = rs[1].split(',');
-                if(rder.length == 1)
+                if(rder.length == 1)    // Regular rule
                 {
                     if(rs[0].length == 1)
-                        this.rules.set(rs[0], rs[1]);
+                    {
+                        let existingDer = this.rules.get(rs[0]);
+                        if(!existingDer)
+                            this.rules.set(rs[0], rs[1]);
+                        else if(typeof existingDer === 'string')
+                            this.rules.set(rs[0], [existingDer, rs[1]]);
+                        else
+                            this.rules.set(rs[0], [...existingDer, rs[1]]);
+                    }
                     else if(rs[0].length == 2 && rs[0][0] == '~')
                     {
-                        this.models.set(rs[0][1], rs[1]);
+                        let existingDer = this.models.get(rs[0][1]);
+                        if(!existingDer)
+                            this.models.set(rs[0][1], rs[1]);
+                        else if(typeof existingDer === 'string')
+                            this.models.set(rs[0][1], [existingDer, rs[1]]);
+                        else
+                            this.models.set(rs[0][1], [...existingDer, rs[1]]);
+
                         this.ignoreList.add(rs[0][1]);
                     }
                 }
-                else
+                else    // Stochastic rule
                 {
                     for(let i = 0; i < rder.length; ++i)
                         rder[i] = rder[i].trim();
+
                     if(rs[0].length == 1)
-                        this.rules.set(rs[0], rder);
+                    {
+                        let existingDer = this.rules.get(rs[0]);
+                        if(!existingDer)
+                            this.rules.set(rs[0], rder);
+                        else if(typeof existingDer === 'string')
+                            this.rules.set(rs[0], [existingDer, rder]);
+                        else
+                            this.rules.set(rs[0], [...existingDer, rder]);
+                    }
                     else if(rs[0].length == 2 && rs[0][0] == '~')
                     {
-                        this.models.set(rs[0][1], rder);
+                        let existingDer = this.models.get(rs[0][1]);
+                        if(!existingDer)
+                            this.models.set(rs[0][1], rder);
+                        else if(typeof existingDer === 'string')
+                            this.models.set(rs[0][1], [existingDer, rder]);
+                        else
+                            this.models.set(rs[0][1], [...existingDer, rder]);
+
                         this.ignoreList.add(rs[0][1]);
                     }
                 }
@@ -1694,7 +1725,7 @@ class Renderer
     tick(dt)
     {
         if(this.lv > this.loaded + 1 ||
-        typeof this.levels[this.lv] == 'undefined')
+        typeof this.levels[this.lv] === 'undefined')
             return;
 
         if(this.i >= this.levels[this.lv].length && this.loopMode == 0)
@@ -1718,7 +1749,7 @@ class Renderer
 
         // You can't believe how many times I have to type this typeof clause.
         if(level > this.loaded + 1 ||
-        typeof this.levels[this.lv] == 'undefined')
+        typeof this.levels[this.lv] === 'undefined')
             return;
 
         if(onlyUpdate)
@@ -1984,7 +2015,7 @@ class Renderer
      */
     get progressPercent()
     {
-        if(typeof this.levels[this.lv] == 'undefined')
+        if(typeof this.levels[this.lv] === 'undefined')
             return 0;
 
         let pf = this.progressFrac;
@@ -2009,7 +2040,7 @@ class Renderer
      */
     get loadingString()
     {
-        let len = typeof this.levels[this.loaded + 1] == 'undefined' ? 0 :
+        let len = typeof this.levels[this.loaded + 1] === 'undefined' ? 0 :
         this.levels[this.loaded + 1].length;
         return Localization.format(getLoc('rendererLoading'), this.loaded + 1,
         len);
@@ -2020,7 +2051,7 @@ class Renderer
      */
     get stateString()
     {
-        if(typeof this.levels[this.lv] == 'undefined')
+        if(typeof this.levels[this.lv] === 'undefined')
             return this.loadingString;
 
         return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.progressString}\\end{matrix}`;
@@ -2031,7 +2062,7 @@ class Renderer
      */
     get oriString()
     {
-        if(typeof this.levels[this.lv] == 'undefined')
+        if(typeof this.levels[this.lv] === 'undefined')
             return this.loadingString;
 
         return `\\begin{matrix}q=${this.ori.toString()},&${this.progressString}\\end{matrix}`;
