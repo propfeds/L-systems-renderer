@@ -115,6 +115,7 @@ const locStrings =
         btnClear: 'Clear',
         btnDefault: '* Reset to Defaults',
         btnAdd: 'Add',
+        btnReroll: 'Reroll',
         btnConstruct: 'Construct',
         btnDelete: 'Delete',
         btnView: 'View',
@@ -142,6 +143,7 @@ const locStrings =
         measurement: '{0}: max {1}ms, avg {2}ms over {3} ticks',
 
         rerollSeed: 'You are about to reroll the system\'s seed.',
+        resetRenderer: 'You are about to reset the renderer.',
 
         menuSequence: 'Sequence Menu',
         labelLevelSeq: 'Level {0}: ',
@@ -152,7 +154,7 @@ const locStrings =
         labelAngle: 'Turning angle (°): ',
         labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
-        labelSeed: 'Seed (for stochastic systems): ',
+        labelSeed: 'Seed: ',
 
         menuRenderer: 'Renderer Menu',
         labelInitScale: '* Initial scale: ',
@@ -3404,6 +3406,32 @@ let createSystemMenu = () =>
         }
     });
     let tmpSeed = values.seed;
+    let seedLabel = ui.createGrid
+    ({
+        row: 1,
+        column: 0,
+        columnDefinitions: ['40*', '30*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelSeed'),
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }),
+            ui.createButton
+            ({
+                text: getLoc('btnReroll'),
+                column: 1,
+                heightRequest: 40,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    seedEntry.text = globalSeed.nextInt.toString();
+                }
+            })
+        ]
+    });
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
@@ -3477,13 +3505,7 @@ let createSystemMenu = () =>
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     ignoreEntry,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelSeed'),
-                                        row: 1,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
+                                    seedLabel,
                                     seedEntry
                                 ]
                             })
@@ -4006,6 +4028,32 @@ let createViewMenu = (title) =>
         }
     });
     let tmpSeed = values.seed;
+    let seedLabel = ui.createGrid
+    ({
+        row: 1,
+        column: 0,
+        columnDefinitions: ['40*', '30*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelSeed'),
+                column: 0,
+                verticalOptions: LayoutOptions.CENTER
+            }),
+            ui.createButton
+            ({
+                text: getLoc('btnReroll'),
+                column: 1,
+                heightRequest: 40,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    seedEntry.text = globalSeed.nextInt.toString();
+                }
+            })
+        ]
+    });
     let seedEntry = ui.createEntry
     ({
         text: tmpSeed.toString(),
@@ -4087,13 +4135,7 @@ let createViewMenu = (title) =>
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     ignoreEntry,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelSeed'),
-                                        row: 1,
-                                        column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
-                                    }),
+                                    seedLabel,
                                     seedEntry
                                 ]
                             }),
@@ -5039,9 +5081,9 @@ var setInternalState = (stateStr) =>
 
 var canResetStage = () => true;
 
-var getResetStageMessage = () => getLoc('rerollSeed');
+var getResetStageMessage = () => getLoc('resetRenderer');
 
-var resetStage = () => renderer.seed = globalSeed.nextInt;
+var resetStage = () => renderer.reset();
 
 var getTertiaryEquation = () =>
 {
