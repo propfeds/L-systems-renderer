@@ -42,10 +42,7 @@ var getName = (language) =>
         en: 'L-systems Renderer',
     };
 
-    if(language in names)
-        return names[language];
-
-    return names.en;
+    return names[language] || names.en;
 }
 var getDescription = (language) =>
 {
@@ -68,10 +65,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 `in case it's corrupted, please contact me.`,
     };
 
-    if(language in descs)
-        return descs[language];
-
-    return descs.en;
+    return descs[language] || descs.en;
 }
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
@@ -810,7 +804,7 @@ let getLoc = (name, lang = menuLang) =>
     if(name in locStrings.en)
         return locStrings.en[name];
     
-    return `String not found: ${lang}.${name}`;
+    return `String missing: ${lang}.${name}`;
 }
 
 /**
@@ -1043,7 +1037,7 @@ class LSystem
         this.rules = new Map();
         this.contextRules = new Map();
         /**
-         * @type {string} a list of symbols ignored by the renderer.
+         * @type {set} a list of symbols ignored by the renderer.
          * @public
          */
         this.ignoreList = new Set(ignoreList);
@@ -1075,18 +1069,22 @@ class LSystem
                     if(rs[0].length == 1)
                         this.rules.set(rs[0], rs[1]);
                     else if(rs[0].length == 2 && rs[0][0] == '~')
+                    {
                         this.models.set(rs[0][1], rs[1]);
+                        this.ignoreList.add(rs[0][1]);
+                    }
                 }
                 else
                 {
-                    // Models can't have stochastic rules sadly, due to how
-                    // derivations work.
                     for(let i = 0; i < rder.length; ++i)
                         rder[i] = rder[i].trim();
                     if(rs[0].length == 1)
                         this.rules.set(rs[0], rder);
                     else if(rs[0].length == 2 && rs[0][0] == '~')
+                    {
                         this.models.set(rs[0][1], rder);
+                        this.ignoreList.add(rs[0][1]);
+                    }
                 }
             }
         }
@@ -1636,7 +1634,7 @@ class Renderer
      * Applies a new L-system to the renderer.
      * @param {LSystem} system the new system.
      */
-    set applySystem(system)
+    set constructSystem(system)
     {
         this.system = system;
         this.levels = [];
@@ -2691,7 +2689,7 @@ var getUpgradeListDelegate = () =>
     let resumeButton = createButton(Localization.format(getLoc('btnResume'),
     tmpSystemName), () =>
     {
-        renderer.applySystem = tmpSystem;
+        renderer.constructSystem = tmpSystem;
         tmpSystem = null;
     }, ui.screenHeight * 0.05);
     resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
@@ -3457,7 +3455,7 @@ let createSystemMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.applySystem = new LSystem(tmpAxiom,
+                                renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore);
                                 if(tmpSystem)
                                 {
@@ -3703,7 +3701,7 @@ let createSystemClipboardMenu = (values) =>
                         let sv = JSON.parse(tmpSys);
                         tmpSystemName = sv.title;
                         tmpSystemDesc = sv.desc;
-                        renderer.applySystem = new LSystem(sv.system.axiom,
+                        renderer.constructSystem = new LSystem(sv.system.axiom,
                         sv.system.rules, sv.system.turnAngle,
                         sv.system.seed, sv.system.ignoreList);
                         tmpSystem = null;
@@ -4106,7 +4104,7 @@ let createViewMenu = (title) =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                renderer.applySystem = new LSystem(tmpAxiom,
+                                renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore);
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
@@ -4451,7 +4449,7 @@ let createManualMenu = () =>
                             {
                                 Sound.playClick();
                                 let s = manualSystems[page];
-                                renderer.applySystem = s.system;
+                                renderer.constructSystem = s.system;
                                 tmpSystem = null;
                                 if('config' in s)
                                     renderer.configureStaticCamera(...s.config);

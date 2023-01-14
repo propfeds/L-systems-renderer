@@ -1,12 +1,15 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [1.00, the Mistletoe Update](#100-the-mistletoe-update)
+  - [1.00, Mistletoe ed.](#100-mistletoe-ed)
   - [0.21: Completed](#021-completed)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## 1.00, the Mistletoe Update
+## 1.00, Mistletoe ed.
+
+- [ ] Arrange coding streams
+  - Ask if people would be interested
 
 - [ ] Add more comments in the code
 - [ ] Turtle controls summary page in guide
@@ -28,14 +31,23 @@
   - [ ] Remove the backtrack list option
     - Also, backtrack on the way back and forward needs different lists?
 
+- [ ] Turning angles
+  - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
+  - [ ] Button to change mode between degrees and radians
+
+- [ ] Implement Mersenne Twister instead of th fucjuing Lcg
+
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Can multiple derivations on the same rule still be made? Ruins parity
   - Allow both modes to exist
+  - Difficulty: multiple derivations
+
+- [ ] Investigate tropism (capital T) only available for parametric
 
 - [ ] Change how models work:
   - Stochastic models are no longer available
-    - Please define stochastic rules for the actual symbol instead, pre-model 
+    - Instead define stochastic rules for the actual symbol instead, pre-model 
   - Models are no longer recursively derived
     - This will remove their permanence
   - Instead, they will be processed by the renderer using a queue
@@ -45,11 +57,27 @@
     - Easy, just add the model map's keys to the set
     - Update the manual
   - Backtrack models?
+- [ ] Counter argument:
+  - Permanence can be solved by cutting with `%`, albeit with a 1 tick cost for
+  renderer hesitation (or 2)
+    - Solution: Renderer only pushes on `[` if the position / ori has changed
+    - This makes more sense thematically, as cut wounds will leave scars
+      - Lemma's Garden: this will slightly slow down growth
+  - If models were to be processed by renderer, then they cannot evolve
+  - Having a model also means that symbol should be ignored (no extra F)
+    - Easy, just add the model map's keys to the set
+    - Update the manual
+  - Lemma's Garden: Complex models such as flowers will bog down the growth cost
 
 - [ ] Parametric systems
-  - Different classes or merge into regular?
-    - Different classes means less overhead processing for regular systems
-  - Regex magic to separate string to actual sequence of symbols?
+  - Different classes
+    - Button in LS menu / save menu to switch modes?
+    - Theory settings?
+    - Lemma stages?
+  - Top-down processing priority
+    - Buttons in LS menu to move up down (swap rules)
+      - How to update rule entries?
+  - [ ] Regex magic to separate string into actual sequence of symbols
   - Equal comparison changed to `==` instead of `=` in abop to differentiate
   from the syntax
   - Store as an extra array of objects
@@ -59,6 +87,7 @@
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
+  - Parametric: **context ignore** replaces regular ignore list in LS menu
   - Skipping over brackets? hmm, difficult
     - Mapping vertex depth, can be checked by tracking brackets and stacks.
     - Actually it's pretty hard to make an algo for this, because it could be:
