@@ -349,7 +349,7 @@ Level 5: abaababa`
 `comprehend this crap though.
 
 Here are the basic symbols and their respective instructions:
-F: moves turtle forward to draw a line of length 1 (usually).
+F: moves turtle forward to draw a line of length 1.
 +: rotates turtle counter-clockwise by an angle.
 -: rotates turtle clockwise by an angle.
 
@@ -506,7 +506,10 @@ Note: In other L-system implementations, < and > may be used instead of \\ ` +
 
 Note 2: Other L-system implementations may also start the turtle facing the ` +
 `y-axis or z-axis instead of the x-axis. To adopt those systems into LSR, ` +
-`swap the axes around until the desired results are achieved.`
+`swap the axes around until the desired results are achieved.
+
+Note 3: Other L-system implementations may swap counter-clockwise and ` +
+`clockwise rotations.`
             },
             {
                 title: 'Example: Blackboard tree',
@@ -632,6 +635,27 @@ Applies static camera:
 Scale: 3*lv
 Centre: (1.5*lv, 0, 0)
 Upright`
+            },
+            {
+                title: 'Appendix: Summary of symbols',
+                contents:
+`Any letter: moves turtle forward to draw a line of length 1.
++ -: rotate turtle on the z-axis (yaw).
+& ^: rotate turtle on the y-axis (pitch).
+\\ /: rotate turtle on the x-axis (roll).
+(counter-clockwise and clockwise, respectively)
+|: reverses turtle direction.
+
+[: pushes the turtle's state onto a stack.
+]: pops the stack's topmost element onto the turtle.
+%: cuts off the remainder of a branch.
+
+{: initiates polygon drawing mode.
+.: sets a polygon vertex.
+}: ends the polygon drawing mode.
+
+~: declares/references a symbol's model.
+,: separates between stochastic derivations.`
             },
             {
                 title: 'Appendix: Advanced artistry in LSR',
@@ -780,9 +804,9 @@ Centre: (0.75*3^lv, -0.25*3^lv, 0)
 Upright`
             },
             {
-                title: 'Appendix: LG',
+                title: 'Appendix: Lemma\'s Garden',
                 contents:
-`Here's to LG.`
+`Here's to LG, coming out in Never.`
             }
         ]
     }
@@ -2319,7 +2343,7 @@ const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalSeed = new LCG(Date.now());
-let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 26];
+let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 24, 27];
 let manualSystems =
 {
     11:
@@ -2415,17 +2439,17 @@ let manualSystems =
         ], 30),
         config: ['3*lv', '1.5*lv', 0, 0, true]
     },
-    27:
+    28:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: ['2^lv', '2^lv', 0, 0, true]
     },
-    28:
+    29:
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: ['1.5*2^lv', '0.225*2^lv', '-0.75*2^lv', 0, false]
     },
-    29:
+    30:
     {
         system: new LSystem('X', [
             'E=XEXF-',
