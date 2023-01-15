@@ -19,8 +19,7 @@
   - Discusses limitations of the game
   - Like a blog post, sort of
 - [ ] Localisation
-- [ ] Folders for saved systems?
-  - Directory separator?
+- [ ] Folders for saved systems
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)

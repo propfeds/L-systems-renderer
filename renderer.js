@@ -154,7 +154,7 @@ const locStrings =
         labelAngle: 'Turning angle (°): ',
         labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
-        labelSeed: 'Seed (32-bit): ',
+        labelSeed: 'Seed (non-zero): ',
 
         menuRenderer: 'Renderer Menu',
         labelInitScale: '* Initial scale: ',
@@ -460,7 +460,9 @@ When the system is grown, one of the possible derivations will be randomly ` +
 
 A system's seed can either be changed manually within the L-systems menu, or ` +
 `randomly reassigned using the 'Reroll' button on the top right corner of ` +
-`the theory screen.`
+`the theory screen.
+
+Note: setting the seed to 0 will disable the random generation.`
             },
             {
                 title: 'Example: Stochastic tree',
@@ -935,20 +937,13 @@ class LCG
 
 class Xorshift
 {
-    constructor(seed = 0)
+    /**
+     * The state must be initialized to non-zero.
+     */
+    constructor(seed = 1752)
     {
         this.state = seed;
     }
-    /* The state must be initialized to non-zero */
-    // uint32_t xorshift32(struct xorshift32_state *state)
-    // {
-    //     /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
-    //     uint32_t x = state->a;
-    //     x ^= x << 13;
-    //     x ^= x >> 17;
-    //     x ^= x << 5;
-    //     return state->a = x;
-    // }
     /**
      * Returns a random integer within [0, 2^32) probably.
      * @returns {number} the next integer in the generator.
@@ -1112,9 +1107,10 @@ class LSystem
      * @param {string} axiom the starting sequence.
      * @param {string[]} rules the production rules.
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
-     * @param {number} seed (default: 0) the seed (for stochastic systems).
+     * @param {number} seed (default: 1752) the seed used for stochastic 
+     * systems.
      */
-    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
+    constructor(axiom = '', rules = [], turnAngle = 0, seed = 1752,
     ignoreList = '', models = {})
     {
         this.userInput =
@@ -4499,6 +4495,65 @@ let createManualMenu = () =>
             sourceEntry
         ]
     });
+    let prevButton = ui.createButton
+    ({
+        text: getLoc('btnPrev'),
+        row: 0,
+        column: 0,
+        isVisible: page > 0,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            if(page > 0)
+                setPage(page - 1);
+        }
+    });
+    let constructButton = ui.createButton
+    ({
+        text: getLoc('btnConstruct'),
+        row: 0,
+        column: 1,
+        isVisible: page in manualSystems,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let s = manualSystems[page];
+            renderer.constructSystem = s.system;
+            tmpSystem = null;
+            if('config' in s)
+                renderer.configureStaticCamera(...s.config);
+
+            tmpSystemName = manualPages[page].title;
+            tmpSystemDesc = Localization.format(
+            getLoc('manualSystemDesc'), page + 1);
+            menu.hide();
+        }
+    });
+    let tocButton = ui.createButton
+    ({
+        text: getLoc('btnContents'),
+        row: 0,
+        column: 1,
+        isVisible: !(page in manualSystems),
+        onClicked: () =>
+        {
+            Sound.playClick();
+            TOCMenu.show();
+        }
+    });
+    let nextButton = ui.createButton
+    ({
+        text: getLoc('btnNext'),
+        row: 0,
+        column: 2,
+        isVisible: page < manualPages.length - 1,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            if(page < manualPages.length - 1)
+                setPage(page + 1);
+        }
+    });
     let setPage = (p) =>
     {
         page = p;
@@ -4515,6 +4570,11 @@ let createManualMenu = () =>
         sourceEntry.text = 'source' in
         manualPages[page] ?
         manualPages[page].source : '';
+
+        prevButton.isVisible = page > 0;
+        nextButton.isVisible = page < manualPages.length - 1;
+        constructButton.isVisible = page in manualSystems;
+        tocButton.isVisible = !(page in manualSystems);
     };
     let getContentsTable = () =>
     {
@@ -4595,65 +4655,10 @@ let createManualMenu = () =>
                     columnDefinitions: ['30*', '30*', '30*'],
                     children:
                     [
-                        ui.createButton
-                        ({
-                            text: getLoc('btnPrev'),
-                            row: 0,
-                            column: 0,
-                            isVisible: () => page > 0,
-                            onClicked: () =>
-                            {
-                                Sound.playClick();
-                                if(page > 0)
-                                    setPage(page - 1);
-                            }
-                        }),
-                        ui.createButton
-                        ({
-                            text: getLoc('btnConstruct'),
-                            row: 0,
-                            column: 1,
-                            isVisible: () => page in manualSystems,
-                            onClicked: () =>
-                            {
-                                Sound.playClick();
-                                let s = manualSystems[page];
-                                renderer.constructSystem = s.system;
-                                tmpSystem = null;
-                                if('config' in s)
-                                    renderer.configureStaticCamera(...s.config);
-
-                                tmpSystemName = manualPages[page].title;
-                                tmpSystemDesc = Localization.format(
-                                getLoc('manualSystemDesc'), page + 1);
-                                menu.hide();
-                            }
-                        }),
-                        ui.createButton
-                        ({
-                            text: getLoc('btnContents'),
-                            row: 0,
-                            column: 1,
-                            isVisible: () => !(page in manualSystems),
-                            onClicked: () =>
-                            {
-                                Sound.playClick();
-                                TOCMenu.show();
-                            }
-                        }),
-                        ui.createButton
-                        ({
-                            text: getLoc('btnNext'),
-                            row: 0,
-                            column: 2,
-                            isVisible: () => page < manualPages.length - 1,
-                            onClicked: () =>
-                            {
-                                Sound.playClick();
-                                if(page < manualPages.length - 1)
-                                    setPage(page + 1);
-                            }
-                        })
+                        prevButton,
+                        constructButton,
+                        tocButton,
+                        nextButton
                     ]
                 })
             ]
