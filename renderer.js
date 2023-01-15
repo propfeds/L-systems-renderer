@@ -81,6 +81,7 @@ let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let measurePerformance = false;
 let maxCharsPerTick = 5000;
+let menuLang = Localization.language;
 
 let savedSystems = new Map();
 
@@ -816,13 +817,11 @@ Upright`
     }
 };
 
-let menuLang = Localization.language;
 /**
  * Returns a localised string.
  * @param {string} name the internal name of the string.
  * @returns {string} the string.
  */
-
 let getLoc = (name, lang = menuLang) =>
 {
     if(lang in locStrings && name in locStrings[lang])
@@ -4983,6 +4982,9 @@ var getInternalState = () => JSON.stringify
 
 var setInternalState = (stateStr) =>
 {
+    if(!stateStr)
+        return;
+
     let values = stateStr.split('\n');
 
     let worldValues = values[0].split(' ');

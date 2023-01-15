@@ -71,6 +71,8 @@
     - This makes more sense thematically, as cut wounds will leave scars
       - Lemma's Garden: this will slightly slow down growth
   - If models were to be processed by renderer, then they cannot evolve
+    - On the other hand, they can 'evolve' in another sense where each parameter
+    value can have a different model
   - [x] Having a model also means that symbol should be ignored (no extra F)
     - Easy, just add the model map's keys to the set
     - [x] Update the manual
