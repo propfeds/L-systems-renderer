@@ -26,6 +26,7 @@
 - [ ] How about locking rotation? (for Navier Stokes)
 - [ ] Rework quickdraw / BT logic
   - [ ] Add a cooldown system
+  - [ ] Proposal: remove idxStack and instead turn stack into a 2D array
   - [ ] Hesitate on both ends if hesitation is on?
   - [ ] When just pushing onto the stack normally (on an F point), don't push
   if the position hasn't changed, because the orientation doesn't matter if
@@ -35,6 +36,7 @@
     - [ ] Hesitate only when the turtle was moved compared to last time?
     - [ ] Does it work with ignored?
   (because of the ignored stuff)
+  - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
   - [ ] Remove the backtrack list option
     - Also, backtrack on the way back and forward needs different lists?
 
@@ -42,7 +44,7 @@
   - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians
 
-- [ ] Implement Mersenne Twister instead of th fucjuing Lcg
+- [x] Implement new RNG (Xorshift) instead of th fucjuing Lcg
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`

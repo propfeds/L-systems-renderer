@@ -154,7 +154,7 @@ const locStrings =
         labelAngle: 'Turning angle (°): ',
         labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
-        labelSeed: 'Seed: ',
+        labelSeed: 'Seed (32-bit): ',
 
         menuRenderer: 'Renderer Menu',
         labelInitScale: '* Initial scale: ',
@@ -933,6 +933,77 @@ class LCG
     }
 }
 
+class Xorshift
+{
+    constructor(seed = 0)
+    {
+        this.state = seed;
+    }
+    /* The state must be initialized to non-zero */
+    // uint32_t xorshift32(struct xorshift32_state *state)
+    // {
+    //     /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+    //     uint32_t x = state->a;
+    //     x ^= x << 13;
+    //     x ^= x >> 17;
+    //     x ^= x << 5;
+    //     return state->a = x;
+    // }
+    /**
+     * Returns a random integer within [0, 2^32) probably.
+     * @returns {number} the next integer in the generator.
+     */
+    get nextInt()
+    {
+        let x = this.state;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        this.state = x;
+        return this.state;
+    }
+    /**
+     * Returns a random floating point number within [0, 1] or [0, 1).
+     * @param {boolean} [includeEnd] (default: false) whether to include the
+     * number 1 in the range.
+     * @returns {number} the floating point, corresponding to the next integer.
+     */
+    nextFloat(includeEnd = false)
+    {
+        if(includeEnd)
+        {
+            // [0, 1]
+            return this.nextInt / (this.m - 1);
+        }
+        else
+        {
+            // [0, 1)
+            return this.nextInt / this.m;
+        }
+    }
+    /**
+     * Returns a random integer within a range of [start, end).
+     * @param {number} start the range's lower bound.
+     * @param {number} end the range's upper bound, plus 1.
+     * @returns {number} the integer.
+     */
+    nextRange(start, end)
+    {
+        // [start, end)
+        let size = end - start;
+        return start + Math.floor(this.nextFloat() * size);
+    }
+    /**
+     * Returns a random element from an array.
+     * @param {any[]} array the array.
+     * @returns the element.
+     */
+    choice(array)
+    {
+        return array[this.nextRange(0, array.length)];
+    }
+}
+
 /**
  * Represents one hell of a quaternion.
  */
@@ -1150,10 +1221,10 @@ class LSystem
          */
         this.seed = seed;
         /**
-         * @type {LCG} the LCG used for random number generation.
+         * @type {Xorshift} the random number generator for this system.
          * @public not sure, ask Itsuki.
          */
-        this.random = new LCG(this.seed);
+        this.RNG = new Xorshift(this.seed);
         /**
          * @type {string} the starting sequence.
          * @public
@@ -1211,7 +1282,7 @@ class LSystem
                 if(typeof deriv === 'string')
                     result += deriv;
                 else
-                    result += deriv[this.random.nextRange(0, deriv.length)];
+                    result += deriv[this.RNG.nextRange(0, deriv.length)];
                 
                 count += deriv.length;
             }
@@ -1291,7 +1362,7 @@ class LSystem
             if(typeof deriv === 'string')
                 result += deriv;
             else
-                result += deriv[this.random.nextRange(0, deriv.length)];
+                result += deriv[this.RNG.nextRange(0, deriv.length)];
         }
         return {
             next: 0,
@@ -1306,7 +1377,7 @@ class LSystem
     {
         this.seed = seed;
         this.userInput.seed = seed;
-        this.random = new LCG(this.seed);
+        this.RNG = new Xorshift(this.seed);
     }
     getPurged(rules)
     {
@@ -1743,8 +1814,10 @@ class Renderer
     draw(level, onlyUpdate = false)
     {
         /*
+        Behold the broken monster patched by sheer duct tape.
         I can guarantee that because the game runs on one thread, the renderer
-        would always load faster than it draws.
+        would always load faster than it draws. Unless you make a rule that 
+        spawns 10000 plus signs. Please don't do it.
         */
         if(level > this.loaded)
             this.update(level);
@@ -2375,7 +2448,7 @@ const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
-let globalSeed = new LCG(Date.now());
+let globalRNG = new Xorshift(Date.now());
 let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 24, 27];
 let manualSystems =
 {
@@ -3427,7 +3500,7 @@ let createSystemMenu = () =>
                 onClicked: () =>
                 {
                     Sound.playClick();
-                    seedEntry.text = globalSeed.nextInt.toString();
+                    seedEntry.text = globalRNG.nextInt.toString();
                 }
             })
         ]
@@ -4049,7 +4122,7 @@ let createViewMenu = (title) =>
                 onClicked: () =>
                 {
                     Sound.playClick();
-                    seedEntry.text = globalSeed.nextInt.toString();
+                    seedEntry.text = globalRNG.nextInt.toString();
                 }
             })
         ]
