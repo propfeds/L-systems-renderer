@@ -80,6 +80,7 @@ let altTerEq = false;
 let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let measurePerformance = false;
+let debugCamPath = false;
 let maxCharsPerTick = 5000;
 let menuLang = Localization.language;
 
@@ -197,6 +198,7 @@ const locStrings =
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
+        debugCamPath: 'Debug camera path: ',
         labelMaxCharsPerTick: 'Maximum loaded chars/tick: ',
         labelInternalState: 'Internal state: ',
 
@@ -2813,8 +2815,11 @@ var getUpgradeListDelegate = () =>
     let resumeButton = createButton(Localization.format(getLoc('btnResume'),
     tmpSystemName), () =>
     {
-        renderer.constructSystem = tmpSystem;
-        tmpSystem = null;
+        if(tmpSystem)
+        {
+            renderer.constructSystem = tmpSystem;
+            tmpSystem = null;
+        }
     }, ui.screenHeight * 0.05);
     resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
     resumeButton.isVisible = () => tmpSystem ? true : false;
@@ -4825,12 +4830,30 @@ let createWorldMenu = () =>
             }
         }
     });
+    let tmpDCP = debugCamPath;
+    let DCPSwitch = ui.createSwitch
+    ({
+        isToggled: tmpDCP,
+        row: 4,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpDCP = !tmpDCP;
+                DCPSwitch.isToggled = tmpDCP;
+            }
+        }
+    });
     let tmpMCPT = maxCharsPerTick;
     let MCPTEntry = ui.createEntry
     ({
         text: tmpMCPT.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 4,
+        row: 5,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4880,8 +4903,16 @@ let createWorldMenu = () =>
                         MPSwitch,
                         ui.createLatexLabel
                         ({
-                            text: getLoc('labelMaxCharsPerTick'),
+                            text: getLoc('debugCamPath'),
                             row: 4,
+                            column: 0,
+                            verticalOptions: LayoutOptions.CENTER
+                        }),
+                        DCPSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelMaxCharsPerTick'),
+                            row: 5,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
@@ -4889,14 +4920,14 @@ let createWorldMenu = () =>
                         ui.createLatexLabel
                         ({
                             text: getLoc('labelInternalState'),
-                            row: 5,
+                            row: 6,
                             column: 0,
                             verticalOptions: LayoutOptions.CENTER
                         }),
                         ui.createButton
                         ({
                             text: getLoc('btnClipboard'),
-                            row: 5,
+                            row: 6,
                             column: 1,
                             heightRequest: 40,
                             onClicked: () =>
@@ -4928,6 +4959,9 @@ let createWorldMenu = () =>
                             camMeasurer.reset();
                         }
                         measurePerformance = tmpMP;
+                        if(tmpDCP != debugCamPath)
+                            renderer.reset();
+                        debugCamPath = tmpDCP;
                         maxCharsPerTick = tmpMCPT;
                         menu.hide();
                     }
@@ -4948,6 +4982,7 @@ var getInternalState = () => JSON.stringify
     tickDelayMode: tickDelayMode,
     resetLvlOnConstruct: resetLvlOnConstruct,
     measurePerformance: measurePerformance,
+    debugCamPath: debugCamPath,
     maxCharsPerTick: maxCharsPerTick,
     renderer:
     {
@@ -5010,6 +5045,8 @@ var setInternalState = (stateStr) =>
             resetLvlOnConstruct = state.resetLvlOnConstruct;
         if('measurePerformance' in state)
             measurePerformance = state.measurePerformance;
+        if('debugCamPath' in state)
+            debugCamPath = state.debugCamPath;
         if('maxCharsPerTick' in state)
             maxCharsPerTick = state.maxCharsPerTick;
         
@@ -5173,7 +5210,13 @@ var getTertiaryEquation = () =>
     return renderer.stateString;
 }
 
-var get3DGraphPoint = () => renderer.cursor;
+var get3DGraphPoint = () =>
+{
+    if(debugCamPath)
+        return -renderer.camera;
+    
+    return renderer.cursor;
+}
 
 var get3DGraphTranslation = () =>
 {

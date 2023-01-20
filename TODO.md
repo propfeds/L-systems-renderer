@@ -50,7 +50,8 @@
   - Can multiple derivations on the same rule still be made? Ruins parity
   - [x] Allow both modes to exist (implemented in Classic)
 
-- [ ] Investigate tropism (capital T) only available for parametric
+- [ ] Investigate tropism (capital T)
+- [ ] Investigate sunlight heading command (`$`)
 
 - [ ] Change how models work:
   - Stochastic models are no longer available
