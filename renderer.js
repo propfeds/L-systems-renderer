@@ -1108,10 +1108,10 @@ class LSystem
      * @param {string} axiom the starting sequence.
      * @param {string[]} rules the production rules.
      * @param {number} turnAngle (default: 30) the turning angle (in degrees).
-     * @param {number} seed (default: 1752) the seed used for stochastic 
+     * @param {number} seed (default: 0) the seed used for stochastic 
      * systems.
      */
-    constructor(axiom = '', rules = [], turnAngle = 0, seed = 1752,
+    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
     ignoreList = '', models = {})
     {
         this.userInput =

@@ -84,6 +84,7 @@
     - Button in LS menu / save menu to switch modes?
     - Theory settings?
     - Lemma stages?
+  - Make `f` move without returning like `F`
   - Top-down processing priority
     - Buttons in LS menu to move up down (swap rules)
       - How to update rule entries?
@@ -220,11 +221,11 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
   `Parametric L-systems Renderer`, with a better randomiser lol
   - Scrapped. Just make a new class.
 - Strict model format for each symbol
-  - Array of Vector3s denoting a path of vertices
-    - Don't write `(0, 0, 0)` at start or end
+  - Array of Vector3s den 0)` at start or end
     - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
     through the model's queue one by one until we reach the end. But we won't
-    go back to `(0, 0, 0)`, we go forward to the next symbol. This would allow
+    go back to `(0, 0, 0)`, weoting a path of vertices
+    - Don't write `(0, 0, go forward to the next symbol. This would allow
     us to draw different lengthed lines if we defined the model to include only
     one point: `(L, 0, 0)`. But... that would delay processing by one turn?
   - Well, we can't include the tilde then. Hardcoded models can still be a thing
