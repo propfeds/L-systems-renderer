@@ -49,7 +49,7 @@ class ParametricLSystem
         }
         // console.log(this.axiomParams.toString());
         // This is a context ignore list. Turtle ignores all except for Ff.
-        this.ignoreList = new Set('FfT+-&^\\/|{.}%');
+        this.ignoreList = new Set('FfT+-&^\\/|{.}%~$');
         
         let rulesMatches = [];
         for(let i = 0; i < rules.length; ++i)
@@ -93,7 +93,7 @@ class ParametricLSystem
                 }
             }
             tmpRule.params = ruleParams;
-            /*
+            /*  // O(1) lookup with O(n) memory, I think
             ruleParams = {
                 'a': ['m', 0],
                 'b': ['l', 0],
@@ -123,10 +123,14 @@ class ParametricLSystem
             // [i][4+4k]: derivation(s)
             // [i][6+4k]: probability
 
+            // Finally, push rule
+            if(!this.rules.has(contextMatch[6]))
+                this.rules.set(contextMatch[6], []);
+            this.rules.get(contextMatch[6]).push(tmpRule);
         }
 
         /* Probably will not allow multi-line stochastics this time.*/
-        let rules =
+        let exampleRules =
         {
             'A':
             [

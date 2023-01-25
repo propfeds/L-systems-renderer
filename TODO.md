@@ -38,6 +38,10 @@
   - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
   - [ ] Remove the backtrack list option
     - Also, backtrack on the way back and forward needs different lists?
+- [ ] Revamp sequence menu
+  - Level 0: 10 chars (`View`)
+  - Classic LS: displays the entire string in a label
+  - Parametric LS: displays symbols and parameters side by side, one symbol/row
 
 - [ ] Turning angles
   - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
@@ -51,7 +55,7 @@
   - [x] Allow both modes to exist (implemented in Classic)
 
 - [ ] Investigate tropism (capital T)
-- [ ] Investigate sunlight heading command (`$`)
+- [ ] Investigate sunlight heading (heliotropism) (`$`)
 
 - [ ] Change how models work:
   - Stochastic models are no longer available

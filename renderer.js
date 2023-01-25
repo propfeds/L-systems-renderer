@@ -33,6 +33,7 @@ import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
 import { Localization } from '../api/Localization';
 import { MathExpression } from '../api/MathExpression';
+import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -3402,6 +3403,7 @@ let createSystemMenu = () =>
         text: tmpAxiom,
         row: 0,
         column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpAxiom = nt;
@@ -3427,6 +3429,7 @@ let createSystemMenu = () =>
         ruleEntries.push(ui.createEntry
         ({
             text: tmpRules[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
             {
                 tmpRules[i] = nt;
@@ -3456,6 +3459,7 @@ let createSystemMenu = () =>
             ruleEntries.push(ui.createEntry
             ({
                 text: '',
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
                 {
                     tmpRules[i] = nt;
@@ -3812,6 +3816,7 @@ let createSystemClipboardMenu = (values) =>
     let sysEntry = ui.createEntry
     ({
         text: tmpSys,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpSys = nt;
@@ -3871,6 +3876,7 @@ let createStateClipboardMenu = (values) =>
     let sysEntry = ui.createEntry
     ({
         text: tmpState,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpState = nt;
@@ -4022,6 +4028,7 @@ let createViewMenu = (title) =>
         text: tmpAxiom,
         row: 0,
         column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpAxiom = nt;
@@ -4049,6 +4056,7 @@ let createViewMenu = (title) =>
         ruleEntries.push(ui.createEntry
         ({
             text: tmpRules[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
             {
                 tmpRules[i] = nt;
@@ -4078,6 +4086,7 @@ let createViewMenu = (title) =>
             ruleEntries.push(ui.createEntry
             ({
                 text: '',
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
                 {
                     tmpRules[i] = nt;
