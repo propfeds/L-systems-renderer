@@ -87,7 +87,7 @@ let menuLang = Localization.language;
 
 let savedSystems = new Map();
 
-const DEFAULT_BUTTON_HEIGHT = ui.screenHeight * 0.055;
+const DEFAULT_BUTTON_HEIGHT = Math.max(ui.screenHeight * 0.055, 48);
 const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
@@ -2821,7 +2821,7 @@ var getUpgradeListDelegate = () =>
             renderer.constructSystem = tmpSystem;
             tmpSystem = null;
         }
-    }, ui.screenHeight * 0.05);
+    }, Math.max(ui.screenHeight * 0.05, 44));
     resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
     resumeButton.isVisible = () => tmpSystem ? true : false;
     resumeButton.margin = new Thickness(0, 0, 0, 2);
