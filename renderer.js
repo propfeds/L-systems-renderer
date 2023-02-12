@@ -71,7 +71,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.211;
+var version = 1;
 
 let time = 0;
 let page = 0;
@@ -93,13 +93,14 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v0.21.1',
+        versionName: 'v1.0, Work in Progress',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
-        rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
+        rendererLoading: `\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}
+\\text{{ chars}})\\end{{matrix}}`,
 
         currencyTime: ' (elapsed)',
 
@@ -184,7 +185,8 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
-        labelEntryCharLimit: 'Warning: This entry has been capped at {0} characters. Proceed with caution.',
+        labelEntryCharLimit: `Warning: This entry has been capped at {0} ` +
+        `characters. Proceed with caution.`,
 
         menuNaming: 'Save System',
         labelName: 'Title: ',
@@ -1551,6 +1553,8 @@ class Renderer
          * @public don't touch this.
          */
         this.idxStack = [];
+        this.models = [];
+        this.mdi = [];
         /**
          * @type {number} the current index of the sequence.
          * @public don't know.
@@ -1561,6 +1565,7 @@ class Renderer
          * @public
          */
         this.elapsed = 0;
+        this.cooldown = 0;
         /**
          * @type {Vector3} the last tick's camera position.
          * @public didn't tell you so.
@@ -1646,6 +1651,7 @@ class Renderer
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
+        this.cooldown = 0;
         this.polygonMode = 0;
         if(clearGraph)
         {
@@ -1839,6 +1845,20 @@ class Renderer
         let j, t;
         for(j = 0; j < 2; ++j)
         {
+            if(this.cooldown > 0)
+                --this.cooldown;
+
+            if(this.models.length)
+            {
+                for(; this.mdi[this.mdi.length - 1] <
+                this.models[this.models.length - 1].length;
+                ++this.mdi[this.mdi.length - 1])
+                {
+                    // Process it like the regular switch
+                    continue;
+                }
+                continue;
+            }
             for(; this.i < this.levels[this.lv].length; ++this.i)
             {
                 switch(this.levels[this.lv][this.i])
@@ -1848,31 +1868,48 @@ class Renderer
                         break;
                     case '+':
                         this.ori = this.system.rotations.get('+').mul(this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '-':
                         this.ori = this.system.rotations.get('-').mul(this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '&':
                         this.ori = this.system.rotations.get('&').mul(this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '^':
                         this.ori = this.system.rotations.get('^').mul(this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '\\':
                         this.ori = this.system.rotations.get('\\').mul(
                         this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '/':
                         this.ori = this.system.rotations.get('/').mul(this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '|':
                         this.ori = ZAxisQuat.mul(this.ori);
+                        if(this.quickDraw)
+                            this.cooldown = 1;
                         break;
                     case '[':
                         this.idxStack.push(this.stack.length);
                         this.stack.push([this.state, this.ori]);
                         break;
                     case ']':
+                        if(this.cooldown > 0)
+                            return;
+
                         if(this.stack.length == 0)
                         {
                             log('You\'ve clearly made a bracket error.');
@@ -1889,10 +1926,14 @@ class Renderer
                             if(this.hesitate && this.polygonMode <= 0)
                             {
                                 ++this.i;
+                                this.cooldown = 1;
                                 return;
                             }
                             else
+                            {
+                                this.cooldown = 1;
                                 break;
+                            }
                         }
                         if(this.polygonMode <= 0)
                             return;
@@ -1912,37 +1953,43 @@ class Renderer
                         break;
                     case '.':
                         if(this.polygonMode <= 0)
-                            log('You\'re making a polygon outside of one?');
+                            log('You\'re cannot register a vertex outside of ' +
+                            'polygon drawing.');
                         else
                             ++this.i;
-
                         return;
                     default:
+                        if(this.cooldown > 0)
+                            return;
+
                         let ignored = this.system.ignoreList.has(
                         this.levels[this.lv][this.i]);
 
-                        if(ignored)
-                        {
-                            if(this.quickDraw && this.stack.length > 0 &&
-                            this.ori === this.stack[this.stack.length - 1][1])
-                                this.stack.push([this.state, this.ori]);
-                            break;
-                        }
+                        if(this.hesitate &&
+                        this.levels[this.lv][this.i + 1] == ']')
+                            this.cooldown = 1;
+                        // if(ignored)
+                        // {
+                        //     if(this.quickDraw && this.stack.length > 0 &&
+                        //     this.ori === this.stack[this.stack.length - 1][1])
+                        //         this.stack.push([this.state, this.ori]);
+                        //     break;
+                        // }
 
-                        if(!this.quickBacktrack)
+                        if(!this.quickBacktrack && this.stack.length == 0 ||
+                        (this.stack.length > 0 &&
+                        this.state !== this.stack[this.stack.length - 1][0]))
                             this.stack.push([this.state, this.ori]);
 
-                        this.forward();
+                        if(!this.ignored)
+                            this.forward();
 
                         let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
                         if(this.quickBacktrack && breakAhead)
                             this.stack.push([this.state, this.ori]);
-
-                        if(this.quickDraw && !breakAhead &&
-                        (this.quickBacktrack || this.stack.length > 0 &&
-                        this.ori === this.stack[this.stack.length - 1][1]) &&
-                        this.i < this.levels[this.lv].length - 1)
+                        
+                        if(this.quickDraw)
                             break;
                         else if(this.polygonMode <= 0)
                         {
@@ -1951,6 +1998,13 @@ class Renderer
                         }
                         else
                             break;
+
+                        // if(this.quickDraw && !breakAhead &&
+                        // (this.quickBacktrack || this.stack.length > 0 &&
+                        // this.ori === this.stack[this.stack.length - 1][1]) &&
+                        // this.i < this.levels[this.lv].length - 1)
+                        //     break;
+                        
                 }
             }
             if(!this.backtrackTail || this.stack.length == 0)

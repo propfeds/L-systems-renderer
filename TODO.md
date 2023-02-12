@@ -61,7 +61,7 @@
   - Stochastic models are no longer available
     - Instead define stochastic rules for the actual symbol instead, pre-model 
   - Models are no longer recursively derived
-    - This will remove their permanence
+    - This will remove their permanence and increase performance
   - Instead, they will be processed by the renderer using a queue
     - The processing code will be positioned below (?) the main renderer loop
     - Almost the exact same code as main loop, but with `~` queue controls
@@ -103,7 +103,7 @@
 - [ ] Context sensitivity
   - `b < a > c → aa`
   - Parametric: **context ignore** replaces regular ignore list in LS menu
-  - Skipping over brackets? hmm, difficult
+  - [x] Skipping over brackets? hmm, difficult
     - Mapping vertex depth, can be checked by tracking brackets and stacks.
     - Actually it's pretty hard to make an algo for this, because it could be:
     `01[23[456][45][4]][234]2`, and you would have to find all the 2s if you
