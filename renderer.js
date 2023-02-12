@@ -1656,6 +1656,7 @@ class Renderer
         if(clearGraph)
         {
             this.elapsed = 0;
+            time = 0;
             theory.clearGraph();
         }
         theory.invalidateTertiaryEquation();
@@ -1846,7 +1847,10 @@ class Renderer
         for(j = 0; j < 2; ++j)
         {
             if(this.cooldown > 0)
+            {
                 --this.cooldown;
+                return;
+            }
 
             if(this.models.length)
             {
@@ -1908,7 +1912,10 @@ class Renderer
                         break;
                     case ']':
                         if(this.cooldown > 0)
+                        {
+                            --this.cooldown;
                             return;
+                        }
 
                         if(this.stack.length == 0)
                         {
@@ -1960,7 +1967,10 @@ class Renderer
                         return;
                     default:
                         if(this.cooldown > 0)
+                        {
+                            --this.cooldown;
                             return;
+                        }
 
                         let ignored = this.system.ignoreList.has(
                         this.levels[this.lv][this.i]);
@@ -1968,6 +1978,7 @@ class Renderer
                         if(this.hesitate &&
                         this.levels[this.lv][this.i + 1] == ']')
                             this.cooldown = 1;
+
                         // if(ignored)
                         // {
                         //     if(this.quickDraw && this.stack.length > 0 &&
@@ -1976,9 +1987,11 @@ class Renderer
                         //     break;
                         // }
 
-                        if(!this.quickBacktrack && this.stack.length == 0 ||
+                        let moved = this.stack.length == 0 ||
                         (this.stack.length > 0 &&
-                        this.state !== this.stack[this.stack.length - 1][0]))
+                        this.state !== this.stack[this.stack.length - 1][0]);
+
+                        if(!this.quickBacktrack && moved)
                             this.stack.push([this.state, this.ori]);
 
                         if(!this.ignored)
