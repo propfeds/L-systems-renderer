@@ -688,16 +688,9 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 `of leaves and flowers, this speed feels at home with plant modelling. It ` +
 `offers a good compromise between speed and precision, although even 0.1 ` +
 `would be too slow for large scale figures.
-- 0.3 sec: with loose slanted lines, tick length 0.3 is generally is a solid ` +
-`option for any figure requiring some playfulness. However, it is fairly ` +
-`unknown that tick length 0.3 holds the most powerful secret in this whole ` +
-`universe: it can truly create the straightest lines out of this family. As ` +
-`always, some tricks are needed here:
-    + First, create an anchor at this speed by holding -.
-    + Switch back and forth between levels to reset the turtle.
-    + Activate the anchor by holding +, and marvel at the beauty of it all.
-Note: This trick is not guaranteed to work every time, so it is advised to ` +
-`try again multiple times.
+- 0.3 sec: Tick length 0.3 holds the most powerful secret in this whole ` +
+`universe: it can create the straightest lines out of this family. No ` +
+`trickery needed!
 - 0.4 sec: this one can really spice the figure up by tying up cute knots ` +
 `between corners occasionally, mimicking leaf shapes on a tree.
 - 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
