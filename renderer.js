@@ -1836,7 +1836,7 @@ class Renderer
         Don't worry, it'll not run forever. This is just to prevent the renderer
         from hesitating for 1 tick every loop.
         */
-        let j, t;
+        let j, t, moved;
         for(j = 0; j < 2; ++j)
         {
             if(this.cooldown > 0)
@@ -1916,6 +1916,9 @@ class Renderer
                             break;
                         }
 
+                        moved = this.state !==
+                        this.stack[this.stack.length - 1][0];
+
                         t = this.stack.pop();
                         this.state = t[0];
                         this.ori = t[1];
@@ -1923,7 +1926,7 @@ class Renderer
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            if(this.hesitate && this.polygonMode <= 0)
+                            if(this.hesitate && this.polygonMode <= 0 && moved)
                             {
                                 ++this.i;
                                 this.cooldown = 1;
@@ -1931,7 +1934,8 @@ class Renderer
                             }
                             else
                             {
-                                this.cooldown = 1;
+                                if(moved)
+                                    this.cooldown = 1;
                                 break;
                             }
                         }
@@ -1968,7 +1972,7 @@ class Renderer
                         let ignored = this.system.ignoreList.has(
                         this.levels[this.lv][this.i]);
 
-                        if(this.hesitate &&
+                        if(this.hesitate && !this.quickBacktrack &&
                         this.levels[this.lv][this.i + 1] == ']')
                             this.cooldown = 1;
 
@@ -1980,9 +1984,9 @@ class Renderer
                         //     break;
                         // }
 
-                        let moved = this.stack.length == 0 ||
-                        (this.stack.length > 0 &&
-                        this.state !== this.stack[this.stack.length - 1][0]);
+                        moved = this.stack.length == 0 ||
+                        (this.stack.length > 0 && this.state !==
+                        this.stack[this.stack.length - 1][0]);
 
                         if(!this.quickBacktrack && moved)
                             this.stack.push([this.state, this.ori]);

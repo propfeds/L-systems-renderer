@@ -23,16 +23,18 @@
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
+- [ ] Screen adaptive button sizes (40, 44, 48) plus other stuff maybe
 - [ ] Rework quickdraw / BT logic
-  - [ ] Add a cooldown system
+  - [ ] Progress: Regular & backtrack done, quickdraw remaining
+  - [x] Add a cooldown system
   - [ ] Proposal: remove idxStack and instead turn stack into a 2D array
-  - [ ] Hesitate on both ends if hesitation is on?
-  - [ ] When just pushing onto the stack normally (on an F point), don't push
+  - [x] Hesitate on both ends if hesitation is on?
+  - [x] When just pushing onto the stack normally (on an F point), don't push
   if the position hasn't changed, because the orientation doesn't matter if
   the stack point isn't a `[` bracket point
-  - [ ] If the `]]]]]` are stacked, hesitation time is massive
-    - [ ] If the stack hasn't detected any movement, just don't do anything
-    - [ ] Hesitate only when the turtle was moved compared to last time?
+  - [x] If the `]]]]]` are stacked, hesitation time is massive
+    - [x] If the stack hasn't detected any movement, just don't do anything
+    - [x] Hesitate only when the turtle was moved compared to last time?
     - [ ] Does it work with ignored?
   (because of the ignored stuff)
   - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
