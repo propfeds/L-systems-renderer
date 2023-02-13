@@ -1272,7 +1272,7 @@ class LSystem
          * @type {string} the starting sequence.
          * @public
          */
-        this.axiom = this.getRecursiveModels(axiom).result;
+        this.axiom = axiom;
         /**
          * @type {number} the turning angle (in degrees).
          * @public
@@ -1300,7 +1300,7 @@ class LSystem
     }
     rerollAxiom()
     {
-        this.axiom = this.getRecursiveModels(this.userInput.axiom).result;
+        this.axiom = this.userInput.axiom;
     }
     getRecursiveModels(sequence)
     {
@@ -1353,10 +1353,9 @@ class LSystem
     derive(sequence, start = 0)
     {
         let result = '';
-        let count = 0;
         for(let i = start; i < sequence.length; ++i)
         {
-            if(result.length + count > maxCharsPerTick)
+            if(result.length > maxCharsPerTick)
             {
                 return {
                     next: i,
@@ -1386,19 +1385,10 @@ class LSystem
                 else
                     continue;
             }
-            else if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
-            {
-                let r = this.getRecursiveModels(
-                this.models.get(sequence[i + 1]));
-                deriv = r.result;
-                count += r.count - r.result.length;
-            }
+            else if(sequence[i] == '~')
+                continue;
             else if(this.rules.has(sequence[i]))
-            {
-                let r = this.getRecursiveModels(this.rules.get(sequence[i]));
-                deriv = r.result;
-                count += r.count - r.result.length;
-            }
+                deriv = this.rules.get(sequence[i]);
             else
                 deriv = sequence[i];
 
@@ -1696,6 +1686,8 @@ class Renderer
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
+        this.models = [];
+        this.mdi = [];
         this.cooldown = 0;
         this.polygonMode = 0;
         if(clearGraph)
@@ -1892,7 +1884,8 @@ class Renderer
         from hesitating for 1 tick every loop.
         */
         let j, t, moved;
-        for(j = 0; j < 2; ++j)
+        let loopLimit = 2;  // Shenanigans may arise with models? Try this
+        for(j = 0; j < loopLimit; ++j)
         {
             // log(`${Math.round(this.elapsed)}, ${this.i} ` +
             // `${this.levels[this.lv][this.i]} (-${this.cooldown}): ` +
@@ -1903,19 +1896,163 @@ class Renderer
                 return;
             }
 
-            if(this.models.length)
+            if(this.models.length > 0)
             {
+                // log(this.models.toString());
+                // log(this.mdi.toString());
+                // Unreadable pile of shit
                 for(; this.mdi[this.mdi.length - 1] <
                 this.models[this.models.length - 1].length;
                 ++this.mdi[this.mdi.length - 1])
                 {
-                    // Process it like the regular switch
-                    continue;
+                    switch(this.models[this.models.length - 1][this.mdi[this.mdi.length - 1]])
+                    {
+                        case ' ':
+                            log('Blank space detected.')
+                            break;
+                        case '+':
+                            this.ori = this.system.rotations.get('+').mul(this.ori);
+                            break;
+                        case '-':
+                            this.ori = this.system.rotations.get('-').mul(this.ori);
+                            break;
+                        case '&':
+                            this.ori = this.system.rotations.get('&').mul(this.ori);
+                            break;
+                        case '^':
+                            this.ori = this.system.rotations.get('^').mul(this.ori);
+                            break;
+                        case '\\':
+                            this.ori = this.system.rotations.get('\\').mul(
+                            this.ori);
+                            break;
+                        case '/':
+                            this.ori = this.system.rotations.get('/').mul(this.ori);
+                            break;
+                        case '|':
+                            this.ori = ZAxisQuat.mul(this.ori);
+                            break;
+                        case '~':
+                            ++this.mdi[this.mdi.length - 1];
+                            this.models.push(this.system.models.get(this.models[this.models.length - 1][this.mdi[this.mdi.length - 1]]));
+                            this.mdi.push(0);
+                            return;
+                        case '[':
+                            this.idxStack.push(this.stack.length);
+                            this.stack.push([this.state, this.ori]);
+                            break;
+                        case ']':
+                            if(this.cooldown > 0 && this.polygonMode <= 0)
+                            {
+                                --this.cooldown;
+                                return;
+                            }
+
+                            if(this.stack.length == 0)
+                            {
+                                log('You\'ve clearly made a bracket error.');
+                                break;
+                            }
+
+                            moved = this.state !==
+                            this.stack[this.stack.length - 1][0];
+
+                            t = this.stack.pop();
+                            this.state = t[0];
+                            this.ori = t[1];
+                            if(this.stack.length ==
+                            this.idxStack[this.idxStack.length - 1])
+                            {
+                                this.idxStack.pop();
+                                if(moved)
+                                    this.cooldown = 1;
+                                if(this.hesitateNode && this.polygonMode <= 0)
+                                {
+                                    ++this.mdi[this.mdi.length - 1];
+                                    return;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                            if(this.polygonMode <= 0)
+                                return;
+                            else
+                            {
+                                --this.mdi[this.mdi.length - 1];
+                                break;
+                            }
+                        case '%':
+                            // Nothing to do here, all handled by LSystem derivation
+                            break;
+                        case '{':        
+                            ++this.polygonMode;
+                            break;
+                        case '}':
+                            --this.polygonMode;
+                            break;
+                        case '.':
+                            if(this.polygonMode <= 0)
+                                log('You\'re cannot register a vertex outside of ' +
+                                'polygon drawing.');
+                            else
+                                ++this.mdi[this.mdi.length - 1];
+                            return;
+                        default:
+                            if(this.cooldown > 0 && this.polygonMode <= 0)
+                            {
+                                --this.cooldown;
+                                return;
+                            }
+
+                            let ignored = this.system.ignoreList.has(
+                                this.models[this.models.length - 1][this.mdi[this.mdi.length - 1]]);
+                            let breakAhead = this.backtrackList.has(
+                                this.models[this.models.length - 1][this.mdi[this.mdi.length - 1] + 1]);
+                            let btAhead = this.models[this.models.length - 1][this.mdi[this.mdi.length - 1] + 1] == ']' ||
+                            this.mdi[this.mdi.length - 1] == this.models[this.models.length - 1].length - 1;
+
+                            if(this.hesitateApex && btAhead)
+                                this.cooldown = 1;
+
+                            if(this.quickDraw && breakAhead)
+                                this.cooldown = 1;
+
+                            moved = this.stack.length == 0 ||
+                            (this.stack.length > 0 && this.state !==
+                            this.stack[this.stack.length - 1][0]);
+
+                            if(!this.quickBacktrack && moved && !ignored)
+                                this.stack.push([this.state, this.ori]);
+
+                            if(!ignored)
+                                this.forward();
+
+                            if(this.quickBacktrack && breakAhead)
+                                this.stack.push([this.state, this.ori]);
+                            
+                            if(this.quickDraw && !btAhead)
+                                break;
+                            else if(this.polygonMode <= 0)
+                            {
+                                ++this.mdi[this.mdi.length - 1];
+                                return;
+                            }
+                            else
+                                break;
+                    }
                 }
+                this.models.pop();
+                this.mdi.pop();
+                ++loopLimit;
+                // continue prevents the regular loop from running
                 continue;
             }
             for(; this.i < this.levels[this.lv].length; ++this.i)
             {
+                // if(this.models.length > 0)
+                //     break;
                 switch(this.levels[this.lv][this.i])
                 {
                     case ' ':
@@ -1943,6 +2080,12 @@ class Renderer
                     case '|':
                         this.ori = ZAxisQuat.mul(this.ori);
                         break;
+                    case '~':
+                        ++this.i;
+                        this.models.push(this.system.models.get(
+                        this.levels[this.lv][this.i]));
+                        this.mdi.push(0);
+                        return;
                     case '[':
                         this.idxStack.push(this.stack.length);
                         this.stack.push([this.state, this.ori]);
