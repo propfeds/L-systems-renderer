@@ -1839,6 +1839,7 @@ class Renderer
         let j, t, moved;
         for(j = 0; j < 2; ++j)
         {
+            log(`${Math.round(this.elapsed)}, ${this.i} ${this.levels[this.lv][this.i]} (-${this.cooldown}): ${this.stack.length} stacked`)
             if(this.cooldown > 0)
             {
                 --this.cooldown;
@@ -1865,39 +1866,25 @@ class Renderer
                         break;
                     case '+':
                         this.ori = this.system.rotations.get('+').mul(this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '-':
                         this.ori = this.system.rotations.get('-').mul(this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '&':
                         this.ori = this.system.rotations.get('&').mul(this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '^':
                         this.ori = this.system.rotations.get('^').mul(this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '\\':
                         this.ori = this.system.rotations.get('\\').mul(
                         this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '/':
                         this.ori = this.system.rotations.get('/').mul(this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '|':
                         this.ori = ZAxisQuat.mul(this.ori);
-                        if(this.quickDraw)
-                            this.cooldown = 1;
                         break;
                     case '[':
                         this.idxStack.push(this.stack.length);
@@ -1973,9 +1960,13 @@ class Renderer
                         this.levels[this.lv][this.i]);
                         let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
-                        let btAhead = this.levels[this.lv][this.i + 1] == ']';
+                        let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
+                        this.i == this.levels[this.lv].length - 1;
 
                         if(this.hesitate && btAhead)
+                            this.cooldown = 1;
+
+                        if(this.quickDraw && breakAhead)
                             this.cooldown = 1;
 
                         // if(ignored)
@@ -1999,7 +1990,7 @@ class Renderer
                         if(this.quickBacktrack && breakAhead)
                             this.stack.push([this.state, this.ori]);
                         
-                        if(this.quickDraw)
+                        if(this.quickDraw && !btAhead)
                             break;
                         else if(this.polygonMode <= 0)
                         {
