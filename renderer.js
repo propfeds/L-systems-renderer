@@ -176,6 +176,8 @@ const locStrings =
         labelQuickdraw: '* Quickdraw (unstable): ',
         labelQuickBT: '* Quick backtrack: ',
         labelHesitate: '* Stutter on backtrack: ',
+        labelHesitateApex: '* Stutter at apex: ',
+        labelHesitateNode: '* Stutter at node: ',
         labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -1444,7 +1446,8 @@ class Renderer
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
     quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[',
-    loadModels = true, backtrackTail = false, hesitate = true)
+    loadModels = true, backtrackTail = false, hesitateApex = true,
+    hesitateNode = true)
     {
         /**
          * @type {LSystem} the L-system being handled.
@@ -1504,7 +1507,8 @@ class Renderer
         this.backtrackList = new Set(backtrackList);
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
-        this.hesitate = hesitate;
+        this.hesitateApex = hesitateApex;
+        this.hesitateNode = hesitateNode;
         /**
          * @type {Vector3} the cursor's position.
          * @public but shouldn't be.
@@ -1673,12 +1677,14 @@ class Renderer
      */
     configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
     loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels,
-    backtrackTail, hesitate)
+    backtrackTail, hesitateApex, hesitateNode)
     {
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
-        (loadModels != this.loadModels) || (hesitate != this.hesitate);
+        (loadModels != this.loadModels) ||
+        (hesitateApex != this.hesitateApex) ||
+        (hesitateNode != this.hesitateNode);
 
         this.figScaleStr = figureScale.toString();
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
@@ -1710,7 +1716,8 @@ class Renderer
         this.backtrackList = btl;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
-        this.hesitate = hesitate;
+        this.hesitateApex = hesitateApex;
+        this.hesitateNode = hesitateNode;
 
         if(requireReset)
             this.reset();
@@ -1916,7 +1923,7 @@ class Renderer
                             this.idxStack.pop();
                             if(moved)
                                 this.cooldown = 1;
-                            if(this.hesitate && this.polygonMode <= 0)
+                            if(this.hesitateNode && this.polygonMode <= 0)
                             {
                                 ++this.i;
                                 return;
@@ -1963,7 +1970,7 @@ class Renderer
                         let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
                         this.i == this.levels[this.lv].length - 1;
 
-                        if(this.hesitate && btAhead)
+                        if(this.hesitateApex && btAhead)
                             this.cooldown = 1;
 
                         if(this.quickDraw && breakAhead)
@@ -2201,7 +2208,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitateApex} ${this.hesitateNode}`;
     }
 }
 
@@ -3225,17 +3232,17 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpHes = renderer.hesitate;
-    let hesLabel = ui.createLatexLabel
+    let tmpHesA = renderer.hesitateApex;
+    let hesALabel = ui.createLatexLabel
     ({
-        text: getLoc('labelHesitate'),
+        text: getLoc('labelHesitateApex'),
         row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
-    let hesSwitch = ui.createSwitch
+    let hesASwitch = ui.createSwitch
     ({
-        isToggled: tmpHes,
+        isToggled: tmpHesA,
         row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
@@ -3245,30 +3252,55 @@ let createConfigMenu = () =>
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
-                tmpHes = !tmpHes;
-                hesSwitch.isToggled = tmpHes;
+                tmpHesA = !tmpHesA;
+                hesASwitch.isToggled = tmpHesA;
             }
         }
     });
-    let tmpEXB = [...renderer.backtrackList].join('');
-    let EXBLabel = ui.createLatexLabel
+    let tmpHesN = renderer.hesitateNode;
+    let hesNLabel = ui.createLatexLabel
     ({
-        text: getLoc('labelBTList'),
+        text: getLoc('labelHesitateNode'),
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
-    let EXBEntry = ui.createEntry
+    let hesNSwitch = ui.createSwitch
     ({
-        text: tmpEXB,
+        isToggled: tmpHesN,
         row: 3,
         column: 1,
-        horizontalTextAlignment: TextAlignment.END,
-        onTextChanged: (ot, nt) =>
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
         {
-            tmpEXB = nt;
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpHesN = !tmpHesN;
+                hesNSwitch.isToggled = tmpHesN;
+            }
         }
     });
+    // let tmpEXB = [...renderer.backtrackList].join('');
+    // let EXBLabel = ui.createLatexLabel
+    // ({
+    //     text: getLoc('labelBTList'),
+    //     row: 3,
+    //     column: 0,
+    //     verticalOptions: LayoutOptions.CENTER
+    // });
+    // let EXBEntry = ui.createEntry
+    // ({
+    //     text: tmpEXB,
+    //     row: 3,
+    //     column: 1,
+    //     horizontalTextAlignment: TextAlignment.END,
+    //     onTextChanged: (ot, nt) =>
+    //     {
+    //         tmpEXB = nt;
+    //     }
+    // });
 
     let menu = ui.createPopup
     ({
@@ -3346,7 +3378,7 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                // rowDefinitions: [40, 40, 40, 40, 40],
+                                rowDefinitions: [40, 40, 40, 40],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -3366,10 +3398,10 @@ let createConfigMenu = () =>
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     QBSwitch,
-                                    hesLabel,
-                                    hesSwitch,
-                                    EXBLabel,
-                                    EXBEntry
+                                    hesALabel,
+                                    hesASwitch,
+                                    hesNLabel,
+                                    hesNSwitch
                                 ]
                             })
                         ]
@@ -3402,8 +3434,8 @@ let createConfigMenu = () =>
                                 Sound.playClick();
                                 let requireReset = renderer.configure(tmpZE,
                                 tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel,
-                                tmpTail, tmpHes);
+                                tmpUpright, tmpQD, tmpQB, undefined, tmpModel,
+                                tmpTail, tmpHesA, tmpHesN);
                                 lvlControls.updateDescription();
                                 menu.hide();
                             }
@@ -3435,8 +3467,10 @@ let createConfigMenu = () =>
                                 modelSwitch.isToggled = rx.loadModels;
                                 tmpTail = rx.backtrackTail;
                                 tailSwitch.isToggled = rx.backtrackTail;
-                                tmpHes = rx.hesitate;
-                                hesSwitch.isToggled = rx.hesitate;
+                                tmpHesA = rx.hesitateApex;
+                                hesASwitch.isToggled = rx.hesitateApex;
+                                tmpHesN = rx.hesitateNode;
+                                hesNSwitch.isToggled = rx.hesitateNode;
                                 lvlControls.updateDescription();
                                 // menu.hide();
                             }
@@ -5061,9 +5095,10 @@ var getInternalState = () => JSON.stringify
         loadModels: renderer.loadModels,
         quickDraw: renderer.quickDraw,
         quickBacktrack: renderer.quickBacktrack,
-        backtrackList: [...renderer.backtrackList].join(''),
+        // backtrackList: [...renderer.backtrackList].join(''),
         backtrackTail: renderer.backtrackTail,
-        hesitate: renderer.hesitate
+        hesitateApex: renderer.hesitateApex,
+        hesitateNode: renderer.hesitateNode
     },
     system: tmpSystem ?
     {
@@ -5129,8 +5164,9 @@ var setInternalState = (stateStr) =>
             state.renderer.camZ, state.renderer.followFactor,
             state.renderer.loopMode, state.renderer.upright,
             state.renderer.quickDraw, state.renderer.quickBacktrack,
-            state.renderer.backtrackList, state.renderer.loadModels,
-            state.renderer.backtrackTail, state.renderer.hesitate);
+            undefined, state.renderer.loadModels,
+            state.renderer.backtrackTail, state.renderer.hesitateApex,
+            state.renderer.hesitateNode);
         }
         else
             renderer = new Renderer(system);
