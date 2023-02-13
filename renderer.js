@@ -1905,36 +1905,44 @@ class Renderer
                 this.models[this.models.length - 1].length;
                 ++this.mdi[this.mdi.length - 1])
                 {
-                    switch(this.models[this.models.length - 1][this.mdi[this.mdi.length - 1]])
+                    switch(this.models[this.models.length - 1][
+                    this.mdi[this.mdi.length - 1]])
                     {
                         case ' ':
                             log('Blank space detected.')
                             break;
                         case '+':
-                            this.ori = this.system.rotations.get('+').mul(this.ori);
+                            this.ori = this.system.rotations.get('+').mul(
+                            this.ori);
                             break;
                         case '-':
-                            this.ori = this.system.rotations.get('-').mul(this.ori);
+                            this.ori = this.system.rotations.get('-').mul(
+                            this.ori);
                             break;
                         case '&':
-                            this.ori = this.system.rotations.get('&').mul(this.ori);
+                            this.ori = this.system.rotations.get('&').mul(
+                            this.ori);
                             break;
                         case '^':
-                            this.ori = this.system.rotations.get('^').mul(this.ori);
+                            this.ori = this.system.rotations.get('^').mul(
+                            this.ori);
                             break;
                         case '\\':
                             this.ori = this.system.rotations.get('\\').mul(
                             this.ori);
                             break;
                         case '/':
-                            this.ori = this.system.rotations.get('/').mul(this.ori);
+                            this.ori = this.system.rotations.get('/').mul(
+                            this.ori);
                             break;
                         case '|':
                             this.ori = ZAxisQuat.mul(this.ori);
                             break;
                         case '~':
                             ++this.mdi[this.mdi.length - 1];
-                            this.models.push(this.system.models.get(this.models[this.models.length - 1][this.mdi[this.mdi.length - 1]]));
+                            this.models.push(this.system.models.get(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]));
                             this.mdi.push(0);
                             return;
                         case '[':
@@ -1984,7 +1992,7 @@ class Renderer
                                 break;
                             }
                         case '%':
-                            // Nothing to do here, all handled by LSystem derivation
+                            // Nothing to do here
                             break;
                         case '{':        
                             ++this.polygonMode;
@@ -1994,7 +2002,7 @@ class Renderer
                             break;
                         case '.':
                             if(this.polygonMode <= 0)
-                                log('You\'re cannot register a vertex outside of ' +
+                                log('You cannot register a vertex outside of ' +
                                 'polygon drawing.');
                             else
                                 ++this.mdi[this.mdi.length - 1];
@@ -2007,11 +2015,15 @@ class Renderer
                             }
 
                             let ignored = this.system.ignoreList.has(
-                                this.models[this.models.length - 1][this.mdi[this.mdi.length - 1]]);
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]);
                             let breakAhead = this.backtrackList.has(
-                                this.models[this.models.length - 1][this.mdi[this.mdi.length - 1] + 1]);
-                            let btAhead = this.models[this.models.length - 1][this.mdi[this.mdi.length - 1] + 1] == ']' ||
-                            this.mdi[this.mdi.length - 1] == this.models[this.models.length - 1].length - 1;
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1]);
+                            let btAhead = this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1] == ']' ||
+                            this.mdi[this.mdi.length - 1] ==
+                            this.models[this.models.length - 1].length - 1;
 
                             if(this.hesitateApex && btAhead)
                                 this.cooldown = 1;
@@ -2143,7 +2155,7 @@ class Renderer
                         break;
                     case '.':
                         if(this.polygonMode <= 0)
-                            log('You\'re cannot register a vertex outside of ' +
+                            log('You cannot register a vertex outside of ' +
                             'polygon drawing.');
                         else
                             ++this.i;
@@ -2168,14 +2180,6 @@ class Renderer
                         if(this.quickDraw && breakAhead)
                             this.cooldown = 1;
 
-                        // if(ignored)
-                        // {
-                        //     if(this.quickDraw && this.stack.length > 0 &&
-                        //     this.ori === this.stack[this.stack.length - 1][1])
-                        //         this.stack.push([this.state, this.ori]);
-                        //     break;
-                        // }
-
                         moved = this.stack.length == 0 ||
                         (this.stack.length > 0 && this.state !==
                         this.stack[this.stack.length - 1][0]);
@@ -2198,13 +2202,6 @@ class Renderer
                         }
                         else
                             break;
-
-                        // if(this.quickDraw && !breakAhead &&
-                        // (this.quickBacktrack || this.stack.length > 0 &&
-                        // this.ori === this.stack[this.stack.length - 1][1]) &&
-                        // this.i < this.levels[this.lv].length - 1)
-                        //     break;
-                        
                 }
             }
             if(!this.backtrackTail || this.stack.length == 0)
@@ -2696,6 +2693,8 @@ class Measurer
 }
 
 const XAxisQuat = new Quaternion(0, 1, 0, 0);
+const UprightQuat = new Quaternion(Math.cos(Math.PI / 4), 0, 0,
+-Math.sin(Math.PI / 4)).mul(XAxisQuat);
 const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
