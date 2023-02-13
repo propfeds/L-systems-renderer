@@ -1439,12 +1439,12 @@ class Renderer
      * straight lines on the way forward.
      * @param {boolean} quickBacktrack (default: false) whether to skip through
      * straight lines on the way backward.
-     * @param {string} backtrackList (default: '+-&^\\/|[]') a list of symbols
-     * to act as stoppers for backtracking.
+     * @param {string} backtrackList (default: '+-&^\\/|[') a list of symbols to
+     * act as stoppers for backtracking.
      */
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
-    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]',
+    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[',
     loadModels = true, backtrackTail = false, hesitate = true)
     {
         /**
@@ -1971,9 +1971,11 @@ class Renderer
 
                         let ignored = this.system.ignoreList.has(
                         this.levels[this.lv][this.i]);
+                        let breakAhead = this.backtrackList.has(
+                        this.levels[this.lv][this.i + 1]);
+                        let btAhead = this.levels[this.lv][this.i + 1] == ']';
 
-                        if(this.hesitate && !this.quickBacktrack &&
-                        this.levels[this.lv][this.i + 1] == ']')
+                        if(this.hesitate && btAhead)
                             this.cooldown = 1;
 
                         // if(ignored)
@@ -1991,11 +1993,9 @@ class Renderer
                         if(!this.quickBacktrack && moved)
                             this.stack.push([this.state, this.ori]);
 
-                        if(!this.ignored)
+                        if(!ignored)
                             this.forward();
 
-                        let breakAhead = this.backtrackList.has(
-                        this.levels[this.lv][this.i + 1]);
                         if(this.quickBacktrack && breakAhead)
                             this.stack.push([this.state, this.ori]);
                         

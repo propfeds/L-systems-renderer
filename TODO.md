@@ -26,12 +26,13 @@
 - [ ] Screen adaptive button sizes (40, 44, 48) plus other stuff maybe
 - [ ] Rework quickdraw / BT logic
   - [ ] Progress: Regular & backtrack done, quickdraw remaining
+  - [ ] Test suite: Arrow, Cantor, Snowflake
   - [x] Add a cooldown system
-  - [ ] Proposal: remove idxStack and instead turn stack into a 2D array
   - [x] Hesitate on both ends if hesitation is on?
   - [x] When just pushing onto the stack normally (on an F point), don't push
   if the position hasn't changed, because the orientation doesn't matter if
   the stack point isn't a `[` bracket point
+  - [x] Issue: quick BT still forces hesitation on the way forward
   - [x] If the `]]]]]` are stacked, hesitation time is massive
     - [x] If the stack hasn't detected any movement, just don't do anything
     - [x] Hesitate only when the turtle was moved compared to last time?
