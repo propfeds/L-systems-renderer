@@ -4976,6 +4976,15 @@ let createManualMenu = () =>
 
 let createSeqViewMenu = (level) =>
 {
+    let pageTitle = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelChars'),
+        renderer.levels[level].length),
+        margin: new Thickness(0, 4),
+        heightRequest: 20,
+        horizontalOptions: LayoutOptions.CENTER,
+        verticalOptions: LayoutOptions.CENTER
+    });
     let pageContents = ui.createLabel
     ({
         fontFamily: FontFamily.CMU_REGULAR,
@@ -4993,6 +5002,7 @@ let createSeqViewMenu = (level) =>
         ({
             children:
             [
+                pageTitle,
                 ui.createFrame
                 ({
                     padding: new Thickness(8, 6),
