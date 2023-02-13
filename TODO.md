@@ -12,10 +12,6 @@
 
 - [ ] Arrange coding streams
   - Ask if people would be interested
-- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
-
-- [ ] Add more comments in the code
-- [ ] Update docstrings
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -28,11 +24,15 @@
 
 ## 1.0, Mistletoe ed.
 
+- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
+- [ ] Add more comments in the code
+- [ ] Update docstrings
+
 - [ ] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
 
 - [ ] Revamp sequence menu
   - Level 0: 10 chars (`View`)
-  - Classic LS: displays the entire string in a label
+  - [x] Classic LS: displays the entire string in a label
   - Parametric LS: displays symbols and parameters side by side, one symbol/row
 
 - [ ] Turning angles
@@ -44,34 +44,6 @@
     - Stop swizzling!
     - Tropism is still the same direction, so we can simulate sideways vines
 - [ ] Investigate sunlight heading (heliotropism) (`$`)
-
-- [x] Issue: models are broken because of backtrack rework
-- [x] Change how models work:
-  - Stochastic models are no longer available
-    - Instead define stochastic rules for the actual symbol instead, pre-model 
-  - Models are no longer recursively derived
-    - This will remove their permanence and increase performance
-  - Instead, they will be processed by the renderer using a queue
-    - The processing code will be positioned below (?) the main renderer loop
-    - Almost the exact same code as main loop, but with `~` queue controls
-  - Having a model also means that symbol should be ignored (no extra F)
-    - Easy, just add the model map's keys to the set
-    - Update the manual
-  - Backtrack models?
-- [x] Update guide about models
-- Counter argument:
-  - Permanence can be solved by cutting with `%`, albeit with a 1 tick cost for
-  renderer hesitation (or 2)
-    - Solution: Renderer only pushes on `[` if the position / ori has changed
-    - This makes more sense thematically, as cut wounds will leave scars
-      - Lemma's Garden: this will slightly slow down growth
-  - If models were to be processed by renderer, then they cannot evolve
-    - On the other hand, they can 'evolve' in another sense where each parameter
-    value can have a different model
-  - [x] Having a model also means that symbol should be ignored (no extra F)
-    - Easy, just add the model map's keys to the set
-    - [x] Update the manual
-  - Lemma's Garden: Complex models such as flowers will bog down the growth cost
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
@@ -108,26 +80,24 @@
     - Ancestor means the index of whomever the fuck is on top of the idx stack.
     - Does this work with the dynamic loading system with all the data passing?
   - If stored by maps: Keys can be any data type.
-  - If stored by objects:
-  ```js
-  // v2
-  let contextRulesLR =
-  {
-    'ABC': 'D', // Two ways: A<B>C = D
-    'FBG': 'H'  // F<B>G = H
-  };
-  let contextRulesL =
-  {
-    'AB': 'E'   // One way: A<B = E
-  };
-  let contextRulesR =
-  {
-    'BA': 'E'   // One way: B>A = E
-  };
-  ```
+  - If stored by objects: written in `parametric_lsystem.js`
 
 ## 1.0: Completed
 
+- [x] Issue: models are broken because of backtrack rework
+- [x] Change how models work:
+  - Stochastic models are no longer available
+    - Instead define stochastic rules for the actual symbol instead, pre-model 
+  - Models are no longer recursively derived
+    - This will remove their permanence and increase performance
+  - Instead, they will be processed by the renderer using a queue
+    - The processing code will be positioned below (?) the main renderer loop
+    - Almost the exact same code as main loop, but with `~` queue controls
+  - Having a model also means that symbol should be ignored (no extra F)
+    - Easy, just add the model map's keys to the set
+    - Update the manual
+  - Backtrack models?
+- [x] Update guide about models
 - Can multiple derivations on the same rule still be made? Ruins parity
   - [x] Allow both modes to exist (ONLY in Classic)
 - [x] Implement new RNG (Xorshift) instead of th fucjuing Lcg
@@ -262,3 +232,16 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
     index of an array?
   - Model storage
     - How to load? How to edit?
+- Counter argument to new model format:
+  - Permanence can be solved by cutting with `%`, albeit with a 1 tick cost for
+  renderer hesitation (or 2)
+    - Solution: Renderer only pushes on `[` if the position / ori has changed
+    - This makes more sense thematically, as cut wounds will leave scars
+      - Lemma's Garden: this will slightly slow down growth
+  - If models were to be processed by renderer, then they cannot evolve
+    - On the other hand, they can 'evolve' in another sense where each parameter
+    value can have a different model
+  - [x] Having a model also means that symbol should be ignored (no extra F)
+    - Easy, just add the model map's keys to the set
+    - [x] Update the manual
+  - Lemma's Garden: Complex models such as flowers will bog down the growth cost

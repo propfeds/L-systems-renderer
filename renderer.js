@@ -34,6 +34,7 @@ import { TouchType } from '../api/ui/properties/TouchType';
 import { Localization } from '../api/Localization';
 import { MathExpression } from '../api/MathExpression';
 import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
+import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -198,8 +199,8 @@ const locStrings =
         rerollSeed: 'You are about to reroll the system\'s seed.',
         resetRenderer: 'You are about to reset the renderer.',
 
-        menuSequence: 'Sequence Menu',
-        labelLevelSeq: 'Level {0}: ',
+        menuSequence: '{0} (Level {1})',
+        labelLevelSeq: 'Level {0}: {1} chars',
         labelChars: '({0} chars)',
 
         menuLSystem: 'L-system Menu',
@@ -4973,6 +4974,46 @@ let createManualMenu = () =>
     return menu;
 }
 
+let createSeqViewMenu = (level) =>
+{
+    let pageContents = ui.createLabel
+    ({
+        fontFamily: FontFamily.CMU_REGULAR,
+        fontSize: 16,
+        text: renderer.levels[level],
+        lineBreakMode: LineBreakMode.CHARACTER_WRAP
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: Localization.format(getLoc('menuSequence'), tmpSystemName,
+        level),
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createFrame
+                ({
+                    padding: new Thickness(8, 6),
+                    heightRequest: ui.screenHeight * 0.28,
+                    content: ui.createScrollView
+                    ({
+                        content: ui.createStackLayout
+                        ({
+                            children:
+                            [
+                                pageContents
+                            ]
+                        })
+                    })
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
 let createSequenceMenu = () =>
 {
     let tmpLvls = [];
@@ -4980,67 +5021,44 @@ let createSequenceMenu = () =>
     {
         tmpLvls.push(ui.createLatexLabel
         ({
-            text: Localization.format(getLoc('labelLevelSeq'), i),
+            text: Localization.format(getLoc('labelLevelSeq'), i,
+            renderer.levels[i].length),
             row: i,
             column: 0,
             verticalOptions: LayoutOptions.CENTER
         }));
-        tmpLvls.push(ui.createGrid
+        tmpLvls.push(ui.createButton
         ({
-            columnDefinitions: ['80*', 'auto'],
+            text: getLoc('btnView'),
             row: i,
             column: 1,
-            children:
-            [
-                ui.createEntry
-                ({
-                    text: renderer.levels[i],
-                    row: 0,
-                    column: 0
-                }),
-                ui.createLatexLabel
-                ({
-                    text: Localization.format(getLoc('labelChars'),
-                    renderer.levels[i].length),
-                    row: 0,
-                    column: 1,
-                    horizontalOptions: LayoutOptions.END_AND_EXPAND,
-                    verticalOptions: LayoutOptions.CENTER
-                })
-            ]
+            heightRequest: SMALL_BUTTON_HEIGHT,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                let viewMenu = createSeqViewMenu(i);
+                viewMenu.show();
+            }
         }));
     }
     let seqGrid = ui.createGrid
     ({
-        columnDefinitions: ['20*', '80*'],
+        columnDefinitions: ['70*', '30*'],
         children: tmpLvls
     });
 
     let menu = ui.createPopup
     ({
-        title: getLoc('menuSequence'),
+        title: tmpSystemName,
         content: ui.createStackLayout
         ({
             children:
             [
                 ui.createScrollView
                 ({
-                    // heightRequest: ui.screenHeight * 0.3,
+                    heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+                    Math.min(ui.screenHeight * 0.36, seqGrid.height)),
                     content: seqGrid
-                }),
-                ui.createBox
-                ({
-                    heightRequest: 1,
-                    margin: new Thickness(0, 6)
-                }),
-                ui.createButton
-                ({
-                    text: getLoc('btnClose'),
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        menu.hide();
-                    }
                 })
             ]
         })
