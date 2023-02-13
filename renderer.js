@@ -289,8 +289,7 @@ Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `pausing the renderer. Holding + afterwards will return the renderer to the ` +
 `previously anchored speed.
 
-Reroll: located on the top right. Pressing this button will reroll the ` +
-`system's seed (only applicable for stochastic systems).
+Reset: located on the top right. Pressing this button will reset the renderer.
 
 Menu buttons: You pressed on one of them to get here, did you?
 - L-system menu: allows you to edit the currently displayed system.
@@ -304,11 +303,11 @@ Menu buttons: You pressed on one of them to get here, did you?
 `Design your L-system using the L-systems menu.
 
 - Axiom: the system's starting sequence.
-- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
+- Turning angle: the angle the turtle turns when turns the turtle (in degrees).
 - Production rules: an unlimited number of rules can be added using the ` +
 `'Add' button.
 - Ignored symbols: the turtle will stand still when encountering these symbols.
-- Seed: sets the seed of a stochastic system.
+- Seed: the seed for a stochastic system can be rerolled or manually set.
 
 Note: Any blank rules will be trimmed afterwards.`
             },
@@ -324,10 +323,10 @@ Camera options:
 - Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
 `modes follow the turtle.
 - Fixed camera centre: determines camera position in Fixed mode using a ` +
-`formula, similar to figure scale.
+`written formula similar to figure scale.
 - Follow factor: changes how quickly the camera follows the turtle.
-- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
-`z-axis.
+- Upright figure: rotates the figure by 90 degrees counter-clockwise around ` +
+`the z-axis so that it heads upwards.
 
 Renderer logic:
 - Looping mode: the Level mode repeats a single level, while the Playlist ` +
@@ -338,9 +337,8 @@ Renderer logic:
 Advanced stroke options:
 - Quickdraw (unstable): skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
-- Stutter on backtrack: pause for one tick after backtracking for more ` +
-`accurate figures.
-- Backtrack list: sets stopping symbols for backtracking.`
+- Stutter at apex: pause for one tick at the tips of lines.
+- Stutter at node: pause for one tick after backtracking through branches.`
             },
             {
                 title: 'Saving and loading',
@@ -640,8 +638,9 @@ Upright`,
 
 Normal commands inside a polygon block will not draw lines, making it great ` +
 `for hiding away any scaffolding in the creation of models.
-Note: Due to how the rendering engine works, the polygon tool in LSR works ` +
-`a bit differently from that described in The Algorithmic Beauty of Plants. ` +
+
+Note: Due to how Exponential Idle's 3D graph works, the polygon tool in LSR ` +
+`works differently from that described in The Algorithmic Beauty of Plants. ` +
 `Therefore, it is advised to make some adjustments when adopting schemes ` +
 `from the book into LSR.`
             },
@@ -675,8 +674,10 @@ To declare a model rule, attach a tilde in front of the symbol on the left side:
 
 To reference a model in another rule, attach a tilde in front of the symbol ` +
 `in the same way it was declared.
+
 Note: The symbol will not disappear from the rule after the model has been ` +
 `drawn, but it will be ignored by the turtle.
+
 Note 2: The model only lasts for one level, and needs to be refreshed ` + 
 `(example follows in the next page).`
             },
@@ -751,7 +752,7 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 `between corners occasionally, mimicking leaf shapes on a tree.
 - 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
 `of use when it comes to bringing that rough sketch feeling to a figure.
-- 0.6 sec and above: don't care, class dismissed.`
+- 0.6 sec and above: I don't care, class dismissed.`
             },
             {
                 title: 'Advanced artistry in LSR (2)',
@@ -767,14 +768,11 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 `comes to both precision and aesthetics.
 - Quick backtrack: this one's a reliable one, trading only a little beauty ` +
 `for some extra speed.
-- Stutter on backtrack: now, this is what I mean when I say hesitation is ` +
+- Stutter at apex/node: now, this is what I mean when I say hesitation is ` +
 `not defeat. Pausing for even just one tick can give your figure just enough ` +
 `cohesion it really needs. To prove this, try loading the Arrow weed then ` +
-`alternate between drawing with this option on and off, while on tick length ` +
-`0.1, or 10 tickspeed. There will be a noticeable difference, even from afar.
-- Backtrack list: usually, I would say that if you are here to draw ` +
-`L-systems, I recommend not to edit this option, but for the brave and ` +
-`worthy, you could create truly mesmerising results with this.
+`alternate between drawing with these option on and off, at 0.1 tick length, ` +
+`or 10 tickspeed. There will be a noticeable difference, even from afar.
 
 Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             },
