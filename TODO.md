@@ -42,6 +42,7 @@
 - [ ] Investigate tropism (capital T)
 - [ ] Investigate sunlight heading (heliotropism) (`$`)
 
+- [x] Issue: models are broken because of backtrack rework
 - [ ] Change how models work:
   - Stochastic models are no longer available
     - Instead define stochastic rules for the actual symbol instead, pre-model 

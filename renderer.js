@@ -1897,7 +1897,7 @@ class Renderer
             // log(`${Math.round(this.elapsed)}, ${this.i} ` +
             // `${this.levels[this.lv][this.i]} (-${this.cooldown}): ` +
             // `${this.stack.length} stacked`)
-            if(this.cooldown > 0)
+            if(this.cooldown > 0 && this.polygonMode <= 0)
             {
                 --this.cooldown;
                 return;
@@ -1948,7 +1948,7 @@ class Renderer
                         this.stack.push([this.state, this.ori]);
                         break;
                     case ']':
-                        if(this.cooldown > 0)
+                        if(this.cooldown > 0 && this.polygonMode <= 0)
                         {
                             --this.cooldown;
                             return;
@@ -2006,7 +2006,7 @@ class Renderer
                             ++this.i;
                         return;
                     default:
-                        if(this.cooldown > 0)
+                        if(this.cooldown > 0 && this.polygonMode <= 0)
                         {
                             --this.cooldown;
                             return;
