@@ -87,7 +87,56 @@ let menuLang = Localization.language;
 
 let savedSystems = new Map();
 
-const DEFAULT_BUTTON_HEIGHT = Math.max(ui.screenHeight * 0.055, 48);
+let getImageSize = (width) =>
+{
+    if(width >= 1080)
+        return 48;
+    if(width >= 720)
+        return 36;
+    if(width >= 360)
+        return 24;
+
+    return 20;
+}
+
+let getBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 96;
+    if(width >= 720)
+        return 72;
+    if(width >= 360)
+        return 48;
+
+    return 40;
+}
+
+let getMediumBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 88;
+    if(width >= 720)
+        return 66;
+    if(width >= 360)
+        return 44;
+
+    return 36;
+}
+
+let getSmallBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 80;
+    if(width >= 720)
+        return 60;
+    if(width >= 360)
+        return 40;
+
+    return 32;
+}
+
+const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
+const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
@@ -2237,7 +2286,7 @@ class VariableControls
     {
         this.varBtn.content.text = this.variable.getDescription();
     }
-    createVariableButton(callback = null, height = DEFAULT_BUTTON_HEIGHT)
+    createVariableButton(callback = null, height = BUTTON_HEIGHT)
     {
         if(this.varBtn !== null)
             return this.varBtn;
@@ -2292,7 +2341,7 @@ class VariableControls
         this.refundBtn.content.textColor = this.variable.level > 0 ?
         Color.TEXT : Color.TEXT_MEDIUM;
     }
-    createRefundButton(symbol = '-', height = DEFAULT_BUTTON_HEIGHT)
+    createRefundButton(symbol = '-', height = BUTTON_HEIGHT)
     {
         if(this.refundBtn !== null)
             return this.refundBtn;
@@ -2359,7 +2408,7 @@ class VariableControls
         this.buyBtn.content.textColor = this.variable.level <
         this.variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM;
     }
-    createBuyButton(symbol = '+', height = DEFAULT_BUTTON_HEIGHT)
+    createBuyButton(symbol = '+', height = BUTTON_HEIGHT)
     {
         if(this.buyBtn !== null)
             return this.buyBtn;
@@ -2786,7 +2835,7 @@ var getEquationOverlay = () =>
     return result;
 }
 
-let createButton = (label, callback, height = DEFAULT_BUTTON_HEIGHT) =>
+let createButton = (label, callback, height = BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -2883,7 +2932,7 @@ var getUpgradeListDelegate = () =>
             renderer.constructSystem = tmpSystem;
             tmpSystem = null;
         }
-    }, Math.max(ui.screenHeight * 0.05, 44));
+    }, getMediumBtnSize(ui.screenWidth));
     resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
     resumeButton.isVisible = () => tmpSystem ? true : false;
     resumeButton.margin = new Thickness(0, 0, 0, 2);
@@ -2902,8 +2951,8 @@ var getUpgradeListDelegate = () =>
                     rowSpacing: 6,
                     rowDefinitions:
                     [
-                        DEFAULT_BUTTON_HEIGHT,
-                        DEFAULT_BUTTON_HEIGHT
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT
                     ],
                     columnDefinitions: ['50*', '50*'],
                     children:
@@ -2947,9 +2996,9 @@ var getUpgradeListDelegate = () =>
                     rowSpacing: 6,
                     rowDefinitions:
                     [
-                        DEFAULT_BUTTON_HEIGHT,
-                        DEFAULT_BUTTON_HEIGHT,
-                        DEFAULT_BUTTON_HEIGHT
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT
                     ],
                     columnDefinitions: ['50*', '50*'],
                     children:
@@ -3355,7 +3404,11 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                rowDefinitions: [40, 40],
+                                rowDefinitions:
+                                [
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT
+                                ],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -3378,7 +3431,13 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                rowDefinitions: [40, 40, 40, 40],
+                                rowDefinitions:
+                                [
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT
+                                ],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -3420,7 +3479,7 @@ let createConfigMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    minimumHeightRequest: 64,
+                    minimumHeightRequest: BUTTON_HEIGHT,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -3589,7 +3648,7 @@ let createSystemMenu = () =>
             ({
                 text: getLoc('btnReroll'),
                 column: 1,
-                heightRequest: 40,
+                heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
                 {
                     Sound.playClick();
@@ -3685,7 +3744,7 @@ let createSystemMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    minimumHeightRequest: 64,
+                    minimumHeightRequest: BUTTON_HEIGHT,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -3788,7 +3847,7 @@ let createNamingMenu = () =>
             text: getLoc('btnOverwrite'),
             row: 0,
             column: 1,
-            heightRequest: 40,
+            heightRequest: SMALL_BUTTON_HEIGHT,
             onClicked: () =>
             {
                 Sound.playClick();
@@ -3812,8 +3871,8 @@ let createNamingMenu = () =>
     });
     let systemGridScroll = ui.createScrollView
     ({
-        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.2,
-        systemGrid.height)),
+        heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+        Math.min(ui.screenHeight * 0.2, systemGrid.height)),
         content: systemGrid
     });
 
@@ -4167,7 +4226,7 @@ let createViewMenu = (title) =>
         text: getLoc('btnAdd'),
         row: 0,
         column: 1,
-        heightRequest: 40,
+        heightRequest: SMALL_BUTTON_HEIGHT,
         onClicked: () =>
         {
             Sound.playClick();
@@ -4216,7 +4275,7 @@ let createViewMenu = (title) =>
             ({
                 text: getLoc('btnReroll'),
                 column: 1,
-                heightRequest: 40,
+                heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
                 {
                     Sound.playClick();
@@ -4359,7 +4418,7 @@ let createViewMenu = (title) =>
                 }),
                 ui.createGrid
                 ({
-                    minimumHeightRequest: 64,
+                    minimumHeightRequest: BUTTON_HEIGHT,
                     columnDefinitions: ['30*', '30*', '30*'],
                     children:
                     [
@@ -4460,7 +4519,7 @@ let createSaveMenu = () =>
             text: getLoc('btnView'),
             row: 0,
             column: 1,
-            heightRequest: 40,
+            heightRequest: SMALL_BUTTON_HEIGHT,
             onClicked: () =>
             {
                 Sound.playClick();
@@ -4482,8 +4541,8 @@ let createSaveMenu = () =>
     });
     let systemGridScroll = ui.createScrollView
     ({
-        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.32,
-        systemGrid.height)),
+        heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+        Math.min(ui.screenHeight * 0.32, systemGrid.height)),
         content: systemGrid
     });
     let menu = ui.createPopup
@@ -4510,7 +4569,7 @@ let createSaveMenu = () =>
                             text: getLoc('btnClipboard'),
                             row: 0,
                             column: 1,
-                            heightRequest: 40,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
                             onClicked: () =>
                             {
                                 let clipMenu = createSystemClipboardMenu(
@@ -4529,7 +4588,7 @@ let createSaveMenu = () =>
                             text: getLoc('btnSave'),
                             row: 0,
                             column: 2,
-                            heightRequest: 40,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
                             onClicked: () =>
                             {
                                 Sound.playClick();
@@ -4696,7 +4755,7 @@ let createManualMenu = () =>
                 contentsTable[i] + 1),
                 row: i,
                 column: 1,
-                heightRequest: 40,
+                heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
                 {
                     Sound.playClick();
@@ -5027,7 +5086,7 @@ let createWorldMenu = () =>
                             text: getLoc('btnClipboard'),
                             row: 6,
                             column: 1,
-                            heightRequest: 40,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
                             onClicked: () =>
                             {
                                 let clipMenu = createStateClipboardMenu(
