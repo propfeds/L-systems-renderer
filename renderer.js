@@ -940,6 +940,8 @@ class Xorshift
     constructor(seed = 1752)
     {
         this.state = seed;
+        this.mod = 0x100000000;
+                // 0xffff ffff
     }
     /**
      * Returns a random integer within [0, 2^32) probably.
@@ -962,16 +964,13 @@ class Xorshift
      */
     nextFloat(includeEnd = false)
     {
-        if(includeEnd)
-        {
-            // [0, 1]
-            return this.nextInt / (this.m - 1);
-        }
-        else
-        {
-            // [0, 1)
-            return this.nextInt / this.m;
-        }
+        let result;
+        if(includeEnd)  // [-1, 1]
+            result = this.nextInt / (this.mod - 1);
+        else            // [-1, 1)
+            result = this.nextInt / this.mod;
+
+        return (result + 1) / 2;
     }
     /**
      * Returns a random integer within a range of [start, end).
@@ -1839,7 +1838,9 @@ class Renderer
         let j, t, moved;
         for(j = 0; j < 2; ++j)
         {
-            log(`${Math.round(this.elapsed)}, ${this.i} ${this.levels[this.lv][this.i]} (-${this.cooldown}): ${this.stack.length} stacked`)
+            // log(`${Math.round(this.elapsed)}, ${this.i} ` +
+            // `${this.levels[this.lv][this.i]} (-${this.cooldown}): ` +
+            // `${this.stack.length} stacked`)
             if(this.cooldown > 0)
             {
                 --this.cooldown;
@@ -1913,16 +1914,15 @@ class Renderer
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            if(this.hesitate && this.polygonMode <= 0 && moved)
+                            if(moved)
+                                this.cooldown = 1;
+                            if(this.hesitate && this.polygonMode <= 0)
                             {
                                 ++this.i;
-                                this.cooldown = 1;
                                 return;
                             }
                             else
                             {
-                                if(moved)
-                                    this.cooldown = 1;
                                 break;
                             }
                         }
@@ -1981,7 +1981,7 @@ class Renderer
                         (this.stack.length > 0 && this.state !==
                         this.stack[this.stack.length - 1][0]);
 
-                        if(!this.quickBacktrack && moved)
+                        if(!this.quickBacktrack && moved && !ignored)
                             this.stack.push([this.state, this.ori]);
 
                         if(!ignored)

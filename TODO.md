@@ -10,10 +10,10 @@
 
 - [ ] Arrange coding streams
   - Ask if people would be interested
+- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 
 - [ ] Add more comments in the code
 - [ ] Update docstrings
-- [x] Turtle controls summary page in guide
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -24,9 +24,13 @@
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
 - [ ] Screen adaptive button sizes (40, 44, 48) plus other stuff maybe
+- [ ] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
 - [ ] Rework quickdraw / BT logic
-  - [ ] Progress: Regular & backtrack done, quickdraw remaining
-  - [ ] Test suite: Arrow, Cantor, Snowflake
+  - Progress: Regular, backtrack, quickdraw done
+  - Test suites:
+    - [x] Arrow (8/8)
+    - [x] Cantor (8/8)
+    - [ ] Snowflake (0/8) - still wasting time on ignored shits
   - [x] Add a cooldown system
   - [x] Hesitate on both ends if hesitation is on?
   - [x] When just pushing onto the stack normally (on an F point), don't push
@@ -41,6 +45,7 @@
   - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
   - [ ] Remove the backtrack list option
     - Also, backtrack on the way back and forward needs different lists?
+- [x] Turtle controls summary page in guide
 - [ ] Revamp sequence menu
   - Level 0: 10 chars (`View`)
   - Classic LS: displays the entire string in a label
