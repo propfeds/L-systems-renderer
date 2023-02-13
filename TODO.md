@@ -1,13 +1,14 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
+  - [Other considerations](#other-considerations)
   - [1.0, Mistletoe ed.](#10-mistletoe-ed)
   - [1.0: Completed](#10-completed)
   - [0.21: Completed](#021-completed)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## 1.0, Mistletoe ed.
+## Other considerations
 
 - [ ] Arrange coding streams
   - Ask if people would be interested
@@ -24,7 +25,11 @@
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
+
+## 1.0, Mistletoe ed.
+
 - [ ] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
+
 - [ ] Revamp sequence menu
   - Level 0: 10 chars (`View`)
   - Classic LS: displays the entire string in a label
@@ -34,16 +39,14 @@
   - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians
 
-- [ ] Investigate Houdini stochastic syntax for weighted derivations
-`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
-  - Can multiple derivations on the same rule still be made? Ruins parity
-  - [x] Allow both modes to exist (ONLY in Classic)
-
 - [ ] Investigate tropism (capital T)
+  - [x] Separate starting quaternions for upright and sideways
+    - Stop swizzling!
+    - Tropism is still the same direction, so we can simulate sideways vines
 - [ ] Investigate sunlight heading (heliotropism) (`$`)
 
 - [x] Issue: models are broken because of backtrack rework
-- [ ] Change how models work:
+- [x] Change how models work:
   - Stochastic models are no longer available
     - Instead define stochastic rules for the actual symbol instead, pre-model 
   - Models are no longer recursively derived
@@ -55,7 +58,8 @@
     - Easy, just add the model map's keys to the set
     - Update the manual
   - Backtrack models?
-- [ ] Counter argument:
+- [x] Update guide about models
+- Counter argument:
   - Permanence can be solved by cutting with `%`, albeit with a 1 tick cost for
   renderer hesitation (or 2)
     - Solution: Renderer only pushes on `[` if the position / ori has changed
@@ -68,6 +72,10 @@
     - Easy, just add the model map's keys to the set
     - [x] Update the manual
   - Lemma's Garden: Complex models such as flowers will bog down the growth cost
+
+- [ ] Investigate Houdini stochastic syntax for weighted derivations
+`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
+  - Stochastic in PLSR: has to be on the same line
 
 - [ ] Parametric systems
   - Different classes
@@ -120,6 +128,8 @@
 
 ## 1.0: Completed
 
+- Can multiple derivations on the same rule still be made? Ruins parity
+  - [x] Allow both modes to exist (ONLY in Classic)
 - [x] Implement new RNG (Xorshift) instead of th fucjuing Lcg
 - [x] Screen adaptive button sizes (40, 44, 48) plus other stuff maybe
 - [x] Rework quickdraw / BT logic (**good enough!**)

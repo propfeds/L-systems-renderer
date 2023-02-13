@@ -219,7 +219,7 @@ const locStrings =
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Level', 'Playlist'],
-        labelUpright: '* Upright x-axis: ',
+        labelUpright: '* Upright figure: ',
         labelBTTail: 'Draw tail end: ',
         labelLoadModels: '* (Teaser) Load models: ',
         labelQuickdraw: '* Quickdraw (unstable): ',
@@ -289,8 +289,7 @@ Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `pausing the renderer. Holding + afterwards will return the renderer to the ` +
 `previously anchored speed.
 
-Reroll: located on the top right. Pressing this button will reroll the ` +
-`system's seed (only applicable for stochastic systems).
+Reset: located on the top right. Pressing this button will reset the renderer.
 
 Menu buttons: You pressed on one of them to get here, did you?
 - L-system menu: allows you to edit the currently displayed system.
@@ -304,11 +303,11 @@ Menu buttons: You pressed on one of them to get here, did you?
 `Design your L-system using the L-systems menu.
 
 - Axiom: the system's starting sequence.
-- Turning angle: the angle the turtle turns when the turtle turns (in degrees).
+- Turning angle: the angle the turtle turns when turns the turtle (in degrees).
 - Production rules: an unlimited number of rules can be added using the ` +
 `'Add' button.
 - Ignored symbols: the turtle will stand still when encountering these symbols.
-- Seed: sets the seed of a stochastic system.
+- Seed: the seed for a stochastic system can be rerolled or manually set.
 
 Note: Any blank rules will be trimmed afterwards.`
             },
@@ -324,10 +323,10 @@ Camera options:
 - Camera mode: toggles between Fixed, Linear and Quadratic. The latter two ` +
 `modes follow the turtle.
 - Fixed camera centre: determines camera position in Fixed mode using a ` +
-`formula, similar to figure scale.
+`written formula similar to figure scale.
 - Follow factor: changes how quickly the camera follows the turtle.
-- Upright x-axis: rotates figure by 90 degrees counter-clockwise around the ` +
-`z-axis.
+- Upright figure: rotates the figure by 90 degrees counter-clockwise around ` +
+`the z-axis so that it heads upwards.
 
 Renderer logic:
 - Looping mode: the Level mode repeats a single level, while the Playlist ` +
@@ -338,9 +337,8 @@ Renderer logic:
 Advanced stroke options:
 - Quickdraw (unstable): skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
-- Stutter on backtrack: pause for one tick after backtracking for more ` +
-`accurate figures.
-- Backtrack list: sets stopping symbols for backtracking.`
+- Stutter at apex: pause for one tick at the tips of lines.
+- Stutter at node: pause for one tick after backtracking through branches.`
             },
             {
                 title: 'Saving and loading',
@@ -496,7 +494,7 @@ Turning angle: 30°
 
 Applies static camera:
 Scale: 1.5*2^lv
-Centre: (1.2*2^lv, 0, 0)
+Centre: (0, 1.2*2^lv, 0)
 Upright`
             },
             {
@@ -533,7 +531,7 @@ Turning angle: 22.5°
 
 Applies static camera:
 Scale: 1.5*2^lv
-Centre: (1.2*2^lv, 0, 0)
+Centre: (0, 1.2*2^lv, 0)
 Upright`
             },
             {
@@ -589,7 +587,7 @@ Turning angle: 8°
 
 Applies static camera:
 Scale: 2*2^lv
-Centre: (1.2*2^lv, 0, 0)
+Centre: (0, 1.2*2^lv, 0)
 Upright`,
                 source: 'https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf'
             },
@@ -622,7 +620,7 @@ Turning angle: 4°
 
 Applies static camera: (mathematically unproven)
 Scale: 3*1.3^lv
-Centre: (1.8*1.3^lv, 0, 0)
+Centre: (0, 1.8*1.3^lv, 0)
 Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
@@ -640,8 +638,9 @@ Upright`,
 
 Normal commands inside a polygon block will not draw lines, making it great ` +
 `for hiding away any scaffolding in the creation of models.
-Note: Due to how the rendering engine works, the polygon tool in LSR works ` +
-`a bit differently from that described in The Algorithmic Beauty of Plants. ` +
+
+Note: Due to how Exponential Idle's 3D graph works, the polygon tool in LSR ` +
+`works differently from that described in The Algorithmic Beauty of Plants. ` +
 `Therefore, it is advised to make some adjustments when adopting schemes ` +
 `from the book into LSR.`
             },
@@ -659,7 +658,7 @@ Turning angle: 27°
 
 Applies static camera:
 Scale: lv
-Centre: (lv/2-1, 0, 0)
+Centre: (0, lv/2-1, 0)
 Upright`
             },
             {
@@ -675,26 +674,33 @@ To declare a model rule, attach a tilde in front of the symbol on the left side:
 
 To reference a model in another rule, attach a tilde in front of the symbol ` +
 `in the same way it was declared.
+
 Note: The symbol will not disappear from the rule after the model has been ` +
-`drawn, but it will be ignored by the turtle.`
+`drawn, but it will be ignored by the turtle.
+
+Note 2: The model only lasts for one level, and needs to be refreshed ` + 
+`(example follows in the next page).`
             },
             {
                 title: 'Example: Lilac branch',
                 contents:
 `Ripped straight off of page 92 of The Algorithmic Beauty of Plants. But I ` +
 `made the model myself.
+K represents the flower, and its model is refreshed every level with the ` +
+`rule K = ~K.
 
 Axiom: A~K
 A = [--//~K][++//~K]I///A
 I = Fi
 i = Fj
 j = J[--FFA][++FFA]
+K = ~K
 ~K = F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]
 Turning angle: 30°
 
 Applies static camera:
 Scale: 3*lv
-Centre: (1.5*lv, 0, 0)
+Centre: (0, 1.5*lv, 0)
 Upright`
             },
             {
@@ -746,7 +752,7 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 `between corners occasionally, mimicking leaf shapes on a tree.
 - 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
 `of use when it comes to bringing that rough sketch feeling to a figure.
-- 0.6 sec and above: don't care, class dismissed.`
+- 0.6 sec and above: I don't care, class dismissed.`
             },
             {
                 title: 'Advanced artistry in LSR (2)',
@@ -762,14 +768,11 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 `comes to both precision and aesthetics.
 - Quick backtrack: this one's a reliable one, trading only a little beauty ` +
 `for some extra speed.
-- Stutter on backtrack: now, this is what I mean when I say hesitation is ` +
+- Stutter at apex/node: now, this is what I mean when I say hesitation is ` +
 `not defeat. Pausing for even just one tick can give your figure just enough ` +
 `cohesion it really needs. To prove this, try loading the Arrow weed then ` +
-`alternate between drawing with this option on and off, while on tick length ` +
-`0.1, or 10 tickspeed. There will be a noticeable difference, even from afar.
-- Backtrack list: usually, I would say that if you are here to draw ` +
-`L-systems, I recommend not to edit this option, but for the brave and ` +
-`worthy, you could create truly mesmerising results with this.
+`alternate between drawing with these option on and off, at 0.1 tick length, ` +
+`or 10 tickspeed. There will be a noticeable difference, even from afar.
 
 Class dismissed, and stay tuned for next week's lecture, on the Art of Looping!`
             },
@@ -820,7 +823,7 @@ Turning angle: 15°
 
 Applies static camera:
 Scale: 2^lv
-Centre: (2^lv, 0, 0)
+Centre: (0, 2^lv, 0)
 Upright`
             },
             {
@@ -854,7 +857,7 @@ Turning angle: 22.5°
 
 Applies static camera: (mathematically unproven)
 Scale: 3^lv
-Centre: (0.75*3^lv, -0.25*3^lv, 0)
+Centre: (0.25*3^lv, 0.75*3^lv, 0)
 Upright`
             },
             {
@@ -1272,7 +1275,7 @@ class LSystem
          * @type {string} the starting sequence.
          * @public
          */
-        this.axiom = this.getRecursiveModels(axiom).result;
+        this.axiom = axiom;
         /**
          * @type {number} the turning angle (in degrees).
          * @public
@@ -1300,7 +1303,7 @@ class LSystem
     }
     rerollAxiom()
     {
-        this.axiom = this.getRecursiveModels(this.userInput.axiom).result;
+        this.axiom = this.userInput.axiom;
     }
     getRecursiveModels(sequence)
     {
@@ -1353,10 +1356,9 @@ class LSystem
     derive(sequence, start = 0)
     {
         let result = '';
-        let count = 0;
         for(let i = start; i < sequence.length; ++i)
         {
-            if(result.length + count > maxCharsPerTick)
+            if(result.length > maxCharsPerTick)
             {
                 return {
                     next: i,
@@ -1386,19 +1388,10 @@ class LSystem
                 else
                     continue;
             }
-            else if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
-            {
-                let r = this.getRecursiveModels(
-                this.models.get(sequence[i + 1]));
-                deriv = r.result;
-                count += r.count - r.result.length;
-            }
+            else if(sequence[i] == '~')
+                continue;
             else if(this.rules.has(sequence[i]))
-            {
-                let r = this.getRecursiveModels(this.rules.get(sequence[i]));
-                deriv = r.result;
-                count += r.count - r.result.length;
-            }
+                deriv = this.rules.get(sequence[i]);
             else
                 deriv = sequence[i];
 
@@ -1567,7 +1560,7 @@ class Renderer
          * @type {Quaternion} the cursor's orientation.
          * @public stay away from me.
          */
-        this.ori = new Quaternion();
+        this.ori = this.upright ? uprightQuat : new Quaternion();
         /**
          * @type {string[]} stores the system's every level.
          * @public don't touch me.
@@ -1692,10 +1685,12 @@ class Renderer
     reset(clearGraph = true)
     {
         this.state = new Vector3(0, 0, 0);
-        this.ori = new Quaternion();
+        this.ori = this.upright ? uprightQuat : new Quaternion();
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
+        this.models = [];
+        this.mdi = [];
         this.cooldown = 0;
         this.polygonMode = 0;
         if(clearGraph)
@@ -1892,7 +1887,8 @@ class Renderer
         from hesitating for 1 tick every loop.
         */
         let j, t, moved;
-        for(j = 0; j < 2; ++j)
+        let loopLimit = 2;  // Shenanigans may arise with models? Try this
+        for(j = 0; j < loopLimit; ++j)
         {
             // log(`${Math.round(this.elapsed)}, ${this.i} ` +
             // `${this.levels[this.lv][this.i]} (-${this.cooldown}): ` +
@@ -1903,19 +1899,175 @@ class Renderer
                 return;
             }
 
-            if(this.models.length)
+            if(this.models.length > 0)
             {
+                // log(this.models.toString());
+                // log(this.mdi.toString());
+                // Unreadable pile of shit
                 for(; this.mdi[this.mdi.length - 1] <
                 this.models[this.models.length - 1].length;
                 ++this.mdi[this.mdi.length - 1])
                 {
-                    // Process it like the regular switch
-                    continue;
+                    switch(this.models[this.models.length - 1][
+                    this.mdi[this.mdi.length - 1]])
+                    {
+                        case ' ':
+                            log('Blank space detected.')
+                            break;
+                        case '+':
+                            this.ori = this.system.rotations.get('+').mul(
+                            this.ori);
+                            break;
+                        case '-':
+                            this.ori = this.system.rotations.get('-').mul(
+                            this.ori);
+                            break;
+                        case '&':
+                            this.ori = this.system.rotations.get('&').mul(
+                            this.ori);
+                            break;
+                        case '^':
+                            this.ori = this.system.rotations.get('^').mul(
+                            this.ori);
+                            break;
+                        case '\\':
+                            this.ori = this.system.rotations.get('\\').mul(
+                            this.ori);
+                            break;
+                        case '/':
+                            this.ori = this.system.rotations.get('/').mul(
+                            this.ori);
+                            break;
+                        case '|':
+                            this.ori = ZAxisQuat.mul(this.ori);
+                            break;
+                        case '~':
+                            ++this.mdi[this.mdi.length - 1];
+                            this.models.push(this.system.models.get(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]));
+                            this.mdi.push(0);
+                            return;
+                        case '[':
+                            this.idxStack.push(this.stack.length);
+                            this.stack.push([this.state, this.ori]);
+                            break;
+                        case ']':
+                            if(this.cooldown > 0 && this.polygonMode <= 0)
+                            {
+                                --this.cooldown;
+                                return;
+                            }
+
+                            if(this.stack.length == 0)
+                            {
+                                log('You\'ve clearly made a bracket error.');
+                                break;
+                            }
+
+                            moved = this.state !==
+                            this.stack[this.stack.length - 1][0];
+
+                            t = this.stack.pop();
+                            this.state = t[0];
+                            this.ori = t[1];
+                            if(this.stack.length ==
+                            this.idxStack[this.idxStack.length - 1])
+                            {
+                                this.idxStack.pop();
+                                if(moved)
+                                    this.cooldown = 1;
+                                if(this.hesitateNode && this.polygonMode <= 0)
+                                {
+                                    ++this.mdi[this.mdi.length - 1];
+                                    return;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                            if(this.polygonMode <= 0)
+                                return;
+                            else
+                            {
+                                --this.mdi[this.mdi.length - 1];
+                                break;
+                            }
+                        case '%':
+                            // Nothing to do here
+                            break;
+                        case '{':        
+                            ++this.polygonMode;
+                            break;
+                        case '}':
+                            --this.polygonMode;
+                            break;
+                        case '.':
+                            if(this.polygonMode <= 0)
+                                log('You cannot register a vertex outside of ' +
+                                'polygon drawing.');
+                            else
+                                ++this.mdi[this.mdi.length - 1];
+                            return;
+                        default:
+                            if(this.cooldown > 0 && this.polygonMode <= 0)
+                            {
+                                --this.cooldown;
+                                return;
+                            }
+
+                            let ignored = this.system.ignoreList.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]);
+                            let breakAhead = this.backtrackList.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1]);
+                            let btAhead = this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1] == ']' ||
+                            this.mdi[this.mdi.length - 1] ==
+                            this.models[this.models.length - 1].length - 1;
+
+                            if(this.hesitateApex && btAhead)
+                                this.cooldown = 1;
+
+                            if(this.quickDraw && breakAhead)
+                                this.cooldown = 1;
+
+                            moved = this.stack.length == 0 ||
+                            (this.stack.length > 0 && this.state !==
+                            this.stack[this.stack.length - 1][0]);
+
+                            if(!this.quickBacktrack && moved && !ignored)
+                                this.stack.push([this.state, this.ori]);
+
+                            if(!ignored)
+                                this.forward();
+
+                            if(this.quickBacktrack && breakAhead)
+                                this.stack.push([this.state, this.ori]);
+                            
+                            if(this.quickDraw && !btAhead)
+                                break;
+                            else if(this.polygonMode <= 0)
+                            {
+                                ++this.mdi[this.mdi.length - 1];
+                                return;
+                            }
+                            else
+                                break;
+                    }
                 }
+                this.models.pop();
+                this.mdi.pop();
+                ++loopLimit;
+                // continue prevents the regular loop from running
                 continue;
             }
             for(; this.i < this.levels[this.lv].length; ++this.i)
             {
+                // if(this.models.length > 0)
+                //     break;
                 switch(this.levels[this.lv][this.i])
                 {
                     case ' ':
@@ -1943,6 +2095,12 @@ class Renderer
                     case '|':
                         this.ori = ZAxisQuat.mul(this.ori);
                         break;
+                    case '~':
+                        ++this.i;
+                        this.models.push(this.system.models.get(
+                        this.levels[this.lv][this.i]));
+                        this.mdi.push(0);
+                        return;
                     case '[':
                         this.idxStack.push(this.stack.length);
                         this.stack.push([this.state, this.ori]);
@@ -2000,7 +2158,7 @@ class Renderer
                         break;
                     case '.':
                         if(this.polygonMode <= 0)
-                            log('You\'re cannot register a vertex outside of ' +
+                            log('You cannot register a vertex outside of ' +
                             'polygon drawing.');
                         else
                             ++this.i;
@@ -2025,14 +2183,6 @@ class Renderer
                         if(this.quickDraw && breakAhead)
                             this.cooldown = 1;
 
-                        // if(ignored)
-                        // {
-                        //     if(this.quickDraw && this.stack.length > 0 &&
-                        //     this.ori === this.stack[this.stack.length - 1][1])
-                        //         this.stack.push([this.state, this.ori]);
-                        //     break;
-                        // }
-
                         moved = this.stack.length == 0 ||
                         (this.stack.length > 0 && this.state !==
                         this.stack[this.stack.length - 1][0]);
@@ -2055,13 +2205,6 @@ class Renderer
                         }
                         else
                             break;
-
-                        // if(this.quickDraw && !breakAhead &&
-                        // (this.quickBacktrack || this.stack.length > 0 &&
-                        // this.ori === this.stack[this.stack.length - 1][1]) &&
-                        // this.i < this.levels[this.lv].length - 1)
-                        //     break;
-                        
                 }
             }
             if(!this.backtrackTail || this.stack.length == 0)
@@ -2097,8 +2240,8 @@ class Renderer
     swizzle(coords)
     {
         // The game uses left-handed Y-up, I mean Y-down coordinates.
-        if(this.upright)
-            return new Vector3(-coords.y, -coords.x, coords.z);
+        // if(this.upright)
+        //     return new Vector3(-coords.y, -coords.x, coords.z);
 
         return new Vector3(coords.x, -coords.y, coords.z);
     }
@@ -2552,6 +2695,7 @@ class Measurer
     }
 }
 
+const uprightQuat = new Quaternion(Math.sqrt(2)/2, 0, 0, -Math.sqrt(2)/2);
 const XAxisQuat = new Quaternion(0, 1, 0, 0);
 const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 
@@ -2561,11 +2705,6 @@ let globalRNG = new Xorshift(Date.now());
 let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 24, 27];
 let manualSystems =
 {
-    11:
-    {
-        system: arrow,
-        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
-    },
     8:
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
@@ -2576,13 +2715,18 @@ let manualSystems =
         system: new LSystem('X', ['X=+Y-X-Y+', 'Y=-X+Y+X-'], 60),
         config: ['2^lv', '0.5*2^lv', 'sqrt(3)/4*2^lv', 0, false]
     },
+    11:
+    {
+        system: arrow,
+        config: ['1.5*2^lv', 0, '1.2*2^lv', 0, true]
+    },
     13:
     {
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
         ], 22.5),
-        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
+        config: ['1.5*2^lv', 0, '1.2*2^lv', 0, true]
     },
     luckyFlower:
     {
@@ -2593,7 +2737,7 @@ let manualSystems =
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]II'
         ], 12),
-        config: [6, 6, 0, 0, true]
+        config: [6, 0, 6, 0, true]
     },
     14:
     {
@@ -2615,7 +2759,7 @@ let manualSystems =
             'Y=Z-ZY+',
             'Z=ZZ'
         ], 8),
-        config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
+        config: ['2*2^lv', 0, '1.2*2^lv', 0, true]
     },
     17:
     {
@@ -2632,7 +2776,7 @@ let manualSystems =
             'C=[---------FF][+++++++++FF]B&&+C',
             'D=[---------FF][+++++++++FF]B&&-D'
         ], 4),
-        config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
+        config: ['3*1.3^lv', 0, '1.8*1.3^lv', 0, true]
     },
     20:
     {
@@ -2641,7 +2785,7 @@ let manualSystems =
             'B=[-B]C.',
             'C=GC'
         ], 27),
-        config: ['lv', 'lv/2-1', 0, 0, true]
+        config: ['lv', 0, 'lv/2-1', 0, true]
     },
     22:
     {
@@ -2650,14 +2794,15 @@ let manualSystems =
             'I=Fi',
             'i=Fj',
             'j=J[--FFA][++FFA]',
+            'K=~K',
             '~K=F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]'
         ], 30),
-        config: ['3*lv', '1.5*lv', 0, 0, true]
+        config: ['3*lv', 0, '1.5*lv', 0, true]
     },
     28:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
-        config: ['2^lv', '2^lv', 0, 0, true]
+        config: ['2^lv', 0, '2^lv', 0, true]
     },
     29:
     {
@@ -2671,7 +2816,7 @@ let manualSystems =
             'F=FX+[E]X',
             'X=F-[X+[X[++E]F]]+F[X+FX]-X'
         ], 22.5),
-        config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
+        config: ['3^lv', '0.25*3^lv', '0.75*3^lv', 0, true]
     }
 };
 let tmpSystem = null;
