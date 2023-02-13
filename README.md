@@ -28,7 +28,7 @@ Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
 delivered to this theory's raw code. Copy the page's URL.
 
 Then, access the custom theory panel within the game (unlocked after finishing
-the Convergence Test) then enter the picking menu. Press the `+` symbol and
+T9, the last theory) then enter the picking menu. Press the `+` symbol and
 paste the URL in.
 
 ## Screenshots

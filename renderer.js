@@ -71,7 +71,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
                 'for providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.211;
+var version = 1;
 
 let time = 0;
 let page = 0;
@@ -87,19 +87,69 @@ let menuLang = Localization.language;
 
 let savedSystems = new Map();
 
-const DEFAULT_BUTTON_HEIGHT = Math.max(ui.screenHeight * 0.055, 48);
+let getImageSize = (width) =>
+{
+    if(width >= 1080)
+        return 48;
+    if(width >= 720)
+        return 36;
+    if(width >= 360)
+        return 24;
+
+    return 20;
+}
+
+let getBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 96;
+    if(width >= 720)
+        return 72;
+    if(width >= 360)
+        return 48;
+
+    return 40;
+}
+
+let getMediumBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 88;
+    if(width >= 720)
+        return 66;
+    if(width >= 360)
+        return 44;
+
+    return 36;
+}
+
+let getSmallBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 80;
+    if(width >= 720)
+        return 60;
+    if(width >= 360)
+        return 40;
+
+    return 32;
+}
+
+const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
+const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
 const locStrings =
 {
     en:
     {
-        versionName: 'v0.21.1',
+        versionName: 'v1.0, Work in Progress',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
-        rendererLoading: '\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}',
+        rendererLoading: `\\begin{{matrix}}Loading...&\\text{{Lv. {0}}}&({1}
+\\text{{ chars}})\\end{{matrix}}`,
 
         currencyTime: ' (elapsed)',
 
@@ -175,6 +225,8 @@ const locStrings =
         labelQuickdraw: '* Quickdraw (unstable): ',
         labelQuickBT: '* Quick backtrack: ',
         labelHesitate: '* Stutter on backtrack: ',
+        labelHesitateApex: '* Stutter at apex: ',
+        labelHesitateNode: '* Stutter at node: ',
         labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -184,7 +236,8 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
-        labelEntryCharLimit: 'Warning: This entry has been capped at {0} characters. Proceed with caution.',
+        labelEntryCharLimit: `Warning: This entry has been capped at {0} ` +
+        `characters. Proceed with caution.`,
 
         menuNaming: 'Save System',
         labelName: 'Title: ',
@@ -686,16 +739,9 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 `of leaves and flowers, this speed feels at home with plant modelling. It ` +
 `offers a good compromise between speed and precision, although even 0.1 ` +
 `would be too slow for large scale figures.
-- 0.3 sec: with loose slanted lines, tick length 0.3 is generally is a solid ` +
-`option for any figure requiring some playfulness. However, it is fairly ` +
-`unknown that tick length 0.3 holds the most powerful secret in this whole ` +
-`universe: it can truly create the straightest lines out of this family. As ` +
-`always, some tricks are needed here:
-    + First, create an anchor at this speed by holding -.
-    + Switch back and forth between levels to reset the turtle.
-    + Activate the anchor by holding +, and marvel at the beauty of it all.
-Note: This trick is not guaranteed to work every time, so it is advised to ` +
-`try again multiple times.
+- 0.3 sec: Tick length 0.3 holds the most powerful secret in this whole ` +
+`universe: it can create the straightest lines out of this family. No ` +
+`trickery needed!
 - 0.4 sec: this one can really spice the figure up by tying up cute knots ` +
 `between corners occasionally, mimicking leaf shapes on a tree.
 - 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
@@ -945,6 +991,8 @@ class Xorshift
     constructor(seed = 1752)
     {
         this.state = seed;
+        this.mod = 0x100000000;
+                // 0xffff ffff
     }
     /**
      * Returns a random integer within [0, 2^32) probably.
@@ -967,16 +1015,13 @@ class Xorshift
      */
     nextFloat(includeEnd = false)
     {
-        if(includeEnd)
-        {
-            // [0, 1]
-            return this.nextInt / (this.m - 1);
-        }
-        else
-        {
-            // [0, 1)
-            return this.nextInt / this.m;
-        }
+        let result;
+        if(includeEnd)  // [-1, 1]
+            result = this.nextInt / (this.mod - 1);
+        else            // [-1, 1)
+            result = this.nextInt / this.mod;
+
+        return (result + 1) / 2;
     }
     /**
      * Returns a random integer within a range of [start, end).
@@ -1444,13 +1489,14 @@ class Renderer
      * straight lines on the way forward.
      * @param {boolean} quickBacktrack (default: false) whether to skip through
      * straight lines on the way backward.
-     * @param {string} backtrackList (default: '+-&^\\/|[]') a list of symbols
-     * to act as stoppers for backtracking.
+     * @param {string} backtrackList (default: '+-&^\\/|[') a list of symbols to
+     * act as stoppers for backtracking.
      */
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
-    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[]',
-    loadModels = true, backtrackTail = false, hesitate = true)
+    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[',
+    loadModels = true, backtrackTail = false, hesitateApex = true,
+    hesitateNode = true)
     {
         /**
          * @type {LSystem} the L-system being handled.
@@ -1510,7 +1556,8 @@ class Renderer
         this.backtrackList = new Set(backtrackList);
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
-        this.hesitate = hesitate;
+        this.hesitateApex = hesitateApex;
+        this.hesitateNode = hesitateNode;
         /**
          * @type {Vector3} the cursor's position.
          * @public but shouldn't be.
@@ -1551,6 +1598,8 @@ class Renderer
          * @public don't touch this.
          */
         this.idxStack = [];
+        this.models = [];
+        this.mdi = [];
         /**
          * @type {number} the current index of the sequence.
          * @public don't know.
@@ -1561,6 +1610,7 @@ class Renderer
          * @public
          */
         this.elapsed = 0;
+        this.cooldown = 0;
         /**
          * @type {Vector3} the last tick's camera position.
          * @public didn't tell you so.
@@ -1646,10 +1696,12 @@ class Renderer
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
+        this.cooldown = 0;
         this.polygonMode = 0;
         if(clearGraph)
         {
             this.elapsed = 0;
+            time = 0;
             theory.clearGraph();
         }
         theory.invalidateTertiaryEquation();
@@ -1674,12 +1726,14 @@ class Renderer
      */
     configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
     loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels,
-    backtrackTail, hesitate)
+    backtrackTail, hesitateApex, hesitateNode)
     {
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
-        (loadModels != this.loadModels) || (hesitate != this.hesitate);
+        (loadModels != this.loadModels) ||
+        (hesitateApex != this.hesitateApex) ||
+        (hesitateNode != this.hesitateNode);
 
         this.figScaleStr = figureScale.toString();
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
@@ -1711,7 +1765,8 @@ class Renderer
         this.backtrackList = btl;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
-        this.hesitate = hesitate;
+        this.hesitateApex = hesitateApex;
+        this.hesitateNode = hesitateNode;
 
         if(requireReset)
             this.reset();
@@ -1836,9 +1891,29 @@ class Renderer
         Don't worry, it'll not run forever. This is just to prevent the renderer
         from hesitating for 1 tick every loop.
         */
-        let j, t;
+        let j, t, moved;
         for(j = 0; j < 2; ++j)
         {
+            // log(`${Math.round(this.elapsed)}, ${this.i} ` +
+            // `${this.levels[this.lv][this.i]} (-${this.cooldown}): ` +
+            // `${this.stack.length} stacked`)
+            if(this.cooldown > 0 && this.polygonMode <= 0)
+            {
+                --this.cooldown;
+                return;
+            }
+
+            if(this.models.length)
+            {
+                for(; this.mdi[this.mdi.length - 1] <
+                this.models[this.models.length - 1].length;
+                ++this.mdi[this.mdi.length - 1])
+                {
+                    // Process it like the regular switch
+                    continue;
+                }
+                continue;
+            }
             for(; this.i < this.levels[this.lv].length; ++this.i)
             {
                 switch(this.levels[this.lv][this.i])
@@ -1873,11 +1948,20 @@ class Renderer
                         this.stack.push([this.state, this.ori]);
                         break;
                     case ']':
+                        if(this.cooldown > 0 && this.polygonMode <= 0)
+                        {
+                            --this.cooldown;
+                            return;
+                        }
+
                         if(this.stack.length == 0)
                         {
                             log('You\'ve clearly made a bracket error.');
                             break;
                         }
+
+                        moved = this.state !==
+                        this.stack[this.stack.length - 1][0];
 
                         t = this.stack.pop();
                         this.state = t[0];
@@ -1886,13 +1970,17 @@ class Renderer
                         this.idxStack[this.idxStack.length - 1])
                         {
                             this.idxStack.pop();
-                            if(this.hesitate && this.polygonMode <= 0)
+                            if(moved)
+                                this.cooldown = 1;
+                            if(this.hesitateNode && this.polygonMode <= 0)
                             {
                                 ++this.i;
                                 return;
                             }
                             else
+                            {
                                 break;
+                            }
                         }
                         if(this.polygonMode <= 0)
                             return;
@@ -1912,37 +2000,53 @@ class Renderer
                         break;
                     case '.':
                         if(this.polygonMode <= 0)
-                            log('You\'re making a polygon outside of one?');
+                            log('You\'re cannot register a vertex outside of ' +
+                            'polygon drawing.');
                         else
                             ++this.i;
-
                         return;
                     default:
-                        let ignored = this.system.ignoreList.has(
-                        this.levels[this.lv][this.i]);
-
-                        if(ignored)
+                        if(this.cooldown > 0 && this.polygonMode <= 0)
                         {
-                            if(this.quickDraw && this.stack.length > 0 &&
-                            this.ori === this.stack[this.stack.length - 1][1])
-                                this.stack.push([this.state, this.ori]);
-                            break;
+                            --this.cooldown;
+                            return;
                         }
 
-                        if(!this.quickBacktrack)
-                            this.stack.push([this.state, this.ori]);
-
-                        this.forward();
-
+                        let ignored = this.system.ignoreList.has(
+                        this.levels[this.lv][this.i]);
                         let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
-                        if(this.quickBacktrack && breakAhead)
+                        let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
+                        this.i == this.levels[this.lv].length - 1;
+
+                        if(this.hesitateApex && btAhead)
+                            this.cooldown = 1;
+
+                        if(this.quickDraw && breakAhead)
+                            this.cooldown = 1;
+
+                        // if(ignored)
+                        // {
+                        //     if(this.quickDraw && this.stack.length > 0 &&
+                        //     this.ori === this.stack[this.stack.length - 1][1])
+                        //         this.stack.push([this.state, this.ori]);
+                        //     break;
+                        // }
+
+                        moved = this.stack.length == 0 ||
+                        (this.stack.length > 0 && this.state !==
+                        this.stack[this.stack.length - 1][0]);
+
+                        if(!this.quickBacktrack && moved && !ignored)
                             this.stack.push([this.state, this.ori]);
 
-                        if(this.quickDraw && !breakAhead &&
-                        (this.quickBacktrack || this.stack.length > 0 &&
-                        this.ori === this.stack[this.stack.length - 1][1]) &&
-                        this.i < this.levels[this.lv].length - 1)
+                        if(!ignored)
+                            this.forward();
+
+                        if(this.quickBacktrack && breakAhead)
+                            this.stack.push([this.state, this.ori]);
+                        
+                        if(this.quickDraw && !btAhead)
                             break;
                         else if(this.polygonMode <= 0)
                         {
@@ -1951,6 +2055,13 @@ class Renderer
                         }
                         else
                             break;
+
+                        // if(this.quickDraw && !breakAhead &&
+                        // (this.quickBacktrack || this.stack.length > 0 &&
+                        // this.ori === this.stack[this.stack.length - 1][1]) &&
+                        // this.i < this.levels[this.lv].length - 1)
+                        //     break;
+                        
                 }
             }
             if(!this.backtrackTail || this.stack.length == 0)
@@ -2146,7 +2257,7 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitate}`;
+        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitateApex} ${this.hesitateNode}`;
     }
 }
 
@@ -2175,7 +2286,7 @@ class VariableControls
     {
         this.varBtn.content.text = this.variable.getDescription();
     }
-    createVariableButton(callback = null, height = DEFAULT_BUTTON_HEIGHT)
+    createVariableButton(callback = null, height = BUTTON_HEIGHT)
     {
         if(this.varBtn !== null)
             return this.varBtn;
@@ -2230,7 +2341,7 @@ class VariableControls
         this.refundBtn.content.textColor = this.variable.level > 0 ?
         Color.TEXT : Color.TEXT_MEDIUM;
     }
-    createRefundButton(symbol = '-', height = DEFAULT_BUTTON_HEIGHT)
+    createRefundButton(symbol = '-', height = BUTTON_HEIGHT)
     {
         if(this.refundBtn !== null)
             return this.refundBtn;
@@ -2297,7 +2408,7 @@ class VariableControls
         this.buyBtn.content.textColor = this.variable.level <
         this.variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM;
     }
-    createBuyButton(symbol = '+', height = DEFAULT_BUTTON_HEIGHT)
+    createBuyButton(symbol = '+', height = BUTTON_HEIGHT)
     {
         if(this.buyBtn !== null)
             return this.buyBtn;
@@ -2724,7 +2835,7 @@ var getEquationOverlay = () =>
     return result;
 }
 
-let createButton = (label, callback, height = DEFAULT_BUTTON_HEIGHT) =>
+let createButton = (label, callback, height = BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
     ({
@@ -2821,7 +2932,7 @@ var getUpgradeListDelegate = () =>
             renderer.constructSystem = tmpSystem;
             tmpSystem = null;
         }
-    }, Math.max(ui.screenHeight * 0.05, 44));
+    }, getMediumBtnSize(ui.screenWidth));
     resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
     resumeButton.isVisible = () => tmpSystem ? true : false;
     resumeButton.margin = new Thickness(0, 0, 0, 2);
@@ -2840,8 +2951,8 @@ var getUpgradeListDelegate = () =>
                     rowSpacing: 6,
                     rowDefinitions:
                     [
-                        DEFAULT_BUTTON_HEIGHT,
-                        DEFAULT_BUTTON_HEIGHT
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT
                     ],
                     columnDefinitions: ['50*', '50*'],
                     children:
@@ -2885,9 +2996,9 @@ var getUpgradeListDelegate = () =>
                     rowSpacing: 6,
                     rowDefinitions:
                     [
-                        DEFAULT_BUTTON_HEIGHT,
-                        DEFAULT_BUTTON_HEIGHT,
-                        DEFAULT_BUTTON_HEIGHT
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT
                     ],
                     columnDefinitions: ['50*', '50*'],
                     children:
@@ -3170,17 +3281,17 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpHes = renderer.hesitate;
-    let hesLabel = ui.createLatexLabel
+    let tmpHesA = renderer.hesitateApex;
+    let hesALabel = ui.createLatexLabel
     ({
-        text: getLoc('labelHesitate'),
+        text: getLoc('labelHesitateApex'),
         row: 2,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
-    let hesSwitch = ui.createSwitch
+    let hesASwitch = ui.createSwitch
     ({
-        isToggled: tmpHes,
+        isToggled: tmpHesA,
         row: 2,
         column: 1,
         horizontalOptions: LayoutOptions.END,
@@ -3190,30 +3301,55 @@ let createConfigMenu = () =>
                 e.type == TouchType.LONGPRESS_RELEASED)
             {
                 Sound.playClick();
-                tmpHes = !tmpHes;
-                hesSwitch.isToggled = tmpHes;
+                tmpHesA = !tmpHesA;
+                hesASwitch.isToggled = tmpHesA;
             }
         }
     });
-    let tmpEXB = [...renderer.backtrackList].join('');
-    let EXBLabel = ui.createLatexLabel
+    let tmpHesN = renderer.hesitateNode;
+    let hesNLabel = ui.createLatexLabel
     ({
-        text: getLoc('labelBTList'),
+        text: getLoc('labelHesitateNode'),
         row: 3,
         column: 0,
         verticalOptions: LayoutOptions.CENTER
     });
-    let EXBEntry = ui.createEntry
+    let hesNSwitch = ui.createSwitch
     ({
-        text: tmpEXB,
+        isToggled: tmpHesN,
         row: 3,
         column: 1,
-        horizontalTextAlignment: TextAlignment.END,
-        onTextChanged: (ot, nt) =>
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
         {
-            tmpEXB = nt;
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpHesN = !tmpHesN;
+                hesNSwitch.isToggled = tmpHesN;
+            }
         }
     });
+    // let tmpEXB = [...renderer.backtrackList].join('');
+    // let EXBLabel = ui.createLatexLabel
+    // ({
+    //     text: getLoc('labelBTList'),
+    //     row: 3,
+    //     column: 0,
+    //     verticalOptions: LayoutOptions.CENTER
+    // });
+    // let EXBEntry = ui.createEntry
+    // ({
+    //     text: tmpEXB,
+    //     row: 3,
+    //     column: 1,
+    //     horizontalTextAlignment: TextAlignment.END,
+    //     onTextChanged: (ot, nt) =>
+    //     {
+    //         tmpEXB = nt;
+    //     }
+    // });
 
     let menu = ui.createPopup
     ({
@@ -3268,7 +3404,11 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                rowDefinitions: [40, 40],
+                                rowDefinitions:
+                                [
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT
+                                ],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -3291,7 +3431,13 @@ let createConfigMenu = () =>
                             }),
                             ui.createGrid
                             ({
-                                // rowDefinitions: [40, 40, 40, 40, 40],
+                                rowDefinitions:
+                                [
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT
+                                ],
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
@@ -3311,10 +3457,10 @@ let createConfigMenu = () =>
                                         verticalOptions: LayoutOptions.CENTER
                                     }),
                                     QBSwitch,
-                                    hesLabel,
-                                    hesSwitch,
-                                    EXBLabel,
-                                    EXBEntry
+                                    hesALabel,
+                                    hesASwitch,
+                                    hesNLabel,
+                                    hesNSwitch
                                 ]
                             })
                         ]
@@ -3333,7 +3479,7 @@ let createConfigMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    minimumHeightRequest: 64,
+                    minimumHeightRequest: BUTTON_HEIGHT,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -3347,8 +3493,8 @@ let createConfigMenu = () =>
                                 Sound.playClick();
                                 let requireReset = renderer.configure(tmpZE,
                                 tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                tmpUpright, tmpQD, tmpQB, tmpEXB, tmpModel,
-                                tmpTail, tmpHes);
+                                tmpUpright, tmpQD, tmpQB, undefined, tmpModel,
+                                tmpTail, tmpHesA, tmpHesN);
                                 lvlControls.updateDescription();
                                 menu.hide();
                             }
@@ -3380,8 +3526,10 @@ let createConfigMenu = () =>
                                 modelSwitch.isToggled = rx.loadModels;
                                 tmpTail = rx.backtrackTail;
                                 tailSwitch.isToggled = rx.backtrackTail;
-                                tmpHes = rx.hesitate;
-                                hesSwitch.isToggled = rx.hesitate;
+                                tmpHesA = rx.hesitateApex;
+                                hesASwitch.isToggled = rx.hesitateApex;
+                                tmpHesN = rx.hesitateNode;
+                                hesNSwitch.isToggled = rx.hesitateNode;
                                 lvlControls.updateDescription();
                                 // menu.hide();
                             }
@@ -3500,7 +3648,7 @@ let createSystemMenu = () =>
             ({
                 text: getLoc('btnReroll'),
                 column: 1,
-                heightRequest: 40,
+                heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
                 {
                     Sound.playClick();
@@ -3596,7 +3744,7 @@ let createSystemMenu = () =>
                 }),
                 ui.createGrid
                 ({
-                    minimumHeightRequest: 64,
+                    minimumHeightRequest: BUTTON_HEIGHT,
                     columnDefinitions: ['50*', '50*'],
                     children:
                     [
@@ -3699,7 +3847,7 @@ let createNamingMenu = () =>
             text: getLoc('btnOverwrite'),
             row: 0,
             column: 1,
-            heightRequest: 40,
+            heightRequest: SMALL_BUTTON_HEIGHT,
             onClicked: () =>
             {
                 Sound.playClick();
@@ -3723,8 +3871,8 @@ let createNamingMenu = () =>
     });
     let systemGridScroll = ui.createScrollView
     ({
-        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.2,
-        systemGrid.height)),
+        heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+        Math.min(ui.screenHeight * 0.2, systemGrid.height)),
         content: systemGrid
     });
 
@@ -4078,7 +4226,7 @@ let createViewMenu = (title) =>
         text: getLoc('btnAdd'),
         row: 0,
         column: 1,
-        heightRequest: 40,
+        heightRequest: SMALL_BUTTON_HEIGHT,
         onClicked: () =>
         {
             Sound.playClick();
@@ -4127,7 +4275,7 @@ let createViewMenu = (title) =>
             ({
                 text: getLoc('btnReroll'),
                 column: 1,
-                heightRequest: 40,
+                heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
                 {
                     Sound.playClick();
@@ -4270,7 +4418,7 @@ let createViewMenu = (title) =>
                 }),
                 ui.createGrid
                 ({
-                    minimumHeightRequest: 64,
+                    minimumHeightRequest: BUTTON_HEIGHT,
                     columnDefinitions: ['30*', '30*', '30*'],
                     children:
                     [
@@ -4371,7 +4519,7 @@ let createSaveMenu = () =>
             text: getLoc('btnView'),
             row: 0,
             column: 1,
-            heightRequest: 40,
+            heightRequest: SMALL_BUTTON_HEIGHT,
             onClicked: () =>
             {
                 Sound.playClick();
@@ -4393,8 +4541,8 @@ let createSaveMenu = () =>
     });
     let systemGridScroll = ui.createScrollView
     ({
-        heightRequest: () => Math.max(40, Math.min(ui.screenHeight * 0.32,
-        systemGrid.height)),
+        heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+        Math.min(ui.screenHeight * 0.32, systemGrid.height)),
         content: systemGrid
     });
     let menu = ui.createPopup
@@ -4421,7 +4569,7 @@ let createSaveMenu = () =>
                             text: getLoc('btnClipboard'),
                             row: 0,
                             column: 1,
-                            heightRequest: 40,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
                             onClicked: () =>
                             {
                                 let clipMenu = createSystemClipboardMenu(
@@ -4440,7 +4588,7 @@ let createSaveMenu = () =>
                             text: getLoc('btnSave'),
                             row: 0,
                             column: 2,
-                            heightRequest: 40,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
                             onClicked: () =>
                             {
                                 Sound.playClick();
@@ -4607,7 +4755,7 @@ let createManualMenu = () =>
                 contentsTable[i] + 1),
                 row: i,
                 column: 1,
-                heightRequest: 40,
+                heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
                 {
                     Sound.playClick();
@@ -4938,7 +5086,7 @@ let createWorldMenu = () =>
                             text: getLoc('btnClipboard'),
                             row: 6,
                             column: 1,
-                            heightRequest: 40,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
                             onClicked: () =>
                             {
                                 let clipMenu = createStateClipboardMenu(
@@ -5006,9 +5154,10 @@ var getInternalState = () => JSON.stringify
         loadModels: renderer.loadModels,
         quickDraw: renderer.quickDraw,
         quickBacktrack: renderer.quickBacktrack,
-        backtrackList: [...renderer.backtrackList].join(''),
+        // backtrackList: [...renderer.backtrackList].join(''),
         backtrackTail: renderer.backtrackTail,
-        hesitate: renderer.hesitate
+        hesitateApex: renderer.hesitateApex,
+        hesitateNode: renderer.hesitateNode
     },
     system: tmpSystem ?
     {
@@ -5074,8 +5223,9 @@ var setInternalState = (stateStr) =>
             state.renderer.camZ, state.renderer.followFactor,
             state.renderer.loopMode, state.renderer.upright,
             state.renderer.quickDraw, state.renderer.quickBacktrack,
-            state.renderer.backtrackList, state.renderer.loadModels,
-            state.renderer.backtrackTail, state.renderer.hesitate);
+            undefined, state.renderer.loadModels,
+            state.renderer.backtrackTail, state.renderer.hesitateApex,
+            state.renderer.hesitateNode);
         }
         else
             renderer = new Renderer(system);

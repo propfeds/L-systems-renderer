@@ -1,19 +1,20 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [1.00, Mistletoe ed.](#100-mistletoe-ed)
+  - [1.0, Mistletoe ed.](#10-mistletoe-ed)
+  - [1.0: Completed](#10-completed)
   - [0.21: Completed](#021-completed)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## 1.00, Mistletoe ed.
+## 1.0, Mistletoe ed.
 
 - [ ] Arrange coding streams
   - Ask if people would be interested
+- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 
 - [ ] Add more comments in the code
 - [ ] Update docstrings
-- [x] Turtle controls summary page in guide
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -23,21 +24,7 @@
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - [ ] How about locking rotation? (for Navier Stokes)
-- [ ] Rework quickdraw / BT logic
-  - [ ] Add a cooldown system
-  - [ ] Proposal: remove idxStack and instead turn stack into a 2D array
-  - [ ] Hesitate on both ends if hesitation is on?
-  - [ ] When just pushing onto the stack normally (on an F point), don't push
-  if the position hasn't changed, because the orientation doesn't matter if
-  the stack point isn't a `[` bracket point
-  - [ ] If the `]]]]]` are stacked, hesitation time is massive
-    - [ ] If the stack hasn't detected any movement, just don't do anything
-    - [ ] Hesitate only when the turtle was moved compared to last time?
-    - [ ] Does it work with ignored?
-  (because of the ignored stuff)
-  - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
-  - [ ] Remove the backtrack list option
-    - Also, backtrack on the way back and forward needs different lists?
+- [ ] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
 - [ ] Revamp sequence menu
   - Level 0: 10 chars (`View`)
   - Classic LS: displays the entire string in a label
@@ -47,21 +34,20 @@
   - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians
 
-- [x] Implement new RNG (Xorshift) instead of th fucjuing Lcg
-
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Can multiple derivations on the same rule still be made? Ruins parity
-  - [x] Allow both modes to exist (implemented in Classic)
+  - [x] Allow both modes to exist (ONLY in Classic)
 
 - [ ] Investigate tropism (capital T)
 - [ ] Investigate sunlight heading (heliotropism) (`$`)
 
+- [x] Issue: models are broken because of backtrack rework
 - [ ] Change how models work:
   - Stochastic models are no longer available
     - Instead define stochastic rules for the actual symbol instead, pre-model 
   - Models are no longer recursively derived
-    - This will remove their permanence
+    - This will remove their permanence and increase performance
   - Instead, they will be processed by the renderer using a queue
     - The processing code will be positioned below (?) the main renderer loop
     - Almost the exact same code as main loop, but with `~` queue controls
@@ -103,7 +89,7 @@
 - [ ] Context sensitivity
   - `b < a > c → aa`
   - Parametric: **context ignore** replaces regular ignore list in LS menu
-  - Skipping over brackets? hmm, difficult
+  - [x] Skipping over brackets? hmm, difficult
     - Mapping vertex depth, can be checked by tracking brackets and stacks.
     - Actually it's pretty hard to make an algo for this, because it could be:
     `01[23[456][45][4]][234]2`, and you would have to find all the 2s if you
@@ -131,6 +117,32 @@
     'BA': 'E'   // One way: B>A = E
   };
   ```
+
+## 1.0: Completed
+
+- [x] Implement new RNG (Xorshift) instead of th fucjuing Lcg
+- [x] Screen adaptive button sizes (40, 44, 48) plus other stuff maybe
+- [x] Rework quickdraw / BT logic (**good enough!**)
+  - Progress: Regular, backtrack, quickdraw done
+  - Test suites:
+    - [x] Arrow (8/8)
+    - [x] Cantor (8/8)
+    - [ ] Snowflake (0/8) - still wasting time on ignored shits
+  - [x] Add a cooldown system
+  - [x] Hesitate on both ends if hesitation is on?
+  - [x] When just pushing onto the stack normally (on an F point), don't push
+  if the position hasn't changed, because the orientation doesn't matter if
+  the stack point isn't a `[` bracket point
+  - [x] Issue: quick BT still forces hesitation on the way forward
+  - [x] If the `]]]]]` are stacked, hesitation time is massive
+    - [x] If the stack hasn't detected any movement, just don't do anything
+    - [x] Hesitate only when the turtle was moved compared to last time?
+    - [ ] Does it work with ignored? No
+  (because of the ignored stuff)
+  - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
+  - [x] Remove the backtrack list option
+    - Also, backtrack on the way back and forward needs different lists?
+- [x] Turtle controls summary page in guide
 
 ## 0.21: Completed
 
