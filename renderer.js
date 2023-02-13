@@ -219,7 +219,7 @@ const locStrings =
         labelFollowFactor: 'Follow factor (0-1): ',
         labelLoopMode: 'Looping mode: {0}',
         loopModes: ['Off', 'Level', 'Playlist'],
-        labelUpright: '* Upright x-axis: ',
+        labelUpright: '* Upright figure: ',
         labelBTTail: 'Draw tail end: ',
         labelLoadModels: '* (Teaser) Load models: ',
         labelQuickdraw: '* Quickdraw (unstable): ',
@@ -496,7 +496,7 @@ Turning angle: 30°
 
 Applies static camera:
 Scale: 1.5*2^lv
-Centre: (1.2*2^lv, 0, 0)
+Centre: (0, 1.2*2^lv, 0)
 Upright`
             },
             {
@@ -533,7 +533,7 @@ Turning angle: 22.5°
 
 Applies static camera:
 Scale: 1.5*2^lv
-Centre: (1.2*2^lv, 0, 0)
+Centre: (0, 1.2*2^lv, 0)
 Upright`
             },
             {
@@ -589,7 +589,7 @@ Turning angle: 8°
 
 Applies static camera:
 Scale: 2*2^lv
-Centre: (1.2*2^lv, 0, 0)
+Centre: (0, 1.2*2^lv, 0)
 Upright`,
                 source: 'https://www.bioquest.org/products/files/13157_Real-time%203D%20Plant%20Structure%20Modeling%20by%20L-System.pdf'
             },
@@ -622,7 +622,7 @@ Turning angle: 4°
 
 Applies static camera: (mathematically unproven)
 Scale: 3*1.3^lv
-Centre: (1.8*1.3^lv, 0, 0)
+Centre: (0, 1.8*1.3^lv, 0)
 Upright`,
                 source: 'http://jobtalle.com/lindenmayer_systems.html'
             },
@@ -659,7 +659,7 @@ Turning angle: 27°
 
 Applies static camera:
 Scale: lv
-Centre: (lv/2-1, 0, 0)
+Centre: (0, lv/2-1, 0)
 Upright`
             },
             {
@@ -676,25 +676,30 @@ To declare a model rule, attach a tilde in front of the symbol on the left side:
 To reference a model in another rule, attach a tilde in front of the symbol ` +
 `in the same way it was declared.
 Note: The symbol will not disappear from the rule after the model has been ` +
-`drawn, but it will be ignored by the turtle.`
+`drawn, but it will be ignored by the turtle.
+Note 2: The model only lasts for one level, and needs to be refreshed ` + 
+`(example follows in the next page).`
             },
             {
                 title: 'Example: Lilac branch',
                 contents:
 `Ripped straight off of page 92 of The Algorithmic Beauty of Plants. But I ` +
 `made the model myself.
+K represents the flower, and its model is refreshed every level with the ` +
+`rule K = ~K.
 
 Axiom: A~K
 A = [--//~K][++//~K]I///A
 I = Fi
 i = Fj
 j = J[--FFA][++FFA]
+K = ~K
 ~K = F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]
 Turning angle: 30°
 
 Applies static camera:
 Scale: 3*lv
-Centre: (1.5*lv, 0, 0)
+Centre: (0, 1.5*lv, 0)
 Upright`
             },
             {
@@ -820,7 +825,7 @@ Turning angle: 15°
 
 Applies static camera:
 Scale: 2^lv
-Centre: (2^lv, 0, 0)
+Centre: (0, 2^lv, 0)
 Upright`
             },
             {
@@ -854,7 +859,7 @@ Turning angle: 22.5°
 
 Applies static camera: (mathematically unproven)
 Scale: 3^lv
-Centre: (0.75*3^lv, -0.25*3^lv, 0)
+Centre: (0.25*3^lv, 0.75*3^lv, 0)
 Upright`
             },
             {
@@ -1557,7 +1562,7 @@ class Renderer
          * @type {Quaternion} the cursor's orientation.
          * @public stay away from me.
          */
-        this.ori = new Quaternion();
+        this.ori = this.upright ? uprightQuat : new Quaternion();
         /**
          * @type {string[]} stores the system's every level.
          * @public don't touch me.
@@ -1682,7 +1687,7 @@ class Renderer
     reset(clearGraph = true)
     {
         this.state = new Vector3(0, 0, 0);
-        this.ori = new Quaternion();
+        this.ori = this.upright ? uprightQuat : new Quaternion();
         this.stack = [];
         this.idxStack = [];
         this.i = 0;
@@ -2237,8 +2242,8 @@ class Renderer
     swizzle(coords)
     {
         // The game uses left-handed Y-up, I mean Y-down coordinates.
-        if(this.upright)
-            return new Vector3(-coords.y, -coords.x, coords.z);
+        // if(this.upright)
+        //     return new Vector3(-coords.y, -coords.x, coords.z);
 
         return new Vector3(coords.x, -coords.y, coords.z);
     }
@@ -2692,9 +2697,8 @@ class Measurer
     }
 }
 
+const uprightQuat = new Quaternion(Math.sqrt(2)/2, 0, 0, -Math.sqrt(2)/2);
 const XAxisQuat = new Quaternion(0, 1, 0, 0);
-const UprightQuat = new Quaternion(Math.cos(Math.PI / 4), 0, 0,
--Math.sin(Math.PI / 4)).mul(XAxisQuat);
 const ZAxisQuat = new Quaternion(0, 0, 0, 1);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
@@ -2703,11 +2707,6 @@ let globalRNG = new Xorshift(Date.now());
 let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 24, 27];
 let manualSystems =
 {
-    11:
-    {
-        system: arrow,
-        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
-    },
     8:
     {
         system: new LSystem('FX', ['Y=-FX-Y', 'X=X+YF+'], 90),
@@ -2718,13 +2717,18 @@ let manualSystems =
         system: new LSystem('X', ['X=+Y-X-Y+', 'Y=-X+Y+X-'], 60),
         config: ['2^lv', '0.5*2^lv', 'sqrt(3)/4*2^lv', 0, false]
     },
+    11:
+    {
+        system: arrow,
+        config: ['1.5*2^lv', 0, '1.2*2^lv', 0, true]
+    },
     13:
     {
         system: new LSystem('X', [
             'F=FF',
             'X=F-[[X]+X]+F[+FX]-X,F+[[X]-X]-F[-FX]+X'
         ], 22.5),
-        config: ['1.5*2^lv', '1.2*2^lv', 0, 0, true]
+        config: ['1.5*2^lv', 0, '1.2*2^lv', 0, true]
     },
     luckyFlower:
     {
@@ -2735,7 +2739,7 @@ let manualSystems =
             'R=+++I,++I,++++I',
             'F=[---[I+I]--I+I][+++[I-I]++I-I]II'
         ], 12),
-        config: [6, 6, 0, 0, true]
+        config: [6, 0, 6, 0, true]
     },
     14:
     {
@@ -2757,7 +2761,7 @@ let manualSystems =
             'Y=Z-ZY+',
             'Z=ZZ'
         ], 8),
-        config: ['2*2^lv', '1.2*2^lv', 0, 0, true]
+        config: ['2*2^lv', 0, '1.2*2^lv', 0, true]
     },
     17:
     {
@@ -2774,7 +2778,7 @@ let manualSystems =
             'C=[---------FF][+++++++++FF]B&&+C',
             'D=[---------FF][+++++++++FF]B&&-D'
         ], 4),
-        config: ['3*1.3^lv', '1.8*1.3^lv', 0, 0, true]
+        config: ['3*1.3^lv', 0, '1.8*1.3^lv', 0, true]
     },
     20:
     {
@@ -2783,7 +2787,7 @@ let manualSystems =
             'B=[-B]C.',
             'C=GC'
         ], 27),
-        config: ['lv', 'lv/2-1', 0, 0, true]
+        config: ['lv', 0, 'lv/2-1', 0, true]
     },
     22:
     {
@@ -2792,14 +2796,15 @@ let manualSystems =
             'I=Fi',
             'i=Fj',
             'j=J[--FFA][++FFA]',
+            'K=~K',
             '~K=F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]'
         ], 30),
-        config: ['3*lv', '1.5*lv', 0, 0, true]
+        config: ['3*lv', 0, '1.5*lv', 0, true]
     },
     28:
     {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
-        config: ['2^lv', '2^lv', 0, 0, true]
+        config: ['2^lv', 0, '2^lv', 0, true]
     },
     29:
     {
@@ -2813,7 +2818,7 @@ let manualSystems =
             'F=FX+[E]X',
             'X=F-[X+[X[++E]F]]+F[X+FX]-X'
         ], 22.5),
-        config: ['3^lv', '0.75*3^lv', '-0.25*3^lv', 0, true]
+        config: ['3^lv', '0.25*3^lv', '0.75*3^lv', 0, true]
     }
 };
 let tmpSystem = null;

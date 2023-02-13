@@ -40,7 +40,7 @@
   - [ ] Button to change mode between degrees and radians
 
 - [ ] Investigate tropism (capital T)
-  - [ ] Separate starting quaternions for upright and sideways
+  - [x] Separate starting quaternions for upright and sideways
     - Stop swizzling!
     - Tropism is still the same direction, so we can simulate sideways vines
 - [ ] Investigate sunlight heading (heliotropism) (`$`)
@@ -58,7 +58,7 @@
     - Easy, just add the model map's keys to the set
     - Update the manual
   - Backtrack models?
-- [ ] Update guide about models
+- [x] Update guide about models
 - Counter argument:
   - Permanence can be solved by cutting with `%`, albeit with a 1 tick cost for
   renderer hesitation (or 2)
