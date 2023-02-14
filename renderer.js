@@ -1945,6 +1945,11 @@ class Renderer
                             this.ori = ZAxisQuat.mul(this.ori);
                             break;
                         case '~':
+                            if(!this.system.models.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1]))
+                                break;
+
                             ++this.mdi[this.mdi.length - 1];
                             this.models.push(this.system.models.get(
                             this.models[this.models.length - 1][
@@ -2099,6 +2104,10 @@ class Renderer
                         this.ori = ZAxisQuat.mul(this.ori);
                         break;
                     case '~':
+                        if(!this.system.models.has(
+                        this.levels[this.lv][this.i + 1]))
+                            break;
+
                         ++this.i;
                         this.models.push(this.system.models.get(
                         this.levels[this.lv][this.i]));
