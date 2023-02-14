@@ -35,6 +35,7 @@ import { Localization } from '../api/Localization';
 import { MathExpression } from '../api/MathExpression';
 import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
+import { StackOrientation } from '../api/ui/properties/StackOrientation';
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -1448,7 +1449,8 @@ class LSystem
      */
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ${[...this.ignoreList].join('')}`;
+        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ` +
+        `${[...this.ignoreList].join('')}`;
         for(let [key, value] of this.rules)
         {
             if(typeof value === 'string')
@@ -2382,7 +2384,9 @@ class Renderer
         if(typeof this.levels[this.lv] === 'undefined')
             return this.loadingString;
 
-        return `\\begin{matrix}x=${getCoordString(this.state.x)},&y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&${this.progressString}\\end{matrix}`;
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&
+        y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&
+        ${this.progressString}\\end{matrix}`;
     }
     /**
      * Returns the cursor's orientation as a string.
@@ -2393,7 +2397,8 @@ class Renderer
         if(typeof this.levels[this.lv] === 'undefined')
             return this.loadingString;
 
-        return `\\begin{matrix}q=${this.ori.toString()},&${this.progressString}\\end{matrix}`;
+        return `\\begin{matrix}q=${this.ori.toString()},&${this.progressString}
+        \\end{matrix}`;
     }
     /**
      * Returns the renderer's string representation.
@@ -2401,7 +2406,12 @@ class Renderer
      */
     toString()
     {
-        return`${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ${this.camYStr} ${this.camZStr} ${this.followFactor} ${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ${this.hesitateApex} ${this.hesitateNode}`;
+        return `${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ` +
+        `${this.camYStr} ${this.camZStr} ${this.followFactor} ` +
+        `${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ` +
+        `${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ` +
+        `${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ` +
+        `${this.hesitateApex} ${this.hesitateNode}`;
     }
 }
 
@@ -2444,7 +2454,7 @@ class VariableControls
             content: ui.createLatexLabel
             ({
                 text: this.variable.getDescription(),
-                verticalOptions: LayoutOptions.CENTER,
+                verticalTextAlignment: TextAlignment.CENTER,
                 textColor: Color.TEXT_MEDIUM
             }),
             borderColor: Color.TRANSPARENT
@@ -2506,8 +2516,8 @@ class VariableControls
             content: ui.createLatexLabel
             ({
                 text: symbol,
-                horizontalOptions: LayoutOptions.CENTER,
-                verticalOptions: LayoutOptions.CENTER,
+                horizontalTextAlignment: TextAlignment.CENTER,
+                verticalTextAlignment: TextAlignment.CENTER,
                 textColor: this.variable.level > 0 ? Color.TEXT :
                 Color.TEXT_MEDIUM
             }),
@@ -2573,8 +2583,8 @@ class VariableControls
             content: ui.createLatexLabel
             ({
                 text: symbol,
-                horizontalOptions: LayoutOptions.CENTER,
-                verticalOptions: LayoutOptions.CENTER,
+                horizontalTextAlignment: TextAlignment.CENTER,
+                verticalTextAlignment: TextAlignment.CENTER,
                 textColor: this.variable.level < this.variable.maxLevel ?
                 Color.TEXT : Color.TEXT_MEDIUM
             }),
@@ -2981,6 +2991,46 @@ var getEquationOverlay = () =>
     return result;
 }
 
+// var getCurrencyBarDelegate = () =>
+// {
+//     let stack = ui.createGrid
+//     ({
+//         columnDefinitions: ['1*', '1*'],
+//         children:
+//         [
+//             ui.createLatexLabel
+//             ({
+//                 column: 0,
+//                 text: () =>
+//                 {
+//                     let msTime = renderer.elapsedTime;
+//                     return `${msTime[0] < 10 ? '0' : ''}${msTime[0]}:` +
+//                     `${msTime[1] < 10 ? '0' : ''}${msTime[1].toFixed(1)} ` +
+//                     `elapsed`;
+//                     min.value = 1e-8 + msTime[0] + msTime[1] / 100;
+//                 },
+//                 fontSize: 11,
+//                 horizontalTextAlignment: TextAlignment.CENTER,
+//                 verticalTextAlignment: TextAlignment.END
+//             }),
+//             ui.createLatexLabel
+//             ({
+//                 column: 1,
+//                 text: () => `${renderer.progressPercent.toFixed(2)}\\%`,
+//                 fontSize: 11,
+//                 horizontalTextAlignment: TextAlignment.CENTER,
+//                 verticalTextAlignment: TextAlignment.END
+//             })
+//         ]
+//     });
+//     return ui.createFrame
+//     ({
+//         padding: new Thickness(0, 6),
+//         // margin: new Thickness(0, -1),
+//         content: stack
+//     });
+// }
+
 let createButton = (label, callback, height = BUTTON_HEIGHT) =>
 {
     let frame = ui.createFrame
@@ -2992,7 +3042,7 @@ let createButton = (label, callback, height = BUTTON_HEIGHT) =>
         content: ui.createLatexLabel
         ({
             text: label,
-            verticalOptions: LayoutOptions.CENTER,
+            verticalTextAlignment: TextAlignment.CENTER,
             textColor: Color.TEXT
         }),
         onTouched: (e) =>
@@ -3183,7 +3233,7 @@ let createConfigMenu = () =>
         getLoc('camModes')[tmpCM]),
         row: 1,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let CMSlider = ui.createSlider
     ({
@@ -3221,7 +3271,7 @@ let createConfigMenu = () =>
         isVisible: tmpCM == 0,
         row: 2,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let camGrid = ui.createEntry
     ({
@@ -3259,8 +3309,8 @@ let createConfigMenu = () =>
                 text: getLoc('labelCamOffset'),
                 row: 0,
                 column: 0,
-                // horizontalOptions: LayoutOptions.END,
-                verticalOptions: LayoutOptions.CENTER
+                // horizontalTextAlignment: TextAlignment.END,
+                verticalTextAlignment: TextAlignment.CENTER
             }),
             CYEntry
         ]
@@ -3283,7 +3333,7 @@ let createConfigMenu = () =>
         text: getLoc('labelFollowFactor'),
         row: 2,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER,
         isVisible: tmpCM > 0
     });
     let FFEntry = ui.createEntry
@@ -3324,7 +3374,7 @@ let createConfigMenu = () =>
         getLoc('loopModes')[tmpLM]),
         row: 0,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let LMSlider = ui.createSlider
     ({
@@ -3372,7 +3422,7 @@ let createConfigMenu = () =>
         text: getLoc('labelLoadModels'),
         row: 2,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let modelSwitch = ui.createSwitch
     ({
@@ -3433,7 +3483,7 @@ let createConfigMenu = () =>
         text: getLoc('labelHesitateApex'),
         row: 2,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let hesASwitch = ui.createSwitch
     ({
@@ -3458,7 +3508,7 @@ let createConfigMenu = () =>
         text: getLoc('labelHesitateNode'),
         row: 3,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let hesNSwitch = ui.createSwitch
     ({
@@ -3483,7 +3533,7 @@ let createConfigMenu = () =>
     //     text: getLoc('labelBTList'),
     //     row: 3,
     //     column: 0,
-    //     verticalOptions: LayoutOptions.CENTER
+    //     verticalTextAlignment: TextAlignment.CENTER
     // });
     // let EXBEntry = ui.createEntry
     // ({
@@ -3522,7 +3572,8 @@ let createConfigMenu = () =>
                                         text: getLoc('labelFigScale'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     zoomEntry,
                                     CMLabel,
@@ -3538,7 +3589,8 @@ let createConfigMenu = () =>
                                         text: getLoc('labelUpright'),
                                         row: 4,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     uprightSwitch,
                                 ]
@@ -3565,7 +3617,8 @@ let createConfigMenu = () =>
                                         text: getLoc('labelBTTail'),
                                         row: 1,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     tailSwitch
                                 ]
@@ -3592,7 +3645,8 @@ let createConfigMenu = () =>
                                         text: getLoc('labelQuickdraw'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     QDSwitch,
                                     ui.createLatexLabel
@@ -3600,7 +3654,8 @@ let createConfigMenu = () =>
                                         text: getLoc('labelQuickBT'),
                                         row: 1,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     QBSwitch,
                                     hesALabel,
@@ -3621,7 +3676,7 @@ let createConfigMenu = () =>
                 ({
                     text: getLoc('labelRequireReset'),
                     margin: new Thickness(0, 0, 0, 4),
-                    verticalOptions: LayoutOptions.CENTER
+                    verticalTextAlignment: TextAlignment.CENTER
                 }),
                 ui.createGrid
                 ({
@@ -3733,7 +3788,7 @@ let createSystemMenu = () =>
     let rulesLabel = ui.createLatexLabel
     ({
         text: Localization.format(getLoc('labelRules'), ruleEntries.length),
-        verticalOptions: LayoutOptions.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let ruleStack = ui.createStackLayout
@@ -3788,7 +3843,7 @@ let createSystemMenu = () =>
             ({
                 text: getLoc('labelSeed'),
                 column: 0,
-                verticalOptions: LayoutOptions.CENTER
+                verticalTextAlignment: TextAlignment.CENTER
             }),
             ui.createButton
             ({
@@ -3840,7 +3895,8 @@ let createSystemMenu = () =>
                                         text: getLoc('labelAxiom'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     axiomEntry,
                                     ui.createLatexLabel
@@ -3848,7 +3904,8 @@ let createSystemMenu = () =>
                                         text: getLoc('labelAngle'),
                                         row: 0,
                                         column: 2,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     angleEntry,
                                 ]
@@ -3873,7 +3930,8 @@ let createSystemMenu = () =>
                                         text: getLoc('labelIgnored'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     ignoreEntry,
                                     seedLabel,
@@ -3977,7 +4035,7 @@ let createNamingMenu = () =>
                 text: key,
                 row: i,
                 column: 0,
-                verticalOptions: LayoutOptions.CENTER
+                verticalTextAlignment: TextAlignment.CENTER
             }));
             let btnO = createOverwriteButton(key);
             btnO.row = i;
@@ -4039,7 +4097,7 @@ let createNamingMenu = () =>
                             text: getLoc('labelName'),
                             row: 0,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         nameEntry
                     ]
@@ -4054,7 +4112,7 @@ let createNamingMenu = () =>
                             text: getLoc('labelDesc'),
                             row: 0,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         descEntry
                     ]
@@ -4068,8 +4126,8 @@ let createNamingMenu = () =>
                 ({
                     text: Localization.format(getLoc('labelSavedSystems'),
                     savedSystems.size),
-                    // horizontalOptions: LayoutOptions.CENTER,
-                    verticalOptions: LayoutOptions.CENTER,
+                    // horizontalTextAlignment: TextAlignment.CENTER,
+                    verticalTextAlignment: TextAlignment.CENTER,
                     margin: new Thickness(0, 12)
                 }),
                 systemGridScroll,
@@ -4123,7 +4181,7 @@ let createSystemClipboardMenu = (values) =>
         text: Localization.format(getLoc('labelEntryCharLimit'),
         ENTRY_CHAR_LIMIT),
         margin: new Thickness(0, 0, 0, 4),
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
 
     let menu = ui.createPopup
@@ -4183,7 +4241,7 @@ let createStateClipboardMenu = (values) =>
         text: Localization.format(getLoc('labelEntryCharLimit'),
         ENTRY_CHAR_LIMIT),
         margin: new Thickness(0, 0, 0, 4),
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
 
     let menu = ui.createPopup
@@ -4246,7 +4304,7 @@ let createViewMenu = (title) =>
         text: getLoc('labelCamCentre'),
         row: 1,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let camGrid = ui.createEntry
     ({
@@ -4271,8 +4329,8 @@ let createViewMenu = (title) =>
                 text: getLoc('labelCamOffset'),
                 row: 0,
                 column: 0,
-                // horizontalOptions: LayoutOptions.END,
-                verticalOptions: LayoutOptions.CENTER
+                // horizontalTextAlignment: TextAlignment.END,
+                verticalTextAlignment: TextAlignment.CENTER
             }),
             ui.createEntry
             ({
@@ -4360,7 +4418,7 @@ let createViewMenu = (title) =>
     let rulesLabel = ui.createLatexLabel
     ({
         text: Localization.format(getLoc('labelRules'), ruleEntries.length),
-        verticalOptions: LayoutOptions.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let ruleStack = ui.createStackLayout
@@ -4415,7 +4473,7 @@ let createViewMenu = (title) =>
             ({
                 text: getLoc('labelSeed'),
                 column: 0,
-                verticalOptions: LayoutOptions.CENTER
+                verticalTextAlignment: TextAlignment.CENTER
             }),
             ui.createButton
             ({
@@ -4462,8 +4520,8 @@ let createViewMenu = (title) =>
                             ({
                                 text: tmpDesc,
                                 margin: new Thickness(0, 6),
-                                horizontalOptions: LayoutOptions.CENTER,
-                                verticalOptions: LayoutOptions.CENTER
+                                horizontalTextAlignment: TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER
                             }),
                             ui.createGrid
                             ({
@@ -4475,7 +4533,8 @@ let createViewMenu = (title) =>
                                         text: getLoc('labelAxiom'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     axiomEntry,
                                     ui.createLatexLabel
@@ -4483,7 +4542,8 @@ let createViewMenu = (title) =>
                                         text: getLoc('labelAngle'),
                                         row: 0,
                                         column: 2,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     angleEntry
                                 ]
@@ -4508,7 +4568,8 @@ let createViewMenu = (title) =>
                                         text: getLoc('labelIgnored'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     ignoreEntry,
                                     seedLabel,
@@ -4523,8 +4584,9 @@ let createViewMenu = (title) =>
                             ui.createLatexLabel
                             ({
                                 text: getLoc('labelApplyCamera'),
-                                // horizontalOptions: LayoutOptions.CENTER,
-                                verticalOptions: LayoutOptions.CENTER,
+                                // horizontalTextAlignment:
+                                // TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER,
                                 margin: new Thickness(0, 12)
                             }),
                             ui.createGrid
@@ -4537,7 +4599,8 @@ let createViewMenu = (title) =>
                                         text: getLoc('labelFigScale'),
                                         row: 0,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     zoomEntry,
                                     camLabel,
@@ -4549,7 +4612,8 @@ let createViewMenu = (title) =>
                                         text: getLoc('labelUpright'),
                                         row: 3,
                                         column: 0,
-                                        verticalOptions: LayoutOptions.CENTER
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
                                     }),
                                     uprightSwitch
                                 ]
@@ -4631,8 +4695,8 @@ let createSaveMenu = () =>
     ({
         text: Localization.format(getLoc('labelSavedSystems'),
         savedSystems.size),
-        // horizontalOptions: LayoutOptions.CENTER,
-        verticalOptions: LayoutOptions.CENTER,
+        // horizontalTextAlignment: TextAlignment.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let getSystemGrid = () =>
@@ -4646,7 +4710,7 @@ let createSaveMenu = () =>
                 text: key,
                 row: i,
                 column: 0,
-                verticalOptions: LayoutOptions.CENTER
+                verticalTextAlignment: TextAlignment.CENTER
             }));
             let btn = createViewButton(key);
             btn.row = i;
@@ -4708,7 +4772,7 @@ let createSaveMenu = () =>
                             text: getLoc('labelCurrentSystem'),
                             row: 0,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         ui.createButton
                         ({
@@ -4770,8 +4834,8 @@ let createManualMenu = () =>
         text: manualPages[page].title,
         margin: new Thickness(0, 4),
         heightRequest: 20,
-        horizontalOptions: LayoutOptions.CENTER,
-        verticalOptions: LayoutOptions.CENTER
+        horizontalTextAlignment: TextAlignment.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let pageContents = ui.createLabel
     ({
@@ -4796,8 +4860,8 @@ let createManualMenu = () =>
                 text: getLoc('labelSource'),
                 row: 0,
                 column: 0,
-                horizontalOptions: LayoutOptions.END_AND_EXPAND,
-                verticalOptions: LayoutOptions.CENTER
+                horizontalOptions: LayoutOptions.END,
+                verticalTextAlignment: TextAlignment.CENTER
             }),
             sourceEntry
         ]
@@ -4893,7 +4957,7 @@ let createManualMenu = () =>
                 text: manualPages[contentsTable[i]].title,
                 row: i,
                 column: 0,
-                verticalOptions: LayoutOptions.CENTER
+                verticalTextAlignment: TextAlignment.CENTER
             }));
             children.push(ui.createButton
             ({
@@ -4982,8 +5046,8 @@ let createSeqViewMenu = (level) =>
         renderer.levels[level].length),
         margin: new Thickness(0, 4),
         heightRequest: 20,
-        horizontalOptions: LayoutOptions.CENTER,
-        verticalOptions: LayoutOptions.CENTER
+        horizontalTextAlignment: TextAlignment.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let pageContents = ui.createLabel
     ({
@@ -5035,7 +5099,7 @@ let createSequenceMenu = () =>
             renderer.levels[i].length),
             row: i,
             column: 0,
-            verticalOptions: LayoutOptions.CENTER
+            verticalTextAlignment: TextAlignment.CENTER
         }));
         tmpLvls.push(ui.createButton
         ({
@@ -5121,7 +5185,7 @@ let createWorldMenu = () =>
         getLoc('terEqModes')[Number(tmpAC)]),
         row: 2,
         column: 0,
-        verticalOptions: LayoutOptions.CENTER
+        verticalTextAlignment: TextAlignment.CENTER
     });
     let ACSwitch = ui.createSwitch
     ({
@@ -5210,7 +5274,7 @@ let createWorldMenu = () =>
                             text: getLoc('labelOfflineReset'),
                             row: 0,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         ODSwitch,
                         ui.createLatexLabel
@@ -5218,7 +5282,7 @@ let createWorldMenu = () =>
                             text: getLoc('labelResetLvl'),
                             row: 1,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         RLSwitch,
                         ACLabel,
@@ -5228,7 +5292,7 @@ let createWorldMenu = () =>
                             text: getLoc('labelMeasure'),
                             row: 3,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         MPSwitch,
                         ui.createLatexLabel
@@ -5236,7 +5300,7 @@ let createWorldMenu = () =>
                             text: getLoc('debugCamPath'),
                             row: 4,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         DCPSwitch,
                         ui.createLatexLabel
@@ -5244,7 +5308,7 @@ let createWorldMenu = () =>
                             text: getLoc('labelMaxCharsPerTick'),
                             row: 5,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         MCPTEntry,
                         ui.createLatexLabel
@@ -5252,7 +5316,7 @@ let createWorldMenu = () =>
                             text: getLoc('labelInternalState'),
                             row: 6,
                             column: 0,
-                            verticalOptions: LayoutOptions.CENTER
+                            verticalTextAlignment: TextAlignment.CENTER
                         }),
                         ui.createButton
                         ({
