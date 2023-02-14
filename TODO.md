@@ -28,7 +28,7 @@
 - [ ] Add more comments in the code
 - [ ] Update docstrings
 
-- [ ] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
+- [x] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
 
 - [ ] Revamp sequence menu
   - Level 0: 10 chars (`View`)

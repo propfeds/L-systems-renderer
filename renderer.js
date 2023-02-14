@@ -1880,7 +1880,7 @@ class Renderer
             return;
         
         // This is to prevent the renderer from skipping the first point.
-        if(this.elapsed == 0)
+        if(this.elapsed <= 0.101)
             return;
 
         /*
@@ -2952,15 +2952,15 @@ var tick = (elapsedTime, multiplier) =>
     }
     else
     {
-        renderer.draw(l.level, !timeCheck(elapsedTime));
         renderer.tick(elapsedTime);
+        renderer.draw(l.level, !timeCheck(elapsedTime));
     }
 
     if(measurePerformance)
         drawMeasurer.stamp();
 
     let msTime = renderer.elapsedTime;
-    min.value = msTime[0] + msTime[1] / 100;
+    min.value = 1e-8 + msTime[0] + msTime[1] / 100;
     progress.value = renderer.progressPercent;
     theory.invalidateTertiaryEquation();
 }
