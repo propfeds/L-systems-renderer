@@ -1131,6 +1131,23 @@ class Quaternion
         return new Quaternion(this.r, -this.i, -this.j, -this.k);
     }
     /**
+     * Computes the norm of a quaternion.
+     * @returns {number} the norm.
+     */
+    get norm()
+    {
+        return Math.sqrt(this.r ** 2 + this.i ** 2 + this.j ** 2 + this.k ** 2);
+    }
+    /**
+     * Normalises a quaternion.
+     * @returns {Quaternion} the normalised quaternion.
+     */
+    get normalise()
+    {
+        let n = this.norm;
+        return new Quaternion(this.r / n, this.i / n, this.j / n, this.k / n);
+    }
+    /**
      * Returns a rotation vector from the quaternion.
      * @returns {Vector3} the rotation vector.
      */
@@ -1138,6 +1155,82 @@ class Quaternion
     {
         let r = this.neg.mul(XAxisQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
+    }
+    /**
+     * Applies a gravi-tropism to the quaternion.
+     * @param {number} weight the weight of the vector (negative for upwards).
+     * @returns {Quaternion} a new sagged quaternion.
+     */
+    applyTropism(weight = 0)
+    {
+        if(weight == 0)
+            return this;
+        
+        let curRot = this.rotVector;
+        let newRot = curRot + new Vector3(0, weight, 0);
+        let n = newRot.length;
+        if(n == 0)
+            return this;
+        newRot /= n;
+        let dp = curRot.x * newRot.x + curRot.y * newRot.y +
+        curRot.z * newRot.z;
+        let axis;
+        if(dp < -1 + 1e-8)
+        {
+            /* Edge case
+            If the two vectors are in opposite directions, select an axis for
+            fun.
+            */
+            // Cross product with (0, 0, 1)
+            axis = new Vector3(-curRot.y, curRot.x, 0);
+            let an = axis.norm;
+            if(Math.abs(an) < 0.1)
+            {
+                // Cross product with (1, 0, 0)
+                axis = new Vector3(0, -curRot.z, curRot.y);
+            }
+            an = axis.norm;
+            axis /= an;
+            return new Quaternion(0, axis.x, axis.y, axis.z).mul(this);
+        }
+        axis = new Vector3(
+            curRot.y * newRot.z - curRot.z * newRot.y,
+            curRot.z * newRot.x - curRot.x * newRot.z,
+            curRot.x * newRot.y - curRot.y * newRot.x,
+        );
+        let s = Math.sqrt((1 + dp) * 2);
+        return new Quaternion(
+            s / 2,
+            axis.x / s,
+            axis.y / s,
+            axis.z / s
+        ).mul(this);
+// float cosTheta = Vector3f::DotProduct(forward, direction);
+// Vector3f axis;
+
+// if (cosTheta < -1 + 0.001f) {
+//     // special case when vectors in opposite directions:
+//     // there is no "ideal" rotation axis
+//     // So guess one; any will do as long as it's perpendicular to start
+//     axis = Vector3f::CrossProduct(Vector3f(0.0f, 0.0f, 1.0f), forward);
+
+//     if (axis.Length() * axis.Length() < 0.01)
+//         axis = Vector3f::CrossProduct(Vector3f(1.0f, 0.0f, 0.0f), forward);
+
+//     axis = Vector3f::Normalize(axis);
+//     return Quaternion(axis.x, axis.y, axis.z, DegreesToRadians(0));
+// }
+
+// axis = Vector3f::CrossProduct(forward, direction);
+// float s = sqrt((1 + cosTheta) * 2);
+// float invs = 1 / s;
+
+// return Quaternion(
+//     axis.x * invs,
+//     axis.y * invs,
+//     axis.z * invs,
+//     s * 0.5f
+// );
     }
     /**
      * Returns the quaternion's string representation.
@@ -1163,7 +1256,7 @@ class LSystem
      * systems.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', models = {})
+    ignoreList = '', models = {}, tropism = 0)
     {
         this.userInput =
         {
@@ -1490,7 +1583,7 @@ class Renderer
      */
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
-    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[',
+    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[$T',
     loadModels = true, backtrackTail = false, hesitateApex = true,
     hesitateNode = true)
     {
@@ -1944,6 +2037,9 @@ class Renderer
                         case '|':
                             this.ori = ZAxisQuat.mul(this.ori);
                             break;
+                        case 'T':
+                            this.ori = this.ori.applyTropism(0.5);
+                            break;
                         case '~':
                             if(!this.system.models.has(
                             this.models[this.models.length - 1][
@@ -2102,6 +2198,9 @@ class Renderer
                         break;
                     case '|':
                         this.ori = ZAxisQuat.mul(this.ori);
+                        break;
+                    case 'T':
+                        this.ori = this.ori.applyTropism(0.5);
                         break;
                     case '~':
                         if(!this.system.models.has(
@@ -2715,6 +2814,7 @@ class Measurer
     }
 }
 
+// const sidewayQuat = new Quaternion(1, 0, 0, 0);
 const uprightQuat = new Quaternion(Math.sqrt(2)/2, 0, 0, -Math.sqrt(2)/2);
 const XAxisQuat = new Quaternion(0, 1, 0, 0);
 const ZAxisQuat = new Quaternion(0, 0, 0, 1);
