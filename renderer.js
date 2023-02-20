@@ -209,6 +209,7 @@ const locStrings =
         labelAngle: 'Turning angle (°): ',
         labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
+        labelTropism: 'Tropism (gravity): ',
         labelSeed: 'Seed (non-zero): ',
 
         menuRenderer: 'Renderer Menu',
@@ -1157,7 +1158,8 @@ class Quaternion
         return new Vector3(r.i, r.j, r.k);
     }
     /**
-     * Applies a gravi-tropism to the quaternion.
+     * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
+     * Applies a gravi-tropism to the quaternion. Why is negative for upwards?
      * @param {number} weight the weight of the vector (negative for upwards).
      * @returns {Quaternion} a new sagged quaternion.
      */
@@ -1167,7 +1169,7 @@ class Quaternion
             return this;
         
         let curRot = this.rotVector;
-        let newRot = curRot + new Vector3(0, weight, 0);
+        let newRot = curRot - new Vector3(0, weight, 0);
         let n = newRot.length;
         if(n == 0)
             return this;
@@ -1178,20 +1180,10 @@ class Quaternion
         if(dp < -1 + 1e-8)
         {
             /* Edge case
-            If the two vectors are in opposite directions, select an axis for
-            fun.
+            If the two vectors are in opposite directions, just do the sensible
+            thing.
             */
-            // Cross product with (0, 0, 1)
-            axis = new Vector3(-curRot.y, curRot.x, 0);
-            let an = axis.norm;
-            if(Math.abs(an) < 0.1)
-            {
-                // Cross product with (1, 0, 0)
-                axis = new Vector3(0, -curRot.z, curRot.y);
-            }
-            an = axis.norm;
-            axis /= an;
-            return new Quaternion(0, axis.x, axis.y, axis.z).mul(this);
+            return ZAxisQuat.mul(this);
         }
         axis = new Vector3(
             curRot.y * newRot.z - curRot.z * newRot.y,
@@ -1199,38 +1191,13 @@ class Quaternion
             curRot.x * newRot.y - curRot.y * newRot.x,
         );
         let s = Math.sqrt((1 + dp) * 2);
+        // I forgore that our quaternions have to be all negative
         return new Quaternion(
-            s / 2,
+            -s / 2,
             axis.x / s,
             axis.y / s,
             axis.z / s
         ).mul(this);
-// float cosTheta = Vector3f::DotProduct(forward, direction);
-// Vector3f axis;
-
-// if (cosTheta < -1 + 0.001f) {
-//     // special case when vectors in opposite directions:
-//     // there is no "ideal" rotation axis
-//     // So guess one; any will do as long as it's perpendicular to start
-//     axis = Vector3f::CrossProduct(Vector3f(0.0f, 0.0f, 1.0f), forward);
-
-//     if (axis.Length() * axis.Length() < 0.01)
-//         axis = Vector3f::CrossProduct(Vector3f(1.0f, 0.0f, 0.0f), forward);
-
-//     axis = Vector3f::Normalize(axis);
-//     return Quaternion(axis.x, axis.y, axis.z, DegreesToRadians(0));
-// }
-
-// axis = Vector3f::CrossProduct(forward, direction);
-// float s = sqrt((1 + cosTheta) * 2);
-// float invs = 1 / s;
-
-// return Quaternion(
-//     axis.x * invs,
-//     axis.y * invs,
-//     axis.z * invs,
-//     s * 0.5f
-// );
     }
     /**
      * Returns the quaternion's string representation.
@@ -1256,7 +1223,7 @@ class LSystem
      * systems.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', models = {}, tropism = 0)
+    ignoreList = '', models = {}, tropism = 0.5)
     {
         this.userInput =
         {
@@ -1265,7 +1232,8 @@ class LSystem
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
-            models: models
+            models: models,
+            tropism: tropism
         };
         /**
          * @type {string[]} the production rules.
@@ -1395,6 +1363,8 @@ class LSystem
         this.rotations.set('^', new Quaternion(c, 0, s, 0));
         this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
         this.rotations.set('/', new Quaternion(c, s, 0, 0));
+
+        this.tropism = tropism;
     }
     rerollAxiom()
     {
@@ -1533,7 +1503,8 @@ class LSystem
             turnAngle: this.userInput.turnAngle,
             seed: this.userInput.seed,
             ignoreList: this.userInput.ignoreList,
-            models: this.userInput.models
+            models: this.userInput.models,
+            tropism: this.userInput.tropism
         };
     }
     /**
@@ -2038,7 +2009,8 @@ class Renderer
                             this.ori = ZAxisQuat.mul(this.ori);
                             break;
                         case 'T':
-                            this.ori = this.ori.applyTropism(0.5);
+                            this.ori = this.ori.applyTropism(
+                            this.system.tropism);
                             break;
                         case '~':
                             if(!this.system.models.has(
@@ -2200,7 +2172,7 @@ class Renderer
                         this.ori = ZAxisQuat.mul(this.ori);
                         break;
                     case 'T':
-                        this.ori = this.ori.applyTropism(0.5);
+                        this.ori = this.ori.applyTropism(this.system.tropism);
                         break;
                     case '~':
                         if(!this.system.models.has(
@@ -3940,10 +3912,23 @@ let createSystemMenu = () =>
             tmpIgnore = nt;
         }
     });
+    let tmpTropism = values.tropism;
+    let tropismEntry = ui.createEntry
+    ({
+        text: tmpTropism.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpTropism = Number(nt);
+        }
+    });
     let tmpSeed = values.seed;
     let seedLabel = ui.createGrid
     ({
-        row: 1,
+        row: 2,
         column: 0,
         columnDefinitions: ['40*', '30*'],
         children:
@@ -3971,7 +3956,7 @@ let createSystemMenu = () =>
     ({
         text: tmpSeed.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 1,
+        row: 2,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4043,6 +4028,15 @@ let createSystemMenu = () =>
                                         TextAlignment.CENTER
                                     }),
                                     ignoreEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelTropism'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    tropismEntry,
                                     seedLabel,
                                     seedEntry
                                 ]
@@ -4070,7 +4064,8 @@ let createSystemMenu = () =>
                             {
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
-                                tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore,
+                                undefined, tmpTropism);
                                 if(tmpSystem)
                                 {
                                     tmpSystem = null;
@@ -4097,6 +4092,7 @@ let createSystemMenu = () =>
                                 getLoc('labelRules'), ruleEntries.length);
                                 ruleStack.children = ruleEntries;
                                 ignoreEntry.text = values.ignoreList;
+                                tropismEntry.text = values.tropism.toString();
                                 seedEntry.text = values.seed.toString();
                             }
                         })
@@ -4318,7 +4314,8 @@ let createSystemClipboardMenu = (values) =>
                         tmpSystemDesc = sv.desc;
                         renderer.constructSystem = new LSystem(sv.system.axiom,
                         sv.system.rules, sv.system.turnAngle,
-                        sv.system.seed, sv.system.ignoreList);
+                        sv.system.seed, sv.system.ignoreList, undefined,
+                        sv.system.tropism);
                         tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
@@ -4495,7 +4492,7 @@ let createViewMenu = (title) =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = values.turnAngle;
+    let tmpAngle = values.turnAngle || 0;
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
@@ -4570,10 +4567,23 @@ let createViewMenu = (title) =>
             tmpIgnore = nt;
         }
     });
-    let tmpSeed = values.seed;
+    let tmpTropism = values.tropism || 0.5;
+    let tropismEntry = ui.createEntry
+    ({
+        text: tmpTropism.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpTropism = Number(nt);
+        }
+    });
+    let tmpSeed = values.seed || 0;
     let seedLabel = ui.createGrid
     ({
-        row: 1,
+        row: 2,
         column: 0,
         columnDefinitions: ['40*', '30*'],
         children:
@@ -4601,7 +4611,7 @@ let createViewMenu = (title) =>
     ({
         text: tmpSeed.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 1,
+        row: 2,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4681,6 +4691,15 @@ let createViewMenu = (title) =>
                                         TextAlignment.CENTER
                                     }),
                                     ignoreEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelTropism'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    tropismEntry,
                                     seedLabel,
                                     seedEntry
                                 ]
@@ -4750,7 +4769,8 @@ let createViewMenu = (title) =>
                             {
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
-                                tmpRules, tmpAngle, tmpSeed, tmpIgnore);
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore,
+                                undefined, tmpTropism);
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
@@ -4771,7 +4791,8 @@ let createViewMenu = (title) =>
                                 {
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
-                                    tmpAngle, tmpSeed, tmpIgnore).object,
+                                    tmpAngle, tmpSeed, tmpIgnore, undefined,
+                                    tmpTropism).object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
@@ -5559,7 +5580,8 @@ var setInternalState = (stateStr) =>
             tmpSystemName = state.system.title;
             tmpSystemDesc = state.system.desc;
             tmpSystem = new LSystem(state.system.axiom, state.system.rules,
-            state.system.turnAngle, state.system.seed, state.system.ignoreList);
+            state.system.turnAngle, state.system.seed, state.system.ignoreList,
+            undefined, state.system.tropism);
         }
         
         if('renderer' in state)
