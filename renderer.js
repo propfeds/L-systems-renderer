@@ -167,7 +167,7 @@ const locStrings =
         saPatienceHint: 'Be patient.',
 
         btnSave: 'Save',
-        btnClear: 'Clear',
+        btnClear: 'Clear All',
         btnDefault: '* Reset to Defaults',
         btnAdd: 'Add',
         btnReroll: 'Reroll',
@@ -874,8 +874,8 @@ Upright`
 
 /**
  * Returns a localised string.
- * @param {string} name the internal name of the string.
- * @returns {string} the string.
+ * @param {string} name the string's internal name.
+ * @returns {string}
  */
 let getLoc = (name, lang = menuLang) =>
 {
@@ -890,7 +890,7 @@ let getLoc = (name, lang = menuLang) =>
 
 /**
  * Returns a string of a fixed decimal number, with a fairly uniform width.
- * @returns {string} the string.
+ * @returns {string}
  */
 let getCoordString = (x) => x.toFixed(x >= -0.01 ?
     (x <= 9.999 ? 3 : (x <= 99.99 ? 2 : 1)) :
@@ -898,10 +898,10 @@ let getCoordString = (x) => x.toFixed(x >= -0.01 ?
 );
 
 /**
- * Compares for every member of two sets.
+ * Compares equality for every member of two sets, disregarding order.
  * @param {Set} xs set 1.
  * @param {Set} ys set 2.
- * @returns {boolean} whether two sets are the exact same (disregarding order).
+ * @returns {boolean}
  */
 let eqSet = (xs, ys) => xs.size === ys.size && [...xs].every((x) => ys.has(x));
 
@@ -918,29 +918,25 @@ class LCG
     {
         /**
          * @type {number} the mod of this realm.
-         * @public but not really.
          */
         this.m = 0x80000000; // 2**31;
         /**
          * @type {number} some constant
-         * @public but shouldn't be.
          */
         this.a = 1103515245;
         /**
          * @type {number} some other constant.
-         * @public please leave me pretty be.
          */
         this.c = 12345;
         /**
          * @type {number} the LCG's current state.
-         * @public honestly.
          */
         this.state = seed % this.m;
     }
 
     /**
      * Returns a random integer within [0, 2^31).
-     * @returns {number} the next integer in the generator.
+     * @returns {number}
      */
     get nextInt()
     {
@@ -951,7 +947,7 @@ class LCG
      * Returns a random floating point number within [0, 1] or [0, 1).
      * @param {boolean} [includeEnd] (default: false) whether to include the
      * number 1 in the range.
-     * @returns {number} the floating point, corresponding to the next integer.
+     * @returns {number}
      */
     nextFloat(includeEnd = false)
     {
@@ -970,7 +966,7 @@ class LCG
      * Returns a random integer within a range of [start, end).
      * @param {number} start the range's lower bound.
      * @param {number} end the range's upper bound, plus 1.
-     * @returns {number} the integer.
+     * @returns {number}
      */
     nextRange(start, end)
     {
@@ -981,7 +977,7 @@ class LCG
     /**
      * Returns a random element from an array.
      * @param {any[]} array the array.
-     * @returns the element.
+     * @returns {any}
      */
     choice(array)
     {
@@ -998,11 +994,11 @@ class Xorshift
     {
         this.state = seed;
         this.mod = 0x100000000;
-                // 0xffff ffff
+                // 0x ffffffff + 1
     }
     /**
      * Returns a random integer within [0, 2^32) probably.
-     * @returns {number} the next integer in the generator.
+     * @returns {number}
      */
     get nextInt()
     {
@@ -1017,7 +1013,7 @@ class Xorshift
      * Returns a random floating point number within [0, 1] or [0, 1).
      * @param {boolean} [includeEnd] (default: false) whether to include the
      * number 1 in the range.
-     * @returns {number} the floating point, corresponding to the next integer.
+     * @returns {number}
      */
     nextFloat(includeEnd = false)
     {
@@ -1033,7 +1029,7 @@ class Xorshift
      * Returns a random integer within a range of [start, end).
      * @param {number} start the range's lower bound.
      * @param {number} end the range's upper bound, plus 1.
-     * @returns {number} the integer.
+     * @returns {number}
      */
     nextRange(start, end)
     {
@@ -1044,7 +1040,7 @@ class Xorshift
     /**
      * Returns a random element from an array.
      * @param {any[]} array the array.
-     * @returns the element.
+     * @returns {any}
      */
     choice(array)
     {
@@ -1068,22 +1064,18 @@ class Quaternion
     {
         /**
          * @type {number} the real component.
-         * @public
          */
         this.r = r;
         /**
          * @type {number} the imaginary i component.
-         * @public
          */
         this.i = i;
         /**
          * @type {number} the imaginary j component.
-         * @public
          */
         this.j = j;
         /**
          * @type {number} the imaginary k component.
-         * @public
          */
         this.k = k;
     }
@@ -1092,7 +1084,7 @@ class Quaternion
      * Computes the sum of the current quaternion with another. Does not modify
      * the original quaternion.
      * @param {Quaternion} quat this other quaternion.
-     * @returns {Quaternion} the sum.
+     * @returns {Quaternion}
      */
     add(quat)
     {
@@ -1107,7 +1099,7 @@ class Quaternion
      * Computes the product of the current quaternion with another. Does not
      * modify the original quaternion.
      * @param {Quaternion} quat this other quaternion.
-     * @returns {Quaternion} the product.
+     * @returns {Quaternion}
      */
     mul(quat)
     {
@@ -1125,7 +1117,7 @@ class Quaternion
      * Computes the negation of a quaternion. The negation also acts as the
      * inverse if the quaternion's norm is 1, which is the case with rotation
      * quaternions.
-     * @returns {Quaternion} the negation.
+     * @returns {Quaternion}
      */
     get neg()
     {
@@ -1133,7 +1125,7 @@ class Quaternion
     }
     /**
      * Computes the norm of a quaternion.
-     * @returns {number} the norm.
+     * @returns {number}
      */
     get norm()
     {
@@ -1141,7 +1133,7 @@ class Quaternion
     }
     /**
      * Normalises a quaternion.
-     * @returns {Quaternion} the normalised quaternion.
+     * @returns {Quaternion}
      */
     get normalise()
     {
@@ -1149,33 +1141,42 @@ class Quaternion
         return new Quaternion(this.r / n, this.i / n, this.j / n, this.k / n);
     }
     /**
-     * Returns a rotation vector from the quaternion.
-     * @returns {Vector3} the rotation vector.
+     * Returns a heading vector from the quaternion.
+     * @returns {Vector3}
      */
-    get rotVector()
+    get headingVector()
     {
-        let r = this.neg.mul(XAxisQuat).mul(this);
+        let r = this.neg.mul(xUpQuat).mul(this);
         return new Vector3(r.i, r.j, r.k);
     }
     /**
-     * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
-     * Applies a gravi-tropism to the quaternion. Why is negative for upwards?
-     * @param {number} weight the weight of the vector (negative for upwards).
-     * @returns {Quaternion} a new sagged quaternion.
+     * Returns an up vector from the quaternion.
+     * @returns {Vector3}
      */
-    applyTropism(weight = 0)
+    get upVector()
     {
-        if(weight == 0)
-            return this;
-        
-        let curRot = this.rotVector;
-        let newRot = curRot - new Vector3(0, weight, 0);
-        let n = newRot.length;
-        if(n == 0)
-            return this;
-        newRot /= n;
-        let dp = curRot.x * newRot.x + curRot.y * newRot.y +
-        curRot.z * newRot.z;
+        let r = this.neg.mul(yUpQuat).mul(this);
+        return new Vector3(r.i, r.j, r.k);
+    }
+    /**
+     * Returns a side vector (left or right?) from the quaternion.
+     * @returns {Vector3}
+     */
+    get sideVector()
+    {
+        let r = this.neg.mul(zUpQuat).mul(this);
+        return new Vector3(r.i, r.j, r.k);
+    }
+    /**
+     * Rotate from a heading vector to another.
+     * @param {Vector3} src the current heading.
+     * @param {Vector3} dst the target heading.
+     * @returns {Quaternion}
+     */
+    rotateFrom(src, dst)
+    {
+        let dp = src.x * dst.x + src.y * dst.y +
+        src.z * dst.z;
         let axis;
         if(dp < -1 + 1e-8)
         {
@@ -1183,15 +1184,15 @@ class Quaternion
             If the two vectors are in opposite directions, just do the sensible
             thing.
             */
-            return ZAxisQuat.mul(this);
+            return zUpQuat.mul(this);
         }
         axis = new Vector3(
-            curRot.y * newRot.z - curRot.z * newRot.y,
-            curRot.z * newRot.x - curRot.x * newRot.z,
-            curRot.x * newRot.y - curRot.y * newRot.x,
+            src.y * dst.z - src.z * dst.y,
+            src.z * dst.x - src.x * dst.z,
+            src.x * dst.y - src.y * dst.x,
         );
         let s = Math.sqrt((1 + dp) * 2);
-        // I forgore that our quaternions have to be all negative
+        // I forgore that our quaternions have to be all negative, dunnoe why
         return new Quaternion(
             -s / 2,
             axis.x / s,
@@ -1200,8 +1201,52 @@ class Quaternion
         ).mul(this);
     }
     /**
+     * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
+     * Applies a gravi-tropism vector to the quaternion.
+     * @param {number} weight the vector's weight (negative for upwards).
+     * @returns {Quaternion}
+     */
+    applyTropism(weight = 0)
+    {
+        if(weight == 0)
+            return this;
+        
+        let curHead = this.headingVector;
+        let newHead = curHead - new Vector3(0, weight, 0);
+        let n = newHead.length;
+        if(n == 0)
+            return this;
+        newHead /= n;
+        return this.rotateFrom(curHead, newHead);
+    }
+    /**
+     * Rolls the quaternion so that its up vector aligns with the earth.
+     * @returns {Quaternion}
+     */
+    alignToVertical()
+    {
+        // L = V×H / |V×H| and U = H×L
+        let curHead = this.headingVector;
+        let curUp = this.upVector;
+        // Can we take a shortcut and just align the side vectors?
+        let l = new Vector3(curHead.z, 0, -curHead.x);
+        let n = l.length;
+        if(n == 0)
+            return this;
+        l /= n;
+        let newUp = new Vector3(
+            curHead.y * l.z - curHead.z * l.y,
+            curHead.z * l.x - curHead.x * l.z,
+            curHead.x * l.y - curHead.y * l.x,
+        );
+        if(newUp.y < 0)
+            newUp = -newUp;
+        log(`${curUp}\n\t--> ${newUp}`);
+        return this.rotateFrom(curUp, newUp);
+    }
+    /**
      * Returns the quaternion's string representation.
-     * @returns {string} the string.
+     * @returns {string}
      */
     toString()
     {
@@ -1628,6 +1673,9 @@ class Renderer
          * @public stay away from me.
          */
         this.ori = this.upright ? uprightQuat : new Quaternion();
+        log(this.ori.headingVector.toString());
+        log(this.ori.upVector.toString());
+        log(this.ori.sideVector.toString());
         /**
          * @type {string[]} stores the system's every level.
          * @public don't touch me.
@@ -1905,7 +1953,7 @@ class Renderer
      */
     forward()
     {
-        this.state += this.ori.rotVector;
+        this.state += this.ori.headingVector;
     }
     /**
      * Ticks the clock.
@@ -2006,7 +2054,10 @@ class Renderer
                             this.ori);
                             break;
                         case '|':
-                            this.ori = ZAxisQuat.mul(this.ori);
+                            this.ori = zUpQuat.mul(this.ori);
+                            break;
+                        case '$':
+                            this.ori = this.ori.alignToVertical();
                             break;
                         case 'T':
                             this.ori = this.ori.applyTropism(
@@ -2169,7 +2220,10 @@ class Renderer
                         this.ori = this.system.rotations.get('/').mul(this.ori);
                         break;
                     case '|':
-                        this.ori = ZAxisQuat.mul(this.ori);
+                        this.ori = zUpQuat.mul(this.ori);
+                        break;
+                    case '$':
+                        this.ori = this.ori.alignToVertical();
                         break;
                     case 'T':
                         this.ori = this.ori.applyTropism(this.system.tropism);
@@ -2788,8 +2842,9 @@ class Measurer
 
 // const sidewayQuat = new Quaternion(1, 0, 0, 0);
 const uprightQuat = new Quaternion(Math.sqrt(2)/2, 0, 0, -Math.sqrt(2)/2);
-const XAxisQuat = new Quaternion(0, 1, 0, 0);
-const ZAxisQuat = new Quaternion(0, 0, 0, 1);
+const xUpQuat = new Quaternion(0, 1, 0, 0);
+const yUpQuat = new Quaternion(0, 0, 1, 0);
+const zUpQuat = new Quaternion(0, 0, 0, 1);
 
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
