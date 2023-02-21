@@ -225,7 +225,7 @@ const locStrings =
         labelUpright: '* Upright figure: ',
         labelBTTail: 'Draw tail end: ',
         labelLoadModels: '* (Teaser) Load models: ',
-        labelQuickdraw: '* Quickdraw (unstable): ',
+        labelQuickdraw: '* Quickdraw: ',
         labelQuickBT: '* Quick backtrack: ',
         labelHesitate: '* Stutter on backtrack: ',
         labelHesitateApex: '* Stutter at apex: ',
@@ -268,9 +268,9 @@ const locStrings =
             {
                 title: 'Introduction',
                 contents:
-`Welcome to the L-systems Renderer! This guide aims to help you understand ` +
-`the basics of L-systems, as well as instructions on how to effectively use ` +
-`this theory to construct and render them.
+`Welcome to the (Classic) L-systems Renderer! This guide aims to help you ` +
+`understand the basics of L-systems, as well as instructions on how to ` +
+`effectively use this theory to construct and render them.
 
 Let's start discovering the wonders of L-systems.`
             },
@@ -310,6 +310,8 @@ Menu buttons: You pressed on one of them to get here, did you?
 - Production rules: an unlimited number of rules can be added using the ` +
 `'Add' button.
 - Ignored symbols: the turtle will stand still when encountering these symbols.
+- Tropism (gravity): determines the amount of gravity applied by the tropism ` +
+`(T) command. A negative value will instead lift the branch upwards.
 - Seed: the seed for a stochastic system can be rerolled or manually set.
 
 Note: Any blank rules will be trimmed afterwards.`
@@ -338,7 +340,7 @@ Renderer logic:
 `sequence.
 
 Advanced stroke options:
-- Quickdraw (unstable): skips over straight consecutive segments.
+- Quickdraw: skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
 - Stutter at apex: pause for one tick at the tips of lines.
 - Stutter at node: pause for one tick after backtracking through branches.`
@@ -416,8 +418,8 @@ F: moves turtle forward to draw a line of length 1.
 Note: In the original grammar, the lower-case f is used to move the turtle ` +
 `forward without drawing anything, but that is simply impossible with this ` +
 `game's 3D graph. So in this theory, any non-reserved symbol will draw a ` +
-`line. This includes both upper- and lower-case letters, and potentially ` +
-`anything you can throw at it.`
+`line. This includes both upper- and lower-case letters (except T), and ` +
+`potentially anything you can throw at it.`
             },
             {
                 title: 'Example: The dragon curve',
@@ -461,7 +463,7 @@ Scale: 2^lv
 Centre: (0.5*2^lv, sqrt(3)/4*2^lv, 0)`
             },
             {
-                title: 'Stacking mechanism',
+                title: 'Branching mechanisms',
                 contents:
 `Although numerous fractals can be created using only the basic symbols, ` +
 `when it comes to modelling branching structures such as trees, the turtle ` +
@@ -473,8 +475,8 @@ Stack operations are represented with square brackets:
 [: records the turtle's position and facing onto a stack.
 ]: take the topmost element (position and facing) off the stack, and move ` +
 `the turtle there.
-%: cuts off the remainder of its branch by searching for the closing bracket ` +
-`] in the branch.
+%: cuts off the remainder of a branch, by deleting every symbol up until ` +
+`the closing bracket ] in the branch.
 
 Note: Due to the game's 3D graph only allowing one continuous path to be ` +
 `drawn, the turtle will not actually divide itself, but instead backtrack ` +
@@ -561,7 +563,14 @@ Centre: (0, 0, 0)`
 + -: rotate turtle on the z-axis (yaw).
 & ^: rotate turtle on the y-axis (pitch).
 \\ /: rotate turtle on the x-axis (roll).
-|: reverses turtle direction.
+
+|: reverses the turtle's direction.
+T: applies a force of gravity (tropism) to the turtle's current heading, so ` +
+`that it droops downward (with a positive tropism factor), or heads upward ` +
+`(with a negative tropism factor).
+$: rolls the turtle around its own axis, so that its up vector is closest to ` +
+`absolute verticality i.e. the y-axis, and subsequently, its direction is ` +
+`closest to lying on a horizontal plane.
 
 Note: In other L-system implementations, < and > may be used instead of \\ ` +
 `and / like in this theory.
@@ -1676,9 +1685,6 @@ class Renderer
          * @public stay away from me.
          */
         this.ori = this.upright ? uprightQuat : new Quaternion();
-        log(this.ori.headingVector.toString());
-        log(this.ori.upVector.toString());
-        log(this.ori.sideVector.toString());
         /**
          * @type {string[]} stores the system's every level.
          * @public don't touch me.
@@ -2008,9 +2014,6 @@ class Renderer
         let loopLimit = 2;  // Shenanigans may arise with models? Try this
         for(j = 0; j < loopLimit; ++j)
         {
-            // log(`${Math.round(this.elapsed)}, ${this.i} ` +
-            // `${this.levels[this.lv][this.i]} (-${this.cooldown}): ` +
-            // `${this.stack.length} stacked`)
             if(this.cooldown > 0 && this.polygonMode <= 0)
             {
                 --this.cooldown;
@@ -2019,8 +2022,6 @@ class Renderer
 
             if(this.models.length > 0)
             {
-                // log(this.models.toString());
-                // log(this.mdi.toString());
                 // Unreadable pile of shit
                 for(; this.mdi[this.mdi.length - 1] <
                 this.models[this.models.length - 1].length;
@@ -2349,7 +2350,6 @@ class Renderer
             }
             if(!this.backtrackTail || this.stack.length == 0)
             {
-                // log(this.stateString)
                 switch(this.loopMode)
                 {
                     case 2:

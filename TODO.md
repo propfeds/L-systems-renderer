@@ -50,7 +50,7 @@
   L = V × H / |V × H| and U = H × L,
   where vectors H, L and U are the heading (`\ /`), left (`& ^`) and up (`+ -`) vectors associated with the turtle, V is the direction opposite to gravity, and |A| denotes the length of vector A.
   - main: roll the turtle around the H axis so that H and U lie in a common vertical plane with U closest to up
-- [ ] Add T and $ to gude
+- [x] Add T and $ to gude
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
@@ -66,6 +66,7 @@
     - Buttons in LS menu to move up down (swap rules)
       - How to update rule entries?
   - [ ] Regex magic to separate string into actual sequence of symbols
+  - [ ] Issue: regex for nested brackets in parameters?
   - Equal comparison changed to `==` instead of `=` in abop to differentiate
   from the syntax
   - Store as an extra array of objects
