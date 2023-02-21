@@ -1280,7 +1280,7 @@ class LSystem
      * systems.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', models = {}, tropism = 0.5)
+    ignoreList = '', tropism = 0.5)
     {
         this.userInput =
         {
@@ -1289,7 +1289,6 @@ class LSystem
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
-            models: models,
             tropism: tropism
         };
         /**
@@ -1304,8 +1303,6 @@ class LSystem
          */
         this.ignoreList = new Set(ignoreList);
         this.models = new Map();
-        for(let key in models)
-            this.models.set(key, models[key]);
 
         for(let i = 0; i < rules.length; ++i)
         {
@@ -1560,7 +1557,6 @@ class LSystem
             turnAngle: this.userInput.turnAngle,
             seed: this.userInput.seed,
             ignoreList: this.userInput.ignoreList,
-            models: this.userInput.models,
             tropism: this.userInput.tropism
         };
     }
@@ -2233,7 +2229,7 @@ class Renderer
                         this.ori = this.ori.applyTropism(this.system.tropism);
                         break;
                     case '~':
-                        if(!this.system.models.has(
+                        if(!this.loadModels || !this.system.models.has(
                         this.levels[this.lv][this.i + 1]))
                             break;
 
@@ -4123,7 +4119,7 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore,
-                                undefined, tmpTropism);
+                                tmpTropism);
                                 if(tmpSystem)
                                 {
                                     tmpSystem = null;
@@ -4372,7 +4368,7 @@ let createSystemClipboardMenu = (values) =>
                         tmpSystemDesc = sv.desc;
                         renderer.constructSystem = new LSystem(sv.system.axiom,
                         sv.system.rules, sv.system.turnAngle,
-                        sv.system.seed, sv.system.ignoreList, undefined,
+                        sv.system.seed, sv.system.ignoreList,
                         sv.system.tropism);
                         tmpSystem = null;
                         if('config' in sv)
@@ -4828,7 +4824,7 @@ let createViewMenu = (title) =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore,
-                                undefined, tmpTropism);
+                                tmpTropism);
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
@@ -4849,8 +4845,8 @@ let createViewMenu = (title) =>
                                 {
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
-                                    tmpAngle, tmpSeed, tmpIgnore, undefined,
-                                    tmpTropism).object,
+                                    tmpAngle, tmpSeed, tmpIgnore, tmpTropism).
+                                    object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
@@ -5639,7 +5635,7 @@ var setInternalState = (stateStr) =>
             tmpSystemDesc = state.system.desc;
             tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList,
-            undefined, state.system.tropism);
+            state.system.tropism);
         }
         
         if('renderer' in state)

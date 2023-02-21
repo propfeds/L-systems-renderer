@@ -9,7 +9,7 @@ const LS_CONTEXT =
 class ParametricLSystem
 {
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', models = {})
+    ignoreList = '')
     {
         // User input
         this.userInput =
@@ -19,7 +19,6 @@ class ParametricLSystem
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
-            models: models
         };
         // Use regex magic to separate
         let axiomMatches = [...axiom.replace(TRIM_SP, '').matchAll(LS_SYMBOL)];

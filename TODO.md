@@ -20,7 +20,6 @@
 - [ ] Folders for saved systems
 - [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
-- [ ] How about locking rotation? (for Navier Stokes)
 
 ## 1.0, Mistletoe ed.
 
@@ -39,24 +38,12 @@
   - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians
 
-- [x] Investigate tropism (capital T)
-  - [x] Separate starting quaternions for upright and sideways
-    - Stop swizzling!
-    - Tropism is still the same direction, so we can simulate sideways vines
-- [x] Investigate vertical heading (`$`) (NOT helio-tropism)
-  - Houdini: $(x,y,z)
-  Rotates the turtle so the up vector is (0,1,0). Points the turtle in the direction of the point (x,y,z). Default behavior is only to orient and not to change the direction.
-  - Abop: The symbol $ rolls the turtle around its own axis so that vector L pointing to the left of the turtle is brought to a horizontal position. Consequently, the branch plane is “closest to a horizontal plane,” as required by Honda’s model. From a technical point of view, $ modifies the turtle orientation in space according to the formulae
-  L = V × H / |V × H| and U = H × L,
-  where vectors H, L and U are the heading (`\ /`), left (`& ^`) and up (`+ -`) vectors associated with the turtle, V is the direction opposite to gravity, and |A| denotes the length of vector A.
-  - main: roll the turtle around the H axis so that H and U lie in a common vertical plane with U closest to up
-- [x] Add T and $ to gude
-
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Stochastic in PLSR: has to be on the same line
 
 - [ ] Parametric systems
+  - [ ] New option in constructor for MathExpression variables
   - Different classes
     - Button in LS menu / save menu to switch modes?
     - Theory settings?
@@ -92,6 +79,18 @@
 
 ## 1.0: Completed
 
+- [x] Investigate tropism (capital T)
+  - [x] Separate starting quaternions for upright and sideways
+    - Stop swizzling!
+    - Tropism is still the same direction, so we can simulate sideways vines
+- [x] Investigate vertical heading (`$`) (NOT helio-tropism)
+  - Houdini: $(x,y,z)
+  Rotates the turtle so the up vector is (0,1,0). Points the turtle in the direction of the point (x,y,z). Default behavior is only to orient and not to change the direction.
+  - Abop: The symbol $ rolls the turtle around its own axis so that vector L pointing to the left of the turtle is brought to a horizontal position. Consequently, the branch plane is “closest to a horizontal plane,” as required by Honda’s model. From a technical point of view, $ modifies the turtle orientation in space according to the formulae
+  L = V × H / |V × H| and U = H × L,
+  where vectors H, L and U are the heading (`\ /`), left (`& ^`) and up (`+ -`) vectors associated with the turtle, V is the direction opposite to gravity, and |A| denotes the length of vector A.
+  - main: roll the turtle around the H axis so that H and U lie in a common vertical plane with U closest to up
+- [x] Add T and $ to gude
 - [x] Issue: models are broken because of backtrack rework
 - [x] Change how models work:
   - Stochastic models are no longer available
