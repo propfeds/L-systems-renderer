@@ -210,7 +210,7 @@ const locStrings =
         labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
         labelTropism: 'Tropism (gravity): ',
-        labelSeed: 'Seed: ',
+        labelSeed: 'Seed (≠ 0): ',
 
         menuRenderer: 'Renderer Menu',
         labelInitScale: '* Initial scale: ',
@@ -3901,8 +3901,8 @@ let createSystemMenu = () =>
     ({
         text: tmpAngle.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 0,
-        column: 3,
+        row: 1,
+        column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
@@ -3974,7 +3974,7 @@ let createSystemMenu = () =>
     ({
         text: tmpTropism.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 1,
+        row: 2,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -3985,7 +3985,7 @@ let createSystemMenu = () =>
     let tmpSeed = values.seed;
     let seedLabel = ui.createGrid
     ({
-        row: 2,
+        row: 3,
         column: 0,
         columnDefinitions: ['40*', '30*'],
         children:
@@ -4013,7 +4013,7 @@ let createSystemMenu = () =>
     ({
         text: tmpSeed.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 2,
+        row: 3,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4038,7 +4038,7 @@ let createSystemMenu = () =>
                         [
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '40*', '25*', '15*'],
+                                columnDefinitions: ['20*', '80*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -4050,15 +4050,6 @@ let createSystemMenu = () =>
                                         TextAlignment.CENTER
                                     }),
                                     axiomEntry,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelAngle'),
-                                        row: 0,
-                                        column: 2,
-                                        verticalTextAlignment:
-                                        TextAlignment.CENTER
-                                    }),
-                                    angleEntry,
                                 ]
                             }),
                             ui.createGrid
@@ -4087,8 +4078,17 @@ let createSystemMenu = () =>
                                     ignoreEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelTropism'),
+                                        text: getLoc('labelAngle'),
                                         row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    angleEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelTropism'),
+                                        row: 2,
                                         column: 0,
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
@@ -4554,8 +4554,8 @@ let createViewMenu = (title) =>
     ({
         text: tmpAngle.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 0,
-        column: 3,
+        row: 1,
+        column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
@@ -4629,7 +4629,7 @@ let createViewMenu = (title) =>
     ({
         text: tmpTropism.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 1,
+        row: 2,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4640,7 +4640,7 @@ let createViewMenu = (title) =>
     let tmpSeed = values.seed || 0;
     let seedLabel = ui.createGrid
     ({
-        row: 2,
+        row: 3,
         column: 0,
         columnDefinitions: ['40*', '30*'],
         children:
@@ -4668,7 +4668,7 @@ let createViewMenu = (title) =>
     ({
         text: tmpSeed.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 2,
+        row: 3,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4701,7 +4701,7 @@ let createViewMenu = (title) =>
                             }),
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '40*', '25*', '15*'],
+                                columnDefinitions: ['20*', '80*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -4713,15 +4713,6 @@ let createViewMenu = (title) =>
                                         TextAlignment.CENTER
                                     }),
                                     axiomEntry,
-                                    ui.createLatexLabel
-                                    ({
-                                        text: getLoc('labelAngle'),
-                                        row: 0,
-                                        column: 2,
-                                        verticalTextAlignment:
-                                        TextAlignment.CENTER
-                                    }),
-                                    angleEntry
                                 ]
                             }),
                             ui.createGrid
@@ -4750,8 +4741,17 @@ let createViewMenu = (title) =>
                                     ignoreEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelTropism'),
+                                        text: getLoc('labelAngle'),
                                         row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    angleEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelTropism'),
+                                        row: 2,
                                         column: 0,
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
