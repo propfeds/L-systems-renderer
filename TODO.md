@@ -34,10 +34,8 @@
   - [x] Classic LS: displays the entire string in a label
   - Parametric LS: displays symbols and parameters side by side, one symbol/row
 
-- [ ] Investigate actual tropism formula
-
-- [ ] Turning angles (and tropism)
-  - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
+- [x] Turning angles (and tropism)
+  - Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians?
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations

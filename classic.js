@@ -1,20 +1,14 @@
 /*
 L-systems Renderer implementation in Exponential Idle.
 
-Disclaimer: The literature around (OL) L-system's symbols is generally not much
-consistent. Therefore, the symbols used here may mean different things in other
-implementations. One such example is that \ and / may be swapped; or that +
-would turn the cursor clockwise instead of counter (as implemented here).
-Another example would be that < and > are used instead of \ and /.
-
-The maths used in this theory do not resemble a paragon of correctness either,
-particularly referencing the horrible butchery of quaternions, and all the
-camera rotation slander in the world. In this theory, the vector is initially
-heading in the X-axis, instead of the Y/Z-axis, which is more common in other
-implementations of L-systems. I'm just a unit circle kind of person.
-
-If the X is the eyes of a laughing face, then the Y represents my waifu Ms. Y,
-and the Z stands for Zombies.
+Disclaimer: Differences between LSR and other L-system implementations all
+around the web.
+- / and \ may be swapped.
+- + turns anti-clockwise, - turns clockwise.
+- \ and / are used instead of < and >.
+- Y-up is used here instead of Z-up.
+- Quaternions are used instead of actually intuitive concepts such as matrices.
+- Quaternions maths are absolutely butchered.
 
 (c) 2022 Temple of Pan (R) (TM) All rights reversed.
 */
@@ -35,7 +29,6 @@ import { Localization } from '../api/Localization';
 import { MathExpression } from '../api/MathExpression';
 import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
-import { StackOrientation } from '../api/ui/properties/StackOrientation';
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -1425,7 +1418,7 @@ class LSystem
          * @type {number} the turning angle (in degrees).
          * @public
          */
-        this.turnAngle = turnAngle;
+        this.turnAngle = MathExpression.parse(turnAngle.toString()).evaluate();
         /**
          * @type {number} half the turning angle (in radians).
          * @public
@@ -1446,7 +1439,7 @@ class LSystem
         this.rotations.set('\\', new Quaternion(-c, s, 0, 0));
         this.rotations.set('/', new Quaternion(-c, -s, 0, 0));
 
-        this.tropism = tropism;
+        this.tropism = MathExpression.parse(tropism.toString()).evaluate();
     }
     rerollAxiom()
     {
@@ -3928,17 +3921,16 @@ let createSystemMenu = () =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = values.turnAngle;
+    let tmpAngle = values.turnAngle || '0';
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
-        keyboard: Keyboard.NUMERIC,
         row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpAngle = Number(nt);
+            tmpAngle = nt;
         }
     });
     let tmpRules = values.rules;
@@ -4001,20 +3993,19 @@ let createSystemMenu = () =>
             tmpIgnore = nt;
         }
     });
-    let tmpTropism = values.tropism;
+    let tmpTropism = values.tropism || '0';
     let tropismEntry = ui.createEntry
     ({
         text: tmpTropism.toString(),
-        keyboard: Keyboard.NUMERIC,
         row: 2,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpTropism = Number(nt);
+            tmpTropism = nt;
         }
     });
-    let tmpSeed = values.seed;
+    let tmpSeed = values.seed || '0';
     let seedLabel = ui.createGrid
     ({
         row: 3,
@@ -4174,14 +4165,14 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 let values = new LSystem().object;
                                 axiomEntry.text = values.axiom;
-                                angleEntry.text = values.turnAngle.toString();
+                                angleEntry.text = values.turnAngle;
                                 tmpRules = values.rules;
                                 ruleEntries = [];
                                 rulesLabel.text = Localization.format(
                                 getLoc('labelRules'), ruleEntries.length);
                                 ruleStack.children = ruleEntries;
                                 ignoreEntry.text = values.ignoreList;
-                                tropismEntry.text = values.tropism.toString();
+                                tropismEntry.text = values.tropism;
                                 seedEntry.text = values.seed.toString();
                             }
                         })
@@ -4201,6 +4192,7 @@ let createNamingMenu = () =>
         text: tmpName,
         row: 0,
         column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpName = nt;
@@ -4212,6 +4204,7 @@ let createNamingMenu = () =>
         text: tmpDesc,
         row: 0,
         column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpDesc = nt;
@@ -4423,7 +4416,7 @@ let createStateClipboardMenu = (values) =>
     let sysEntry = ui.createEntry
     ({
         text: tmpState,
-        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        // clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
         onTextChanged: (ot, nt) =>
         {
             tmpState = nt;
@@ -4581,17 +4574,16 @@ let createViewMenu = (title) =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = values.turnAngle || 0;
+    let tmpAngle = values.turnAngle || '0';
     let angleEntry = ui.createEntry
     ({
         text: tmpAngle.toString(),
-        keyboard: Keyboard.NUMERIC,
         row: 1,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpAngle = Number(nt);
+            tmpAngle = nt;
         }
     });
     let tmpRules = [];
@@ -4656,20 +4648,19 @@ let createViewMenu = (title) =>
             tmpIgnore = nt;
         }
     });
-    let tmpTropism = values.tropism || 0.25;
+    let tmpTropism = values.tropism || '0';
     let tropismEntry = ui.createEntry
     ({
         text: tmpTropism.toString(),
-        keyboard: Keyboard.NUMERIC,
         row: 2,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
         {
-            tmpTropism = Number(nt);
+            tmpTropism = nt;
         }
     });
-    let tmpSeed = values.seed || 0;
+    let tmpSeed = values.seed || '0';
     let seedLabel = ui.createGrid
     ({
         row: 3,
@@ -4804,7 +4795,7 @@ let createViewMenu = (title) =>
                                 // horizontalTextAlignment:
                                 // TextAlignment.CENTER,
                                 verticalTextAlignment: TextAlignment.CENTER,
-                                margin: new Thickness(0, 12)
+                                margin: new Thickness(0, 9)
                             }),
                             ui.createGrid
                             ({
