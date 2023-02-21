@@ -210,7 +210,7 @@ const locStrings =
         labelRules: 'Production rules: {0}',
         labelIgnored: 'Ignored symbols: ',
         labelTropism: 'Tropism (gravity): ',
-        labelSeed: 'Seed (non-zero): ',
+        labelSeed: 'Seed: ',
 
         menuRenderer: 'Renderer Menu',
         labelInitScale: '* Initial scale: ',
@@ -1177,16 +1177,15 @@ class Quaternion
     {
         let dp = src.x * dst.x + src.y * dst.y +
         src.z * dst.z;
-        let axis;
+        let rotAxis;
         if(dp < -1 + 1e-8)
         {
             /* Edge case
-            If the two vectors are in opposite directions, just do the sensible
-            thing.
+            If the two vectors are in opposite directions, just reverse.
             */
             return zUpQuat.mul(this);
         }
-        axis = new Vector3(
+        rotAxis = new Vector3(
             src.y * dst.z - src.z * dst.y,
             src.z * dst.x - src.x * dst.z,
             src.x * dst.y - src.y * dst.x,
@@ -1195,10 +1194,10 @@ class Quaternion
         // I forgore that our quaternions have to be all negative, dunnoe why
         return new Quaternion(
             -s / 2,
-            axis.x / s,
-            axis.y / s,
-            axis.z / s
-        ).mul(this);
+            rotAxis.x / s,
+            rotAxis.y / s,
+            rotAxis.z / s
+        ).mul(this).normalise;
     }
     /**
      * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
@@ -1220,29 +1219,33 @@ class Quaternion
         return this.rotateFrom(curHead, newHead);
     }
     /**
+     * https://gamedev.stackexchange.com/questions/198977/how-to-solve-for-the-angle-of-a-axis-angle-rotation-that-gets-me-closest-to-a-sp/199027#199027
      * Rolls the quaternion so that its up vector aligns with the earth.
      * @returns {Quaternion}
      */
     alignToVertical()
     {
-        // L = V×H / |V×H| and U = H×L
+        // L = V×H / |V×H|
         let curHead = this.headingVector;
         let curUp = this.upVector;
-        // Can we take a shortcut and just align the side vectors?
-        let l = new Vector3(curHead.z, 0, -curHead.x);
-        let n = l.length;
+        let side = new Vector3(curHead.z, 0, -curHead.x);
+        let n = side.length;
         if(n == 0)
             return this;
-        l /= n;
+        side /= n;
+        // U = HxL
         let newUp = new Vector3(
-            curHead.y * l.z - curHead.z * l.y,
-            curHead.z * l.x - curHead.x * l.z,
-            curHead.x * l.y - curHead.y * l.x,
+            curHead.y * side.z - curHead.z * side.y,
+            curHead.z * side.x - curHead.x * side.z,
+            curHead.x * side.y - curHead.y * side.x,
         );
-        if(newUp.y < 0)
-            newUp = -newUp;
-        log(`${curUp}\n\t--> ${newUp}`);
-        return this.rotateFrom(curUp, newUp);
+        let a = Math.atan2(
+            curUp.x * side.x + curUp.y * side.y + curUp.z * side.z,
+            curUp.x * newUp.x + curUp.y * newUp.y + newUp.z * newUp.z,
+        ) / 2;
+        let s = Math.sin(a);
+        let c = Math.cos(a);
+        return new Quaternion(-c, s, 0, 0).mul(this).normalise;
     }
     /**
      * Returns the quaternion's string representation.
@@ -1402,12 +1405,12 @@ class LSystem
          * @public but shouldn't be.
          */
         this.rotations = new Map();
-        this.rotations.set('+', new Quaternion(c, 0, 0, -s));
-        this.rotations.set('-', new Quaternion(c, 0, 0, s));
-        this.rotations.set('&', new Quaternion(c, 0, -s, 0));
-        this.rotations.set('^', new Quaternion(c, 0, s, 0));
-        this.rotations.set('\\', new Quaternion(c, -s, 0, 0));
-        this.rotations.set('/', new Quaternion(c, s, 0, 0));
+        this.rotations.set('+', new Quaternion(-c, 0, 0, s));
+        this.rotations.set('-', new Quaternion(-c, 0, 0, -s));
+        this.rotations.set('&', new Quaternion(-c, 0, s, 0));
+        this.rotations.set('^', new Quaternion(-c, 0, -s, 0));
+        this.rotations.set('\\', new Quaternion(-c, s, 0, 0));
+        this.rotations.set('/', new Quaternion(-c, -s, 0, 0));
 
         this.tropism = tropism;
     }
@@ -2841,7 +2844,7 @@ class Measurer
 }
 
 // const sidewayQuat = new Quaternion(1, 0, 0, 0);
-const uprightQuat = new Quaternion(Math.sqrt(2)/2, 0, 0, -Math.sqrt(2)/2);
+const uprightQuat = new Quaternion(-Math.sqrt(2)/2, 0, 0, Math.sqrt(2)/2);
 const xUpQuat = new Quaternion(0, 1, 0, 0);
 const yUpQuat = new Quaternion(0, 0, 1, 0);
 const zUpQuat = new Quaternion(0, 0, 0, 1);
