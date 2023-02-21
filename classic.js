@@ -224,7 +224,7 @@ const locStrings =
         loopModes: ['Off', 'Level', 'Playlist'],
         labelUpright: '* Upright figure: ',
         labelBTTail: 'Draw tail end: ',
-        labelLoadModels: '* (Teaser) Load models: ',
+        labelLoadModels: '* Load models: ',
         labelQuickdraw: '* Quickdraw: ',
         labelQuickBT: '* Quick backtrack: ',
         labelHesitate: '* Stutter on backtrack: ',
@@ -1344,8 +1344,6 @@ class LSystem
                             this.models.set(rs[0][1], [existingDer, rs[1]]);
                         else
                             this.models.set(rs[0][1], [...existingDer, rs[1]]);
-
-                        this.ignoreList.add(rs[0][1]);
                     }
                 }
                 else    // Stochastic rule
@@ -1372,8 +1370,6 @@ class LSystem
                             this.models.set(rs[0][1], [existingDer, rder]);
                         else
                             this.models.set(rs[0][1], [...existingDer, rder]);
-
-                        this.ignoreList.add(rs[0][1]);
                     }
                 }
             }
@@ -2146,6 +2142,9 @@ class Renderer
 
                             let ignored = this.system.ignoreList.has(
                             this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]) ||
+                            this.loadModels && this.system.models.has(
+                            this.models[this.models.length - 1][
                             this.mdi[this.mdi.length - 1]]);
                             let breakAhead = this.backtrackList.has(
                             this.models[this.models.length - 1][
@@ -2308,7 +2307,8 @@ class Renderer
                         }
 
                         let ignored = this.system.ignoreList.has(
-                        this.levels[this.lv][this.i]);
+                        this.levels[this.lv][this.i]) || this.loadModels &&
+                        this.system.models.has(this.levels[this.lv][this.i]);
                         let breakAhead = this.backtrackList.has(
                         this.levels[this.lv][this.i + 1]);
                         let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
@@ -3740,6 +3740,7 @@ let createConfigMenu = () =>
                                 rowDefinitions:
                                 [
                                     SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
                                     SMALL_BUTTON_HEIGHT
                                 ],
                                 columnDefinitions: ['70*', '30*'],
@@ -3755,7 +3756,9 @@ let createConfigMenu = () =>
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
                                     }),
-                                    tailSwitch
+                                    tailSwitch,
+                                    modelLabel,
+                                    modelSwitch
                                 ]
                             }),
                             ui.createBox
