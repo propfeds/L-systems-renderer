@@ -34,9 +34,11 @@
   - [x] Classic LS: displays the entire string in a label
   - Parametric LS: displays symbols and parameters side by side, one symbol/row
 
-- [ ] Turning angles
+- [ ] Investigate actual tropism formula
+
+- [ ] Turning angles (and tropism)
   - [ ] Formula expressions allow shenanigans such as `360/7`, mostly
-  - [ ] Button to change mode between degrees and radians
+  - [ ] Button to change mode between degrees and radians?
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
@@ -83,6 +85,7 @@
   - [x] Separate starting quaternions for upright and sideways
     - Stop swizzling!
     - Tropism is still the same direction, so we can simulate sideways vines
+    - Houdini: Apply tropism vector (gravity). This angles the turtle towards the negative Y axis. The amount of change is governed by g. The default change is to use the Gravity parameter.
 - [x] Investigate vertical heading (`$`) (NOT helio-tropism)
   - Houdini: $(x,y,z)
   Rotates the turtle so the up vector is (0,1,0). Points the turtle in the direction of the point (x,y,z). Default behavior is only to orient and not to change the direction.

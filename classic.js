@@ -312,7 +312,7 @@ Menu buttons: You pressed on one of them to get here, did you?
 - Ignored symbols: the turtle will stand still when encountering these symbols.
 - Tropism (gravity): determines the amount of gravity applied by the tropism ` +
 `(T) command. A negative value will instead lift the branch upwards.
-- Seed: the seed for a stochastic system can be rerolled or manually set.
+- Seed: the seed for a stochastic system. Can be manually set or rerolled.
 
 Note: Any blank rules will be trimmed afterwards.`
             },
@@ -567,7 +567,8 @@ Centre: (0, 0, 0)`
 |: reverses the turtle's direction.
 T: applies a force of gravity (tropism) to the turtle's current heading, so ` +
 `that it droops downward (with a positive tropism factor), or heads upward ` +
-`(with a negative tropism factor).
+`(with a negative tropism factor). This factor should be in the range from ` +
+`-1 to 1.
 $: rolls the turtle around its own axis, so that its up vector is closest to ` +
 `absolute verticality i.e. the y-axis, and subsequently, its direction is ` +
 `closest to lying on a horizontal plane.
@@ -1177,7 +1178,7 @@ class Quaternion
         return new Vector3(r.i, r.j, r.k);
     }
     /**
-     * Rotate from a heading vector to another.
+     * (Deprecated) Rotate from a heading vector to another. Inaccurate!
      * @param {Vector3} src the current heading.
      * @param {Vector3} dst the target heading.
      * @returns {Quaternion}
@@ -1210,22 +1211,53 @@ class Quaternion
     }
     /**
      * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
+     * (Deprecated) Applies a gravi-tropism vector to the quaternion. Inaccurat!
+     * @param {number} weight the vector's length (negative for upwards).
+     * @returns {Quaternion}
+     */
+    applyTropismVector(weight = 0)
+    {
+        if(weight == 0)
+            return this;
+
+        let curHead = this.headingVector;
+        let newHead = curHead - new Vector3(0, weight, 0);
+        log(`${curHead}\n\t--> ${newHead}`)
+        let n = newHead.length;
+        if(n == 0)
+            return this;
+        newHead /= n;
+        let result = this.rotateFrom(curHead, newHead);
+        log(`Expected: ${newHead}\nActual: ${result.headingVector}`);
+        return result;
+    }
+    /**
      * Applies a gravi-tropism vector to the quaternion.
-     * @param {number} weight the vector's weight (negative for upwards).
+     * @param {number} weight the branch's susceptibility to bending.
      * @returns {Quaternion}
      */
     applyTropism(weight = 0)
     {
         if(weight == 0)
             return this;
-        
+
+        // a = e * |HxT| (n)
         let curHead = this.headingVector;
-        let newHead = curHead - new Vector3(0, weight, 0);
-        let n = newHead.length;
+        let rotAxis = new Vector3(curHead.z, 0, -curHead.x);
+        let n = rotAxis.length;
         if(n == 0)
             return this;
-        newHead /= n;
-        return this.rotateFrom(curHead, newHead);
+        rotAxis /= n;
+        let a = weight * n / 2;
+        let s = Math.sin(a);
+        let c = Math.cos(a);
+        // I don't know why it works the opposite way this time
+        return this.mul(new Quaternion(
+            -c,
+            rotAxis.x * s,
+            rotAxis.y * s,
+            rotAxis.z * s
+        )).normalise;
     }
     /**
      * https://gamedev.stackexchange.com/questions/198977/how-to-solve-for-the-angle-of-a-axis-angle-rotation-that-gets-me-closest-to-a-sp/199027#199027
@@ -1280,7 +1312,7 @@ class LSystem
      * systems.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', tropism = 0.5)
+    ignoreList = '', tropism = 0.25)
     {
         this.userInput =
         {
@@ -4624,7 +4656,7 @@ let createViewMenu = (title) =>
             tmpIgnore = nt;
         }
     });
-    let tmpTropism = values.tropism || 0.5;
+    let tmpTropism = values.tropism || 0.25;
     let tropismEntry = ui.createEntry
     ({
         text: tmpTropism.toString(),
