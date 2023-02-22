@@ -163,6 +163,8 @@ const locStrings =
         btnClear: 'Clear All',
         btnDefault: '* Reset to Defaults',
         btnAdd: 'Add',
+        btnUp: '▲',
+        btnDown: '▼',
         btnReroll: 'Reroll',
         btnConstruct: 'Construct',
         btnDelete: 'Delete',
@@ -3935,10 +3937,13 @@ let createSystemMenu = () =>
     });
     let tmpRules = values.rules;
     let ruleEntries = [];
+    let ruleMoveBtns = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
         ruleEntries.push(ui.createEntry
         ({
+            row: i,
+            column: 0,
             text: tmpRules[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -3946,6 +3951,23 @@ let createSystemMenu = () =>
                 tmpRules[i] = nt;
             }
         }));
+        if(i)
+        {
+            ruleMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 1,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpRule = ruleEntries[i].text;
+                    ruleEntries[i].text = ruleEntries[i - 1].text;
+                    ruleEntries[i - 1].text = tmpRule;
+                }
+            }));
+        }
     }
     let rulesLabel = ui.createLatexLabel
     ({
@@ -3953,22 +3975,25 @@ let createSystemMenu = () =>
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
-    let ruleStack = ui.createStackLayout
+    let ruleStack = ui.createGrid
     ({
-        children: ruleEntries
+        columnDefinitions: ['7*', '1*', 0],
+        children: [...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
     ({
         text: getLoc('btnAdd'),
         row: 0,
         column: 1,
-        heightRequest: 40,
+        heightRequest: SMALL_BUTTON_HEIGHT,
         onClicked: () =>
         {
             Sound.playClick();
             let i = ruleEntries.length;
             ruleEntries.push(ui.createEntry
             ({
+                row: i,
+                column: 0,
                 text: '',
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -3976,9 +4001,26 @@ let createSystemMenu = () =>
                     tmpRules[i] = nt;
                 }
             }));
+            if(i)
+            {
+                ruleMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 1,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpRule = ruleEntries[i].text;
+                        ruleEntries[i].text = ruleEntries[i - 1].text;
+                        ruleEntries[i - 1].text = tmpRule;
+                    }
+                }));
+            }
             rulesLabel.text = Localization.format(getLoc('labelRules'),
             ruleEntries.length);
-            ruleStack.children = ruleEntries;
+            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
         }
     });
     let tmpIgnore = values.ignoreList;
@@ -4590,10 +4632,13 @@ let createViewMenu = (title) =>
     for(let i = 0; i < values.rules.length; ++i)
         tmpRules[i] = values.rules[i];
     let ruleEntries = [];
+    let ruleMoveBtns = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
         ruleEntries.push(ui.createEntry
         ({
+            row: i,
+            column: 0,
             text: tmpRules[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -4601,6 +4646,23 @@ let createViewMenu = (title) =>
                 tmpRules[i] = nt;
             }
         }));
+        if(i)
+        {
+            ruleMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 1,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpRule = ruleEntries[i].text;
+                    ruleEntries[i].text = ruleEntries[i - 1].text;
+                    ruleEntries[i - 1].text = tmpRule;
+                }
+            }));
+        }
     }
     let rulesLabel = ui.createLatexLabel
     ({
@@ -4608,9 +4670,10 @@ let createViewMenu = (title) =>
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
-    let ruleStack = ui.createStackLayout
+    let ruleStack = ui.createGrid
     ({
-        children: ruleEntries
+        columnDefinitions: ['7*', '1*', 0],
+        children: [...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
     ({
@@ -4624,6 +4687,8 @@ let createViewMenu = (title) =>
             let i = ruleEntries.length;
             ruleEntries.push(ui.createEntry
             ({
+                row: i,
+                column: 0,
                 text: '',
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -4631,9 +4696,26 @@ let createViewMenu = (title) =>
                     tmpRules[i] = nt;
                 }
             }));
+            if(i)
+            {
+                ruleMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 1,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpRule = ruleEntries[i].text;
+                        ruleEntries[i].text = ruleEntries[i - 1].text;
+                        ruleEntries[i - 1].text = tmpRule;
+                    }
+                }));
+            }
             rulesLabel.text = Localization.format(getLoc('labelRules'),
             ruleEntries.length);
-            ruleStack.children = ruleEntries;
+            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
         }
     });
     let tmpIgnore = values.ignoreList;

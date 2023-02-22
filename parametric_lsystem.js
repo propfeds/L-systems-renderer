@@ -2,7 +2,11 @@ import { MathExpression } from "../api/MathExpression";
 
 const TRIM_SP = /\s+/g;
 const LS_RULE = /(.+):(.+)=(([^:]+)(:([^,]+))?)(,([^:]+)(:([^,]+))?)*/;
-const LS_SYMBOL = /(.)(\(([^\)]+)\))?/g;
+// BIG TODO: instead of using regex to match nested brackets, just use regular
+// loops to capture axiom and rule symbols. The other regexes are still fine.
+const LS_SYMBOL_WITHOUT_NESTED_BRACKETS = /(.)(\(([^\)]+)\))?/g;
+const LS_SYMBOL_STILL_WIP = /(.)(\((\(((?>[^()]+)|(?R))*\)|[^()])+\))?/g;
+// Context doesn't need to check for nested brackets!
 const LS_CONTEXT =
 /((.)(\(([^\)]+)\))?<)?((.)(\(([^\)]+)\))?)(>(.)(\(([^\)]+)\))?)?/;
 
@@ -118,7 +122,7 @@ class ParametricLSystem
             // [i][2]: condition
             tmpRule.condition = MathExpression.parse(rulesMatches[i][2]);
 
-            // let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t==0 = [+(30)G]F/(180)A(2):0.5, [-(30)G]F\(180)A(2):0.5']);
+            // let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t==0=[+(30)G]F/(180)A(2):0.5,[-(30)G]F\(180)A(2):0.5']);
             // [i][4+4k]: derivation(s)
             // [i][6+4k]: probability
 

@@ -27,17 +27,6 @@
 - [ ] Add more comments in the code
 - [ ] Update docstrings (done up to Quaternion)
 
-- [x] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
-
-- [ ] Revamp sequence menu
-  - Level 0: 10 chars (`View`)
-  - [x] Classic LS: displays the entire string in a label
-  - Parametric LS: displays symbols and parameters side by side, one symbol/row
-
-- [x] Turning angles (and tropism)
-  - Formula expressions allow shenanigans such as `360/7`, mostly
-  - [ ] Button to change mode between degrees and radians?
-
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Stochastic in PLSR: has to be on the same line
@@ -50,8 +39,6 @@
     - Lemma stages?
   - Make `f` move without returning like `F`
   - Top-down processing priority
-    - Buttons in LS menu to move up down (swap rules)
-      - How to update rule entries?
   - [ ] Regex magic to separate string into actual sequence of symbols
   - [ ] Issue: regex for nested brackets in parameters?
   - Equal comparison changed to `==` instead of `=` in abop to differentiate
@@ -77,8 +64,20 @@
   - If stored by maps: Keys can be any data type.
   - If stored by objects: written in `parametric_lsystem.js`
 
+- [ ] Revamp sequence menu
+  - Level 0: 10 chars (`View`)
+  - [x] Classic LS: displays the entire string in a label
+  - Parametric LS: displays symbols and parameters side by side, one symbol/row
+
+- [x] Turning angles (and tropism)
+  - Formula expressions allow shenanigans such as `360/7`, mostly
+  - [ ] Button to change mode between degrees and radians?
+
 ## 1.0: Completed
 
+- [x] Buttons in LS menu to move up down (swap rules)
+  - How to update rule entries?
+- [x] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
 - [x] Investigate tropism (capital T)
   - [x] Separate starting quaternions for upright and sideways
     - Stop swizzling!
