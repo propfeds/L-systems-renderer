@@ -267,25 +267,25 @@ const locStrings =
 `understand the basics of L-systems, as well as instructions on how to ` +
 `effectively use this theory to construct and render them.
 
-Let's start discovering the wonders of L-systems.`
+Let's start discovering the wonders of L-systems (and the renderer).`
             },
             {
                 title: 'Controls: Theory screen',
                 contents:
 `The theory screen consists of the renderer and its controls.
 
-Level: the system's iteration. Pressing + or - will grow/revert the system ` +
-`respectively.
+Level: the iteration/generation/stage of the system. Pressing + or - will ` +
+`derive/revert the system.
 - Pressing the Level button will reveal all levels of the system.
 - Holding + or - will buy/refund levels in bulks of 10.
 
 Tickspeed: controls the renderer's drawing speed (up to 10 lines/sec, which ` +
 `produces less accurate lines).
-- Pressing the Tickspeed button will toggle between the Tickspeed and Tick ` +
+- Pressing the Tickspeed button will toggle between Tickspeed and Tick ` +
 `length modes.
-- Holding - will create an 'anchor' on the current level then set it to 0, ` +
-`pausing the renderer. Holding + afterwards will return the renderer to the ` +
-`previously anchored speed.
+- Holding - will create an 'anchor' on the current level before setting it ` +
+`to 0, pausing the renderer. Holding + afterwards will return the renderer ` +
+`to the previously anchored speed.
 
 Reset: located on the top right. Pressing this button will reset the renderer.
 
@@ -306,8 +306,9 @@ Menu buttons: You pressed on one of them to get here, did you?
 `'Add' button.
 - Ignored symbols: the turtle will stand still when encountering these symbols.
 - Tropism (gravity): determines the amount of gravity applied by the tropism ` +
-`(T) command. A negative value will instead lift the branch upwards.
-- Seed: the seed for a stochastic system. Can be manually set or rerolled.
+`(T) command.
+- Seed: determines the seed for a stochastic system. Can be manually set or ` +
+`rerolled.
 
 Note: Any blank rules will be trimmed afterwards.`
             },
@@ -561,8 +562,8 @@ Centre: (0, 0, 0)`
 
 |: reverses the turtle's direction.
 T: applies a force of gravity (tropism) to the turtle's current heading, so ` +
-`that it droops downward (with a positive tropism factor), or heads upward ` +
-`(with a negative tropism factor). This factor should be in the range from ` +
+`that it drops downward (with a positive tropism factor), or lifts upward ` +
+`(with a negative tropism factor). The factor should be in the range from ` +
 `-1 to 1.
 $: rolls the turtle around its own axis, so that its up vector is closest to ` +
 `absolute verticality i.e. the y-axis, and subsequently, its direction is ` +
@@ -1307,7 +1308,7 @@ class LSystem
      * systems.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', tropism = 0.25)
+    ignoreList = '', tropism = 0)
     {
         this.userInput =
         {
