@@ -267,7 +267,9 @@ const locStrings =
 `understand the basics of L-systems, as well as instructions on how to ` +
 `effectively use this theory to construct and render them.
 
-Let's start discovering the wonders of L-systems (and the renderer).`
+Let's start discovering the wonders of L-systems (and the renderer).
+
+Notice: A gallery for L-systems has opened! Visit page 28 for details.`
             },
             {
                 title: 'Controls: Theory screen',
@@ -556,6 +558,7 @@ Centre: (0, 0, 0)`
                 contents:
 `Using a yaw-pitch-roll orientation system, we can also generate figures in 3D.
 
+Counter-clockwise and clockwise respectively,
 + -: rotate turtle on the z-axis (yaw).
 & ^: rotate turtle on the y-axis (pitch).
 \\ /: rotate turtle on the x-axis (roll).
@@ -715,14 +718,16 @@ Upright`
             {
                 title: 'Appendix: Summary of symbols',
                 contents:
-`Any letter: moves turtle forward to draw a line of length 1.
+`Any letter (except T): moves turtle forward to draw a line of length 1.
 + -: rotate turtle on the z-axis (yaw).
 & ^: rotate turtle on the y-axis (pitch).
 \\ /: rotate turtle on the x-axis (roll).
-(counter-clockwise and clockwise, respectively)
-|: reverses turtle direction.
 
-[: pushes the turtle's state onto a stack.
+|: reverses turtle direction.
+T: applies tropism (gravity) to branch.
+$: aligns turtle's up vector to vertical.
+
+[: pushes turtle state onto a stack.
 ]: pops the stack's topmost element onto the turtle.
 %: cuts off the remainder of a branch.
 
@@ -738,6 +743,11 @@ Upright`
                 contents:
 `Welcome to the LSR Art Academy. Thanks for finishing the manual, by the way!
 And today's class: Tick length.
+
+For a background observation, Exponential Idle's 3D graph seems to be using ` +
+`a Bézier-like spline with no locality. Therefore, it is not suitable for ` +
+`drawing straight lines. However, this does not mean we cannot get anything ` +
+`out of it, and today's class will demonstrate otherwise.
 
 Now, while tickspeed might be more of a familiar concept to the idle ` +
 `fellows, in LSR it posesses a flaw: it is not consistent. For instance, at ` +
@@ -756,7 +766,8 @@ Now, while tickspeed might be more of a familiar concept to the idle ` +
 `would be too slow for large scale figures.
 - 0.3 sec: Tick length 0.3 holds the most powerful secret in this whole ` +
 `universe: it can create the straightest lines out of this family. No ` +
-`trickery needed!
+`trickery needed! As the 3D graph seems to be running on a 3-tick cycle, ` +
+`the sampled points line up precisely with the renderer's drawing.
 - 0.4 sec: this one can really spice the figure up by tying up cute knots ` +
 `between corners occasionally, mimicking leaf shapes on a tree.
 - 0.5 sec: with slight occasional overshoots, tick length 0.5 proves itself ` +
@@ -816,9 +827,37 @@ Generally, in figures such as this or the Koch snowflake, it'd be better to ` +
 `due to the tail end being a backtrack itself, of course.`
             },
             {
-                title: 'Appendix: Botched L-systems',
+                title: 'Gallery',
                 contents:
-`Here are the systems created for another theory of mine, Botched L-system.`
+`Welcome to a L-systems gallery. Enjoy!
+
+Notice: The gallery is open for submission!
+Mail me your own L-systems, so it can be included in the gallery.
+Maybe over Discord. Reddit account. Arcane-mail logistics!`
+            },
+            {
+                title: 'Lilac branch (Advanced)',
+                contents:
+`A more complex version of the previous lilac branch in the Models section, ` +
+`complete with detailed models and copious utilisation of tropism.
+
+Axiom: +S~A
+S = FS
+A = T[--//~K][++//~K]I///~A
+~A = [+++~a~a~a~a]
+~a = -{[^-F.][--FF.][&-F.].}+^^^
+K = ~K
+~K = [FT[F]+++~k~k~k~k]
+~k = -{[^--F.][F-^-F.][^--F|++^--F|+F+F.][-F+F.][&--F|++&--F|+F+F.][F-&-F.][&--F.].}+^^^
+I = Fi
+i = Fj
+j = J[--FF~A][++FF~A]
+Turning angle: 30°
+Tropism: 0.16
+
+Applies static camera:
+Scale: 2*lv+1
+Centre: (2*lv+1, lv/2+3/4, 0)`
             },
             {
                 title: 'Botched Cultivar FF',
@@ -868,11 +907,6 @@ Applies static camera: (mathematically unproven)
 Scale: 3^lv
 Centre: (0.25*3^lv, 0.75*3^lv, 0)
 Upright`
-            },
-            {
-                title: 'Appendix: Lemma\'s Garden',
-                contents:
-`Here's to LG, coming out in Never.`
             }
         ]
     }
@@ -2876,7 +2910,7 @@ const zUpQuat = new Quaternion(0, 0, 0, 1);
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalRNG = new Xorshift(Date.now());
-let contentsTable = [1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 24, 27];
+let contentsTable = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 15, 19, 21, 23, 24, 27];
 let manualSystems =
 {
     8:
@@ -2920,7 +2954,7 @@ let manualSystems =
             'F=F[+i][-i]F',
             'i=Ii,IIi'
         ], 60, 0, 'i'),
-        config: ["2*2^lv", 0, 0, 0, false]
+        config: ['2*2^lv', 0, 0, 0, false]
     },
     16:
     {
@@ -2975,15 +3009,31 @@ let manualSystems =
     },
     28:
     {
+        system: new LSystem('+S~A', [
+            'S=FS',
+            'A=T[--//~K][++//~K]I///~A',
+            '~A=[+++~a~a~a~a]',
+            '~a=-{[^-F.][--FF.][&-F.].}+^^^',
+            'K=~K',
+            '~K=[FT[F]+++~k~k~k~k]',
+            '~k=-{[^--F.][F-^-F.][^--F|++^--F|+F+F.][-F+F.][&--F|++&--F|+F+F.][F-&-F.][&--F.].}+^^^',
+            'I=Fi',
+            'i=Fj',
+            'j=J[--FF~A][++FF~A]'
+        ], 30, 0, '', 0.16),
+        config: ['2*lv+1', '2*lv+1', 'lv/2+3/4', 0, false]
+    },
+    29:
+    {
         system: new LSystem('X', ['F=FF', 'X=F-[[X]+X]+F[-X]-X'], 15),
         config: ['2^lv', 0, '2^lv', 0, true]
     },
-    29:
+    30:
     {
         system: new LSystem('X', ['F=F[+F]XF', 'X=F-[[X]+X]+F[-FX]-X'], 27),
         config: ['1.5*2^lv', '0.225*2^lv', '-0.75*2^lv', 0, false]
     },
-    30:
+    31:
     {
         system: new LSystem('X', [
             'E=XEXF-',
