@@ -4504,7 +4504,7 @@ let createStateClipboardMenu = (values) =>
     return menu;
 }
 
-let createViewMenu = (title) =>
+let createViewMenu = (title, parentMenu) =>
 {
     let systemObj = savedSystems.get(title);
     let values = systemObj.system;
@@ -4938,6 +4938,7 @@ let createViewMenu = (title) =>
                                 tmpCY, tmpCZ, tmpUpright);
                                 tmpSystemName = title;
                                 tmpSystemDesc = tmpDesc;
+                                parentMenu.hide();
                                 menu.hide();
                             }
                         }),
@@ -5025,7 +5026,7 @@ let createSaveMenu = () =>
             onClicked: () =>
             {
                 Sound.playClick();
-                let viewMenu = createViewMenu(title, systemGrid);
+                let viewMenu = createViewMenu(title, menu);
                 viewMenu.onDisappearing = () =>
                 {
                     systemGrid.children = getSystemGrid();
