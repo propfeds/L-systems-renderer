@@ -3977,7 +3977,7 @@ let createSystemMenu = () =>
     });
     let ruleStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*', 0],
+        columnDefinitions: ['7*', '1*'],
         children: [...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
@@ -4672,7 +4672,7 @@ let createViewMenu = (title, parentMenu) =>
     });
     let ruleStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*', 0],
+        columnDefinitions: ['7*', '1*'],
         children: [...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
