@@ -23,7 +23,7 @@
 
 - [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 - [ ] Add more comments in the code
-- [ ] Update docstrings (done up to LSystem)
+- [ ] Update docstrings (done up to Renderer)
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`

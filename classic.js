@@ -29,6 +29,7 @@ import { Localization } from '../api/Localization';
 import { MathExpression } from '../api/MathExpression';
 import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
+import { BigNumber } from '../api/BigNumber';
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -134,6 +135,7 @@ const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
 const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
 const TRIM_SP = /\s+/g;
+const BACKTRACK_LIST = new Set('+-&^\\/|[$T');
 const locStrings =
 {
     en:
@@ -225,7 +227,7 @@ const locStrings =
         labelQuickBT: '* Quick backtrack: ',
         labelHesitate: '* Stutter on backtrack: ',
         labelHesitateApex: '* Stutter at apex: ',
-        labelHesitateNode: '* Stutter at node: ',
+        labelHesitateFork: '* Stutter at fork: ',
         labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -342,7 +344,7 @@ Advanced stroke options:
 - Quickdraw: skips over straight consecutive segments.
 - Quick backtrack: works similarly, but on the way back.
 - Stutter at apex: pause for one tick at the tips of lines.
-- Stutter at node: pause for one tick after backtracking through branches.`
+- Stutter at fork: pause for one tick after backtracking through branches.`
             },
             {
                 title: 'Saving and loading',
@@ -789,7 +791,7 @@ Now, open your renderer menu textbook to the last section. There are about 4 ` +
 `comes to both precision and aesthetics.
 - Quick backtrack: this one's a reliable one, trading only a little beauty ` +
 `for some extra speed.
-- Stutter at apex/node: now, this is what I mean when I say hesitation is ` +
+- Stutter at apex/fork: now, this is what I mean when I say hesitation is ` +
 `not defeat. Pausing for even just one tick can give your figure just enough ` +
 `cohesion it really needs. To prove this, try loading the Arrow weed then ` +
 `alternate between drawing with these option on and off, at 0.1 tick length, ` +
@@ -1336,9 +1338,8 @@ class LSystem
      * @constructor
      * @param {string} axiom the starting sequence.
      * @param {string[]} rules the production rules.
-     * @param {string} turnAngle (default: 0) the turning angle (in degrees).
-     * @param {number} seed (default: 0) the seed used for stochastic 
-     * systems.
+     * @param {string} turnAngle the turning angle (in degrees).
+     * @param {number} seed the seed used for stochastic systems.
      * @param {string} ignoreList a list of symbols to be ignored by the turtle.
      * @param {string} tropism the tropism factor.
      */
@@ -1346,7 +1347,14 @@ class LSystem
     ignoreList = '', tropism = 0)
     {
         /**
-         * @type {object} the user input in its original form.
+         * @type {{
+         *  axiom: string,
+         *  rules: string[],
+         *  turnAngle: string,
+         *  seed: number,
+         *  ignoreList: string,
+         *  tropism: string
+         * }} the user input in its original form.
          */
         this.userInput =
         {
@@ -1473,10 +1481,11 @@ class LSystem
     }
 
     /**
-     * Derive a sequence from the input string.
+     * Derive a sequence from the input string. `next` denotes the starting
+     * position to be derived next tick. `result` contains the work completed
+     * for the current tick.
      * @param {string} state the input string.
-     * @returns {object} `next`: the starting position to be derived next tick.
-     * `result`: the work completed in the current tick.
+     * @returns {{next: number, result: string}}
      */
     derive(sequence, start = 0)
     {
@@ -1561,7 +1570,14 @@ class LSystem
     }
     /**
      * Returns a deep copy (hopefully) of the user input to prevent overwrites.
-     * @returns {object}
+     * @returns {{
+     *  axiom: string,
+     *  rules: string[],
+     *  turnAngle: string,
+     *  seed: number,
+     *  ignoreList: string,
+     *  tropism: string
+     * }}
      */
     get object()
     {
@@ -1580,7 +1596,7 @@ class LSystem
      */
     toString()
     {
-        return JSON.stringify(this.userInput, undefined, 4);
+        return JSON.stringify(this.object, null, 4);
     }
 }
 
@@ -1592,162 +1608,190 @@ class Renderer
     /**
      * @constructor
      * @param {LSystem} system the L-system to be handled.
-     * @param {string} figureScale (default: 1) the zoom level expression.
-     * @param {boolean} cameraMode (default: 0) the camera mode.
-     * @param {number} camX (default: 0) the camera's x-axis centre.
-     * @param {number} camY (default: 0) the camera's y-axis centre.
-     * @param {number} camZ (default: 0) the camera's z-axis centre.
-     * @param {number} followFactor (default: 0.1; between 0 and 1) the
-     * camera's cursor-following speed.
-     * @param {number} loopMode (default: 0; between 0 and 2) the renderer's
-     * looping mode.
-     * @param {boolean} upright (default: false) whether to rotate the system
-     * around the z-axis by 90 degrees.
-     * @param {boolean} quickDraw (default: false) whether to skip through
-     * straight lines on the way forward.
-     * @param {boolean} quickBacktrack (default: false) whether to skip through
-     * straight lines on the way backward.
-     * @param {string} backtrackList (default: '+-&^\\/|[') a list of symbols to
-     * act as stoppers for backtracking.
+     * @param {string} figureScale the zoom level expression.
+     * @param {boolean} cameraMode the camera mode.
+     * @param {string} camX the camera's x-axis centre.
+     * @param {string} camY the camera's y-axis centre.
+     * @param {string} camZ the camera's z-axis centre.
+     * @param {number} followFactor the camera's cursor-following speed.
+     * @param {number} loopMode the renderer's looping mode.
+     * @param {boolean} upright whether to rotate the system around the z-axis
+     * by 90 degrees.
+     * @param {boolean} quickDraw whether to skip through straight lines on the
+     * way forward.
+     * @param {boolean} quickBacktrack whether to skip through straight lines on
+     * the way backward.
+     * @param {boolean} loadModels whether to load dedicated models for symbols.
+     * @param {boolean} backtrackTail whether to backtrack at the end of a loop.
+     * @param {boolean} hesitateApex whether to stutter for 1 tick at apices.
+     * @param {boolean} hesitateFork whether to stutter for 1 tick at forks.
      */
     constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
     camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
-    quickDraw = false, quickBacktrack = false, backtrackList = '+-&^\\/|[$T',
-    loadModels = true, backtrackTail = false, hesitateApex = true,
-    hesitateNode = true)
+    quickDraw = false, quickBacktrack = false, loadModels = true,
+    backtrackTail = false, hesitateApex = true, hesitateFork = true)
     {
         /**
          * @type {LSystem} the L-system being handled.
-         * @public
          */
         this.system = system;
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
         this.figScaleStr = figureScale.toString();
+        /**
+         * @type {MathExpression} the figure scale expression.
+         */
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        /**
+         * @type {number} the calculated figure scale.
+         */
         this.figureScale = 1;
         /**
          * @type {boolean} the camera mode.
-         * @public
          */
         this.cameraMode = Math.round(Math.min(Math.max(cameraMode, 0), 2));
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
         this.camXStr = camX.toString();
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
         this.camYStr = camY.toString();
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
         this.camZStr = camZ.toString();
+        /**
+         * @type {MathExpression} the camera x expression.
+         */
         this.camXExpr = MathExpression.parse(this.camXStr);
+        /**
+         * @type {MathExpression} the camera y expression.
+         */
         this.camYExpr = MathExpression.parse(this.camYStr);
+        /**
+         * @type {MathExpression} the camera z expression.
+         */
         this.camZExpr = MathExpression.parse(this.camZStr);
         /**
-         * @type {Vector3} the static camera's coordinates.
-         * @public
+         * @type {Vector3} the calculated static camera coordinates.
          */
         this.camCentre = new Vector3(0, 0, 0);
         /**
          * @type {number} the follow factor.
-         * @public
          */
         this.followFactor = Math.min(Math.max(followFactor, 0), 1);
         /**
          * @type {number} the looping mode.
-         * @public
          */
         this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 2));
         /**
          * @type {boolean} the x-axis' orientation.
-         * @public
          */
         this.upright = upright;
         /**
          * @type {boolean} whether to skip through straight lines on the way
          * forward.
-         * @public
          */
         this.quickDraw = quickDraw;
         /**
          * @type {boolean} whether to skip through straight lines on the way
          * back.
-         * @public
          */
         this.quickBacktrack = quickBacktrack;
         /**
-         * @type {string} a list of symbols to act as stoppers for backtracking.
-         * @public
+         * @type {boolean} whether to load models.
          */
-        this.backtrackList = new Set(backtrackList);
         this.loadModels = loadModels;
-        this.backtrackTail = backtrackTail;
-        this.hesitateApex = hesitateApex;
-        this.hesitateNode = hesitateNode;
         /**
-         * @type {Vector3} the cursor's position.
-         * @public but shouldn't be.
+         * @type {boolean} whether to backtrack at the end.
+         */
+        this.backtrackTail = backtrackTail;
+        /**
+         * @type {boolean} whether to hesitate at apices.
+         */
+        this.hesitateApex = hesitateApex;
+        /**
+         * @type {boolean} whether to hesitate at forks.
+         */
+        this.hesitateFork = hesitateFork;
+        /**
+         * @type {Vector3} the turtle's position.
          */
         this.state = new Vector3(0, 0, 0);
         /**
-         * @type {Quaternion} the cursor's orientation.
-         * @public stay away from me.
+         * @type {Quaternion} the turtle's orientation.
          */
         this.ori = this.upright ? uprightQuat : new Quaternion();
         /**
-         * @type {string[]} stores the system's every level.
-         * @public don't touch me.
+         * @type {string[]} every level of the current system.
          */
         this.levels = [];
         /**
          * @type {number} the current level (updates after buying the variable).
-         * @public don't modify this please.
          */
         this.lv = -1;
         /**
          * @type {number} the maximum level loaded.
-         * @public don't mothify this either.
          */
         this.loaded = -1;
         /**
-         * @type {number} the load target.
-         * @public don't.
+         * @type {number} the load target level.
          */
         this.loadTarget = 0;
         /**
          * @type {[Vector3, Quaternion][]} stores cursor states for brackets.
-         * @public no.
          */
         this.stack = [];
         /**
          * @type {number[]} stores the indices of the other stack.
-         * @public don't touch this.
          */
         this.idxStack = [];
+        /**
+         * @type {string[]} keeps the currently rendered models.
+         */
         this.models = [];
+        /**
+         * @type {number[]} keeps the indices of the other stack.
+         */
         this.mdi = [];
         /**
          * @type {number} the current index of the sequence.
-         * @public don't know.
          */
         this.i = 0;
         /**
          * @type {number} the elapsed time.
-         * @public
          */
         this.elapsed = 0;
+        /**
+         * @type {number} the number of turns before the renderer starts working
+         * again.
+         */
         this.cooldown = 0;
         /**
          * @type {Vector3} the last tick's camera position.
-         * @public didn't tell you so.
          */
         this.lastCamera = new Vector3(0, 0, 0);
+        /**
+         * @type {Vector3} the last tick's camera velocity.
+         */
         this.lastCamVel = new Vector3(0, 0, 0);
         /**
          * @type {number} the next index to update for the current level.
-         * @public I told you so many times that you shouldn't access these.
          */
         this.nextDeriveIdx = 0;
+        /**
+         * @type {number} how many nested polygons currently in (pls keep at 1).
+         */
         this.polygonMode = 0;
     }
 
     /**
      * Updates the renderer's level.
      * @param {number} level the target level.
-     * @param {boolean} seedChanged (default: false) whether the seed has
-     * changed.
+     * @param {boolean} seedChanged whether the seed has changed.
      */
     update(level, seedChanged = false)
     {
@@ -1830,9 +1874,9 @@ class Renderer
      * Configures every parameter of the renderer, except the system.
      * @param {string} figureScale the zoom level expression.
      * @param {boolean} cameraMode the camera mode.
-     * @param {number} camX the camera's x-axis centre.
-     * @param {number} camY the camera's y-axis centre.
-     * @param {number} camZ the camera's z-axis centre.
+     * @param {string} camX the camera's x-axis centre.
+     * @param {string} camY the camera's y-axis centre.
+     * @param {string} camZ the camera's z-axis centre.
      * @param {number} followFactor the camera's cursor-following speed.
      * @param {number} loopMode the renderer's looping mode.
      * @param {boolean} upright whether to rotate the system around the z-axis
@@ -1841,19 +1885,21 @@ class Renderer
      * way forward.
      * @param {boolean} quickBacktrack whether to skip through straight lines
      * on the way backward.
-     * @param {string} backtrackList a list of symbols to act as stoppers for
-     * backtracking.
+     * @param {boolean} loadModels whether to load dedicated models for symbols.
+     * @param {boolean} backtrackTail whether to backtrack at the end of a loop.
+     * @param {boolean} hesitateApex whether to stutter for 1 tick at apices.
+     * @param {boolean} hesitateFork whether to stutter for 1 tick at forks.
      */
     configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
-    loopMode, upright, quickDraw, quickBacktrack, backtrackList, loadModels,
-    backtrackTail, hesitateApex, hesitateNode)
+    loopMode, upright, quickDraw, quickBacktrack, loadModels, backtrackTail,
+    hesitateApex, hesitateFork)
     {
         let requireReset = (figureScale !== this.figScaleStr) ||
         (upright != this.upright) || (quickDraw != this.quickDraw) ||
         (quickBacktrack != this.quickBacktrack) ||
         (loadModels != this.loadModels) ||
         (hesitateApex != this.hesitateApex) ||
-        (hesitateNode != this.hesitateNode);
+        (hesitateFork != this.hesitateFork);
 
         this.figScaleStr = figureScale.toString();
         this.figScaleExpr = MathExpression.parse(this.figScaleStr);
@@ -1879,26 +1925,20 @@ class Renderer
         this.upright = upright;
         this.quickDraw = quickDraw;
         this.quickBacktrack = quickBacktrack;
-        let btl = new Set(backtrackList);
-        if(!eqSet(btl, this.backtrackList))
-            requireReset = true;
-        this.backtrackList = btl;
         this.loadModels = loadModels;
         this.backtrackTail = backtrackTail;
         this.hesitateApex = hesitateApex;
-        this.hesitateNode = hesitateNode;
+        this.hesitateFork = hesitateFork;
 
         if(requireReset)
             this.reset();
-        
-        return requireReset;
     }
     /**
      * Configures only the parameters related to the static camera mode.
      * @param {string} figureScale the zoom level expression.
-     * @param {number} camX the camera's x-axis centre.
-     * @param {number} camY the camera's y-axis centre.
-     * @param {number} camZ the camera's z-axis centre.
+     * @param {string} camX the camera's x-axis centre.
+     * @param {string} camY the camera's y-axis centre.
+     * @param {string} camZ the camera's z-axis centre.
      * @param {boolean} upright whether to rotate the system around the z-axis
      * by 90 degrees.
      */
@@ -1966,11 +2006,13 @@ class Renderer
     }
     /**
      * Ticks the clock.
+     * @param {number} dt the amount of time passed.
      */
     tick(dt)
     {
         if(this.lv > this.loaded + 1 ||
-        typeof this.levels[this.lv] === 'undefined')
+        typeof this.levels[this.lv] === 'undefined' ||
+        this.levels[this.lv].length == 0)
             return;
 
         if(this.i >= this.levels[this.lv].length && this.loopMode == 0)
@@ -2108,7 +2150,7 @@ class Renderer
                                 this.idxStack.pop();
                                 if(moved)
                                     this.cooldown = 1;
-                                if(this.hesitateNode && this.polygonMode <= 0)
+                                if(this.hesitateFork && this.polygonMode <= 0)
                                 {
                                     ++this.mdi[this.mdi.length - 1];
                                     return;
@@ -2154,7 +2196,7 @@ class Renderer
                             this.loadModels && this.system.models.has(
                             this.models[this.models.length - 1][
                             this.mdi[this.mdi.length - 1]]);
-                            let breakAhead = this.backtrackList.has(
+                            let breakAhead = BACKTRACK_LIST.has(
                             this.models[this.models.length - 1][
                             this.mdi[this.mdi.length - 1] + 1]);
                             let btAhead = this.models[this.models.length - 1][
@@ -2274,7 +2316,7 @@ class Renderer
                             this.idxStack.pop();
                             if(moved)
                                 this.cooldown = 1;
-                            if(this.hesitateNode && this.polygonMode <= 0)
+                            if(this.hesitateFork && this.polygonMode <= 0)
                             {
                                 ++this.i;
                                 return;
@@ -2317,7 +2359,7 @@ class Renderer
                         let ignored = this.system.ignoreList.has(
                         this.levels[this.lv][this.i]) || this.loadModels &&
                         this.system.models.has(this.levels[this.lv][this.i]);
-                        let breakAhead = this.backtrackList.has(
+                        let breakAhead = BACKTRACK_LIST.has(
                         this.levels[this.lv][this.i + 1]);
                         let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
                         this.i == this.levels[this.lv].length - 1;
@@ -2379,14 +2421,22 @@ class Renderer
             }
         }
     }
+    /**
+     * Return swizzled coordinates according to the in-game system. The game
+     * uses Android UI coordinates, which is X-right Y-down Z-face.
+     * @param {Vector3} coords the original coordinates.
+     * @returns {Vector3}
+     */
     swizzle(coords)
     {
-        // The game uses left-handed Y-up, I mean Y-down coordinates.
-        // if(this.upright)
-        //     return new Vector3(-coords.y, -coords.x, coords.z);
-
+        // The game uses left-handed Y-up, aka Y-down coordinates.
         return new Vector3(coords.x, -coords.y, coords.z);
     }
+    /**
+     * Returns a variable's value for maths expressions.
+     * @param {string} v the variable's name.
+     * @returns {BigNumber}
+     */
     getVariable(v)
     {
         switch(v)
@@ -2397,7 +2447,7 @@ class Renderer
     }
     /**
      * Returns the camera centre's coordinates.
-     * @returns {Vector3} the coordinates.
+     * @returns {Vector3}
      */
     get centre()
     {
@@ -2407,8 +2457,8 @@ class Renderer
         return this.swizzle(-this.camCentre / this.figureScale);
     }
     /**
-     * Returns the cursor's coordinates.
-     * @returns {Vector3} the coordinates.
+     * Returns the turtle's coordinates.
+     * @returns {Vector3}
      */
     get cursor()
     {
@@ -2417,7 +2467,7 @@ class Renderer
     }
     /**
      * Returns the camera's coordinates.
-     * @returns {Vector3} the coordinates.
+     * @returns {Vector3}
      */
     get camera()
     {
@@ -2443,13 +2493,9 @@ class Renderer
         }
     }
     /**
-     * Returns the cursor's orientation.
-     * @returns {Quaternion} the orientation.
+     * Returns the static camera configuration.
+     * @returns {[string, string, string, string, boolean]}
      */
-    get angles()
-    {
-        return this.ori;
-    }
     get staticCamera()
     {
         return [
@@ -2462,6 +2508,7 @@ class Renderer
     }
     /**
      * Returns the elapsed time.
+     * @returns {[number, number]}
      */
     get elapsedTime()
     {
@@ -2471,16 +2518,16 @@ class Renderer
         ];
     }
     /**
-     * Returns the current progress on this level.
-     * @returns {number[]} the current progress in fractions.
+     * Returns the current progress on this level, in a fraction.
+     * @returns {[number, number]}
      */
     get progressFrac()
     {
         return [this.i, this.levels[this.lv].length];
     }
     /**
-     * Returns the current progress on this level.
-     * @returns {number} (between 0 and 100) the current progress.
+     * Returns the current progress on this level, in percent.
+     * @returns {number}
      */
     get progressPercent()
     {
@@ -2495,8 +2542,8 @@ class Renderer
         return result;
     }
     /**
-     * Returns the current progress as a string.
-     * @returns {string} the string.
+     * Returns the current progress fraction as a string.
+     * @returns {string}
      */
     get progressString()
     {
@@ -2505,7 +2552,7 @@ class Renderer
     }
     /**
      * Returns a loading message.
-     * @returns {string} the string.
+     * @returns {string}
      */
     get loadingString()
     {
@@ -2516,7 +2563,7 @@ class Renderer
     }
     /**
      * Returns the cursor's position as a string.
-     * @returns {string} the string.
+     * @returns {string}
      */
     get stateString()
     {
@@ -2529,7 +2576,7 @@ class Renderer
     }
     /**
      * Returns the cursor's orientation as a string.
-     * @returns {string} the string.
+     * @returns {string}
      */
     get oriString()
     {
@@ -2540,17 +2587,35 @@ class Renderer
         \\end{matrix}`;
     }
     /**
+     * Returns the object representation of the renderer.
+     * @returns {object}
+     */
+    get object()
+    {
+        return {
+            figureScale: this.figScaleStr,
+            cameraMode: this.cameraMode,
+            camX: this.camXStr,
+            camY: this.camYStr,
+            camZ: this.camZStr,
+            followFactor: this.followFactor,
+            loopMode: this.loopMode,
+            upright: this.upright,
+            loadModels: this.loadModels,
+            quickDraw: this.quickDraw,
+            quickBacktrack: this.quickBacktrack,
+            backtrackTail: this.backtrackTail,
+            hesitateApex: this.hesitateApex,
+            hesitateFork: this.hesitateFork
+        }
+    }
+    /**
      * Returns the renderer's string representation.
-     * @returns {string} the string.
+     * @returns {string}
      */
     toString()
     {
-        return `${this.figScaleStr} ${this.cameraMode} ${this.camXStr} ` +
-        `${this.camYStr} ${this.camZStr} ${this.followFactor} ` +
-        `${this.loopMode} ${this.upright ? 1 : 0} ${this.quickDraw ? 1 : 0} ` +
-        `${this.quickBacktrack ? 1 : 0} ${[...this.backtrackList].join('')} ` +
-        `${this.loadModels ? 1 : 0} ${this.backtrackTail ? 1 : 0} ` +
-        `${this.hesitateApex} ${this.hesitateNode}`;
+        return JSON.stringify(this.object, null, 4);
     }
 }
 
@@ -3659,10 +3724,10 @@ let createConfigMenu = () =>
             }
         }
     });
-    let tmpHesN = renderer.hesitateNode;
+    let tmpHesN = renderer.hesitateFork;
     let hesNLabel = ui.createLatexLabel
     ({
-        text: getLoc('labelHesitateNode'),
+        text: getLoc('labelHesitateFork'),
         row: 3,
         column: 0,
         verticalTextAlignment: TextAlignment.CENTER
@@ -3684,25 +3749,6 @@ let createConfigMenu = () =>
             }
         }
     });
-    // let tmpEXB = [...renderer.backtrackList].join('');
-    // let EXBLabel = ui.createLatexLabel
-    // ({
-    //     text: getLoc('labelBTList'),
-    //     row: 3,
-    //     column: 0,
-    //     verticalTextAlignment: TextAlignment.CENTER
-    // });
-    // let EXBEntry = ui.createEntry
-    // ({
-    //     text: tmpEXB,
-    //     row: 3,
-    //     column: 1,
-    //     horizontalTextAlignment: TextAlignment.END,
-    //     onTextChanged: (ot, nt) =>
-    //     {
-    //         tmpEXB = nt;
-    //     }
-    // });
 
     let menu = ui.createPopup
     ({
@@ -3852,10 +3898,9 @@ let createConfigMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let requireReset = renderer.configure(tmpZE,
-                                tmpCM, tmpCX, tmpCY, tmpCZ, tmpFF, tmpLM,
-                                tmpUpright, tmpQD, tmpQB, undefined, tmpModel,
-                                tmpTail, tmpHesA, tmpHesN);
+                                renderer.configure(tmpZE, tmpCM, tmpCX, tmpCY,
+                                tmpCZ, tmpFF, tmpLM, tmpUpright, tmpQD, tmpQB,
+                                tmpModel, tmpTail, tmpHesA, tmpHesN);
                                 lvlControls.updateDescription();
                                 menu.hide();
                             }
@@ -3882,15 +3927,14 @@ let createConfigMenu = () =>
                                 QDSwitch.isToggled = rx.quickDraw;
                                 tmpQB = rx.quickBacktrack;
                                 QBSwitch.isToggled = rx.quickBacktrack;
-                                EXBEntry.text = [...rx.backtrackList].join('');
                                 tmpModel = rx.loadModels;
                                 modelSwitch.isToggled = rx.loadModels;
                                 tmpTail = rx.backtrackTail;
                                 tailSwitch.isToggled = rx.backtrackTail;
                                 tmpHesA = rx.hesitateApex;
                                 hesASwitch.isToggled = rx.hesitateApex;
-                                tmpHesN = rx.hesitateNode;
-                                hesNSwitch.isToggled = rx.hesitateNode;
+                                tmpHesN = rx.hesitateFork;
+                                hesNSwitch.isToggled = rx.hesitateFork;
                                 lvlControls.updateDescription();
                                 // menu.hide();
                             }
@@ -5666,24 +5710,7 @@ var getInternalState = () => JSON.stringify
     measurePerformance: measurePerformance,
     debugCamPath: debugCamPath,
     maxCharsPerTick: maxCharsPerTick,
-    renderer:
-    {
-        figureScale: renderer.figScaleStr,
-        cameraMode: renderer.cameraMode,
-        camX: renderer.camXStr,
-        camY: renderer.camYStr,
-        camZ: renderer.camZStr,
-        followFactor: renderer.followFactor,
-        loopMode: renderer.loopMode,
-        upright: renderer.upright,
-        loadModels: renderer.loadModels,
-        quickDraw: renderer.quickDraw,
-        quickBacktrack: renderer.quickBacktrack,
-        // backtrackList: [...renderer.backtrackList].join(''),
-        backtrackTail: renderer.backtrackTail,
-        hesitateApex: renderer.hesitateApex,
-        hesitateNode: renderer.hesitateNode
-    },
+    renderer: renderer.object,
     system: tmpSystem ?
     {
         title: tmpSystemName,
@@ -5749,9 +5776,8 @@ var setInternalState = (stateStr) =>
             state.renderer.camZ, state.renderer.followFactor,
             state.renderer.loopMode, state.renderer.upright,
             state.renderer.quickDraw, state.renderer.quickBacktrack,
-            undefined, state.renderer.loadModels,
-            state.renderer.backtrackTail, state.renderer.hesitateApex,
-            state.renderer.hesitateNode);
+            state.renderer.loadModels, state.renderer.backtrackTail,
+            state.renderer.hesitateApex, state.renderer.hesitateFork);
         }
         else
             renderer = new Renderer(system);
