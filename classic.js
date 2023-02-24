@@ -30,6 +30,9 @@ import { MathExpression } from '../api/MathExpression';
 import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 import { BigNumber } from '../api/BigNumber';
+import { Upgrade } from '../api/Upgrades';
+import { Button } from '../api/ui/Button';
+import { Frame } from '../api/ui/Frame';
 
 var id = 'L_systems_renderer';
 var getName = (language) =>
@@ -2619,34 +2622,79 @@ class Renderer
     }
 }
 
+/**
+ * Represents a bunch of buttons for variable controls.
+ */
 class VariableControls
 {
+    /**
+     * @constructor
+     * @param {Upgrade} variable the variable being controlled.
+     * @param {boolean} useAnchor whether to use anchor controls.
+     * @param {number} quickbuyAmount the amount of levels to buy when held.
+     */
     constructor(variable, useAnchor = false, quickbuyAmount = 10)
     {
+        /**
+         * @type {Upgrade} the variable being controlled.
+         */
         this.variable = variable;
+        /**
+         * @type {Frame} the variable button.
+         */
         this.varBtn = null;
+        /**
+         * @type {Frame} the refund button.
+         */
         this.refundBtn = null;
+        /**
+         * @type {Frame} the buy button.
+         */
         this.buyBtn = null;
 
+        /**
+         * @type {boolean} whether to use anchor controls.
+         */
         this.useAnchor = useAnchor;
+        /**
+         * @type {number} the anchored variable level.
+         */
         this.anchor = this.variable.level;
+        /**
+         * @type {number} whether the anchor is on.
+         */
         this.anchorActive = false;
+        /**
+         * @type {number} the amount of levels to buy when held.
+         */
         this.quickbuyAmount = quickbuyAmount;
     }
 
+    /**
+     * Updates all buttons, visually.
+     */
     updateAllButtons()
     {
         this.updateDescription();
         this.updateRefundButton();
         this.updateBuyButton();
     }
+    /**
+     * Updates the variable description written on the button's label.
+     */
     updateDescription()
     {
         this.varBtn.content.text = this.variable.getDescription();
     }
+    /**
+     * Creates a variable button.
+     * @param {function(void): void} callback when pressed, calls this function.
+     * @param {number} height the button's height.
+     * @returns {Frame}
+     */
     createVariableButton(callback = null, height = BUTTON_HEIGHT)
     {
-        if(this.varBtn !== null)
+        if(this.varBtn)
             return this.varBtn;
         
         let frame = ui.createFrame
@@ -2663,7 +2711,7 @@ class VariableControls
             }),
             borderColor: Color.TRANSPARENT
         });
-        if(callback !== null)
+        if(callback)
         {
             frame.borderColor = Color.BORDER;
             frame.content.textColor = Color.TEXT;
@@ -2692,6 +2740,9 @@ class VariableControls
         this.varBtn = frame;
         return this.varBtn;
     }
+    /**
+     * Updates the refund button, visually.
+     */
     updateRefundButton()
     {
         this.refundBtn.borderColor = this.variable.level > 0 ? Color.BORDER :
@@ -2699,17 +2750,16 @@ class VariableControls
         this.refundBtn.content.textColor = this.variable.level > 0 ?
         Color.TEXT : Color.TEXT_MEDIUM;
     }
+    /**
+     * Creates a refund button.
+     * @param {string} symbol the button's label.
+     * @param {number} height the button's height.
+     * @returns {Frame}
+     */
     createRefundButton(symbol = '-', height = BUTTON_HEIGHT)
     {
-        if(this.refundBtn !== null)
+        if(this.refundBtn)
             return this.refundBtn;
-
-        // let bc = () => this.variable.level > 0 ? Color.BORDER :
-        // Color.TRANSPARENT;
-        // let tc = () => this.variable.level > 0 ? Color.TEXT :
-        // Color.TEXT_MEDIUM;
-        // let tcPressed = () => this.variable.level > 0 ? Color.TEXT_MEDIUM :
-        // Color.TEXT_DARK;
 
         this.refundBtn = ui.createFrame
         ({
@@ -2759,6 +2809,9 @@ class VariableControls
         });
         return this.refundBtn;
     }
+    /**
+     * Updates the buy button, visually.
+     */
     updateBuyButton()
     {
         this.buyBtn.borderColor = this.variable.level < this.variable.maxLevel ?
@@ -2766,17 +2819,16 @@ class VariableControls
         this.buyBtn.content.textColor = this.variable.level <
         this.variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM;
     }
+    /**
+     * Creates a buy button.
+     * @param {string} symbol the button's label.
+     * @param {number} height the button's height.
+     * @returns {Frame}
+     */
     createBuyButton(symbol = '+', height = BUTTON_HEIGHT)
     {
-        if(this.buyBtn !== null)
+        if(this.buyBtn)
             return this.buyBtn;
-
-        // let bc = () => this.variable.level < this.variable.maxLevel ?
-        // Color.BORDER : Color.TRANSPARENT;
-        // let tc = () => this.variable.level < this.variable.maxLevel ?
-        // Color.TEXT : Color.TEXT_MEDIUM;
-        // let tcPressed = () => this.variable.level < this.variable.maxLevel ?
-        // Color.TEXT_MEDIUM : Color.TEXT_DARK;
 
         this.buyBtn = ui.createFrame
         ({
@@ -2832,22 +2884,57 @@ class VariableControls
     }
 }
 
+/**
+ * Measures performance for a piece of code.
+ */
 class Measurer
 {
+    /**
+     * @constructor
+     * @param {string} title the measurement's title.
+     * @param {number} window the sample size.
+     */
     constructor(title, window = 10)
     {
+        /**
+         * @type {string} the measurement's title.
+         */
         this.title = title;
+        /**
+         * @type {number} the sample size.
+         */
         this.window = window;
+        /**
+         * @type {number} the all-time sum.
+         */
         this.sum = 0;
+        /**
+         * @type {number} the window sum.
+         */
         this.windowSum = 0;
+        /**
+         * @type {number} the all-time maximum.
+         */
         this.max = 0;
+        /**
+         * @type {number[]} recent records.
+         */
         this.records = [];
         for(let i = 0; i < this.window; ++i)
             this.records[i] = 0;
+        /**
+         * @type {number} the elapsed time in ticks.
+         */
         this.ticksPassed = 0;
+        /**
+         * @type {number} the most recent moment the function was stamped.
+         */
         this.lastStamp = null;
     }
-    
+
+    /**
+     * Resets the measurer.
+     */
     reset()
     {
         this.sum = 0;
@@ -2859,9 +2946,12 @@ class Measurer
         this.ticksPassed = 0;
         this.lastStamp = null;
     }
+    /**
+     * Stamps the measurer.
+     */
     stamp()
     {
-        if(this.lastStamp === null)
+        if(!this.lastStamp)
             this.lastStamp = Date.now();
         else
         {
@@ -2876,14 +2966,26 @@ class Measurer
             ++this.ticksPassed;
         }
     }
+    /**
+     * Returns the window average.
+     * @returns {number}
+     */
     get windowAvg()
     {
         return this.windowSum / Math.min(this.window, this.ticksPassed);
     }
+    /**
+     * Returns the all-time average.
+     * @returns {number}
+     */
     get allTimeAvg()
     {
         return this.sum / this.ticksPassed;
     }
+    /**
+     * Returns the string for the window average.
+     * @returns {string}
+     */
     get windowAvgString()
     {
         if(this.ticksPassed == 0)
@@ -2896,6 +2998,10 @@ class Measurer
         getCoordString(this.max), getCoordString(this.windowAvg),
         Math.min(this.window, this.ticksPassed));
     }
+    /**
+     * Returns the string for the all-time average.
+     * @returns {string}
+     */
     get allTimeAvgString()
     {
         if(this.ticksPassed == 0)

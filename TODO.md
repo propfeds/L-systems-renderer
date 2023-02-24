@@ -23,7 +23,6 @@
 
 - [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 - [ ] Add more comments in the code
-- [ ] Update docstrings (done up to Renderer)
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
@@ -76,6 +75,7 @@
 
 ## 1.0: Completed
 
+- [x] Update docstrings
 - [x] Buttons in LS menu to move up down (swap rules)
   - How to update rule entries?
 - [x] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
