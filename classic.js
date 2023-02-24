@@ -2357,18 +2357,16 @@ class Renderer
                 switch(this.loopMode)
                 {
                     case 2:
-                        l.buy(1);
-                        if(this.backtrackTail)
+                        if(!this.backtrackTail)
                             return;
+                        l.buy(1);
                         break;
                     case 1:
-                        this.reset(false);
-                        if(this.backtrackTail)
+                        if(!this.backtrackTail)
                             return;
+                        this.reset(false);
                         break;
                     case 0:
-                        if(this.backtrackTail)
-                            this.state = new Vector3(0, 0, 0);
                         return;
                 }
             }
