@@ -2,18 +2,15 @@ import { MathExpression } from "../api/MathExpression";
 
 const TRIM_SP = /\s+/g;
 const LS_RULE = /(.+):(.+)=(([^:]+)(:([^,]+))?)(,([^:]+)(:([^,]+))?)*/;
-// BIG TODO: instead of using regex to match nested brackets, just use regular
-// loops to capture axiom and rule symbols. The other regexes are still fine.
-const LS_SYMBOL_WITHOUT_NESTED_BRACKETS = /(.)(\(([^\)]+)\))?/g;
-const LS_SYMBOL_STILL_WIP = /(.)(\((\(((?>[^()]+)|(?R))*\)|[^()])+\))?/g;
 // Context doesn't need to check for nested brackets!
 const LS_CONTEXT =
 /((.)(\(([^\)]+)\))?<)?((.)(\(([^\)]+)\))?)(>(.)(\(([^\)]+)\))?)?/;
+// But individual symbols do.
 
 class ParametricLSystem
 {
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '')
+    ignoreList = '', tropism = 0, variables = {})
     {
         // User input
         this.userInput =
@@ -23,21 +20,16 @@ class ParametricLSystem
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
+            tropism: tropism,
+            variables: variables
         };
         // Use regex magic to separate
-        let axiomMatches = [...axiom.replace(TRIM_SP, '').matchAll(LS_SYMBOL)];
-        this.axiom = '';
-        this.axiomParams = [];
-        // let axiomReassembly = '';
-        for(let i = 0; i < axiomMatches.length; ++i)
-        {
-            // axiomReassembly += axiomMatches[i][0];
-            this.axiom += axiomMatches[i][1];
-            this.axiomParams.push(axiomMatches[i][3]);
-            // Indices 1 and 3 are symbol and parameters
-        }
+        let axiomMatches = this.parseSequence(axiom.replace(TRIM_SP, ''));
+        this.axiom = axiomMatches.sequence;
+        this.axiomParams = axiomMatches.params;
+
         // console.log(this.axiom);
-        // console.log(axiomReassembly);
+        // console.log(this.axiomParams);
         for(let i = 0; i < this.axiomParams.length; ++i)
         {
             if(typeof this.axiomParams[i] == 'undefined')
@@ -175,6 +167,56 @@ class ParametricLSystem
                 }
             ]
         };
+    }
+
+    /**
+     * Parse a sequence to return one array of characters and one of parameters.
+     * @param {string} sequence the sequence to be parsed.
+     * @returns {object}
+     */
+    parseSequence(sequence)
+    {
+        let result = '';
+        let resultParams = [];
+        let bracketLvl = 0;
+        let start = null;
+        for(let i = 0; i < sequence.length; ++i)
+        {
+            switch(sequence[i])
+            {
+                case ' ':
+                    log('Blank space detected.')
+                    break;
+                case '(':
+                    ++bracketLvl;
+                    if(bracketLvl == 1)
+                        start = i + 1;
+                    break;
+                case ')':
+                    if(!bracketLvl)
+                    {
+                        log('You\'ve clearly made a bracket error.');
+                        break;
+                    }
+                    --bracketLvl;
+                    if(!bracketLvl)
+                        resultParams.push(sequence.slice(start, i));
+                    break;
+                default:
+                    if(bracketLvl)
+                        break;
+                    
+                    result += sequence[i];
+                    if(sequence[i + 1] != '(')
+                        resultParams.push(null);
+                    break;
+            }
+        }
+        return {
+            sequence: result,
+            params: resultParams
+        };
+        // Tested this out on Chrome console, it worked.
     }
 
     getAncestree(sequence)

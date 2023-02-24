@@ -133,6 +133,7 @@ let getSmallBtnSize = (width) =>
 const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
 const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
+const TRIM_SP = /\s+/g;
 const locStrings =
 {
     en:
@@ -1232,12 +1233,12 @@ class Quaternion
         );
         let s = Math.sqrt((1 + dp) * 2);
         // I forgore that our quaternions have to be all negative, dunnoe why
-        return new Quaternion(
+        return this.mul(new Quaternion(
             -s / 2,
             rotAxis.x / s,
             rotAxis.y / s,
             rotAxis.z / s
-        ).mul(this).normalise;
+        )).normalise;
     }
     /**
      * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
@@ -1252,13 +1253,11 @@ class Quaternion
 
         let curHead = this.headingVector;
         let newHead = curHead - new Vector3(0, weight, 0);
-        log(`${curHead}\n\t--> ${newHead}`)
         let n = newHead.length;
         if(n == 0)
             return this;
         newHead /= n;
         let result = this.rotateFrom(curHead, newHead);
-        log(`Expected: ${newHead}\nActual: ${result.headingVector}`);
         return result;
     }
     /**
@@ -1337,40 +1336,54 @@ class LSystem
      * @constructor
      * @param {string} axiom the starting sequence.
      * @param {string[]} rules the production rules.
-     * @param {number} turnAngle (default: 30) the turning angle (in degrees).
+     * @param {string} turnAngle (default: 0) the turning angle (in degrees).
      * @param {number} seed (default: 0) the seed used for stochastic 
      * systems.
+     * @param {string} ignoreList a list of symbols to be ignored by the turtle.
+     * @param {string} tropism the tropism factor.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
     ignoreList = '', tropism = 0)
     {
+        /**
+         * @type {object} the user input in its original form.
+         */
         this.userInput =
         {
             axiom: axiom,
-            rules: this.getPurged(rules),
+            rules: this.purgeEmpty(rules),
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
             tropism: tropism
         };
         /**
-         * @type {string[]} the production rules.
-         * @public
+         * @type {string} the starting sequence.
+         */
+        this.axiom = axiom;
+        /**
+         * @type {Map<string, string>} the production rules.
          */
         this.rules = new Map();
-        this.contextRules = new Map();
         /**
-         * @type {set} a list of symbols ignored by the renderer.
-         * @public
+         * @type {set} a set of symbols ignored by the turtle.
          */
         this.ignoreList = new Set(ignoreList);
+        /**
+         * @type {Map<string, string>} the models to be used by the renderer.
+         */
         this.models = new Map();
 
+        // Rules processing.
         for(let i = 0; i < rules.length; ++i)
         {
             if(rules[i] !== '')
             {
-                let rs = rules[i].split('=');
+                let rs = rules[i].replace(TRIM_SP, '').split('=');
+                /*
+                Old rules format where rules without a derivation get added to
+                the ignore list, due to the old internal state's limitations.
+                */
                 if(rs.length < 2)
                 {
                     if(i == 0)
@@ -1381,8 +1394,6 @@ class LSystem
                         ]);
                     continue;
                 }
-                for(let i = 0; i < 2; ++i)
-                    rs[i] = rs[i].trim();
 
                 let rder = rs[1].split(',');
                 if(rder.length == 1)    // Regular rule
@@ -1397,7 +1408,7 @@ class LSystem
                         else
                             this.rules.set(rs[0], [...existingDer, rs[1]]);
                     }
-                    else if(rs[0].length == 2 && rs[0][0] == '~')
+                    else if(rs[0].length == 2 && rs[0][0] == '~')   // Model
                     {
                         let existingDer = this.models.get(rs[0][1]);
                         if(!existingDer)
@@ -1410,9 +1421,6 @@ class LSystem
                 }
                 else    // Stochastic rule
                 {
-                    for(let i = 0; i < rder.length; ++i)
-                        rder[i] = rder[i].trim();
-
                     if(rs[0].length == 1)
                     {
                         let existingDer = this.rules.get(rs[0]);
@@ -1423,7 +1431,7 @@ class LSystem
                         else
                             this.rules.set(rs[0], [...existingDer, rder]);
                     }
-                    else if(rs[0].length == 2 && rs[0][0] == '~')
+                    else if(rs[0].length == 2 && rs[0][0] == '~')   // Model
                     {
                         let existingDer = this.models.get(rs[0][1]);
                         if(!existingDer)
@@ -1437,98 +1445,38 @@ class LSystem
             }
         }
         /**
-         * @type {number} the seed (for stochastic systems).
-         * @public
-         */
-        this.seed = seed;
-        /**
          * @type {Xorshift} the random number generator for this system.
-         * @public not sure, ask Itsuki.
          */
-        this.RNG = new Xorshift(this.seed);
+        this.RNG = new Xorshift(seed);
         /**
-         * @type {string} the starting sequence.
-         * @public
+         * @type {number} half the turning angle (in radians) for use in quats.
          */
-        this.axiom = axiom;
-        /**
-         * @type {number} the turning angle (in degrees).
-         * @public
-         */
-        this.turnAngle = MathExpression.parse(turnAngle.toString()).evaluate();
-        /**
-         * @type {number} half the turning angle (in radians).
-         * @public
-         */
-        this.halfAngle = this.turnAngle * Math.PI / 360;
-        let s = Math.sin(this.halfAngle);
-        let c = Math.cos(this.halfAngle);
+        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate() *
+        Math.PI / 360;
         /**
          * @type {Map<string, Quaternion>} a map of rotation quaternions for
          * quicker calculations.
-         * @public but shouldn't be.
          */
         this.rotations = new Map();
+        let s = Math.sin(this.halfAngle);
+        let c = Math.cos(this.halfAngle);
         this.rotations.set('+', new Quaternion(-c, 0, 0, s));
         this.rotations.set('-', new Quaternion(-c, 0, 0, -s));
         this.rotations.set('&', new Quaternion(-c, 0, s, 0));
         this.rotations.set('^', new Quaternion(-c, 0, -s, 0));
         this.rotations.set('\\', new Quaternion(-c, s, 0, 0));
         this.rotations.set('/', new Quaternion(-c, -s, 0, 0));
-
+        /**
+         * @type {number} the tropism factor.
+         */
         this.tropism = MathExpression.parse(tropism.toString()).evaluate();
     }
-    rerollAxiom()
-    {
-        this.axiom = this.userInput.axiom;
-    }
-    getRecursiveModels(sequence)
-    {
-        let result;
-        let count = 0;
-        if(typeof sequence === 'string')
-        {
-            result = '';
-            for(let i = 0; i < sequence.length; ++i)
-            {
-                let deriv;
-                if(sequence[i] == '~' && this.models.has(sequence[i + 1]))
-                {
-                    let r = this.getRecursiveModels(
-                    this.models.get(sequence[i + 1]));
-                    deriv = r.result;
-                    count += r.count;
-                }
-                else
-                    deriv = sequence[i];
 
-                if(typeof deriv === 'string')
-                    result += deriv;
-                else
-                    result += deriv[this.RNG.nextRange(0, deriv.length)];
-                
-                count += deriv.length;
-            }
-        }
-        else
-        {
-            result = [];
-            for(let i = 0; i < sequence.length; ++i)
-            {
-                let r = this.getRecursiveModels(sequence[i]);
-                result.push(r.result);
-                count += r.count;
-            }
-        }
-        return {
-            count: count,
-            result: result
-        };
-    }
     /**
      * Derive a sequence from the input string.
      * @param {string} state the input string.
-     * @returns {string} the derivation.
+     * @returns {object} `next`: the starting position to be derived next tick.
+     * `result`: the work completed in the current tick.
      */
     derive(sequence, start = 0)
     {
@@ -1583,16 +1531,20 @@ class LSystem
         };
     }
     /**
-     * Sets the system's seed.
+     * (Deprecated) Sets the system's seed from the outside in.
      * @param {number} seed the seed.
      */
-    set rerollSeed(seed)
+    set seed(seed)
     {
-        this.seed = seed;
         this.userInput.seed = seed;
         this.RNG = new Xorshift(this.seed);
     }
-    getPurged(rules)
+    /**
+     * Purge the rules of empty lines.
+     * @param {string[]} rules rules.
+     * @returns {string[]}
+     */
+    purgeEmpty(rules)
     {
         let result = [];
         let idx = 0;
@@ -1607,11 +1559,15 @@ class LSystem
         }
         return result;
     }
+    /**
+     * Returns a deep copy (hopefully) of the user input to prevent overwrites.
+     * @returns {object}
+     */
     get object()
     {
         return {
             axiom: this.userInput.axiom,
-            rules: this.getPurged(this.userInput.rules),
+            rules: this.purgeEmpty(this.userInput.rules),
             turnAngle: this.userInput.turnAngle,
             seed: this.userInput.seed,
             ignoreList: this.userInput.ignoreList,
@@ -1620,20 +1576,11 @@ class LSystem
     }
     /**
      * Returns the system's string representation.
-     * @returns {string} the string.
+     * @returns {string}
      */
     toString()
     {
-        let result = `${this.axiom} ${this.turnAngle} ${this.seed} ` +
-        `${[...this.ignoreList].join('')}`;
-        for(let [key, value] of this.rules)
-        {
-            if(typeof value === 'string')
-                result += ` ${key}=${value}`;
-            else
-                result += ` ${key}=${value.join(',')}`;
-        }
-        return result;
+        return JSON.stringify(this.userInput, undefined, 4);
     }
 }
 
@@ -2004,8 +1951,7 @@ class Renderer
      */
     set seed(seed)
     {
-        this.system.rerollSeed = seed;
-        this.system.rerollAxiom();
+        this.system.seed = seed;
         this.nextDeriveIdx = 0;
         this.loaded = -1;
         this.loadTarget = this.lv;

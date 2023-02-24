@@ -10,8 +10,6 @@
 
 ## Other considerations
 
-- [ ] Arrange coding streams
-  - Ask if people would be interested
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
@@ -25,14 +23,17 @@
 
 - [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 - [ ] Add more comments in the code
-- [ ] Update docstrings (done up to Quaternion)
+- [ ] Update docstrings (done up to LSystem)
 
 - [ ] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Stochastic in PLSR: has to be on the same line
 
+- [ ] Option to use old tropisme?
+
 - [ ] Parametric systems
   - [ ] New option in constructor for MathExpression variables
+    - [ ] Button in LS menu next to axiom entry
   - Different classes
     - Button in LS menu / save menu to switch modes?
     - Theory settings?
