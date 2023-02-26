@@ -22,7 +22,10 @@
 
 ## 1.0, Mistletoe ed.
 
-- [ ] Option to use old tropisme?
+- Too much hassle to implement, defer them to LG:
+  - [ ] Option to use old tropisme
+  - [ ] Tropism direction
+
 - [ ] Compress internal state? LZW, LZP
   - [ ] Or just separate into multiple lines, with an add button
 

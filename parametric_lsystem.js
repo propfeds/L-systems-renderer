@@ -46,20 +46,20 @@ class ParametricLSystem
         // This is a context ignore list. Turtle ignores all except for Ff.
         this.ignoreList = new Set('FfT+-&^\\/|{.}%~$');
         
-        let rulesMatches = [];
+        let ruleMatches = [];
         for(let i = 0; i < rules.length; ++i)
         {
-            rulesMatches.push([...rules[i].replace(TRIM_SP, '').match(
+            ruleMatches.push([...rules[i].replace(TRIM_SP, '').match(
             LS_RULE)]);
-            // console.log(rulesMatches[i].toString());
+            // console.log(ruleMatches[i].toString());
             // Indices 1, 2, 4+4k, 6+4k are context, condition, derivation and
             // probability respectively
         }
         this.rules = new Map();
-        for(let i = 0; i < rulesMatches.length; ++i)
+        for(let i = 0; i < ruleMatches.length; ++i)
         {
             // [i][1]: context
-            let contextMatch = [...rulesMatches[i][1].match(LS_CONTEXT)];
+            let contextMatch = [...ruleMatches[i][1].match(LS_CONTEXT)];
             // Indices 2, 4, 6, 8, 10, 12 are the symbols and parameters of
             // left, middle, and right respectively
             if(typeof contextMatch[6] === 'undefined')
@@ -102,71 +102,69 @@ class ParametricLSystem
                 switch(pos)
                 {
                     case 'm':
-                        return m[tmpRule.params[v][1]];
+                        if(m)
+                            return m[tmpRule.params[v][1]];
                     case 'l':
-                        return l[tmpRule.params[v][1]];
+                        if(l)
+                            return l[tmpRule.params[v][1]];
                     case 'r':
-                        return r[tmpRule.params[v][1]];
+                        if(r)
+                            return r[tmpRule.params[v][1]];
                 }
                 // MathExpression eval: (v) => rule.paramMap(v, params[l], ...)
             }
 
             // [i][2]: condition
-            tmpRule.condition = MathExpression.parse(rulesMatches[i][2]);
+            tmpRule.condition = MathExpression.parse(ruleMatches[i][2]);
 
             // let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t==0=[+(30)G]F/(180)A(2):0.5,[-(30)G]F\(180)A(2):0.5']);
             // [i][4+4k]: derivation(s)
             // [i][6+4k]: probability
+            // j = 4k
+            for(let j = 0; j + 4 < ruleMatches[i].length; j += 4)
+            {
+                if(typeof ruleMatches[i][j + 4] === 'undefined')
+                    continue;
+
+                let tmpDeriv = this.parseSequence(ruleMatches[i][j + 4]);
+                if(typeof tmpRule.derivations === 'string')
+                {
+                    tmpRule.derivations = [tmpRule.derivations,
+                    tmpDeriv.sequence];
+                    tmpRule.parameters = [tmpRule.parameters, tmpDeriv.params];
+                    if(ruleMatches[i][j + 6])
+                        tmpRule.chances = [tmpRule.chances,
+                        MathExpression.parse(ruleMatches[i][j + 6])];
+                    else
+                        tmpRule.chances = [tmpRule.chances,
+                        MathExpression.parse('1')];
+                }
+                else
+                {
+                    tmpRule.derivations.push(tmpDeriv.sequence);
+                    tmpRule.parameters.push(tmpDeriv.params);
+                    if(ruleMatches[i][j + 6])
+                        tmpRule.chances.push(MathExpression.parse(
+                        ruleMatches[i][j + 6]));
+                    else
+                        tmpRule.chances.push(MathExpression.parse('1'));
+                }
+            }
 
             // Finally, push rule
-            if(!this.rules.has(contextMatch[6]))
-                this.rules.set(contextMatch[6], []);
-            this.rules.get(contextMatch[6]).push(tmpRule);
+            if(contextMatch[6] == '~')
+            {
+                if(!this.models.has(contextMatch[6]))
+                    this.models.set(contextMatch[6], []);
+                this.models.get(contextMatch[6]).push(tmpRule);
+            }
+            else
+            {
+                if(!this.rules.has(contextMatch[6]))
+                    this.rules.set(contextMatch[6], []);
+                this.rules.get(contextMatch[6]).push(tmpRule);
+            }
         }
-
-        /* Probably will not allow multi-line stochastics this time.*/
-        let exampleRules =
-        {
-            'A':
-            [
-                {   // B(b) < A(a) > C(c, d)
-                    left: 'B',
-                    right: 'C',
-                    paramMap: (v, l, m, r) =>
-                    {
-                        let result =
-                        {
-                            'a': m[0],
-                            'b': l[0],
-                            'c': r[0],
-                            'd': r[1]
-                        };
-                        return result[v];
-                    },
-                    condition: 'c + d > 0',
-                    derivations:
-                    [
-                        'AF+-',
-                        'ABC-+'
-                    ],
-                    derivParams:    // these are MathExpressions too
-                    [
-                        ['a', '1', '137.5', undefined],
-                        ['a + 1', 'b + 1', ['c + 1', 'd'], undefined, '137.5']
-                    ],
-                    prob:   // so are these
-                    [   // Weighted system, sum has to be within 1
-                        '0.5 + a',
-                        'one'
-                    ]
-                },
-                {
-                    // ...
-                    cond: true,
-                    // ...
-                }
-            ]
-        };
     }
 
     /**
@@ -200,7 +198,8 @@ class ParametricLSystem
                     }
                     --bracketLvl;
                     if(!bracketLvl)
-                        resultParams.push(sequence.slice(start, i));
+                        resultParams.push(MathExpression.parse(
+                        sequence.slice(start, i)));
                     break;
                 default:
                     if(bracketLvl)

@@ -2398,6 +2398,7 @@ class Renderer
                             break;
                 }
             }
+            // This is what the renderer will do at the end of a loop
             if(!this.backtrackTail || this.stack.length == 0)
             {
                 switch(this.loopMode)
@@ -2411,10 +2412,6 @@ class Renderer
                     case 0:
                         return;
                 }
-            }
-            else if(!this.backtrackTail && this.loopMode == 0)
-            {
-                return;
             }
             else
             {
