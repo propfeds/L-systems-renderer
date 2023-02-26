@@ -10,25 +10,21 @@
 
 ## Other considerations
 
+- [ ] Add more comments in the code
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
 - [ ] Localisation
 - [ ] Folders for saved systems
-- [ ] Compress internal state? LZW, LZP
 - [ ] Ask Gilles about changing the spline used in 3D graph
+- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 
 ## 1.0, Mistletoe ed.
 
-- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
-- [ ] Add more comments in the code
-
-- [ ] Investigate Houdini stochastic syntax for weighted derivations
-`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
-  - Stochastic in PLSR: has to be on the same line
-
 - [ ] Option to use old tropisme?
+- [ ] Compress internal state? LZW, LZP
+  - [ ] Or just separate into multiple lines, with an add button
 
 - [ ] Parametric systems
   - [ ] New option in constructor for MathExpression variables
@@ -47,6 +43,10 @@
   - Round brackets gonna make it hard for actual drawing - although maybe it
   would've been already stripped down by the time it gets to the turtle
   - `~`: Parameters of the following symbol can control model size in rule
+
+- [ ] Investigate Houdini stochastic syntax for weighted derivations
+`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
+  - Stochastic in PLSR: has to be on the same line
 
 - [ ] Context sensitivity
   - `b < a > c → aa`
@@ -127,7 +127,7 @@
     - [x] Hesitate only when the turtle was moved compared to last time?
     - [ ] Does it work with ignored? No
   (because of the ignored stuff)
-  - [ ] The pop in `]` might be a problem if the branch stack has nothing yet?
+  - [x] The pop in `]` might be a problem if the branch stack has nothing yet?
   - [x] Remove the backtrack list option
     - Also, backtrack on the way back and forward needs different lists?
 - [x] Turtle controls summary page in guide

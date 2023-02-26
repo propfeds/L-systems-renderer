@@ -231,6 +231,7 @@ const locStrings =
         labelHesitate: '* Stutter on backtrack: ',
         labelHesitateApex: '* Stutter at apex: ',
         labelHesitateFork: '* Stutter at fork: ',
+        labelOldTropism: '* Alternate tropism method: ',
         labelBTList: '* Backtrack list: ',
         labelRequireReset: '* Modifying this setting will require a reset.',
 
@@ -2402,18 +2403,18 @@ class Renderer
                 switch(this.loopMode)
                 {
                     case 2:
-                        if(!this.backtrackTail)
-                            return;
                         l.buy(1);
                         break;
                     case 1:
-                        if(!this.backtrackTail)
-                            return;
                         this.reset(false);
                         break;
                     case 0:
                         return;
                 }
+            }
+            else if(!this.backtrackTail && this.loopMode == 0)
+            {
+                return;
             }
             else
             {
