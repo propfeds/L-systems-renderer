@@ -25,6 +25,7 @@
 - Too much hassle to implement, defer them to LG:
   - [ ] Option to use old tropisme
   - [ ] Tropism direction
+    - Maybe can have 4 arguments
 
 - [ ] Compress internal state? LZW, LZP
   - [ ] Or just separate into multiple lines, with an add button

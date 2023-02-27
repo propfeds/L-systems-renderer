@@ -1032,10 +1032,14 @@ class LCG
     }
 }
 
+/**
+ * Represents an instance of the Xorshift RNG.
+ */
 class Xorshift
 {
     /**
-     * The state must be initialized to non-zero.
+     * @constructor
+     * @param {number} seed must be initialized to non-zero.
      */
     constructor(seed = 1752)
     {
@@ -1488,7 +1492,7 @@ class LSystem
      * Derive a sequence from the input string. `next` denotes the starting
      * position to be derived next tick. `result` contains the work completed
      * for the current tick.
-     * @param {string} state the input string.
+     * @param {string} sequence the input string.
      * @returns {{next: number, result: string}}
      */
     derive(sequence, start = 0)
