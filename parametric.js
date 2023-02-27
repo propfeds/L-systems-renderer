@@ -6,6 +6,18 @@ var description = 'Get wrecked.';
 var authors = 'propfeds#5988';
 var version = 0;
 
+let time = 0;
+let page = 0;
+let offlineReset = true;
+let gameIsOffline = false;
+let altTerEq = false;
+let tickDelayMode = false;
+let resetLvlOnConstruct = true;
+let measurePerformance = false;
+let debugCamPath = false;
+let maxCharsPerTick = 1000;
+let menuLang = Localization.language;
+
 const TRIM_SP = /\s+/g;
 const LS_RULE = /(.+):(.+)=(([^:]+)(:([^,]+))?)(,([^:]+)(:([^,]+))?)*/;
 // Context doesn't need to check for nested brackets!
@@ -340,7 +352,7 @@ class ParametricLSystem
         this.userInput =
         {
             axiom: axiom,
-            // rules: this.purgeEmpty(rules),
+            rules: this.purgeEmpty(rules),
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
@@ -602,7 +614,9 @@ class ParametricLSystem
         let idxStack = [];
         let ancestors = [];
         let children = [];
-        for(let i = 0; i < sequence.length; ++i)
+        let i;  // Piece of shit Javascript doesn't let me put the let in the
+        // for loop normally.
+        for(i = 0; i < sequence.length; ++i)
         {
             switch(sequence[i])
             {
@@ -655,7 +669,7 @@ class ParametricLSystem
      * @param {string} sequence the input string.
      * @returns {{next: number, result: string}}
      */
-    derive(sequence, seqParams, start = 0)
+    derive(sequence, seqParams, ancestors, children, start = 0)
     {
         let result = '';
         let resultParams = [];
@@ -697,18 +711,111 @@ class ParametricLSystem
                 continue;
             else if(this.rules.has(sequence[i]))
             {
-                // parse
-                a
+                log(i);
+                let tmpRules = this.rules.get(sequence[i]);
+                for(let j = 0; j < tmpRules.length; ++j)
+                {
+                    // Left and right first
+                    if(tmpRules[j].left && tmpRules[j].left !=
+                    sequence[ancestors[i]])
+                        continue;
+
+                    let right = -1;
+                    if(tmpRules[j].right)
+                    {
+                        for(let k = 0; k < children[i].length; ++k)
+                        {
+                            if(tmpRules[j].right == sequence[children[i][k]])
+                            {
+                                right = children[i][k];
+                                break;
+                            }
+                        }
+                        if(right == -1)
+                            continue;
+                    }
+
+                    let tmpParamMap = (v) => tmpRules[j].paramMap(v,
+                    seqParams[ancestors[i]], seqParams[i], seqParams[right]);
+                    // Next up is the condition
+                    if(!tmpRules[j].condition.evaluate(tmpParamMap))
+                        continue;
+
+                    if(typeof tmpRules[j].derivations === 'string')
+                    {
+                        deriv = tmpRules[j].derivations;
+                        if(tmpRules[j].parameters)
+                        {
+                            derivParams = [];
+                            for(let k = 0; k < tmpRules[j].parameters.length;
+                            ++k)
+                            {
+                                if(tmpRules[j].parameters[k])
+                                    derivParams.push(
+                                    tmpRules[j].parameters[k].evaluate(
+                                    tmpParamMap));
+                                else
+                                    derivParams.push(null);
+                            }
+                        }
+                        break;
+                    }
+                    else    // Stochastic time
+                    {
+                        let roll = this.RNG.nextFloat();
+                        let chanceSum = 0;
+                        let choice = -1;
+                        for(let k = 0; k < tmpRules[j].derivations.length; ++k)
+                        {
+                            // Example
+                            // roll: 0.50
+                            // chance 1: 0.00 - 0.49
+                            // sum after 1: 0.50
+                            // chance 2: 0.50 - 0.99
+                            // sum after 2: 1 (select!)
+                            chanceSum += tmpRules[j].chances[k].evaluate(
+                            tmpParamMap);
+                            if(chanceSum > roll)    // select this
+                            {
+                                deriv = tmpRules[j].derivations[k];
+                                log(deriv)
+                                if(tmpRules[j].parameters[k])
+                                {
+                                    derivParams = [];
+                                    log(JSON.stringify(tmpRules[j].parameters[k], undefined, 4))
+                                    for(let l = 0; l < tmpRules[j].
+                                    parameters[k].length; ++l)
+                                    {
+                                        if(tmpRules[j].parameters[k][l])
+                                        {
+                                            let tmpParams = [];
+                                            for(let m = 0; m < tmpRules[j].
+                                            parameters[k][l].length; ++m)
+                                            {
+                                                tmpParams.push(
+                                                tmpRules[j].parameters[k][l][m].
+                                                evaluate(tmpParamMap));
+                                            }
+                                            derivParams.push(tmpParams);
+                                        }
+                                        else
+                                            derivParams.push(null);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        if(choice == -1)
+                            continue;
+                        break;
+                    }
+                }
             }
             else
                 deriv = sequence[i];
 
             result += deriv;
             resultParams.push(derivParams);
-            // if(typeof deriv === 'string')
-            //     result += deriv;
-            // else
-            //     result += deriv[this.RNG.nextRange(0, deriv.length)];
         }
         return {
             next: 0,
@@ -721,6 +828,41 @@ class ParametricLSystem
     {
 
     }
+
+    /**
+     * Purge the rules of empty lines.
+     * @param {string[]} rules rules.
+     * @returns {string[]}
+     */
+    purgeEmpty(rules)
+    {
+        let result = [];
+        let idx = 0;
+        for(let i = 0; i < rules.length; ++i)
+        {
+            // I hope this deep-copies
+            if(rules[i])
+            {
+                result[idx] = rules[i];
+                ++idx;
+            }
+        }
+        return result;
+    }
 }
 
-let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=0=[+(30)G]F/(180)A(2):0.5,[-(30)G]F\\(180)A(2):0.5']);
+let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5']);
+// A(0)
+let a0 = 'A';
+let a0p = [[BigNumber.ZERO]];
+let tmpDeriv = a.derive(a0, a0p, [null], [null], 0);
+let a1 = tmpDeriv.result;
+let a1p = tmpDeriv.params;
+log(a1);
+log(a1p.toString());
+let at1 = a.getAncestree(a1);
+tmpDeriv = a.derive(a1, a1p, at1.ancestors, at1.children, 0);
+let a2 = tmpDeriv.result;
+let a2p = tmpDeriv.params;
+log(a2);
+log(a2p.toString());
