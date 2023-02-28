@@ -261,12 +261,54 @@ const locStrings =
                 contents:
 `Welcome to the Parametric L-systems Renderer! This guide aims to help you ` +
 `understand parametric L-systems in detail, as well as instructions on how ` +
-`to effectively use this theory to construct and render them.
+`to effectively use this theory to construct and render them. Before using ` +
+`the theory however, it is recommended to try out the Classic version first.
 
-Let's start discovering the wonders of L-systems (and the renderer).
+Without further a due, let's start discovering the wonders of L-systems.
 
 Notice: A gallery for regular L-systems has opened! Visit that theory instead.`
             },
+            {
+                title: 'Differences between LSR versions',
+                contents:
+`First of all, the terminology for Level has been changed to Stage.
+That was the only major change.
+
+Anyway. In Parametric, as multiple rules can exist for one symbol, they are ` +
+`checked from top to bottom when deriving, regardless of context or condition.
+This is different from how it was defined in The Algorithmic Beauty of ` +
+`Plants, where rules with a context are prioritised. Therefore, arrange your ` +
+`rules accordingly.
+
+Declaring models now has a different syntax to align more with ` +
+`context-sensitivity:
+~ > {symbol} = {model}
+Referencing a model in another rule still uses the old syntax:
+~{symbol}`
+            },
+            {
+                title: 'Context-sensitivity',
+                contents:
+`One of the main weaknesses in the original L-system syntax comes from the ` +
+`fact that each symbol has no way of interacting with other symbols. This ` +
+`makes it unfit for applications of cellular automata or modelling forms of ` +
+`communication between a plant's organs.
+
+Context-sensitive L-systems allow this to work, by letting a symbol see both ` +
+`its ancestor (the symbol to its immediate left), and its child to the right ` +
+`(children, if it opens up multiple branches). A context-sensitive rule goes ` +
+`as follows:
+{left} < {symbol} > {right} = {derivation}
+The symbol will only derive according to this rule if its ancestor bears the ` +
+`same symbol as {left}, and one of its children bears the same symbol as ` +
+`{right}.
+
+LSR uses a context-sensitive 2L-system, where the 2 means that a context is ` +
+`determined by two symbols: an ancestor and a child.`
+            },
+            {
+                title: 'Example: '
+            }
         ]
     }
 };
@@ -1023,6 +1065,7 @@ class LSystem
             else if(this.rules.has(sequence[i]))
             {
                 let tmpRules = this.rules.get(sequence[i]);
+                let ruleChoice = -1;
                 for(let j = 0; j < tmpRules.length; ++j)
                 {
                     // Left and right first
@@ -1079,6 +1122,7 @@ class LSystem
                                 derivParams.push(derivPi);
                             }
                         }
+                        ruleChoice = j;
                         break;
                     }
                     else    // Stochastic time
@@ -1132,8 +1176,14 @@ class LSystem
                         // log(`roll = ${roll} choice = ${choice}`)
                         if(choice == -1)
                             continue;
+                        ruleChoice = j;
                         break;
                     }
+                }
+                if(ruleChoice == -1)
+                {
+                    deriv = sequence[i];
+                    derivParams = [seqParams[i]];
                 }
             }
             else
@@ -1162,6 +1212,7 @@ class LSystem
         if(this.models.has(symbol))
         {
             let tmpRules = this.models.get(symbol);
+            let ruleChoice = -1;
             for(let j = 0; j < tmpRules.length; ++j)
             {
                 let tmpParamMap = (v) => tmpRules[j].paramMap(v,
@@ -1196,6 +1247,7 @@ class LSystem
                             resultParams.push(derivPi);
                         }
                     }
+                    ruleChoice = j;
                     break;
                 }
                 else    // Stochastic time
@@ -1250,8 +1302,14 @@ class LSystem
                     // log(`roll = ${roll} choice = ${choice}`)
                     if(choice == -1)
                         continue;
+                    ruleChoice = j;
                     break;
                 }
+            }
+            if(ruleChoice == -1)
+            {
+                deriv = sequence[i];
+                derivParams = [seqParams[i]];
             }
         }
         return {

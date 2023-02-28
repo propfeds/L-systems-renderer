@@ -270,7 +270,7 @@ const locStrings =
             {
                 title: 'Introduction',
                 contents:
-`Welcome to the (Classic) L-systems Renderer! This guide aims to help you ` +
+`Welcome to the Classic L-systems Renderer! This guide aims to help you ` +
 `understand the basics of L-systems, as well as instructions on how to ` +
 `effectively use this theory to construct and render them.
 

@@ -18,17 +18,15 @@
 - [ ] Localisation
 - [ ] Folders for saved systems
 - [ ] Ask Gilles about changing the spline used in 3D graph
-- [ ] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
-
-## 1.0, Mistletoe ed.
-
 - Too much hassle to implement, defer them to LG:
   - [ ] Option to use old tropisme
   - [ ] Tropism direction
     - Maybe can have 4 arguments
-
+- [x] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 - [ ] Compress internal state? LZW, LZP
   - [ ] Or just separate into multiple lines, with an add button
+
+## 1.0, Mistletoe ed.
 
 - [ ] Parametric systems
   - [ ] New option in constructor for MathExpression variables
@@ -48,19 +46,18 @@
   would've been already stripped down by the time it gets to the turtle
   - `~`: Parameters of the following symbol can control model size in rule
 
-- [x] Revamp sequence menu
-  - Level 0: 10 chars (`View`)
-  - [x] Classic LS: displays the entire string in a label
-  - Parametric LS: displays symbols and parameters side by side, one symbol/row
-    - Scrapped lol
-  - [x] Stage navigation
+## 1.0: Completed
 
 - [x] Turning angles (and tropism)
   - Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians?
-
-## 1.0: Completed
-
+    - Probably scrap too lol
+- [x] Revamp sequence menu
+  - Level 0: 10 chars (`View`)
+  - [x] Classic LS: displays the entire string in a label
+  - [ ] Parametric LS: displays symbols and params side by side, one symbol/row
+    - Scrapped lol
+  - [x] Stage navigation
 - [x] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Stochastic in PLSR: has to be on the same line
