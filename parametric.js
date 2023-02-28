@@ -449,7 +449,7 @@ class ParametricLSystem
                             break;
                         }
                 }
-                log(`${v} = ${result}`);
+                // log(`${v} = ${result}`);
                 return result;
                 // MathExpression eval: (v) => rule.paramMap(v, params[l], ...)
             }
@@ -729,8 +729,6 @@ class ParametricLSystem
                             continue;
                     }
 
-                    if(typeof seqParams[i] !== 'undefined')
-                    log(seqParams[i].toString())
                     let tmpParamMap = (v) => tmpRules[j].paramMap(v,
                     seqParams[ancestors[i]], seqParams[i], seqParams[right]);
                     // Next up is the condition
@@ -767,7 +765,6 @@ class ParametricLSystem
                     else    // Stochastic time
                     {
                         let roll = this.RNG.nextFloat();
-                        log(`roll = ${roll}`)
                         let chanceSum = 0;
                         let choice = -1;
                         for(let k = 0; k < tmpRules[j].derivations.length; ++k)
@@ -813,7 +810,7 @@ class ParametricLSystem
                                 break;
                             }
                         }
-                        log(`choice = ${choice}`)
+                        // log(`roll = ${roll} choice = ${choice}`)
                         if(choice == -1)
                             continue;
                         break;
@@ -823,7 +820,7 @@ class ParametricLSystem
             else
             {
                 deriv = sequence[i];
-                derivParams = seqParams[i];
+                derivParams = [seqParams[i]];
             }
 
             result += deriv;
@@ -831,7 +828,6 @@ class ParametricLSystem
                 resultParams.push(...derivParams);
             else
                 resultParams.push(derivParams);
-            log(`${i} ${resultParams.length}`)
         }
         return {
             next: 0,
@@ -840,11 +836,22 @@ class ParametricLSystem
         };
     }
 
-    deriveModel(symbol)
+    deriveModel(symbol, symbolParams)
     {
 
     }
 
+    reconstruct(sequence, params)
+    {
+        let result = '';
+        for(let i = 0; i < sequence.length; ++i)
+        {
+            result += sequence[i];
+            if(params[i])
+                result += `(${params[i].join(', ')})`;
+        }
+        return result;
+    }
     /**
      * Purge the rules of empty lines.
      * @param {string[]} rules rules.
@@ -875,11 +882,10 @@ let at0 = a.getAncestree(a0);
 let tmpDeriv = a.derive(a0, a0p, at0.ancestors, at0.children, 0);
 let a1 = tmpDeriv.result;
 let a1p = tmpDeriv.params;
-log(a1);
-log(a1p.toString());
+log(a.reconstruct(a1, a1p));
+
 let at1 = a.getAncestree(a1);
 tmpDeriv = a.derive(a1, a1p, at1.ancestors, at1.children, 0);
 let a2 = tmpDeriv.result;
 let a2p = tmpDeriv.params;
-log(a2);
-log(a2p.toString());
+log(a.reconstruct(a2, a2p));
