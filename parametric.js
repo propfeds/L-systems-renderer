@@ -132,7 +132,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0, Work in Progress',
+        versionName: 'v1.0, Mistletoe ed. (WIP)',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -1572,12 +1572,12 @@ class Renderer
                 if(this.nextDeriveIdx == 0)
                 {
                     this.levels[i] = ret.result;
-                    this.levelParams[i - 1] = ret.params;
+                    this.levelParams[i] = ret.params;
                 }
                 else
                 {
                     this.levels[i] += ret.result;
-                    this.levelParams[i - 1].push(...ret.params);
+                    this.levelParams[i].push(...ret.params);
                 }
 
                 this.nextDeriveIdx = ret.next;
@@ -2232,8 +2232,10 @@ class Renderer
                         {
                             if(this.levels[this.lv][this.i] == 'F' &&
                             this.levelParams[this.lv][this.i])
+                            {
                                 this.forward(this.levelParams[this.lv][this.i][
                                 0].toNumber());
+                            }
                             else
                                 this.forward();
                         }
@@ -2891,7 +2893,2832 @@ let lvlControls, tsControls;
 let drawMeasurer = new Measurer('renderer.draw()', 30);
 let camMeasurer = new Measurer('renderer.camera', 30);
 
-// Start from init
+var init = () =>
+{
+    min = theory.createCurrency(getLoc('currencyTime'));
+    progress = theory.createCurrency('%');
+
+    // l (STAGE)
+    {
+        let getDesc = (level) => Localization.format(getLoc('varLvDesc'),
+        level.toString(), renderer.loopMode == 2 ? '+' : '');
+        let getInfo = (level) => `\\text{Stg. }${level.toString()}`;
+        l = theory.createUpgrade(0, progress, new FreeCost);
+        l.getDescription = (_) => Utils.getMath(getDesc(l.level));
+        l.getInfo = (amount) => Utils.getMathTo(getInfo(l.level),
+        getInfo(l.level + amount));
+        l.canBeRefunded = (_) => true;
+        l.boughtOrRefunded = (_) =>
+        {
+            lvlControls.updateAllButtons();
+            renderer.update(l.level);
+        };
+        lvlControls = new VariableControls(l);
+    }
+    // ts (Tickspeed)
+    {
+        let getDesc = (level) =>
+        {
+            if(tickDelayMode)
+            {
+                if(level == 0)
+                    return getLoc('varTdDescInf');
+                return Localization.format(getLoc('varTdDesc'),
+                (level / 10).toString());
+            }
+            return Localization.format(getLoc('varTsDesc'), level.toString());
+        };
+        let getInfo = (level) => `\\text{Ts=}${level.toString()}/s`;
+        ts = theory.createUpgrade(1, progress, new FreeCost);
+        ts.getDescription = (_) => Utils.getMath(getDesc(ts.level));
+        ts.getInfo = (amount) => Utils.getMathTo(getInfo(ts.level),
+        getInfo(ts.level + amount));
+        ts.maxLevel = 10;
+        ts.canBeRefunded = (_) => true;
+        ts.boughtOrRefunded = (_) =>
+        {
+            tsControls.updateAllButtons();
+            time = 0;
+        };
+        tsControls = new VariableControls(ts, true);
+    }
+
+    theory.createSecretAchievement(0, null,
+        getLoc('saPatienceTitle'),
+        getLoc('saPatienceDesc'),
+        getLoc('saPatienceHint'),
+        () => min.value > 9.6
+    );
+}
+
+var alwaysShowRefundButtons = () => true;
+
+let timeCheck = (elapsedTime) =>
+{
+    let timeLimit;
+    if(tickDelayMode)
+    {
+        time += 1;
+        timeLimit = ts.level;
+    }
+    else
+    {
+        time += elapsedTime;
+        timeLimit = 1 / ts.level;
+    }
+    if(time >= timeLimit - 1e-8)
+    {
+        time -= timeLimit;
+        return true;
+    }
+    return false;
+}
+
+var tick = (elapsedTime, multiplier) =>
+{
+    if(game.isCalculatingOfflineProgress)
+    {
+        gameIsOffline = true;
+        return;
+    }
+    else if(gameIsOffline)
+    {
+        // Triggers only once when reloading
+        if(offlineReset)
+            renderer.reset();
+        gameIsOffline = false;
+    }
+
+    if(measurePerformance)
+        drawMeasurer.stamp();
+
+    if(ts.level == 0)
+    {
+        // Keep updating even when paused
+        renderer.draw(l.level, true);
+    }
+    else
+    {
+        renderer.tick(elapsedTime);
+        renderer.draw(l.level, !timeCheck(elapsedTime));
+    }
+
+    if(measurePerformance)
+        drawMeasurer.stamp();
+
+    let msTime = renderer.elapsedTime;
+    min.value = 1e-8 + msTime[0] + msTime[1] / 100;
+    progress.value = renderer.progressPercent;
+    theory.invalidateTertiaryEquation();
+}
+
+var getEquationOverlay = () =>
+{
+    let overlayText = () => Localization.format(getLoc('equationOverlayLong'),
+    getLoc('versionName'), tmpSystemName, drawMeasurer.windowAvgString,
+    camMeasurer.windowAvgString);
+
+    let result = ui.createLatexLabel
+    ({
+        text: overlayText,
+        margin: new Thickness(5, 4),
+        fontSize: 9,
+        textColor: Color.TEXT_MEDIUM
+    });
+    return result;
+}
+
+let createButton = (label, callback, height = BUTTON_HEIGHT) =>
+{
+    let frame = ui.createFrame
+    ({
+        heightRequest: height,
+        cornerRadius: 1,
+        padding: new Thickness(10, 2),
+        verticalOptions: LayoutOptions.CENTER,
+        content: ui.createLatexLabel
+        ({
+            text: label,
+            verticalTextAlignment: TextAlignment.CENTER,
+            textColor: Color.TEXT
+        }),
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.PRESSED)
+            {
+                frame.borderColor = Color.TRANSPARENT;
+                frame.content.textColor = Color.TEXT_MEDIUM;
+            }
+            else if(e.type == TouchType.SHORTPRESS_RELEASED ||
+            e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT;
+                callback();
+            }
+            else if(e.type == TouchType.CANCELLED)
+            {
+                frame.borderColor = Color.BORDER;
+                frame.content.textColor = Color.TEXT;
+            }
+        },
+        borderColor: Color.BORDER
+    });
+    return frame;
+}
+
+var getUpgradeListDelegate = () =>
+{
+    let openSeqMenu = () =>
+    {
+        let menu = createSequenceMenu();
+        menu.show();
+    };
+    let lvlButton = lvlControls.createVariableButton(openSeqMenu);
+    lvlButton.row = 0;
+    lvlButton.column = 0;
+    let lvlRefund = lvlControls.createRefundButton('–');
+    lvlRefund.column = 0;
+    let lvlBuy = lvlControls.createBuyButton();
+    lvlBuy.column = 1;
+
+    let toggleTDM = () =>
+    {
+        tickDelayMode = !tickDelayMode;
+        tsControls.updateDescription();
+        time = 0;
+    };
+    let tsButton = tsControls.createVariableButton(toggleTDM);
+    tsButton.row = 1;
+    tsButton.column = 0;
+    let tsRefund = tsControls.createRefundButton('–');
+    tsRefund.column = 0;
+    let tsBuy = tsControls.createBuyButton();
+    tsBuy.column = 1;
+
+    let sysButton = createButton(getLoc('btnMenuLSystem'), () =>
+    createSystemMenu().show());
+    sysButton.row = 0;
+    sysButton.column = 0;
+    let cfgButton = createButton(getLoc('btnMenuRenderer'), () =>
+    createConfigMenu().show());
+    cfgButton.row = 0;
+    cfgButton.column = 1;
+    let slButton = createButton(getLoc('btnMenuSave'), () =>
+    createSaveMenu().show());
+    slButton.row = 1;
+    slButton.column = 0;
+    let manualButton = createButton(getLoc('btnMenuManual'), () =>
+    createManualMenu().show());
+    manualButton.row = 1;
+    manualButton.column = 1;
+    let theoryButton = createButton(getLoc('btnMenuTheory'), () =>
+    createWorldMenu().show());
+    theoryButton.row = 2;
+    theoryButton.column = 0;
+    let resumeButton = createButton(Localization.format(getLoc('btnResume'),
+    tmpSystemName), () =>
+    {
+        if(tmpSystem)
+        {
+            renderer.constructSystem = tmpSystem;
+            tmpSystem = null;
+        }
+    }, getMediumBtnSize(ui.screenWidth));
+    resumeButton.content.horizontalOptions = LayoutOptions.CENTER;
+    resumeButton.isVisible = () => tmpSystem ? true : false;
+    resumeButton.margin = new Thickness(0, 0, 0, 2);
+
+    let stack = ui.createScrollView
+    ({
+        padding: new Thickness(6, 8),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                resumeButton,
+                ui.createGrid
+                ({
+                    columnSpacing: 8,
+                    rowSpacing: 6,
+                    rowDefinitions:
+                    [
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT
+                    ],
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        lvlButton,
+                        ui.createGrid
+                        ({
+                            row: 0,
+                            column: 1,
+                            columnSpacing: 7,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                lvlRefund,
+                                lvlBuy
+                            ]
+                        }),
+                        tsButton,
+                        ui.createGrid
+                        ({
+                            row: 1,
+                            column: 1,
+                            columnSpacing: 7,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                tsRefund,
+                                tsBuy
+                            ]
+                        })
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 0,
+                    // margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    columnSpacing: 8,
+                    rowSpacing: 6,
+                    rowDefinitions:
+                    [
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT,
+                        BUTTON_HEIGHT
+                    ],
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        sysButton,
+                        cfgButton,
+                        slButton,
+                        manualButton,
+                        theoryButton
+                    ]
+                })
+            ]
+        })
+    });
+    return stack;
+}
+
+let createConfigMenu = () =>
+{
+    let tmpZE = renderer.figScaleStr;
+    let zoomEntry = ui.createEntry
+    ({
+        text: tmpZE,
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpZE = nt;
+        }
+    });
+    let tmpCM = renderer.cameraMode;
+    let CMLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelCamMode'),
+        getLoc('camModes')[tmpCM]),
+        row: 1,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let CMSlider = ui.createSlider
+    ({
+        row: 1,
+        column: 1,
+        minimum: 0,
+        maximum: 2,
+        value: tmpCM,
+        onValueChanged: () =>
+        {
+            tmpCM = Math.round(CMSlider.value);
+            CMSlider.isToggled = tmpCM > 0;
+            camLabel.isVisible = tmpCM == 0;
+            camGrid.isVisible = tmpCM == 0;
+            camOffLabel.isVisible = tmpCM == 0;
+            camOffGrid.isVisible = tmpCM == 0;
+            FFLabel.isVisible = tmpCM > 0;
+            FFEntry.isVisible = tmpCM > 0;
+            CMLabel.text = Localization.format(getLoc('labelCamMode'),
+            getLoc('camModes')[tmpCM]);
+                
+        },
+        onDragCompleted: () =>
+        {
+            Sound.playClick();
+            CMSlider.value = tmpCM;
+        }
+    });
+    let tmpCX = renderer.camXStr;
+    let tmpCY = renderer.camYStr;
+    let tmpCZ = renderer.camZStr;
+    let camLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelCamCentre'),
+        isVisible: tmpCM == 0,
+        row: 2,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let camGrid = ui.createEntry
+    ({
+        text: tmpCX,
+        isVisible: tmpCM == 0,
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCX = nt;
+        }
+    });
+    let CYEntry = ui.createEntry
+    ({
+        text: tmpCY,
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCY = nt;
+        }
+    });
+    let camOffLabel = ui.createGrid
+    ({
+        row: 3,
+        column: 0,
+        columnDefinitions: ['40*', '30*'],
+        isVisible: tmpCM == 0,
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelCamOffset'),
+                row: 0,
+                column: 0,
+                // horizontalTextAlignment: TextAlignment.END,
+                verticalTextAlignment: TextAlignment.CENTER
+            }),
+            CYEntry
+        ]
+    });
+    let camOffGrid = ui.createEntry
+    ({
+        text: tmpCZ,
+        isVisible: tmpCM == 0,
+        row: 3,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCZ = nt;
+        }
+    });
+    let tmpFF = renderer.followFactor;
+    let FFLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelFollowFactor'),
+        row: 2,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER,
+        isVisible: tmpCM > 0
+    });
+    let FFEntry = ui.createEntry
+    ({
+        text: tmpFF.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        isVisible: tmpCM > 0,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpFF = Number(nt);
+        }
+    });
+    let tmpUpright = renderer.upright;
+    let uprightSwitch = ui.createSwitch
+    ({
+        isToggled: tmpUpright,
+        row: 4,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+            e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpUpright = !tmpUpright;
+                uprightSwitch.isToggled = tmpUpright;
+            }
+        }
+    });
+    let tmpLM = renderer.loopMode;
+    let LMLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelLoopMode'),
+        getLoc('loopModes')[tmpLM]),
+        row: 0,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let LMSlider = ui.createSlider
+    ({
+        row: 0,
+        column: 1,
+        minimum: 0,
+        maximum: 2,
+        value: tmpLM,
+        // minimumTrackColor: Color.BORDER,
+        // maximumTrackColor: Color.TRANSPARENT,
+        // thumbImageSource: ImageSource.UPGRADES,
+        onValueChanged: () =>
+        {
+            tmpLM = Math.round(LMSlider.value);
+            LMLabel.text = Localization.format(getLoc('labelLoopMode'),
+            getLoc('loopModes')[tmpLM]);
+        },
+        onDragCompleted: () =>
+        {
+            Sound.playClick();
+            LMSlider.value = tmpLM;
+        }
+    });
+    let tmpTail = renderer.backtrackTail;
+    let tailSwitch = ui.createSwitch
+    ({
+        isToggled: tmpTail,
+        row: 1,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpTail = !tmpTail;
+                tailSwitch.isToggled = tmpTail;
+            }
+        }
+    });
+    let tmpModel = renderer.loadModels;
+    let modelLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelLoadModels'),
+        row: 2,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let modelSwitch = ui.createSwitch
+    ({
+        isToggled: tmpModel,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpModel = !tmpModel;
+                modelSwitch.isToggled = tmpModel;
+            }
+        }
+    });
+    let tmpQD = renderer.quickDraw;
+    let QDSwitch = ui.createSwitch
+    ({
+        isToggled: tmpQD,
+        row: 0,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpQD = !tmpQD;
+                QDSwitch.isToggled = tmpQD;
+            }
+        }
+    });
+    let tmpQB = renderer.quickBacktrack;
+    let QBSwitch = ui.createSwitch
+    ({
+        isToggled: tmpQB,
+        row: 1,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpQB = !tmpQB;
+                QBSwitch.isToggled = tmpQB;
+            }
+        }
+    });
+    let tmpHesA = renderer.hesitateApex;
+    let hesALabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelHesitateApex'),
+        row: 2,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let hesASwitch = ui.createSwitch
+    ({
+        isToggled: tmpHesA,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpHesA = !tmpHesA;
+                hesASwitch.isToggled = tmpHesA;
+            }
+        }
+    });
+    let tmpHesN = renderer.hesitateFork;
+    let hesNLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelHesitateFork'),
+        row: 3,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let hesNSwitch = ui.createSwitch
+    ({
+        isToggled: tmpHesN,
+        row: 3,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpHesN = !tmpHesN;
+                hesNSwitch.isToggled = tmpHesN;
+            }
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuRenderer'),
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createScrollView
+                ({
+                    heightRequest: ui.screenHeight * 0.36,
+                    content: ui.createStackLayout
+                    ({
+                        children:
+                        [
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelFigScale'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    zoomEntry,
+                                    CMLabel,
+                                    CMSlider,
+                                    camLabel,
+                                    camGrid,
+                                    camOffLabel,
+                                    camOffGrid,
+                                    FFLabel,
+                                    FFEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelUpright'),
+                                        row: 4,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    uprightSwitch,
+                                ]
+                            }),
+                            ui.createBox
+                            ({
+                                heightRequest: 1,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createGrid
+                            ({
+                                rowDefinitions:
+                                [
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT
+                                ],
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    LMLabel,
+                                    LMSlider,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelBTTail'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    tailSwitch,
+                                    modelLabel,
+                                    modelSwitch
+                                ]
+                            }),
+                            ui.createBox
+                            ({
+                                heightRequest: 1,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createGrid
+                            ({
+                                rowDefinitions:
+                                [
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT,
+                                    SMALL_BUTTON_HEIGHT
+                                ],
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelQuickdraw'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    QDSwitch,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelQuickBT'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    QBSwitch,
+                                    hesALabel,
+                                    hesASwitch,
+                                    hesNLabel,
+                                    hesNSwitch
+                                ]
+                            })
+                        ]
+                    })
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createLatexLabel
+                ({
+                    text: getLoc('labelRequireReset'),
+                    margin: new Thickness(0, 0, 0, 4),
+                    verticalTextAlignment: TextAlignment.CENTER
+                }),
+                ui.createGrid
+                ({
+                    minimumHeightRequest: BUTTON_HEIGHT,
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: getLoc('btnSave'),
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.configure(tmpZE, tmpCM, tmpCX, tmpCY,
+                                tmpCZ, tmpFF, tmpLM, tmpUpright, tmpQD, tmpQB,
+                                tmpModel, tmpTail, tmpHesA, tmpHesN);
+                                lvlControls.updateDescription();
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnDefault'),
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let rx = new Renderer();
+                                zoomEntry.text = rx.figScaleStr;
+                                CMSlider.value = rx.cameraMode;
+                                camGrid.text = rx.camXStr;
+                                CYEntry.text = rx.camYStr;
+                                camOffGrid.text = rx.camZStr;
+                                FFEntry.text = rx.followFactor.toString();
+                                LMSlider.value = rx.loopMode;
+                                tmpUpright = rx.upright;
+                                uprightSwitch.isToggled = rx.upright;
+                                tmpQD = rx.quickDraw;
+                                QDSwitch.isToggled = rx.quickDraw;
+                                tmpQB = rx.quickBacktrack;
+                                QBSwitch.isToggled = rx.quickBacktrack;
+                                tmpModel = rx.loadModels;
+                                modelSwitch.isToggled = rx.loadModels;
+                                tmpTail = rx.backtrackTail;
+                                tailSwitch.isToggled = rx.backtrackTail;
+                                tmpHesA = rx.hesitateApex;
+                                hesASwitch.isToggled = rx.hesitateApex;
+                                tmpHesN = rx.hesitateFork;
+                                hesNSwitch.isToggled = rx.hesitateFork;
+                                lvlControls.updateDescription();
+                                // menu.hide();
+                            }
+                        })
+                    ]
+                })
+            ]
+        })
+    })
+    return menu;
+}
+
+let createSystemMenu = () =>
+{
+    let values = renderer.system.object;
+    let tmpAxiom = values.axiom;
+    let axiomEntry = ui.createEntry
+    ({
+        text: tmpAxiom,
+        row: 0,
+        column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAxiom = nt;
+        }
+    });
+    let tmpAngle = values.turnAngle || '0';
+    let angleEntry = ui.createEntry
+    ({
+        text: tmpAngle.toString(),
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAngle = nt;
+        }
+    });
+    let tmpRules = values.rules;
+    let ruleEntries = [];
+    let ruleMoveBtns = [];
+    for(let i = 0; i < tmpRules.length; ++i)
+    {
+        ruleEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 0,
+            text: tmpRules[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpRules[i] = nt;
+            }
+        }));
+        if(i)
+        {
+            ruleMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 1,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpRule = ruleEntries[i].text;
+                    ruleEntries[i].text = ruleEntries[i - 1].text;
+                    ruleEntries[i - 1].text = tmpRule;
+                }
+            }));
+        }
+    }
+    let rulesLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let ruleStack = ui.createGrid
+    ({
+        columnDefinitions: ['7*', '1*'],
+        children: [...ruleEntries, ...ruleMoveBtns]
+    });
+    let addRuleButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = ruleEntries.length;
+            ruleEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 0,
+                text: '',
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpRules[i] = nt;
+                }
+            }));
+            if(i)
+            {
+                ruleMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 1,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpRule = ruleEntries[i].text;
+                        ruleEntries[i].text = ruleEntries[i - 1].text;
+                        ruleEntries[i - 1].text = tmpRule;
+                    }
+                }));
+            }
+            rulesLabel.text = Localization.format(getLoc('labelRules'),
+            ruleEntries.length);
+            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
+        }
+    });
+    let tmpIgnore = values.ignoreList;
+    let ignoreEntry = ui.createEntry
+    ({
+        text: tmpIgnore,
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpIgnore = nt;
+        }
+    });
+    let tmpTropism = values.tropism || '0';
+    let tropismEntry = ui.createEntry
+    ({
+        text: tmpTropism.toString(),
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpTropism = nt;
+        }
+    });
+    let tmpSeed = values.seed || '0';
+    let seedLabel = ui.createGrid
+    ({
+        row: 3,
+        column: 0,
+        columnDefinitions: ['40*', '30*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelSeed'),
+                column: 0,
+                verticalTextAlignment: TextAlignment.CENTER
+            }),
+            ui.createButton
+            ({
+                text: getLoc('btnReroll'),
+                column: 1,
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    seedEntry.text = globalRNG.nextInt.toString();
+                }
+            })
+        ]
+    });
+    let seedEntry = ui.createEntry
+    ({
+        text: tmpSeed.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 3,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSeed = Number(nt);
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuLSystem'),
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createScrollView
+                ({
+                    content: ui.createStackLayout
+                    ({
+                        children:
+                        [
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['20*', '80*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelAxiom'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    axiomEntry,
+                                ]
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    rulesLabel,
+                                    addRuleButton
+                                ]
+                            }),
+                            ruleStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelIgnored'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    ignoreEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelAngle'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    angleEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelTropism'),
+                                        row: 2,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    tropismEntry,
+                                    seedLabel,
+                                    seedEntry
+                                ]
+                            })
+                        ]
+                    })
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    minimumHeightRequest: BUTTON_HEIGHT,
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: getLoc('btnConstruct'),
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.constructSystem = new LSystem(tmpAxiom,
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore,
+                                tmpTropism);
+                                if(tmpSystem)
+                                {
+                                    tmpSystem = null;
+                                    tmpSystemName = getLoc('defaultSystemName');
+                                    tmpSystemDesc = getLoc('noDescription');
+                                }
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnClear'),
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let values = new LSystem().object;
+                                axiomEntry.text = values.axiom;
+                                angleEntry.text = values.turnAngle;
+                                tmpRules = values.rules;
+                                ruleEntries = [];
+                                rulesLabel.text = Localization.format(
+                                getLoc('labelRules'), ruleEntries.length);
+                                ruleStack.children = ruleEntries;
+                                ignoreEntry.text = values.ignoreList;
+                                tropismEntry.text = values.tropism;
+                                seedEntry.text = values.seed.toString();
+                            }
+                        })
+                    ]
+                })
+            ]
+        })
+    })
+    return menu;
+}
+
+let createNamingMenu = () =>
+{
+    let tmpName = tmpSystemName;
+    let nameEntry = ui.createEntry
+    ({
+        text: tmpName,
+        row: 0,
+        column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpName = nt;
+        }
+    });
+    let tmpDesc = tmpSystemDesc;
+    let descEntry = ui.createEntry
+    ({
+        text: tmpDesc,
+        row: 0,
+        column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpDesc = nt;
+        }
+    });
+
+    let getSystemGrid = () =>
+    {
+        let children = [];
+        let i = 0;
+        for(let [key, value] of savedSystems)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: key,
+                row: i,
+                column: 0,
+                verticalTextAlignment: TextAlignment.CENTER
+            }));
+            let btnO = createOverwriteButton(key);
+            btnO.row = i;
+            children.push(btnO);
+            ++i;
+        }
+        return children;
+    };
+    let createOverwriteButton = (title) =>
+    {
+        let btn = ui.createButton
+        ({
+            text: getLoc('btnOverwrite'),
+            row: 0,
+            column: 1,
+            heightRequest: SMALL_BUTTON_HEIGHT,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                savedSystems.set(title, {
+                    desc: savedSystems.get(title).desc,
+                    system: renderer.system.object,
+                    config: renderer.staticCamera
+                });
+                tmpSystemName = title;
+                tmpSystemDesc = savedSystems.get(title).desc;
+                menu.hide();
+            }
+        });
+        return btn;
+    };
+    let systemGrid = ui.createGrid
+    ({
+        columnDefinitions: ['70*', '30*'],
+        verticalOptions: LayoutOptions.START,
+        children: getSystemGrid() 
+    });
+    let systemGridScroll = ui.createScrollView
+    ({
+        heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+        Math.min(ui.screenHeight * 0.2, systemGrid.height)),
+        content: systemGrid
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuNaming'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['30*', '70*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelName'),
+                            row: 0,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        nameEntry
+                    ]
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['30*', '70*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelDesc'),
+                            row: 0,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        descEntry
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createLatexLabel
+                ({
+                    text: Localization.format(getLoc('labelSavedSystems'),
+                    savedSystems.size),
+                    // horizontalTextAlignment: TextAlignment.CENTER,
+                    verticalTextAlignment: TextAlignment.CENTER,
+                    margin: new Thickness(0, 12)
+                }),
+                systemGridScroll,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: getLoc('btnSave'),
+                    row: 0,
+                    column: 1,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        while(savedSystems.has(tmpName))
+                            tmpName += getLoc('duplicateSuffix');
+                        savedSystems.set(tmpName, {
+                            desc: tmpDesc,
+                            system: renderer.system.object,
+                            config: renderer.staticCamera
+                        });
+                        tmpSystemName = tmpName;
+                        tmpSystemDesc = tmpDesc;
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createSystemClipboardMenu = (values) =>
+{
+    let tmpSys = values;
+    let sysEntry = ui.createEntry
+    ({
+        text: tmpSys,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSys = nt;
+            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
+        }
+    });
+    let warningEntry = ui.createLatexLabel
+    ({
+        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
+        text: Localization.format(getLoc('labelEntryCharLimit'),
+        ENTRY_CHAR_LIMIT),
+        margin: new Thickness(0, 0, 0, 4),
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuClipboard'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                sysEntry,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                warningEntry,
+                ui.createButton
+                ({
+                    text: getLoc('btnConstruct'),
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let sv = JSON.parse(tmpSys);
+                        tmpSystemName = sv.title;
+                        tmpSystemDesc = sv.desc;
+                        renderer.constructSystem = new LSystem(sv.system.axiom,
+                        sv.system.rules, sv.system.turnAngle,
+                        sv.system.seed, sv.system.ignoreList,
+                        sv.system.tropism);
+                        tmpSystem = null;
+                        if('config' in sv)
+                            renderer.configureStaticCamera(...sv.config);
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createStateClipboardMenu = (values) =>
+{
+    let tmpState = values;
+    let sysEntry = ui.createEntry
+    ({
+        text: tmpState,
+        // clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpState = nt;
+            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
+        }
+    });
+    let warningEntry = ui.createLatexLabel
+    ({
+        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
+        text: Localization.format(getLoc('labelEntryCharLimit'),
+        ENTRY_CHAR_LIMIT),
+        margin: new Thickness(0, 0, 0, 4),
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuClipboard'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                sysEntry,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                warningEntry,
+                ui.createButton
+                ({
+                    text: getLoc('btnImport'),
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        setInternalState(tmpState);
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createViewMenu = (title, parentMenu) =>
+{
+    let systemObj = savedSystems.get(title);
+    let values = systemObj.system;
+    let tmpDesc = systemObj.desc;
+    if(!tmpDesc)
+        tmpDesc = getLoc('noDescription');
+    let rendererValues = systemObj.config;
+    let tmpZE = rendererValues[0];
+    let tmpCX = rendererValues[1];
+    let tmpCY = rendererValues[2];
+    let tmpCZ = rendererValues[3];
+    let tmpUpright = rendererValues[4];
+
+    let zoomEntry = ui.createEntry
+    ({
+        text: tmpZE,
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpZE = nt;
+        }
+    });
+    let camLabel = ui.createLatexLabel
+    ({
+        text: getLoc('labelCamCentre'),
+        row: 1,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let camGrid = ui.createEntry
+    ({
+        text: tmpCX,
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCX = nt;
+        }
+    });
+    let camOffLabel = ui.createGrid
+    ({
+        row: 2,
+        column: 0,
+        columnDefinitions: ['40*', '30*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelCamOffset'),
+                row: 0,
+                column: 0,
+                // horizontalTextAlignment: TextAlignment.END,
+                verticalTextAlignment: TextAlignment.CENTER
+            }),
+            ui.createEntry
+            ({
+                text: tmpCY,
+                row: 0,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.END,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpCY = nt;
+                }
+            })
+        ]
+    });
+    let camOffGrid = ui.createEntry
+    ({
+        text: tmpCZ,
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCZ = nt;
+        }
+    });
+    let uprightSwitch = ui.createSwitch
+    ({
+        isToggled: tmpUpright,
+        row: 3,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+            e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpUpright = !tmpUpright;
+                uprightSwitch.isToggled = tmpUpright;
+            }
+        }
+    });
+
+    let tmpAxiom = values.axiom;
+    let axiomEntry = ui.createEntry
+    ({
+        text: tmpAxiom,
+        row: 0,
+        column: 1,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAxiom = nt;
+        }
+    });
+    let tmpAngle = values.turnAngle || '0';
+    let angleEntry = ui.createEntry
+    ({
+        text: tmpAngle.toString(),
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAngle = nt;
+        }
+    });
+    let tmpRules = [];
+    for(let i = 0; i < values.rules.length; ++i)
+        tmpRules[i] = values.rules[i];
+    let ruleEntries = [];
+    let ruleMoveBtns = [];
+    for(let i = 0; i < tmpRules.length; ++i)
+    {
+        ruleEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 0,
+            text: tmpRules[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpRules[i] = nt;
+            }
+        }));
+        if(i)
+        {
+            ruleMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 1,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpRule = ruleEntries[i].text;
+                    ruleEntries[i].text = ruleEntries[i - 1].text;
+                    ruleEntries[i - 1].text = tmpRule;
+                }
+            }));
+        }
+    }
+    let rulesLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let ruleStack = ui.createGrid
+    ({
+        columnDefinitions: ['7*', '1*'],
+        children: [...ruleEntries, ...ruleMoveBtns]
+    });
+    let addRuleButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = ruleEntries.length;
+            ruleEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 0,
+                text: '',
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpRules[i] = nt;
+                }
+            }));
+            if(i)
+            {
+                ruleMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 1,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpRule = ruleEntries[i].text;
+                        ruleEntries[i].text = ruleEntries[i - 1].text;
+                        ruleEntries[i - 1].text = tmpRule;
+                    }
+                }));
+            }
+            rulesLabel.text = Localization.format(getLoc('labelRules'),
+            ruleEntries.length);
+            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
+        }
+    });
+    let tmpIgnore = values.ignoreList;
+    let ignoreEntry = ui.createEntry
+    ({
+        text: tmpIgnore,
+        row: 0,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpIgnore = nt;
+        }
+    });
+    let tmpTropism = values.tropism || '0';
+    let tropismEntry = ui.createEntry
+    ({
+        text: tmpTropism.toString(),
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpTropism = nt;
+        }
+    });
+    let tmpSeed = values.seed || '0';
+    let seedLabel = ui.createGrid
+    ({
+        row: 3,
+        column: 0,
+        columnDefinitions: ['40*', '30*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelSeed'),
+                column: 0,
+                verticalTextAlignment: TextAlignment.CENTER
+            }),
+            ui.createButton
+            ({
+                text: getLoc('btnReroll'),
+                column: 1,
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    seedEntry.text = globalRNG.nextInt.toString();
+                }
+            })
+        ]
+    });
+    let seedEntry = ui.createEntry
+    ({
+        text: tmpSeed.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 3,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpSeed = Number(nt);
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: title,
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createScrollView
+                ({
+                    // heightRequest: ui.screenHeight * 0.32,
+                    content: ui.createStackLayout
+                    ({
+                        children:
+                        [
+                            ui.createLatexLabel
+                            ({
+                                text: tmpDesc,
+                                margin: new Thickness(0, 6),
+                                horizontalTextAlignment: TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['20*', '80*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelAxiom'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    axiomEntry,
+                                ]
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    rulesLabel,
+                                    addRuleButton
+                                ]
+                            }),
+                            ruleStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelIgnored'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    ignoreEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelAngle'),
+                                        row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    angleEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelTropism'),
+                                        row: 2,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    tropismEntry,
+                                    seedLabel,
+                                    seedEntry
+                                ]
+                            }),
+                            ui.createBox
+                            ({
+                                heightRequest: 1,
+                                margin: new Thickness(0, 6)
+                            }),
+                            ui.createLatexLabel
+                            ({
+                                text: getLoc('labelApplyCamera'),
+                                // horizontalTextAlignment:
+                                // TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER,
+                                margin: new Thickness(0, 9)
+                            }),
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelFigScale'),
+                                        row: 0,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    zoomEntry,
+                                    camLabel,
+                                    camGrid,
+                                    camOffLabel,
+                                    camOffGrid,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelUpright'),
+                                        row: 3,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    uprightSwitch
+                                ]
+                            })
+                        ]
+                    })
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    minimumHeightRequest: BUTTON_HEIGHT,
+                    columnDefinitions: ['30*', '30*', '30*'],
+                    children:
+                    [
+                        ui.createButton
+                        ({
+                            text: getLoc('btnConstruct'),
+                            row: 0,
+                            column: 0,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                renderer.constructSystem = new LSystem(tmpAxiom,
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore,
+                                tmpTropism);
+                                tmpSystem = null;
+                                renderer.configureStaticCamera(tmpZE, tmpCX,
+                                tmpCY, tmpCZ, tmpUpright);
+                                tmpSystemName = title;
+                                tmpSystemDesc = tmpDesc;
+                                parentMenu.hide();
+                                menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnSave'),
+                            row: 0,
+                            column: 1,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                savedSystems.set(title,
+                                {
+                                    desc: tmpDesc,
+                                    system: new LSystem(tmpAxiom, tmpRules,
+                                    tmpAngle, tmpSeed, tmpIgnore, tmpTropism).
+                                    object,
+                                    config: [tmpZE, tmpCX, tmpCY, tmpCZ,
+                                    tmpUpright]
+                                });
+                                // menu.hide();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnDelete'),
+                            row: 0,
+                            column: 2,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                savedSystems.delete(title);
+                                menu.hide();
+                            }
+                        })
+                    ]
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createSaveMenu = () =>
+{
+    let savedSystemsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelSavedSystems'),
+        savedSystems.size),
+        // horizontalTextAlignment: TextAlignment.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let getSystemGrid = () =>
+    {
+        let children = [];
+        let i = 0;
+        for(let [key, value] of savedSystems)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: key,
+                row: i,
+                column: 0,
+                verticalTextAlignment: TextAlignment.CENTER
+            }));
+            let btn = createViewButton(key);
+            btn.row = i;
+            btn.column = 1;
+            children.push(btn);
+            ++i;
+        }
+        savedSystemsLabel.text = Localization.format(
+        getLoc('labelSavedSystems'), savedSystems.size);
+        return children;
+    };
+    let createViewButton = (title) =>
+    {
+        let btn = ui.createButton
+        ({
+            text: getLoc('btnView'),
+            row: 0,
+            column: 1,
+            heightRequest: SMALL_BUTTON_HEIGHT,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                let viewMenu = createViewMenu(title, menu);
+                viewMenu.onDisappearing = () =>
+                {
+                    systemGrid.children = getSystemGrid();
+                };
+                viewMenu.show();
+            }
+        });
+        return btn;
+    };
+    let systemGrid = ui.createGrid
+    ({
+        columnDefinitions: ['70*', '30*'],
+        verticalOptions: LayoutOptions.START,
+        children: getSystemGrid()
+    });
+    let systemGridScroll = ui.createScrollView
+    ({
+        heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+        Math.min(ui.screenHeight * 0.32, systemGrid.height)),
+        content: systemGrid
+    });
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuSave'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['40*', '30*', '30*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelCurrentSystem'),
+                            row: 0,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnClipboard'),
+                            row: 0,
+                            column: 1,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
+                            onClicked: () =>
+                            {
+                                let clipMenu = createSystemClipboardMenu(
+                                JSON.stringify(
+                                {
+                                    title: tmpSystemName,
+                                    desc: tmpSystemDesc,
+                                    system: renderer.system.object,
+                                    config: renderer.staticCamera
+                                }));
+                                clipMenu.show();
+                            }
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnSave'),
+                            row: 0,
+                            column: 2,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
+                            onClicked: () =>
+                            {
+                                Sound.playClick();
+                                let namingMenu = createNamingMenu();
+                                namingMenu.onDisappearing = () =>
+                                {
+                                    systemGrid.children = getSystemGrid();
+                                };
+                                namingMenu.show();
+                            }
+                        })
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                savedSystemsLabel,
+                systemGridScroll
+            ]
+        })
+    });
+    return menu;
+}
+
+let createManualMenu = () =>
+{
+    let manualPages = getLoc('manual');
+
+    let pageTitle = ui.createLatexLabel
+    ({
+        text: manualPages[page].title,
+        margin: new Thickness(0, 4),
+        heightRequest: 20,
+        horizontalTextAlignment: TextAlignment.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let pageContents = ui.createLabel
+    ({
+        fontFamily: FontFamily.CMU_REGULAR,
+        fontSize: 16,
+        text: manualPages[page].contents
+    });
+    let sourceEntry = ui.createEntry
+    ({
+        row: 0,
+        column: 1,
+        text: 'source' in manualPages[page] ? manualPages[page].source : ''
+    });
+    let sourceGrid = ui.createGrid
+    ({
+        isVisible: 'source' in manualPages[page],
+        columnDefinitions: ['20*', '80*'],
+        children:
+        [
+            ui.createLatexLabel
+            ({
+                text: getLoc('labelSource'),
+                row: 0,
+                column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalTextAlignment: TextAlignment.CENTER
+            }),
+            sourceEntry
+        ]
+    });
+    let prevButton = ui.createButton
+    ({
+        text: getLoc('btnPrev'),
+        row: 0,
+        column: 0,
+        isVisible: page > 0,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            if(page > 0)
+                setPage(page - 1);
+        }
+    });
+    let constructButton = ui.createButton
+    ({
+        text: getLoc('btnConstruct'),
+        row: 0,
+        column: 1,
+        isVisible: page in manualSystems,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let s = manualSystems[page];
+            renderer.constructSystem = s.system;
+            tmpSystem = null;
+            if('config' in s)
+                renderer.configureStaticCamera(...s.config);
+
+            tmpSystemName = manualPages[page].title;
+            tmpSystemDesc = Localization.format(
+            getLoc('manualSystemDesc'), page + 1);
+            menu.hide();
+        }
+    });
+    let tocButton = ui.createButton
+    ({
+        text: getLoc('btnContents'),
+        row: 0,
+        column: 1,
+        isVisible: !(page in manualSystems),
+        onClicked: () =>
+        {
+            Sound.playClick();
+            TOCMenu.show();
+        }
+    });
+    let nextButton = ui.createButton
+    ({
+        text: getLoc('btnNext'),
+        row: 0,
+        column: 2,
+        isVisible: page < manualPages.length - 1,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            if(page < manualPages.length - 1)
+                setPage(page + 1);
+        }
+    });
+    let setPage = (p) =>
+    {
+        page = p;
+        menu.title = Localization.format(
+            getLoc('menuManual'), page + 1,
+            getLoc('manual').length
+        );
+        pageTitle.text = manualPages[page].title;
+        pageContents.text =
+        manualPages[page].contents;
+        
+        sourceGrid.isVisible = 'source' in
+        manualPages[page];
+        sourceEntry.text = 'source' in
+        manualPages[page] ?
+        manualPages[page].source : '';
+
+        prevButton.isVisible = page > 0;
+        nextButton.isVisible = page < manualPages.length - 1;
+        constructButton.isVisible = page in manualSystems;
+        tocButton.isVisible = !(page in manualSystems);
+    };
+    let getContentsTable = () =>
+    {
+        let children = [];
+        for(let i = 0; i < contentsTable.length; ++i)
+        {
+            children.push(ui.createLatexLabel
+            ({
+                text: manualPages[contentsTable[i]].title,
+                row: i,
+                column: 0,
+                verticalTextAlignment: TextAlignment.CENTER
+            }));
+            children.push(ui.createButton
+            ({
+                text: Localization.format(getLoc('btnPage'),
+                contentsTable[i] + 1),
+                row: i,
+                column: 1,
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    setPage(contentsTable[i]);
+                    TOCMenu.hide();
+                }
+            }));
+        }
+        return children;
+    };
+    let TOCMenu = ui.createPopup
+    ({
+        title: getLoc('menuTOC'),
+        content: ui.createScrollView
+        ({
+            heightRequest: ui.screenHeight * 0.36,
+            content: ui.createGrid
+            ({
+                columnDefinitions: ['80*', '20*'],
+                children: getContentsTable()
+            })
+        })
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: Localization.format(getLoc('menuManual'), page + 1,
+        getLoc('manual').length),
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                pageTitle,
+                ui.createFrame
+                ({
+                    padding: new Thickness(8, 6),
+                    heightRequest: ui.screenHeight * 0.32,
+                    content: ui.createScrollView
+                    ({
+                        content: ui.createStackLayout
+                        ({
+                            children:
+                            [
+                                pageContents,
+                                sourceGrid
+                            ]
+                        })
+                    })
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['30*', '30*', '30*'],
+                    children:
+                    [
+                        prevButton,
+                        constructButton,
+                        tocButton,
+                        nextButton
+                    ]
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createSeqViewMenu = (level) =>
+{
+    let pageTitle = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelChars'),
+        renderer.levels[level].length),
+        margin: new Thickness(0, 4),
+        heightRequest: 20,
+        horizontalTextAlignment: TextAlignment.CENTER,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let pageContents = ui.createLabel
+    ({
+        fontFamily: FontFamily.CMU_REGULAR,
+        fontSize: 16,
+        text: renderer.system.reconstruct(renderer.levels[level],
+        renderer.levelParams[level]),
+        lineBreakMode: LineBreakMode.CHARACTER_WRAP
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: Localization.format(getLoc('menuSequence'), tmpSystemName,
+        level),
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                pageTitle,
+                ui.createFrame
+                ({
+                    padding: new Thickness(8, 6),
+                    heightRequest: ui.screenHeight * 0.28,
+                    content: ui.createScrollView
+                    ({
+                        content: ui.createStackLayout
+                        ({
+                            children:
+                            [
+                                pageContents
+                            ]
+                        })
+                    })
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createSequenceMenu = () =>
+{
+    let tmpLvls = [];
+    for(let i = 0; i < renderer.levels.length; ++i)
+    {
+        tmpLvls.push(ui.createLatexLabel
+        ({
+            text: Localization.format(getLoc('labelLevelSeq'), i,
+            renderer.levels[i].length),
+            row: i,
+            column: 0,
+            verticalTextAlignment: TextAlignment.CENTER
+        }));
+        tmpLvls.push(ui.createButton
+        ({
+            text: getLoc('btnView'),
+            row: i,
+            column: 1,
+            heightRequest: SMALL_BUTTON_HEIGHT,
+            onClicked: () =>
+            {
+                Sound.playClick();
+                let viewMenu = createSeqViewMenu(i);
+                viewMenu.show();
+            }
+        }));
+    }
+    let seqGrid = ui.createGrid
+    ({
+        columnDefinitions: ['70*', '30*'],
+        children: tmpLvls
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: tmpSystemName,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createScrollView
+                ({
+                    heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
+                    Math.min(ui.screenHeight * 0.36, seqGrid.height)),
+                    content: seqGrid
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createWorldMenu = () =>
+{
+    let tmpOD = offlineReset;
+    let ODSwitch = ui.createSwitch
+    ({
+        isToggled: tmpOD,
+        row: 0,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpOD = !tmpOD;
+                ODSwitch.isToggled = tmpOD;
+            }
+        }
+    });
+    let tmpRL = resetLvlOnConstruct;
+    let RLSwitch = ui.createSwitch
+    ({
+        isToggled: tmpRL,
+        row: 1,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpRL = !tmpRL;
+                RLSwitch.isToggled = tmpRL;
+            }
+        }
+    });
+    let tmpAC = altTerEq;
+    let ACLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelTerEq'),
+        getLoc('terEqModes')[Number(tmpAC)]),
+        row: 2,
+        column: 0,
+        verticalTextAlignment: TextAlignment.CENTER
+    });
+    let ACSwitch = ui.createSwitch
+    ({
+        isToggled: tmpAC,
+        row: 2,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpAC = !tmpAC;
+                ACSwitch.isToggled = tmpAC;
+                ACLabel.text = Localization.format(getLoc('labelTerEq'),
+                getLoc('terEqModes')[Number(tmpAC)]);
+            }
+        }
+    });
+    let tmpMP = measurePerformance;
+    let MPSwitch = ui.createSwitch
+    ({
+        isToggled: tmpMP,
+        row: 3,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpMP = !tmpMP;
+                MPSwitch.isToggled = tmpMP;
+            }
+        }
+    });
+    let tmpDCP = debugCamPath;
+    let DCPSwitch = ui.createSwitch
+    ({
+        isToggled: tmpDCP,
+        row: 4,
+        column: 1,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                tmpDCP = !tmpDCP;
+                DCPSwitch.isToggled = tmpDCP;
+            }
+        }
+    });
+    let tmpMCPT = maxCharsPerTick;
+    let MCPTEntry = ui.createEntry
+    ({
+        text: tmpMCPT.toString(),
+        keyboard: Keyboard.NUMERIC,
+        row: 5,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpMCPT = Number(nt);
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuTheory'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    // rowDefinitions: [40, 40, 40, 40],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelOfflineReset'),
+                            row: 0,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        ODSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelResetLvl'),
+                            row: 1,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        RLSwitch,
+                        ACLabel,
+                        ACSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelMeasure'),
+                            row: 3,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        MPSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('debugCamPath'),
+                            row: 4,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        DCPSwitch,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelMaxCharsPerTick'),
+                            row: 5,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        MCPTEntry,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelInternalState'),
+                            row: 6,
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        ui.createButton
+                        ({
+                            text: getLoc('btnClipboard'),
+                            row: 6,
+                            column: 1,
+                            heightRequest: SMALL_BUTTON_HEIGHT,
+                            onClicked: () =>
+                            {
+                                let clipMenu = createStateClipboardMenu(
+                                getInternalState());
+                                clipMenu.show();
+                            }
+                        }),
+                    ]
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: getLoc('btnSave'),
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        offlineReset = tmpOD;
+                        resetLvlOnConstruct = tmpRL;
+                        altTerEq = tmpAC;
+                        if(tmpMP != measurePerformance && tmpMP)
+                        {
+                            drawMeasurer.reset();
+                            camMeasurer.reset();
+                        }
+                        measurePerformance = tmpMP;
+                        if(tmpDCP != debugCamPath)
+                            renderer.reset();
+                        debugCamPath = tmpDCP;
+                        maxCharsPerTick = tmpMCPT;
+                        menu.hide();
+                    }
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+var getInternalState = () => JSON.stringify
+({
+    version: version,
+    time: time,
+    page: page,
+    offlineReset: offlineReset,
+    altTerEq: altTerEq,
+    tickDelayMode: tickDelayMode,
+    resetLvlOnConstruct: resetLvlOnConstruct,
+    measurePerformance: measurePerformance,
+    debugCamPath: debugCamPath,
+    maxCharsPerTick: maxCharsPerTick,
+    renderer: renderer.object,
+    system: tmpSystem ?
+    {
+        title: tmpSystemName,
+        desc: tmpSystemDesc,
+        ...tmpSystem.object
+    } :
+    {
+        title: tmpSystemName,
+        desc: tmpSystemDesc,
+        ...renderer.system.object
+    },
+    savedSystems: Object.fromEntries(savedSystems)
+});
+
+var setInternalState = (stateStr) =>
+{
+    if(!stateStr)
+        return;
+
+    let values = stateStr.split('\n');
+
+    let worldValues = values[0].split(' ');
+    let stateVersion = 0;
+    if(worldValues.length > 0)
+        stateVersion = Number(worldValues[0]);
+
+    if(isNaN(stateVersion))
+    {
+        let state = JSON.parse(stateStr);
+        log(`Loading JSON state (version: ${state.version})`);
+        if('time' in state)
+            time = state.time;
+        if('page' in state)
+            page = state.page;
+        if('offlineReset' in state)
+            offlineReset = state.offlineReset;
+        if('altTerEq' in state)
+            altTerEq = state.altTerEq;
+        if('tickDelayMode' in state)
+            tickDelayMode = state.tickDelayMode;
+        if('resetLvlOnConstruct' in state)
+            resetLvlOnConstruct = state.resetLvlOnConstruct;
+        if('measurePerformance' in state)
+            measurePerformance = state.measurePerformance;
+        if('debugCamPath' in state)
+            debugCamPath = state.debugCamPath;
+        if('maxCharsPerTick' in state)
+            maxCharsPerTick = state.maxCharsPerTick;
+        
+        if('system' in state)
+        {
+            tmpSystemName = state.system.title;
+            tmpSystemDesc = state.system.desc;
+            tmpSystem = new LSystem(state.system.axiom, state.system.rules,
+            state.system.turnAngle, state.system.seed, state.system.ignoreList,
+            state.system.tropism);
+        }
+        
+        if('renderer' in state)
+        {
+            renderer = new Renderer(new LSystem(), state.renderer.figureScale,
+            state.renderer.cameraMode, state.renderer.camX, state.renderer.camY,
+            state.renderer.camZ, state.renderer.followFactor,
+            state.renderer.loopMode, state.renderer.upright,
+            state.renderer.quickDraw, state.renderer.quickBacktrack,
+            state.renderer.loadModels, state.renderer.backtrackTail,
+            state.renderer.hesitateApex, state.renderer.hesitateFork);
+        }
+        else
+            renderer = new Renderer(system);
+
+        if('savedSystems' in state)
+            savedSystems = new Map(Object.entries(state.savedSystems));
+    }
+    // Doesn't even need checking the version number; if it appears at all then
+    // it's definitely written before switching to JSON
+    else
+    {
+        log(`Loading space-separated state (version: ${stateVersion})`);
+        if(worldValues.length > 1)
+            time = Number(worldValues[1]);
+        if(worldValues.length > 2)
+            page = Number(worldValues[2]);
+        if(worldValues.length > 3)
+            offlineReset = Boolean(Number(worldValues[3]));
+        if(worldValues.length > 4)
+            altTerEq = Boolean(Number(worldValues[4]));
+        if(worldValues.length > 5)
+            tickDelayMode = Boolean(Number(worldValues[5]));        
+        if(worldValues.length > 6)
+            resetLvlOnConstruct = Boolean(Number(worldValues[6]));
+        let noofSystems = 0;
+        if(worldValues.length > 7)
+            noofSystems = Number(worldValues[7]);
+
+        if(values.length > 1)
+        {
+            let rv = values[1].split(' ');
+            if(rv.length > 2)
+                rv[2] = Number(rv[2]);  // cameraMode
+            if(rv.length > 6)
+                rv[6] = Number(rv[6]);
+            if(rv.length > 7)
+                rv[7] = Number(rv[7]);
+            if(rv.length > 8)
+                rv[8] = Boolean(Number(rv[8]));
+            if(rv.length > 9)
+                rv[9] = Boolean(Number(rv[9]));
+            if(rv.length > 10)
+                rv[10] = Boolean(Number(rv[10]));
+            if(rv.length > 12)  // camera offset
+                rv[3] = `${rv[3]}*${rv[0]}*${rv[1]}^lv+${rv[12]}`;
+            if(rv.length > 13)
+                rv[4] = `${rv[4]}*${rv[0]}*${rv[1]}^lv+${rv[13]}`;
+            if(rv.length > 14)
+                rv[5] = `${rv[5]}*${rv[0]}*${rv[1]}^lv+${rv[14]}`;
+                rv[1] = `${rv[0]}*${rv[1]}^lv`;
+            if(rv.length > 15)
+                rv[12] = Boolean(Number(rv[15]));
+            
+            for(let i = 13; i < rv.length; ++i)
+                rv[i] = undefined;
+
+            if(stateVersion < 0.2)
+            {
+                if(values.length > 2)
+                {
+                    let systemValues = values[2].split(' ');
+                    let system = new LSystem(systemValues[0],
+                    systemValues.slice(3), Number(systemValues[1]),
+                    Number(systemValues[2]));
+                    renderer = new Renderer(system, ...rv.slice(1));
+                }
+                else
+                    renderer = new Renderer(new LSystem(), ...rv.slice(1));
+            }
+            else
+            {
+                if(values.length > 2)
+                    tmpSystemName = values[2];
+                if(values.length > 3)
+                    tmpSystemDesc = values[3];
+                if(values.length > 4)
+                {
+                    let systemValues = values[4].split(' ');
+                    let system = new LSystem(systemValues[0],
+                    systemValues.slice(3), Number(systemValues[1]),
+                    Number(systemValues[2]));
+                    renderer = new Renderer(system, ...rv.slice(1));
+                }
+                else
+                    renderer = new Renderer(new LSystem(), ...rv.slice(1));
+            }
+        }
+        
+        if(stateVersion < 0.2)
+        {
+            // Load everything.
+            for(let i = 0; 4 + i * 2 < values.length; ++i)
+                savedSystems.set(values[3 + i * 2],
+                {
+                    desc: getLoc('noDescription'),
+                    system: values[4 + i * 2],
+                    config: ['1', '0', '0', '0', false]
+                });
+        }
+        else
+        {
+            for(let i = 0; i < noofSystems; ++i)
+            {
+                let rv = values[9 + i * 5].split(' ');
+                if(rv.length > 5)
+                    rv[2] = `${rv[2]}*${rv[0]}*${rv[1]}^lv+${rv[5]}`;
+                if(rv.length > 6)
+                    rv[3] = `${rv[3]}*${rv[0]}*${rv[1]}^lv+${rv[6]}`;
+                if(rv.length > 7)
+                {
+                    rv[4] = `${rv[4]}*${rv[0]}*${rv[1]}^lv+${rv[7]}`;
+                    rv[1] = `${rv[0]}*${rv[1]}^lv`;
+                }
+                if(rv.length > 8)
+                    rv[5] = Boolean(Number(rv[8]));
+                
+                for(let i = 6; i < rv.length; ++i)
+                    rv[i] = undefined;
+
+                savedSystems.set(values[6 + i * 5], {
+                    desc: values[7 + i * 5],
+                    system: values[8 + i * 5],
+                    config: rv.slice(1)
+                });
+            }
+        }
+    }
+}
+
+var canResetStage = () => true;
+
+var getResetStageMessage = () => getLoc('resetRenderer');
+
+var resetStage = () => renderer.reset();
+
+var getTertiaryEquation = () =>
+{
+    if(altTerEq)
+        return renderer.oriString;
+
+    return renderer.stateString;
+}
+
+var get3DGraphPoint = () =>
+{
+    if(debugCamPath)
+        return -renderer.camera;
+    
+    return renderer.cursor;
+}
+
+var get3DGraphTranslation = () =>
+{
+    if(measurePerformance)
+        camMeasurer.stamp();
+
+    let result = renderer.camera;
+
+    if(measurePerformance)
+        camMeasurer.stamp();
+
+    return result;
+}
+
+init();
 
 let testSuite = () =>
 {
@@ -2927,5 +5754,3 @@ let testSuite = () =>
     let b2p = tmpDeriv.params;
     log(arrow.reconstruct(b2, b2p));
 }
-
-testSuite();
