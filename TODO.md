@@ -39,8 +39,8 @@
     - Lemma stages?
   - Make `f` move without returning like `F`
   - Top-down processing priority
-  - [ ] Regex magic to separate string into actual sequence of symbols
-  - [ ] Issue: regex for nested brackets in parameters?
+  - [x] Regex magic to separate string into actual sequence of symbols
+  - [x] Issue: regex for nested brackets in parameters?
   - Equal comparison changed to `==` instead of `=` in abop to differentiate
   from the syntax
   - Store as an extra array of objects
@@ -48,11 +48,21 @@
   would've been already stripped down by the time it gets to the turtle
   - `~`: Parameters of the following symbol can control model size in rule
 
-- [ ] Investigate Houdini stochastic syntax for weighted derivations
+- [ ] Revamp sequence menu
+  - Level 0: 10 chars (`View`)
+  - [x] Classic LS: displays the entire string in a label
+  - Parametric LS: displays symbols and parameters side by side, one symbol/row
+
+- [x] Turning angles (and tropism)
+  - Formula expressions allow shenanigans such as `360/7`, mostly
+  - [ ] Button to change mode between degrees and radians?
+
+## 1.0: Completed
+
+- [x] Investigate Houdini stochastic syntax for weighted derivations
 `[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
   - Stochastic in PLSR: has to be on the same line
-
-- [ ] Context sensitivity
+- [x] Context sensitivity
   - `b < a > c → aa`
   - Parametric: **context ignore** replaces regular ignore list in LS menu
   - [x] Skipping over brackets? hmm, difficult
@@ -67,18 +77,6 @@
     - Does this work with the dynamic loading system with all the data passing?
   - If stored by maps: Keys can be any data type.
   - If stored by objects: written in `parametric_lsystem.js`
-
-- [ ] Revamp sequence menu
-  - Level 0: 10 chars (`View`)
-  - [x] Classic LS: displays the entire string in a label
-  - Parametric LS: displays symbols and parameters side by side, one symbol/row
-
-- [x] Turning angles (and tropism)
-  - Formula expressions allow shenanigans such as `360/7`, mostly
-  - [ ] Button to change mode between degrees and radians?
-
-## 1.0: Completed
-
 - [x] Update docstrings
 - [x] Buttons in LS menu to move up down (swap rules)
   - How to update rule entries?

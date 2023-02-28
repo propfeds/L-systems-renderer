@@ -466,7 +466,7 @@ class Quaternion
             default:
                 return this;
         }
-        return rotation.mul(this);
+        return rotation.mul(this).normalise;
     }
     /**
      * Computes the negation of a quaternion. The negation also acts as the
@@ -688,10 +688,10 @@ class LSystem
         }
         
         let ruleMatches = [];
-        for(let i = 0; i < rules.length; ++i)
+        for(let i = 0; i < this.userInput.rules.length; ++i)
         {
-            ruleMatches.push([...rules[i].replace(TRIM_SP, '').match(
-            LS_RULE)]);
+            ruleMatches.push([...this.userInput.rules[i].replace(TRIM_SP, '').
+            match(LS_RULE)]);
             // Indices 1, 3, 4 are context, condition, and all derivations
         }
         this.rules = new Map();
@@ -832,9 +832,9 @@ class LSystem
             // Finally, push rule
             if(contextMatch[6] == '~')
             {
-                if(!this.models.has(contextMatch[6]))
-                    this.models.set(contextMatch[6], []);
-                this.models.get(contextMatch[6]).push(tmpRule);
+                if(!this.models.has(contextMatch[10]))
+                    this.models.set(contextMatch[10], []);
+                this.models.get(contextMatch[10]).push(tmpRule);
             }
             else
             {
@@ -2025,10 +2025,12 @@ class Renderer
                                 this.mdi[this.mdi.length - 1]] == 'F' &&
                                 this.modelParams[this.models.length - 1][
                                 this.mdi[this.mdi.length - 1]])
+                                {
                                     this.forward(this.modelParams[
                                     this.models.length - 1][
                                     this.mdi[this.mdi.length - 1]][
                                     0].toNumber());
+                                }
                                 else
                                     this.forward();
                             }
