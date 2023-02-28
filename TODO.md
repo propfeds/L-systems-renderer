@@ -29,6 +29,7 @@
 ## 1.0, Mistletoe ed.
 
 - [ ] Parametric systems
+  - [x] Input context-ignored symbols
   - [ ] New option in constructor for MathExpression variables
     - [ ] Button in LS menu next to axiom entry
   - Different classes

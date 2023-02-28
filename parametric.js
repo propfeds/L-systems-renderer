@@ -125,7 +125,6 @@ const LS_RULE = /([^:]+)(:(.+))?=(.*)/;
 // Context doesn't need to check for nested brackets!
 const LS_CONTEXT =
 /((.)(\(([^\)]+)\))?<)?((.)(\(([^\)]+)\))?)(>(.)(\(([^\)]+)\))?)?/;
-const CTX_IGNORE_LIST = new Set('FfT+-&^\\/|{.}%~$');
 const BACKTRACK_LIST = new Set('+-&^\\/|[$T');
 
 const locStrings =
@@ -198,7 +197,8 @@ const locStrings =
         labelAxiom: 'Axiom: ',
         labelAngle: 'Turning angle (°): ',
         labelRules: 'Production rules: {0}',
-        labelIgnored: 'Ignored symbols: ',
+        labelIgnored: 'Turtle-ignored: ',
+        labelCtxIgnored: 'Context-ignored: ',
         labelTropism: 'Tropism (gravity): ',
         labelSeed: 'Seed (≠ 0): ',
 
@@ -303,11 +303,28 @@ The symbol will only derive according to this rule if its ancestor bears the ` +
 `same symbol as {left}, and one of its children bears the same symbol as ` +
 `{right}.
 
-LSR uses a context-sensitive 2L-system, where the 2 means that a context is ` +
-`determined by two symbols: an ancestor and a child.`
+Note: LSR uses a context-sensitive 2L-system, where the 2 means that a ` +
+`context is determined by two symbols: an ancestor and a child.
+
+Note 2: The list of context-ignored symbols can be configured in the ` + 
+`L-system menu.`
             },
             {
-                title: 'Example: '
+                title: 'Example: Signal propagation',
+                contents:
+`A simple signal sent by the concurrent youth. The signal, denoted by the ` +
+`letter 🅱, starts from the 🅱ase of the tree and travels to the to🅿️.
+
+Axiom: B[+AAA]A[-AA]A[+A]A
+B < A = B
+B = A
+Context-ignored: +-
+Turning angle: 30°
+
+Applies static camera:
+Scale: 4
+Centre: (0, 2, 0)
+Upright`
             }
         ]
     }
@@ -699,7 +716,7 @@ class LSystem
      * @param {object} variables NOT IMPLEMENTED
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', tropism = 0, variables = {})
+    ignoreList = '', ctxIgnoreList = '', tropism = 0, variables = {})
     {
         // User input
         this.userInput =
@@ -709,6 +726,7 @@ class LSystem
             turnAngle: turnAngle,
             seed: seed,
             ignoreList: ignoreList,
+            ctxIgnoreList: ctxIgnoreList,
             tropism: tropism,
             variables: variables
         };
@@ -887,6 +905,7 @@ class LSystem
         }
 
         this.ignoreList = new Set(ignoreList);
+        this.ctxIgnoreList = new Set(ctxIgnoreList);
 
         this.RNG = new Xorshift(seed);
         this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate() *
@@ -991,7 +1010,7 @@ class LSystem
                     idxStack.pop();
                     break;
                 default:
-                    let ignored = CTX_IGNORE_LIST.has(sequence[i]);
+                    let ignored = this.ctxIgnoreList.has(sequence[i]);
                     if(ignored)
                         break;
                     
@@ -1357,6 +1376,7 @@ class LSystem
      *  turnAngle: string,
      *  seed: number,
      *  ignoreList: string,
+     *  ctxIgnoreList: string,
      *  tropism: string,
      *  variables: object
      * }}
@@ -1369,6 +1389,7 @@ class LSystem
             turnAngle: this.userInput.turnAngle,
             seed: this.userInput.seed,
             ignoreList: this.userInput.ignoreList,
+            ctxIgnoreList: this.userInput.ctxIgnoreList,
             tropism: this.userInput.tropism,
             variables: this.userInput.variables
         };
@@ -3799,18 +3820,6 @@ let createSystemMenu = () =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = values.turnAngle || '0';
-    let angleEntry = ui.createEntry
-    ({
-        text: tmpAngle.toString(),
-        row: 1,
-        column: 1,
-        horizontalTextAlignment: TextAlignment.END,
-        onTextChanged: (ot, nt) =>
-        {
-            tmpAngle = nt;
-        }
-    });
     let tmpRules = values.rules;
     let ruleEntries = [];
     let ruleMoveBtns = [];
@@ -3899,7 +3908,7 @@ let createSystemMenu = () =>
             ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
         }
     });
-    let tmpIgnore = values.ignoreList;
+    let tmpIgnore = values.ignoreList || '';
     let ignoreEntry = ui.createEntry
     ({
         text: tmpIgnore,
@@ -3911,11 +3920,35 @@ let createSystemMenu = () =>
             tmpIgnore = nt;
         }
     });
+    let tmpCI = values.ctxIgnoreList || '';
+    let CIEntry = ui.createEntry
+    ({
+        text: tmpCI,
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCI = nt;
+        }
+    });
+    let tmpAngle = values.turnAngle || '0';
+    let angleEntry = ui.createEntry
+    ({
+        text: tmpAngle.toString(),
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAngle = nt;
+        }
+    });
     let tmpTropism = values.tropism || '0';
     let tropismEntry = ui.createEntry
     ({
         text: tmpTropism.toString(),
-        row: 2,
+        row: 3,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -3926,7 +3959,7 @@ let createSystemMenu = () =>
     let tmpSeed = values.seed || '0';
     let seedLabel = ui.createGrid
     ({
-        row: 3,
+        row: 4,
         column: 0,
         columnDefinitions: ['40*', '30*'],
         children:
@@ -3954,7 +3987,7 @@ let createSystemMenu = () =>
     ({
         text: tmpSeed.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 3,
+        row: 4,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4019,8 +4052,17 @@ let createSystemMenu = () =>
                                     ignoreEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelAngle'),
+                                        text: getLoc('labelCtxIgnored'),
                                         row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    CIEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelAngle'),
+                                        row: 2,
                                         column: 0,
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
@@ -4029,7 +4071,7 @@ let createSystemMenu = () =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelTropism'),
-                                        row: 2,
+                                        row: 3,
                                         column: 0,
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
@@ -4062,7 +4104,7 @@ let createSystemMenu = () =>
                             {
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
-                                tmpRules, tmpAngle, tmpSeed, tmpIgnore,
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
                                 tmpTropism);
                                 if(tmpSystem)
                                 {
@@ -4083,14 +4125,15 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 let values = new LSystem().object;
                                 axiomEntry.text = values.axiom;
-                                angleEntry.text = values.turnAngle;
+                                angleEntry.text = values.turnAngle.toString();
                                 tmpRules = values.rules;
                                 ruleEntries = [];
                                 rulesLabel.text = Localization.format(
                                 getLoc('labelRules'), ruleEntries.length);
                                 ruleStack.children = ruleEntries;
                                 ignoreEntry.text = values.ignoreList;
-                                tropismEntry.text = values.tropism;
+                                CIEntry.text = values.ctxIgnoreList;
+                                tropismEntry.text = values.tropism.toString();
                                 seedEntry.text = values.seed.toString();
                             }
                         })
@@ -4315,7 +4358,7 @@ let createSystemClipboardMenu = (values) =>
                         renderer.constructSystem = new LSystem(sv.system.axiom,
                         sv.system.rules, sv.system.turnAngle,
                         sv.system.seed, sv.system.ignoreList,
-                        sv.system.tropism);
+                        sv.system.ctxIgnoreList, sv.system.tropism);
                         tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
@@ -4492,18 +4535,6 @@ let createViewMenu = (title, parentMenu) =>
             tmpAxiom = nt;
         }
     });
-    let tmpAngle = values.turnAngle || '0';
-    let angleEntry = ui.createEntry
-    ({
-        text: tmpAngle.toString(),
-        row: 1,
-        column: 1,
-        horizontalTextAlignment: TextAlignment.END,
-        onTextChanged: (ot, nt) =>
-        {
-            tmpAngle = nt;
-        }
-    });
     let tmpRules = [];
     for(let i = 0; i < values.rules.length; ++i)
         tmpRules[i] = values.rules[i];
@@ -4594,7 +4625,7 @@ let createViewMenu = (title, parentMenu) =>
             ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
         }
     });
-    let tmpIgnore = values.ignoreList;
+    let tmpIgnore = values.ignoreList || '';
     let ignoreEntry = ui.createEntry
     ({
         text: tmpIgnore,
@@ -4606,11 +4637,35 @@ let createViewMenu = (title, parentMenu) =>
             tmpIgnore = nt;
         }
     });
+    let tmpCI = values.ctxIgnoreList || '';
+    let CIEntry = ui.createEntry
+    ({
+        text: tmpCI,
+        row: 1,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpCI = nt;
+        }
+    });
+    let tmpAngle = values.turnAngle || '0';
+    let angleEntry = ui.createEntry
+    ({
+        text: tmpAngle.toString(),
+        row: 2,
+        column: 1,
+        horizontalTextAlignment: TextAlignment.END,
+        onTextChanged: (ot, nt) =>
+        {
+            tmpAngle = nt;
+        }
+    });
     let tmpTropism = values.tropism || '0';
     let tropismEntry = ui.createEntry
     ({
         text: tmpTropism.toString(),
-        row: 2,
+        row: 3,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4621,7 +4676,7 @@ let createViewMenu = (title, parentMenu) =>
     let tmpSeed = values.seed || '0';
     let seedLabel = ui.createGrid
     ({
-        row: 3,
+        row: 4,
         column: 0,
         columnDefinitions: ['40*', '30*'],
         children:
@@ -4649,7 +4704,7 @@ let createViewMenu = (title, parentMenu) =>
     ({
         text: tmpSeed.toString(),
         keyboard: Keyboard.NUMERIC,
-        row: 3,
+        row: 4,
         column: 1,
         horizontalTextAlignment: TextAlignment.END,
         onTextChanged: (ot, nt) =>
@@ -4722,8 +4777,17 @@ let createViewMenu = (title, parentMenu) =>
                                     ignoreEntry,
                                     ui.createLatexLabel
                                     ({
-                                        text: getLoc('labelAngle'),
+                                        text: getLoc('labelCtxIgnored'),
                                         row: 1,
+                                        column: 0,
+                                        verticalTextAlignment:
+                                        TextAlignment.CENTER
+                                    }),
+                                    CIEntry,
+                                    ui.createLatexLabel
+                                    ({
+                                        text: getLoc('labelAngle'),
+                                        row: 2,
                                         column: 0,
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
@@ -4732,7 +4796,7 @@ let createViewMenu = (title, parentMenu) =>
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelTropism'),
-                                        row: 2,
+                                        row: 3,
                                         column: 0,
                                         verticalTextAlignment:
                                         TextAlignment.CENTER
@@ -4807,7 +4871,7 @@ let createViewMenu = (title, parentMenu) =>
                             {
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
-                                tmpRules, tmpAngle, tmpSeed, tmpIgnore,
+                                tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
                                 tmpTropism);
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
@@ -4830,8 +4894,8 @@ let createViewMenu = (title, parentMenu) =>
                                 {
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
-                                    tmpAngle, tmpSeed, tmpIgnore, tmpTropism).
-                                    object,
+                                    tmpAngle, tmpSeed, tmpIgnore, tmpCI,
+                                    tmpTropism).object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
@@ -5654,7 +5718,7 @@ var setInternalState = (stateStr) =>
             tmpSystemDesc = state.system.desc;
             tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList,
-            state.system.tropism);
+            state.system.ctxIgnoreList, state.system.tropism);
         }
         
         if('renderer' in state)
