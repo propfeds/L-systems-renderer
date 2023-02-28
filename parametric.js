@@ -1892,23 +1892,52 @@ class Renderer
                         log('Blank space detected.')
                         break;
                     case '+':
-                        this.ori = this.system.rotations.get('+').mul(this.ori);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.rotate(this.levelParams[
+                            this.lv][this.i][0].toNumber(), '+');
+                        else
+                            this.ori = this.system.rotations.get('+').mul(
+                            this.ori);
                         break;
                     case '-':
-                        this.ori = this.system.rotations.get('-').mul(this.ori);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.rotate(this.levelParams[
+                            this.lv][this.i][0].toNumber(), '-');
+                        else
+                            this.ori = this.system.rotations.get('-').mul(
+                            this.ori);
                         break;
                     case '&':
-                        this.ori = this.system.rotations.get('&').mul(this.ori);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.rotate(this.levelParams[
+                            this.lv][this.i][0].toNumber(), '&');
+                        else
+                            this.ori = this.system.rotations.get('&').mul(
+                            this.ori);
                         break;
                     case '^':
-                        this.ori = this.system.rotations.get('^').mul(this.ori);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.rotate(this.levelParams[
+                            this.lv][this.i][0].toNumber(), '^');
+                        else
+                            this.ori = this.system.rotations.get('^').mul(
+                            this.ori);
                         break;
                     case '\\':
-                        this.ori = this.system.rotations.get('\\').mul(
-                        this.ori);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.rotate(this.levelParams[
+                            this.lv][this.i][0].toNumber(), '\\');
+                        else
+                            this.ori = this.system.rotations.get('\\').mul(
+                            this.ori);
                         break;
                     case '/':
-                        this.ori = this.system.rotations.get('/').mul(this.ori);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.rotate(this.levelParams[
+                            this.lv][this.i][0].toNumber(), '/');
+                        else
+                            this.ori = this.system.rotations.get('/').mul(
+                            this.ori);
                         break;
                     case '|':
                         this.ori = zUpQuat.mul(this.ori);
@@ -1917,7 +1946,12 @@ class Renderer
                         this.ori = this.ori.alignToVertical();
                         break;
                     case 'T':
-                        this.ori = this.ori.applyTropism(this.system.tropism);
+                        if(this.levelParams[this.lv][this.i])
+                            this.ori = this.ori.applyTropism(this.levelParams[
+                            this.lv][this.i][0].toNumber());
+                        else
+                            this.ori = this.ori.applyTropism(
+                            this.system.tropism);
                         break;
                     case '~':
                         if(!this.loadModels || !this.system.models.has(
@@ -1925,8 +1959,11 @@ class Renderer
                             break;
 
                         ++this.i;
-                        this.models.push(this.system.models.get(
-                        this.levels[this.lv][this.i]));
+                        let model = this.system.deriveModel(this.levels[
+                        this.lv][this.i], this.levelParams[this.lv][this.i]);
+
+                        this.models.push(model.result);
+                        this.modelParams.push(model.params);
                         this.mdi.push(0);
                         return;
                     case '[':
@@ -2020,7 +2057,14 @@ class Renderer
                             this.stack.push([this.state, this.ori]);
 
                         if(!ignored)
-                            this.forward();
+                        {
+                            if(this.levels[this.lv][this.i] == 'F' &&
+                            this.levelParams[this.lv][this.i])
+                                this.forward(this.levelParams[this.lv][this.i][
+                                0].toNumber());
+                            else
+                                this.forward();
+                        }
 
                         if(this.quickBacktrack && breakAhead)
                             this.stack.push([this.state, this.ori]);
@@ -2258,18 +2302,440 @@ class Renderer
     }
 }
 
-let a = new LSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5,C:0.5'], 30, 1);
-// A(0)
-let a0 = 'A';
-let a0p = [[BigNumber.ZERO]];
-let at0 = a.getAncestree(a0);
-let tmpDeriv = a.derive(a0, a0p, at0.ancestors, at0.children, 0);
-let a1 = tmpDeriv.result;
-let a1p = tmpDeriv.params;
-log(a.reconstruct(a1, a1p));
+/**
+ * Represents a bunch of buttons for variable controls.
+ */
+class VariableControls
+{
+    /**
+     * @constructor
+     * @param {Upgrade} variable the variable being controlled.
+     * @param {boolean} useAnchor whether to use anchor controls.
+     * @param {number} quickbuyAmount the amount of levels to buy when held.
+     */
+    constructor(variable, useAnchor = false, quickbuyAmount = 10)
+    {
+        /**
+         * @type {Upgrade} the variable being controlled.
+         */
+        this.variable = variable;
+        /**
+         * @type {Frame} the variable button.
+         */
+        this.varBtn = null;
+        /**
+         * @type {Frame} the refund button.
+         */
+        this.refundBtn = null;
+        /**
+         * @type {Frame} the buy button.
+         */
+        this.buyBtn = null;
 
-let at1 = a.getAncestree(a1);
-tmpDeriv = a.derive(a1, a1p, at1.ancestors, at1.children, 0);
-let a2 = tmpDeriv.result;
-let a2p = tmpDeriv.params;
-log(a.reconstruct(a2, a2p));
+        /**
+         * @type {boolean} whether to use anchor controls.
+         */
+        this.useAnchor = useAnchor;
+        /**
+         * @type {number} the anchored variable level.
+         */
+        this.anchor = this.variable.level;
+        /**
+         * @type {number} whether the anchor is on.
+         */
+        this.anchorActive = false;
+        /**
+         * @type {number} the amount of levels to buy when held.
+         */
+        this.quickbuyAmount = quickbuyAmount;
+    }
+
+    /**
+     * Updates all buttons, visually.
+     */
+    updateAllButtons()
+    {
+        this.updateDescription();
+        this.updateRefundButton();
+        this.updateBuyButton();
+    }
+    /**
+     * Updates the variable description written on the button's label.
+     */
+    updateDescription()
+    {
+        this.varBtn.content.text = this.variable.getDescription();
+    }
+    /**
+     * Creates a variable button.
+     * @param {function(void): void} callback when pressed, calls this function.
+     * @param {number} height the button's height.
+     * @returns {Frame}
+     */
+    createVariableButton(callback = null, height = BUTTON_HEIGHT)
+    {
+        if(this.varBtn)
+            return this.varBtn;
+        
+        let frame = ui.createFrame
+        ({
+            heightRequest: height,
+            cornerRadius: 1,
+            padding: new Thickness(10, 2),
+            verticalOptions: LayoutOptions.CENTER,
+            content: ui.createLatexLabel
+            ({
+                text: this.variable.getDescription(),
+                verticalTextAlignment: TextAlignment.CENTER,
+                textColor: Color.TEXT_MEDIUM
+            }),
+            borderColor: Color.TRANSPARENT
+        });
+        if(callback)
+        {
+            frame.borderColor = Color.BORDER;
+            frame.content.textColor = Color.TEXT;
+            frame.onTouched = (e) =>
+            {
+                if(e.type == TouchType.PRESSED)
+                {
+                    frame.borderColor = Color.TRANSPARENT;
+                    frame.content.textColor = Color.TEXT_MEDIUM;
+                }
+                else if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+                {
+                    Sound.playClick();
+                    frame.borderColor = Color.BORDER;
+                    frame.content.textColor = Color.TEXT;
+                    callback();
+                }
+                else if(e.type == TouchType.CANCELLED)
+                {
+                    frame.borderColor = Color.BORDER;
+                    frame.content.textColor = Color.TEXT
+                }
+            }
+        }
+        this.varBtn = frame;
+        return this.varBtn;
+    }
+    /**
+     * Updates the refund button, visually.
+     */
+    updateRefundButton()
+    {
+        this.refundBtn.borderColor = this.variable.level > 0 ? Color.BORDER :
+        Color.TRANSPARENT;
+        this.refundBtn.content.textColor = this.variable.level > 0 ?
+        Color.TEXT : Color.TEXT_MEDIUM;
+    }
+    /**
+     * Creates a refund button.
+     * @param {string} symbol the button's label.
+     * @param {number} height the button's height.
+     * @returns {Frame}
+     */
+    createRefundButton(symbol = '-', height = BUTTON_HEIGHT)
+    {
+        if(this.refundBtn)
+            return this.refundBtn;
+
+        this.refundBtn = ui.createFrame
+        ({
+            heightRequest: height,
+            cornerRadius: 1,
+            padding: new Thickness(10, 2),
+            verticalOptions: LayoutOptions.CENTER,
+            content: ui.createLatexLabel
+            ({
+                text: symbol,
+                horizontalTextAlignment: TextAlignment.CENTER,
+                verticalTextAlignment: TextAlignment.CENTER,
+                textColor: this.variable.level > 0 ? Color.TEXT :
+                Color.TEXT_MEDIUM
+            }),
+            onTouched: (e) =>
+            {
+                if(e.type == TouchType.PRESSED)
+                {
+                    this.refundBtn.borderColor = Color.TRANSPARENT;
+                    this.refundBtn.content.textColor = this.variable.level > 0 ?
+                    Color.TEXT_MEDIUM : Color.TEXT_DARK;
+                }
+                else if(e.type == TouchType.SHORTPRESS_RELEASED)
+                {
+                    Sound.playClick();
+                    this.variable.refund(1);
+                }
+                else if(e.type == TouchType.LONGPRESS)
+                {
+                    Sound.playClick();
+                    if(this.useAnchor)
+                    {
+                        this.anchorActive = true;
+                        if(this.variable.level > 0)
+                            this.anchor = this.variable.level;
+                    }
+                    this.variable.refund(this.quickbuyAmount);
+                }
+                else if(e.type == TouchType.CANCELLED)
+                {
+                    this.updateRefundButton();
+                }
+            },
+            borderColor: this.variable.level > 0 ? Color.BORDER :
+            Color.TRANSPARENT
+        });
+        return this.refundBtn;
+    }
+    /**
+     * Updates the buy button, visually.
+     */
+    updateBuyButton()
+    {
+        this.buyBtn.borderColor = this.variable.level < this.variable.maxLevel ?
+        Color.BORDER : Color.TRANSPARENT;
+        this.buyBtn.content.textColor = this.variable.level <
+        this.variable.maxLevel ? Color.TEXT : Color.TEXT_MEDIUM;
+    }
+    /**
+     * Creates a buy button.
+     * @param {string} symbol the button's label.
+     * @param {number} height the button's height.
+     * @returns {Frame}
+     */
+    createBuyButton(symbol = '+', height = BUTTON_HEIGHT)
+    {
+        if(this.buyBtn)
+            return this.buyBtn;
+
+        this.buyBtn = ui.createFrame
+        ({
+            heightRequest: height,
+            cornerRadius: 1,
+            padding: new Thickness(10, 2),
+            verticalOptions: LayoutOptions.CENTER,
+            content: ui.createLatexLabel
+            ({
+                text: symbol,
+                horizontalTextAlignment: TextAlignment.CENTER,
+                verticalTextAlignment: TextAlignment.CENTER,
+                textColor: this.variable.level < this.variable.maxLevel ?
+                Color.TEXT : Color.TEXT_MEDIUM
+            }),
+            onTouched: (e) =>
+            {
+                if(e.type == TouchType.PRESSED)
+                {
+                    this.buyBtn.borderColor = Color.TRANSPARENT;
+                    this.buyBtn.content.textColor = this.variable.level <
+                    this.variable.maxLevel ? Color.TEXT_MEDIUM :
+                    Color.TEXT_DARK;
+                }
+                else if(e.type == TouchType.SHORTPRESS_RELEASED)
+                {
+                    Sound.playClick();
+                    this.variable.buy(1);
+                }
+                else if(e.type == TouchType.LONGPRESS)
+                {
+                    Sound.playClick();
+                    let q = this.quickbuyAmount;
+                    if(this.useAnchor && this.anchorActive)
+                    {
+                        q = Math.min(q, this.anchor - this.variable.level);
+                        if(q == 0)
+                            q = this.quickbuyAmount;
+                        this.anchorActive = false;
+                    }
+                    for(let i = 0; i < q; ++i)
+                        this.variable.buy(1);
+                }
+                else if(e.type == TouchType.CANCELLED)
+                {
+                    this.updateBuyButton();
+                }
+            },
+            borderColor: this.variable.level < this.variable.maxLevel ?
+            Color.BORDER : Color.TRANSPARENT
+        });
+        return this.buyBtn;
+    }
+}
+
+/**
+ * Measures performance for a piece of code.
+ */
+class Measurer
+{
+    /**
+     * @constructor
+     * @param {string} title the measurement's title.
+     * @param {number} window the sample size.
+     */
+    constructor(title, window = 10)
+    {
+        /**
+         * @type {string} the measurement's title.
+         */
+        this.title = title;
+        /**
+         * @type {number} the sample size.
+         */
+        this.window = window;
+        /**
+         * @type {number} the all-time sum.
+         */
+        this.sum = 0;
+        /**
+         * @type {number} the window sum.
+         */
+        this.windowSum = 0;
+        /**
+         * @type {number} the all-time maximum.
+         */
+        this.max = 0;
+        /**
+         * @type {number[]} recent records.
+         */
+        this.records = [];
+        for(let i = 0; i < this.window; ++i)
+            this.records[i] = 0;
+        /**
+         * @type {number} the elapsed time in ticks.
+         */
+        this.ticksPassed = 0;
+        /**
+         * @type {number} the most recent moment the function was stamped.
+         */
+        this.lastStamp = null;
+    }
+
+    /**
+     * Resets the measurer.
+     */
+    reset()
+    {
+        this.sum = 0;
+        this.windowSum = 0;
+        this.max = 0;
+        this.records = [];
+        for(let i = 0; i < this.window; ++i)
+            this.records[i] = 0;
+        this.ticksPassed = 0;
+        this.lastStamp = null;
+    }
+    /**
+     * Stamps the measurer.
+     */
+    stamp()
+    {
+        if(!this.lastStamp)
+            this.lastStamp = Date.now();
+        else
+        {
+            let closingStamp = Date.now();
+            let i = this.ticksPassed % this.window;
+            this.windowSum -= this.records[i];
+            this.records[i] = closingStamp - this.lastStamp;
+            this.windowSum += this.records[i];
+            this.sum += this.records[i];
+            this.max = Math.max(this.max, this.records[i]);
+            this.lastStamp = null;
+            ++this.ticksPassed;
+        }
+    }
+    /**
+     * Returns the window average.
+     * @returns {number}
+     */
+    get windowAvg()
+    {
+        return this.windowSum / Math.min(this.window, this.ticksPassed);
+    }
+    /**
+     * Returns the all-time average.
+     * @returns {number}
+     */
+    get allTimeAvg()
+    {
+        return this.sum / this.ticksPassed;
+    }
+    /**
+     * Returns the string for the window average.
+     * @returns {string}
+     */
+    get windowAvgString()
+    {
+        if(this.ticksPassed == 0)
+            return '';
+
+        if(!measurePerformance)
+            return '';
+
+        return Localization.format(getLoc('measurement'), this.title,
+        getCoordString(this.max), getCoordString(this.windowAvg),
+        Math.min(this.window, this.ticksPassed));
+    }
+    /**
+     * Returns the string for the all-time average.
+     * @returns {string}
+     */
+    get allTimeAvgString()
+    {
+        if(this.ticksPassed == 0)
+            return '';
+
+        if(!measurePerformance)
+            return '';
+
+        return Localization.format(getLoc('measurement'), this.title,
+        getCoordString(this.max), getCoordString(this.allTimeAvg),
+        this.ticksPassed);
+    }
+}
+
+// const sidewayQuat = new Quaternion(1, 0, 0, 0);
+const uprightQuat = new Quaternion(-Math.sqrt(2)/2, 0, 0, Math.sqrt(2)/2);
+const xUpQuat = new Quaternion(0, 1, 0, 0);
+const yUpQuat = new Quaternion(0, 0, 1, 0);
+const zUpQuat = new Quaternion(0, 0, 0, 1);
+
+let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
+let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
+let globalRNG = new Xorshift(Date.now());
+let contentsTable = [0];
+let manualSystems = {};
+let tmpSystem = null;
+let tmpSystemName = getLoc('welcomeSystemName');
+let tmpSystemDesc = getLoc('welcomeSystemDesc');
+
+var l, ts;
+// Variable controls
+let lvlControls, tsControls;
+
+// Measure drawing performance
+let drawMeasurer = new Measurer('renderer.draw()', 30);
+let camMeasurer = new Measurer('renderer.camera', 30);
+
+// Start from init
+
+let testSuite = () =>
+{
+    let a = new LSystem('[+(30)G]F/(180)A(2)',['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5,C:0.5'], 30, 1);
+    // A(0)
+    let a0 = 'A';
+    let a0p = [[BigNumber.ZERO]];
+    let at0 = a.getAncestree(a0);
+    let tmpDeriv = a.derive(a0, a0p, at0.ancestors, at0.children, 0);
+    let a1 = tmpDeriv.result;
+    let a1p = tmpDeriv.params;
+    log(a.reconstruct(a1, a1p));
+
+    let at1 = a.getAncestree(a1);
+    tmpDeriv = a.derive(a1, a1p, at1.ancestors, at1.children, 0);
+    let a2 = tmpDeriv.result;
+    let a2p = tmpDeriv.params;
+    log(a.reconstruct(a2, a2p));
+}
