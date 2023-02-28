@@ -1095,12 +1095,16 @@ class LSystem
                     let right = -1;
                     if(tmpRules[j].right)
                     {
-                        for(let k = 0; k < children[i].length; ++k)
+                        if(children[i])
                         {
-                            if(tmpRules[j].right == sequence[children[i][k]])
+                            for(let k = 0; k < children[i].length; ++k)
                             {
-                                right = children[i][k];
-                                break;
+                                if(tmpRules[j].right == sequence[children[i][
+                                k]])
+                                {
+                                    right = children[i][k];
+                                    break;
+                                }
                             }
                         }
                         if(right == -1)
