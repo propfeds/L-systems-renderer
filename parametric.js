@@ -1,9 +1,58 @@
-import { MathExpression } from "../api/MathExpression";
+import { FreeCost } from '../api/Costs';
+import { theory } from '../api/Theory';
+import { Utils } from '../api/Utils';
+import { Vector3 } from '../api/Vector3';
+import { ui } from '../api/ui/UI';
+import { Color } from '../api/ui/properties/Color';
+import { FontFamily } from '../api/ui/properties/FontFamily';
+import { Keyboard } from '../api/ui/properties/Keyboard';
+import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
+import { TextAlignment } from '../api/ui/properties/TextAlignment';
+import { Thickness } from '../api/ui/properties/Thickness';
+import { TouchType } from '../api/ui/properties/TouchType';
+import { Localization } from '../api/Localization';
+import { MathExpression } from '../api/MathExpression';
+import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
+import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
+import { BigNumber } from '../api/BigNumber';
+import { Upgrade } from '../api/Upgrades';
+import { Button } from '../api/ui/Button';
+import { Frame } from '../api/ui/Frame';
 
 var id = 'parametric_L_systems_renderer';
-var name = 'Param. L-systems Renderer';
-var description = 'Get wrecked.';
-var authors = 'propfeds#5988';
+var getName = (language) =>
+{
+    let names =
+    {
+        en: 'Param. L-systems Renderer',
+    };
+
+    return names[language] || names.en;
+}
+var getDescription = (language) =>
+{
+    let descs =
+    {
+        en:
+`An educational tool that allows you to model plants, mostly.
+
+Supported L-system features:
+- Parametric, context-sensitive (2L) systems
+- Stochastic (randomised) rules
+- 3D turtle controls
+- Polygon modelling
+
+Other features:
+- Can save a whole army of systems!
+- Camera modes: static and turtle-following
+- Drawing speed and advanced stroke options!`,
+    };
+
+    return descs[language] || descs.en;
+}
+var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
+                'for providing help with quaternions\nskyhigh173#3120, for ' +
+                'suggesting clipboard and JSON internal state formatting';
 var version = 0;
 
 let time = 0;
@@ -18,11 +67,67 @@ let debugCamPath = false;
 let maxCharsPerTick = 1250;
 let menuLang = Localization.language;
 
+let savedSystems = new Map();
+
+let getImageSize = (width) =>
+{
+    if(width >= 1080)
+        return 48;
+    if(width >= 720)
+        return 36;
+    if(width >= 360)
+        return 24;
+
+    return 20;
+}
+
+let getBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 96;
+    if(width >= 720)
+        return 72;
+    if(width >= 360)
+        return 48;
+
+    return 40;
+}
+
+let getMediumBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 88;
+    if(width >= 720)
+        return 66;
+    if(width >= 360)
+        return 44;
+
+    return 36;
+}
+
+let getSmallBtnSize = (width) =>
+{
+    if(width >= 1080)
+        return 80;
+    if(width >= 720)
+        return 60;
+    if(width >= 360)
+        return 40;
+
+    return 32;
+}
+
+const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
+const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
+const ENTRY_CHAR_LIMIT = 5000;
 const TRIM_SP = /\s+/g;
 const LS_RULE = /(.+):(.+)=(.*)/;
 // Context doesn't need to check for nested brackets!
 const LS_CONTEXT =
 /((.)(\(([^\)]+)\))?<)?((.)(\(([^\)]+)\))?)(>(.)(\(([^\)]+)\))?)?/;
+const CTX_IGNORE_LIST = new Set('FfT+-&^\\/|{.}%~$');
+const BACKTRACK_LIST = new Set('+-&^\\/|[$T');
+// TODO: copy from locStrings downward
 
 /**
  * Represents an instance of the Xorshift RNG.
@@ -155,6 +260,45 @@ class Quaternion
         let t3 = this.r * quat.k + this.i * quat.j -
         this.j * quat.i + this.k * quat.r;
         return new Quaternion(t0, t1, t2, t3);
+    }
+    /**
+     * Rotates the quaternion by some degrees.
+     * @param {number} degrees degrees.
+     * @param {string} symbol the corresponding symbol in L-system language.
+     */
+    rotate(degrees = 0, symbol = '+')
+    {
+        if(degrees == 0)
+            return this;
+
+        let halfAngle = degrees * Math.PI / 360;
+        let s = Math.sin(halfAngle);
+        let c = Math.cos(halfAngle);
+        let rotation;
+        switch(symbol)
+        {
+            case '+':
+                rotation = new Quaternion(-c, 0, 0, s);
+                break;
+            case '-':
+                rotation = new Quaternion(-c, 0, 0, -s);
+                break;
+            case '&':
+                rotation = new Quaternion(-c, 0, s, 0);
+                break;
+            case '^':
+                rotation = new Quaternion(-c, 0, -s, 0);
+                break;
+            case '\\':
+                rotation = new Quaternion(-c, s, 0, 0);
+                break;
+            case '/':
+                rotation = new Quaternion(-c, -s, 0, 0);
+                break;
+            default:
+                return this;
+        }
+        return rotation.mul(this);
     }
     /**
      * Computes the negation of a quaternion. The negation also acts as the
@@ -332,7 +476,7 @@ class Quaternion
 /**
  * Represents a parametric L-system.
  */
-class ParametricLSystem
+class LSystem
 {
     /**
      * @constructor
@@ -362,6 +506,7 @@ class ParametricLSystem
         this.axiom = axiomMatches.result;
         this.axiomParams = axiomMatches.params;
 
+        // Manually calculate axiom parameters
         for(let i = 0; i < this.axiomParams.length; ++i)
         {
             if(!this.axiomParams[i])
@@ -531,8 +676,6 @@ class ParametricLSystem
         }
 
         this.ignoreList = new Set(ignoreList);
-        // This is a context ignore list. Turtle ignore list is separate.
-        this.ctxIgnoreList = new Set('FfT+-&^\\/|{.}%~$');
 
         this.RNG = new Xorshift(seed);
         this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate() *
@@ -637,7 +780,7 @@ class ParametricLSystem
                     idxStack.pop();
                     break;
                 default:
-                    let ignored = this.ctxIgnoreList.has(sequence[i]);
+                    let ignored = CTX_IGNORE_LIST.has(sequence[i]);
                     if(ignored)
                         break;
                     
@@ -1008,7 +1151,1114 @@ class ParametricLSystem
     }
 }
 
-let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5,C:0.5'], 30, 1);
+/**
+ * The renderer handles all logic for drawing the L-system.
+ */
+class Renderer
+{
+    /**
+     * @constructor
+     * @param {LSystem} system the L-system to be handled.
+     * @param {string} figureScale the zoom level expression.
+     * @param {boolean} cameraMode the camera mode.
+     * @param {string} camX the camera's x-axis centre.
+     * @param {string} camY the camera's y-axis centre.
+     * @param {string} camZ the camera's z-axis centre.
+     * @param {number} followFactor the camera's cursor-following speed.
+     * @param {number} loopMode the renderer's looping mode.
+     * @param {boolean} upright whether to rotate the system around the z-axis
+     * by 90 degrees.
+     * @param {boolean} quickDraw whether to skip through straight lines on the
+     * way forward.
+     * @param {boolean} quickBacktrack whether to skip through straight lines on
+     * the way backward.
+     * @param {boolean} loadModels whether to load dedicated models for symbols.
+     * @param {boolean} backtrackTail whether to backtrack at the end of a loop.
+     * @param {boolean} hesitateApex whether to stutter for 1 tick at apices.
+     * @param {boolean} hesitateFork whether to stutter for 1 tick at forks.
+     */
+    constructor(system, figureScale = 1, cameraMode = 0, camX = 0, camY = 0,
+    camZ = 0, followFactor = 0.15, loopMode = 0, upright = false,
+    quickDraw = false, quickBacktrack = false, loadModels = true,
+    backtrackTail = false, hesitateApex = true, hesitateFork = true)
+    {
+        /**
+         * @type {LSystem} the L-system being handled.
+         */
+        this.system = system;
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
+        this.figScaleStr = figureScale.toString();
+        /**
+         * @type {MathExpression} the figure scale expression.
+         */
+        this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        /**
+         * @type {number} the calculated figure scale.
+         */
+        this.figureScale = 1;
+        /**
+         * @type {boolean} the camera mode.
+         */
+        this.cameraMode = Math.round(Math.min(Math.max(cameraMode, 0), 2));
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
+        this.camXStr = camX.toString();
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
+        this.camYStr = camY.toString();
+        /**
+         * @type {string} kept for comparison in the renderer menu.
+         */
+        this.camZStr = camZ.toString();
+        /**
+         * @type {MathExpression} the camera x expression.
+         */
+        this.camXExpr = MathExpression.parse(this.camXStr);
+        /**
+         * @type {MathExpression} the camera y expression.
+         */
+        this.camYExpr = MathExpression.parse(this.camYStr);
+        /**
+         * @type {MathExpression} the camera z expression.
+         */
+        this.camZExpr = MathExpression.parse(this.camZStr);
+        /**
+         * @type {Vector3} the calculated static camera coordinates.
+         */
+        this.camCentre = new Vector3(0, 0, 0);
+        /**
+         * @type {number} the follow factor.
+         */
+        this.followFactor = Math.min(Math.max(followFactor, 0), 1);
+        /**
+         * @type {number} the looping mode.
+         */
+        this.loopMode = Math.round(Math.min(Math.max(loopMode, 0), 2));
+        /**
+         * @type {boolean} the x-axis' orientation.
+         */
+        this.upright = upright;
+        /**
+         * @type {boolean} whether to skip through straight lines on the way
+         * forward.
+         */
+        this.quickDraw = quickDraw;
+        /**
+         * @type {boolean} whether to skip through straight lines on the way
+         * back.
+         */
+        this.quickBacktrack = quickBacktrack;
+        /**
+         * @type {boolean} whether to load models.
+         */
+        this.loadModels = loadModels;
+        /**
+         * @type {boolean} whether to backtrack at the end.
+         */
+        this.backtrackTail = backtrackTail;
+        /**
+         * @type {boolean} whether to hesitate at apices.
+         */
+        this.hesitateApex = hesitateApex;
+        /**
+         * @type {boolean} whether to hesitate at forks.
+         */
+        this.hesitateFork = hesitateFork;
+        /**
+         * @type {Vector3} the turtle's position.
+         */
+        this.state = new Vector3(0, 0, 0);
+        /**
+         * @type {Quaternion} the turtle's orientation.
+         */
+        this.ori = this.upright ? uprightQuat : new Quaternion();
+        /**
+         * @type {string[]} every level of the current system.
+         */
+        this.levels = [];
+        this.levelParams = [];
+        // Only stores one level, temporari
+        this.ancestors = null;
+        this.children = null;
+        /**
+         * @type {number} the current level (updates after buying the variable).
+         */
+        this.lv = -1;
+        /**
+         * @type {number} the maximum level loaded.
+         */
+        this.loaded = -1;
+        /**
+         * @type {number} the load target level.
+         */
+        this.loadTarget = 0;
+        /**
+         * @type {[Vector3, Quaternion][]} stores cursor states for brackets.
+         */
+        this.stack = [];
+        /**
+         * @type {number[]} stores the indices of the other stack.
+         */
+        this.idxStack = [];
+        /**
+         * @type {string[]} keeps the currently rendered models.
+         */
+        this.models = [];
+        this.modelParams = [];
+        /**
+         * @type {number[]} keeps the indices of the other stack.
+         */
+        this.mdi = [];
+        /**
+         * @type {number} the current index of the sequence.
+         */
+        this.i = 0;
+        /**
+         * @type {number} the elapsed time.
+         */
+        this.elapsed = 0;
+        /**
+         * @type {number} the number of turns before the renderer starts working
+         * again.
+         */
+        this.cooldown = 0;
+        /**
+         * @type {Vector3} the last tick's camera position.
+         */
+        this.lastCamera = new Vector3(0, 0, 0);
+        /**
+         * @type {Vector3} the last tick's camera velocity.
+         */
+        this.lastCamVel = new Vector3(0, 0, 0);
+        /**
+         * @type {number} the next index to update for the current level.
+         */
+        this.nextDeriveIdx = 0;
+        /**
+         * @type {number} how many nested polygons currently in (pls keep at 1).
+         */
+        this.polygonMode = 0;
+    }
+
+    /**
+     * Updates the renderer's level.
+     * @param {number} level the target level.
+     * @param {boolean} seedChanged whether the seed has changed.
+     */
+    update(level, seedChanged = false)
+    {
+        let clearGraph = this.loopMode != 2 || level < this.lv || seedChanged;
+
+        if(this.lv != level)
+        {
+            this.reset(clearGraph);
+            this.lv = level;
+            this.figureScale = this.figScaleExpr.evaluate(
+            v => this.getVariable(v)).toNumber();
+            if(this.figureScale == 0)
+                this.figureScale = 1;
+            this.camCentre = new Vector3
+            (
+                this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
+                this.camYExpr.evaluate(v => this.getVariable(v)).toNumber(),
+                this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
+            );
+        }
+
+        this.loadTarget = Math.max(level, this.loadTarget);
+
+        let charCount = 0;
+        for(let i = this.loaded + 1; i <= this.loadTarget; ++i)
+        {
+            // Threshold to prevent maximum statements error
+            if(charCount > maxCharsPerTick)
+                return;
+
+            if(i == 0)
+            {
+                this.levels[i] = this.system.axiom;
+                this.levelParams[i] = this.system.axiomParams;
+                charCount += this.levels[i].length;
+                this.nextDeriveIdx = 0;
+            }
+            else
+            {
+                if(!this.ancestors)
+                {
+                    let at = this.system.getAncestree(this.levels[i - 1]);
+                    this.ancestors = at.ancestors;
+                    this.children = at.children;
+                    charCount += this.ancestors.length;
+                }
+                let ret = this.system.derive(this.levels[i - 1],
+                this.levelParams[i - 1], this.ancestors, this.children,
+                this.nextDeriveIdx);
+                if(this.nextDeriveIdx == 0)
+                {
+                    this.levels[i] = ret.result;
+                    this.levelParams[i - 1] = ret.params;
+                }
+                else
+                {
+                    this.levels[i] += ret.result;
+                    this.levelParams[i - 1].push(...ret.params);
+                }
+
+                this.nextDeriveIdx = ret.next;
+                charCount += ret.result.length;
+            }
+            if(this.nextDeriveIdx == 0)
+            {
+                ++this.loaded;
+                this.ancestors = null;
+                this.children = null;
+            }
+            else
+                return;
+        }
+        this.reset(clearGraph);
+    }
+    /**
+     * Resets the renderer.
+     * @param {boolean} clearGraph whether to clear the graph.
+     */
+    reset(clearGraph = true)
+    {
+        this.state = new Vector3(0, 0, 0);
+        this.ori = this.upright ? uprightQuat : new Quaternion();
+        this.stack = [];
+        this.idxStack = [];
+        this.i = 0;
+        this.models = [];
+        this.modelParams = [];
+        this.mdi = [];
+        this.cooldown = 0;
+        this.polygonMode = 0;
+        if(clearGraph)
+        {
+            this.elapsed = 0;
+            time = 0;
+            theory.clearGraph();
+        }
+        theory.invalidateTertiaryEquation();
+    }
+    /**
+     * Configures every parameter of the renderer, except the system.
+     * @param {string} figureScale the zoom level expression.
+     * @param {boolean} cameraMode the camera mode.
+     * @param {string} camX the camera's x-axis centre.
+     * @param {string} camY the camera's y-axis centre.
+     * @param {string} camZ the camera's z-axis centre.
+     * @param {number} followFactor the camera's cursor-following speed.
+     * @param {number} loopMode the renderer's looping mode.
+     * @param {boolean} upright whether to rotate the system around the z-axis
+     * by 90 degrees.
+     * @param {boolean} quickDraw whether to skip through straight lines on the
+     * way forward.
+     * @param {boolean} quickBacktrack whether to skip through straight lines
+     * on the way backward.
+     * @param {boolean} loadModels whether to load dedicated models for symbols.
+     * @param {boolean} backtrackTail whether to backtrack at the end of a loop.
+     * @param {boolean} hesitateApex whether to stutter for 1 tick at apices.
+     * @param {boolean} hesitateFork whether to stutter for 1 tick at forks.
+     */
+    configure(figureScale, cameraMode, camX, camY, camZ, followFactor,
+    loopMode, upright, quickDraw, quickBacktrack, loadModels, backtrackTail,
+    hesitateApex, hesitateFork)
+    {
+        let requireReset = (figureScale !== this.figScaleStr) ||
+        (upright != this.upright) || (quickDraw != this.quickDraw) ||
+        (quickBacktrack != this.quickBacktrack) ||
+        (loadModels != this.loadModels) ||
+        (hesitateApex != this.hesitateApex) ||
+        (hesitateFork != this.hesitateFork);
+
+        this.figScaleStr = figureScale.toString();
+        this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        this.figureScale = this.figScaleExpr.evaluate(
+        v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
+        this.cameraMode = cameraMode;
+        this.camXStr = camX.toString();
+        this.camYStr = camY.toString();
+        this.camZStr = camZ.toString();
+        this.camXExpr = MathExpression.parse(this.camXStr);
+        this.camYExpr = MathExpression.parse(this.camYStr);
+        this.camZExpr = MathExpression.parse(this.camZStr);
+        this.camCentre = new Vector3
+        (
+            this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camYExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
+        );
+        this.followFactor = followFactor;
+        this.loopMode = loopMode;
+        this.upright = upright;
+        this.quickDraw = quickDraw;
+        this.quickBacktrack = quickBacktrack;
+        this.loadModels = loadModels;
+        this.backtrackTail = backtrackTail;
+        this.hesitateApex = hesitateApex;
+        this.hesitateFork = hesitateFork;
+
+        if(requireReset)
+            this.reset();
+    }
+    /**
+     * Configures only the parameters related to the static camera mode.
+     * @param {string} figureScale the zoom level expression.
+     * @param {string} camX the camera's x-axis centre.
+     * @param {string} camY the camera's y-axis centre.
+     * @param {string} camZ the camera's z-axis centre.
+     * @param {boolean} upright whether to rotate the system around the z-axis
+     * by 90 degrees.
+     */
+    configureStaticCamera(figureScale, camX, camY, camZ, upright)
+    {
+        let requireReset = (figureScale !== this.figScaleStr) ||
+        (upright != this.upright);
+
+        this.figScaleStr = figureScale.toString();
+        this.figScaleExpr = MathExpression.parse(this.figScaleStr);
+        this.figureScale = this.figScaleExpr.evaluate(
+        v => this.getVariable(v)).toNumber();
+        if(this.figureScale == 0)
+            this.figureScale = 1;
+        this.camXStr = camX.toString();
+        this.camYStr = camY.toString();
+        this.camZStr = camZ.toString();
+        this.camXExpr = MathExpression.parse(this.camXStr);
+        this.camYExpr = MathExpression.parse(this.camYStr);
+        this.camZExpr = MathExpression.parse(this.camZStr);
+        this.camCentre = new Vector3
+        (
+            this.camXExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camYExpr.evaluate(v => this.getVariable(v)).toNumber(),
+            this.camZExpr.evaluate(v => this.getVariable(v)).toNumber()
+        );
+        this.upright = upright;
+
+        if(requireReset)
+            this.reset();
+    }
+    /**
+     * Applies a new L-system to the renderer.
+     * @param {LSystem} system the new system.
+     */
+    set constructSystem(system)
+    {
+        this.system = system;
+        this.levels = [];
+        this.levelParams = [];
+        this.nextDeriveIdx = 0;
+        this.loaded = -1;
+        this.loadTarget = 0;
+        if(resetLvlOnConstruct)
+            l.level = 0;
+        this.update(l.level);
+    }
+    /**
+     * Sets the seed of the current system.
+     * @param {number} seed the seed.
+     */
+    set seed(seed)
+    {
+        this.system.seed = seed;
+        this.nextDeriveIdx = 0;
+        this.loaded = -1;
+        this.loadTarget = this.lv;
+        this.update(this.lv, true);
+    }
+    /**
+     * Moves the cursor forward.
+     */
+    forward(distance = 1)
+    {
+        this.state += this.ori.headingVector * distance;
+    }
+    /**
+     * Ticks the clock.
+     * @param {number} dt the amount of time passed.
+     */
+    tick(dt)
+    {
+        if(this.lv > this.loaded + 1 ||
+        typeof this.levels[this.lv] === 'undefined' ||
+        this.levels[this.lv].length == 0)
+            return;
+
+        if(this.i >= this.levels[this.lv].length && this.loopMode == 0)
+            if(!this.backtrackTail || this.stack.length == 0)
+                return;
+
+        this.elapsed += dt;
+    }
+    /**
+     * Computes the next cursor position internally.
+     * @param {number} level the level to be drawn.
+     */
+    draw(level, onlyUpdate = false)
+    {
+        /*
+        Behold the broken monster patched by sheer duct tape.
+        I can guarantee that because the game runs on one thread, the renderer
+        would always load faster than it draws. Unless you make a rule that 
+        spawns 10000 plus signs. Please don't do it.
+        */
+        if(level > this.loaded)
+            this.update(level);
+
+        // You can't believe how many times I have to type this typeof clause.
+        if(level > this.loaded + 1 ||
+        typeof this.levels[this.lv] === 'undefined')
+            return;
+
+        if(onlyUpdate)
+            return;
+        
+        // This is to prevent the renderer from skipping the first point.
+        if(this.elapsed <= 0.101)
+            return;
+
+        /*
+        Don't worry, it'll not run forever. This is just to prevent the renderer
+        from hesitating for 1 tick every loop.
+        */
+        let j, t, moved;
+        let loopLimit = 2;  // Shenanigans may arise with models? Try this
+        for(j = 0; j < loopLimit; ++j)
+        {
+            if(this.cooldown > 0 && this.polygonMode <= 0)
+            {
+                --this.cooldown;
+                return;
+            }
+
+            if(this.models.length > 0)
+            {
+                // Unreadable pile of shit
+                for(; this.mdi[this.mdi.length - 1] <
+                this.models[this.models.length - 1].length;
+                ++this.mdi[this.mdi.length - 1])
+                {
+                    switch(this.models[this.models.length - 1][
+                    this.mdi[this.mdi.length - 1]])
+                    {
+                        case ' ':
+                            log('Blank space detected.')
+                            break;
+                        case '+':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.rotate(this.modelParams[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber(),
+                                '+');
+                            else
+                                this.ori = this.system.rotations.get('+').mul(
+                                this.ori);
+                            break;
+                        case '-':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.rotate(this.modelParams[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber(),
+                                '-');
+                            else
+                                this.ori = this.system.rotations.get('-').mul(
+                                this.ori);
+                            break;
+                        case '&':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.rotate(this.modelParams[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber(),
+                                '&');
+                            else
+                                this.ori = this.system.rotations.get('&').mul(
+                                this.ori);
+                            break;
+                        case '^':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.rotate(this.modelParams[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber(),
+                                '^');
+                            else
+                                this.ori = this.system.rotations.get('^').mul(
+                                this.ori);
+                            break;
+                        case '\\':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.rotate(this.modelParams[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber(),
+                                '\\');
+                            else
+                                this.ori = this.system.rotations.get('\\').mul(
+                                this.ori);
+                            break;
+                        case '/':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.rotate(this.modelParams[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber(),
+                                '/');
+                            else
+                                this.ori = this.system.rotations.get('/').mul(
+                                this.ori);
+                            break;
+                        case '|':
+                            this.ori = zUpQuat.mul(this.ori);
+                            break;
+                        case '$':
+                            this.ori = this.ori.alignToVertical();
+                            break;
+                        case 'T':
+                            if(this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]])
+                                this.ori = this.ori.applyTropism(
+                                this.modelParams[this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]][0].toNumber());
+                            else
+                                this.ori = this.ori.applyTropism(
+                                this.system.tropism);
+                            break;
+                        case '~':
+                            if(!this.system.models.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1]))
+                                break;
+
+                            ++this.mdi[this.mdi.length - 1];
+                            let model = this.system.deriveModel(this.models[
+                            this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]], this.modelParams[
+                            this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]);
+
+                            this.models.push(model.result);
+                            this.modelParams.push(model.params);
+                            this.mdi.push(0);
+                            return;
+                        case '[':
+                            this.idxStack.push(this.stack.length);
+                            this.stack.push([this.state, this.ori]);
+                            break;
+                        case ']':
+                            if(this.cooldown > 0 && this.polygonMode <= 0)
+                            {
+                                --this.cooldown;
+                                return;
+                            }
+
+                            if(this.stack.length == 0)
+                            {
+                                log('You\'ve clearly made a bracket error.');
+                                break;
+                            }
+
+                            moved = this.state !==
+                            this.stack[this.stack.length - 1][0];
+
+                            t = this.stack.pop();
+                            this.state = t[0];
+                            this.ori = t[1];
+                            if(this.stack.length ==
+                            this.idxStack[this.idxStack.length - 1])
+                            {
+                                this.idxStack.pop();
+                                if(moved)
+                                    this.cooldown = 1;
+                                if(this.hesitateFork && this.polygonMode <= 0)
+                                {
+                                    ++this.mdi[this.mdi.length - 1];
+                                    return;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                            if(this.polygonMode <= 0)
+                                return;
+                            else
+                            {
+                                --this.mdi[this.mdi.length - 1];
+                                break;
+                            }
+                        case '%':
+                            // Nothing to do here
+                            break;
+                        case '{':        
+                            ++this.polygonMode;
+                            break;
+                        case '}':
+                            --this.polygonMode;
+                            break;
+                        case '.':
+                            if(this.polygonMode <= 0)
+                                log('You cannot register a vertex outside of ' +
+                                'polygon drawing.');
+                            else
+                                ++this.mdi[this.mdi.length - 1];
+                            return;
+                        default:
+                            if(this.cooldown > 0 && this.polygonMode <= 0)
+                            {
+                                --this.cooldown;
+                                return;
+                            }
+
+                            let ignored = this.system.ignoreList.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]) ||
+                            this.loadModels && this.system.models.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]]);
+                            let breakAhead = BACKTRACK_LIST.has(
+                            this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1]);
+                            let btAhead = this.models[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1] + 1] == ']' ||
+                            this.mdi[this.mdi.length - 1] ==
+                            this.models[this.models.length - 1].length - 1;
+
+                            if(this.hesitateApex && btAhead)
+                                this.cooldown = 1;
+
+                            if(this.quickDraw && breakAhead)
+                                this.cooldown = 1;
+
+                            moved = this.stack.length == 0 ||
+                            (this.stack.length > 0 && this.state !==
+                            this.stack[this.stack.length - 1][0]);
+
+                            if(!this.quickBacktrack && moved && !ignored)
+                                this.stack.push([this.state, this.ori]);
+
+                            if(!ignored)
+                            {
+                                if(this.models[this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]] == 'F' &&
+                                this.modelParams[this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]])
+                                    this.forward(this.modelParams[
+                                    this.models.length - 1][
+                                    this.mdi[this.mdi.length - 1]][
+                                    0].toNumber());
+                                else
+                                    this.forward();
+                            }
+
+                            if(this.quickBacktrack && breakAhead)
+                                this.stack.push([this.state, this.ori]);
+                            
+                            if(this.quickDraw && !btAhead)
+                                break;
+                            else if(this.polygonMode <= 0)
+                            {
+                                ++this.mdi[this.mdi.length - 1];
+                                return;
+                            }
+                            else
+                                break;
+                    }
+                }
+                this.models.pop();
+                this.modelParams.pop();
+                this.mdi.pop();
+                ++loopLimit;
+                // continue prevents the regular loop from running
+                continue;
+            }
+            for(; this.i < this.levels[this.lv].length; ++this.i)
+            {
+                // if(this.models.length > 0)
+                //     break;
+                switch(this.levels[this.lv][this.i])
+                {
+                    case ' ':
+                        log('Blank space detected.')
+                        break;
+                    case '+':
+                        this.ori = this.system.rotations.get('+').mul(this.ori);
+                        break;
+                    case '-':
+                        this.ori = this.system.rotations.get('-').mul(this.ori);
+                        break;
+                    case '&':
+                        this.ori = this.system.rotations.get('&').mul(this.ori);
+                        break;
+                    case '^':
+                        this.ori = this.system.rotations.get('^').mul(this.ori);
+                        break;
+                    case '\\':
+                        this.ori = this.system.rotations.get('\\').mul(
+                        this.ori);
+                        break;
+                    case '/':
+                        this.ori = this.system.rotations.get('/').mul(this.ori);
+                        break;
+                    case '|':
+                        this.ori = zUpQuat.mul(this.ori);
+                        break;
+                    case '$':
+                        this.ori = this.ori.alignToVertical();
+                        break;
+                    case 'T':
+                        this.ori = this.ori.applyTropism(this.system.tropism);
+                        break;
+                    case '~':
+                        if(!this.loadModels || !this.system.models.has(
+                        this.levels[this.lv][this.i + 1]))
+                            break;
+
+                        ++this.i;
+                        this.models.push(this.system.models.get(
+                        this.levels[this.lv][this.i]));
+                        this.mdi.push(0);
+                        return;
+                    case '[':
+                        this.idxStack.push(this.stack.length);
+                        this.stack.push([this.state, this.ori]);
+                        break;
+                    case ']':
+                        if(this.cooldown > 0 && this.polygonMode <= 0)
+                        {
+                            --this.cooldown;
+                            return;
+                        }
+
+                        if(this.stack.length == 0)
+                        {
+                            log('You\'ve clearly made a bracket error.');
+                            break;
+                        }
+
+                        moved = this.state !==
+                        this.stack[this.stack.length - 1][0];
+
+                        t = this.stack.pop();
+                        this.state = t[0];
+                        this.ori = t[1];
+                        if(this.stack.length ==
+                        this.idxStack[this.idxStack.length - 1])
+                        {
+                            this.idxStack.pop();
+                            if(moved)
+                                this.cooldown = 1;
+                            if(this.hesitateFork && this.polygonMode <= 0)
+                            {
+                                ++this.i;
+                                return;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        if(this.polygonMode <= 0)
+                            return;
+                        else
+                        {
+                            --this.i;
+                            break;
+                        }
+                    case '%':
+                        // Nothing to do here, all handled by LSystem derivation
+                        break;
+                    case '{':        
+                        ++this.polygonMode;
+                        break;
+                    case '}':
+                        --this.polygonMode;
+                        break;
+                    case '.':
+                        if(this.polygonMode <= 0)
+                            log('You cannot register a vertex outside of ' +
+                            'polygon drawing.');
+                        else
+                            ++this.i;
+                        return;
+                    default:
+                        if(this.cooldown > 0 && this.polygonMode <= 0)
+                        {
+                            --this.cooldown;
+                            return;
+                        }
+
+                        let ignored = this.system.ignoreList.has(
+                        this.levels[this.lv][this.i]) || this.loadModels &&
+                        this.system.models.has(this.levels[this.lv][this.i]);
+                        let breakAhead = BACKTRACK_LIST.has(
+                        this.levels[this.lv][this.i + 1]);
+                        let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
+                        this.i == this.levels[this.lv].length - 1;
+
+                        if(this.hesitateApex && btAhead)
+                            this.cooldown = 1;
+
+                        if(this.quickDraw && breakAhead)
+                            this.cooldown = 1;
+
+                        moved = this.stack.length == 0 ||
+                        (this.stack.length > 0 && this.state !==
+                        this.stack[this.stack.length - 1][0]);
+
+                        if(!this.quickBacktrack && moved && !ignored)
+                            this.stack.push([this.state, this.ori]);
+
+                        if(!ignored)
+                            this.forward();
+
+                        if(this.quickBacktrack && breakAhead)
+                            this.stack.push([this.state, this.ori]);
+                        
+                        if(this.quickDraw && !btAhead)
+                            break;
+                        else if(this.polygonMode <= 0)
+                        {
+                            ++this.i;
+                            return;
+                        }
+                        else
+                            break;
+                }
+            }
+            // This is what the renderer will do at the end of a loop
+            if(!this.backtrackTail || this.stack.length == 0)
+            {
+                switch(this.loopMode)
+                {
+                    case 2:
+                        l.buy(1);
+                        break;
+                    case 1:
+                        this.reset(false);
+                        break;
+                    case 0:
+                        return;
+                }
+            }
+            else
+            {
+                let t = this.stack.pop();
+                this.state = t[0];
+                this.ori = t[1];
+                return;
+            }
+        }
+    }
+    /**
+     * Return swizzled coordinates according to the in-game system. The game
+     * uses Android UI coordinates, which is X-right Y-down Z-face.
+     * @param {Vector3} coords the original coordinates.
+     * @returns {Vector3}
+     */
+    swizzle(coords)
+    {
+        // The game uses left-handed Y-up, aka Y-down coordinates.
+        return new Vector3(coords.x, -coords.y, coords.z);
+    }
+    /**
+     * Returns a variable's value for maths expressions.
+     * @param {string} v the variable's name.
+     * @returns {BigNumber}
+     */
+    getVariable(v)
+    {
+        switch(v)
+        {
+            case 'lv': return BigNumber.from(this.lv);
+        }
+        return null;
+    }
+    /**
+     * Returns the camera centre's coordinates.
+     * @returns {Vector3}
+     */
+    get centre()
+    {
+        if(this.cameraMode)
+            return -this.cursor;
+
+        return this.swizzle(-this.camCentre / this.figureScale);
+    }
+    /**
+     * Returns the turtle's coordinates.
+     * @returns {Vector3}
+     */
+    get cursor()
+    {
+        let coords = this.state / this.figureScale;
+        return this.swizzle(coords);
+    }
+    /**
+     * Returns the camera's coordinates.
+     * @returns {Vector3}
+     */
+    get camera()
+    {
+        let newCamera;
+        switch(this.cameraMode)
+        {
+            case 2:
+                // I accidentally discovered Bézier curves unknowingly.
+                let dist = this.centre - this.lastCamera;
+                newCamera = this.lastCamera + dist * this.followFactor ** 2 +
+                this.lastCamVel * (1 - this.followFactor) ** 2;
+                this.lastCamVel = newCamera - this.lastCamera;
+                this.lastCamera = newCamera;
+                return newCamera;
+            case 1:
+                newCamera = this.centre * this.followFactor +
+                this.lastCamera * (1 - this.followFactor);
+                this.lastCamVel = newCamera - this.lastCamera;
+                this.lastCamera = newCamera;
+                return newCamera;
+            case 0:
+                return this.centre;
+        }
+    }
+    /**
+     * Returns the static camera configuration.
+     * @returns {[string, string, string, string, boolean]}
+     */
+    get staticCamera()
+    {
+        return [
+            this.figScaleStr,
+            this.camXStr,
+            this.camYStr,
+            this.camZStr,
+            this.upright
+        ];
+    }
+    /**
+     * Returns the elapsed time.
+     * @returns {[number, number]}
+     */
+    get elapsedTime()
+    {
+        return [
+            Math.floor(this.elapsed / 60),
+            this.elapsed % 60
+        ];
+    }
+    /**
+     * Returns the current progress on this level, in a fraction.
+     * @returns {[number, number]}
+     */
+    get progressFrac()
+    {
+        return [this.i, this.levels[this.lv].length];
+    }
+    /**
+     * Returns the current progress on this level, in percent.
+     * @returns {number}
+     */
+    get progressPercent()
+    {
+        if(typeof this.levels[this.lv] === 'undefined')
+            return 0;
+
+        let pf = this.progressFrac;
+        let result = pf[0] * 100 / pf[1];
+        if(isNaN(result))
+            result = 0;
+
+        return result;
+    }
+    /**
+     * Returns the current progress fraction as a string.
+     * @returns {string}
+     */
+    get progressString()
+    {
+        let pf = this.progressFrac;
+        return `i=${pf[0]}/${pf[1]}`;
+    }
+    /**
+     * Returns a loading message.
+     * @returns {string}
+     */
+    get loadingString()
+    {
+        let len = typeof this.levels[this.loaded + 1] === 'undefined' ? 0 :
+        this.levels[this.loaded + 1].length;
+        return Localization.format(getLoc('rendererLoading'), this.loaded + 1,
+        len);
+    }
+    /**
+     * Returns the cursor's position as a string.
+     * @returns {string}
+     */
+    get stateString()
+    {
+        if(typeof this.levels[this.lv] === 'undefined')
+            return this.loadingString;
+
+        return `\\begin{matrix}x=${getCoordString(this.state.x)},&
+        y=${getCoordString(this.state.y)},&z=${getCoordString(this.state.z)},&
+        ${this.progressString}\\end{matrix}`;
+    }
+    /**
+     * Returns the cursor's orientation as a string.
+     * @returns {string}
+     */
+    get oriString()
+    {
+        if(typeof this.levels[this.lv] === 'undefined')
+            return this.loadingString;
+
+        return `\\begin{matrix}q=${this.ori.toString()},&${this.progressString}
+        \\end{matrix}`;
+    }
+    /**
+     * Returns the object representation of the renderer.
+     * @returns {object}
+     */
+    get object()
+    {
+        return {
+            figureScale: this.figScaleStr,
+            cameraMode: this.cameraMode,
+            camX: this.camXStr,
+            camY: this.camYStr,
+            camZ: this.camZStr,
+            followFactor: this.followFactor,
+            loopMode: this.loopMode,
+            upright: this.upright,
+            loadModels: this.loadModels,
+            quickDraw: this.quickDraw,
+            quickBacktrack: this.quickBacktrack,
+            backtrackTail: this.backtrackTail,
+            hesitateApex: this.hesitateApex,
+            hesitateFork: this.hesitateFork
+        }
+    }
+    /**
+     * Returns the renderer's string representation.
+     * @returns {string}
+     */
+    toString()
+    {
+        return JSON.stringify(this.object, null, 4);
+    }
+}
+
+let a = new LSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5,C:0.5'], 30, 1);
 // A(0)
 let a0 = 'A';
 let a0p = [[BigNumber.ZERO]];
