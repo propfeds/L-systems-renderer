@@ -121,13 +121,181 @@ const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
 const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
 const TRIM_SP = /\s+/g;
-const LS_RULE = /(.+):(.+)=(.*)/;
+const LS_RULE = /([^:]+)(:(.+))?=(.*)/;
 // Context doesn't need to check for nested brackets!
 const LS_CONTEXT =
 /((.)(\(([^\)]+)\))?<)?((.)(\(([^\)]+)\))?)(>(.)(\(([^\)]+)\))?)?/;
 const CTX_IGNORE_LIST = new Set('FfT+-&^\\/|{.}%~$');
 const BACKTRACK_LIST = new Set('+-&^\\/|[$T');
-// TODO: copy from locStrings downward
+
+const locStrings =
+{
+    en:
+    {
+        versionName: 'v1.0, Work in Progress',
+        welcomeSystemName: 'Arrow',
+        welcomeSystemDesc: 'Welcome to L-systems Renderer!',
+        equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
+        equationOverlay: '{0}\n\n{1}',
+
+        rendererLoading: `\\begin{{matrix}}Loading...&\\text{{Stg. {0}}}&({1}
+\\text{{ chars}})\\end{{matrix}}`,
+
+        currencyTime: ' (elapsed)',
+
+        varLvDesc: '\\text{{Stage: }}{0}{1}',
+        varTdDesc: '\\text{{Tick length: }}{0}\\text{{ sec}}',
+        varTdDescInf: '\\text{{Tick length: }}\\infty',
+        varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
+        upgResumeInfo: 'Resumes the last rendered system',
+
+        saPatienceTitle: 'You\'re watching grass grow.',
+        saPatienceDesc: 'Let the renderer draw a 10-minute long figure or ' +
+        'playlist.',
+        saPatienceHint: 'Be patient.',
+
+        btnSave: 'Save',
+        btnClear: 'Clear All',
+        btnDefault: '* Reset to Defaults',
+        btnAdd: 'Add',
+        btnUp: '▲',
+        btnDown: '▼',
+        btnReroll: 'Reroll',
+        btnConstruct: 'Construct',
+        btnDelete: 'Delete',
+        btnView: 'View',
+        btnClipboard: 'Clipboard',
+        btnOverwrite: 'Overwrite',
+        btnSaveCopy: 'Save as Copy',
+        btnSelect: 'Select',
+        btnSelected: '(Selected)',
+        btnPrev: 'Previous',
+        btnNext: 'Next',
+        btnClose: 'Close',
+        btnImport: 'Import',
+        btnContents: 'Table of\nContents',
+        btnPage: '{0}',
+
+        btnMenuLSystem: 'L-system menu',
+        btnMenuRenderer: 'Renderer menu',
+        btnMenuSave: 'Save/load',
+        btnMenuTheory: 'Settings',
+        btnMenuManual: 'User guide',
+        btnResume: 'Resume – {0}',
+        btnStartMeasure: 'Measure performance',
+        btnEndMeasure: 'Stop measuring',
+
+        measurement: '{0}: max {1}ms, avg {2}ms over {3} ticks',
+
+        rerollSeed: 'You are about to reroll the system\'s seed.',
+        resetRenderer: 'You are about to reset the renderer.',
+
+        menuSequence: '{0} (Stage {1})',
+        labelLevelSeq: 'Stage {0}: {1} chars',
+        labelChars: '({0} chars)',
+
+        menuLSystem: 'L-system Menu',
+        labelAxiom: 'Axiom: ',
+        labelAngle: 'Turning angle (°): ',
+        labelRules: 'Production rules: {0}',
+        labelIgnored: 'Ignored symbols: ',
+        labelTropism: 'Tropism (gravity): ',
+        labelSeed: 'Seed (≠ 0): ',
+
+        menuRenderer: 'Renderer Menu',
+        labelInitScale: '* Initial scale: ',
+        labelFigScale: '* Figure scale: ',
+        labelCamMode: 'Camera mode: {0}',
+        camModes: ['Fixed', 'Linear', 'Quadratic'],
+        labelCamCentre: 'Fixed camera centre (x,): ',
+        labelCamOffset: '... centre (y, z): ',
+        labelFollowFactor: 'Follow factor (0-1): ',
+        labelLoopMode: 'Looping mode: {0}',
+        loopModes: ['Off', 'Stage', 'Playlist'],
+        labelUpright: '* Upright figure: ',
+        labelBTTail: 'Draw tail end: ',
+        labelLoadModels: '* Load models: ',
+        labelQuickdraw: '* Quickdraw: ',
+        labelQuickBT: '* Quick backtrack: ',
+        labelHesitate: '* Stutter on backtrack: ',
+        labelHesitateApex: '* Stutter at apex: ',
+        labelHesitateFork: '* Stutter at fork: ',
+        labelOldTropism: '* Alternate tropism method: ',
+        labelBTList: '* Backtrack list: ',
+        labelRequireReset: '* Modifying this setting will require a reset.',
+
+        menuSave: 'Save/Load Menu',
+        labelCurrentSystem: 'Current system: ',
+        labelSavedSystems: 'Saved systems: {0}',
+        labelApplyCamera: 'Applies static camera: ',
+
+        menuClipboard: 'Clipboard Menu',
+        labelEntryCharLimit: `Warning: This entry has been capped at {0} ` +
+        `characters. Proceed with caution.`,
+
+        menuNaming: 'Save System',
+        labelName: 'Title: ',
+        defaultSystemName: 'Untitled L-system',
+        labelDesc: 'Description: ',
+        noDescription: 'No description.',
+        duplicateSuffix: ' (copy)',
+
+        menuTheory: 'Theory Settings',
+        labelOfflineReset: 'Reset graph on tabbing in: ',
+        labelResetLvl: 'Reset to stage 0 on construction: ',
+        labelTerEq: 'Tertiary equation: {0}',
+        terEqModes: ['Coordinates', 'Orientation'],
+        labelMeasure: 'Measure performance: ',
+        debugCamPath: 'Debug camera path: ',
+        labelMaxCharsPerTick: 'Maximum loaded chars/tick: ',
+        labelInternalState: 'Internal state: ',
+
+        menuManual: 'User Guide ({0}/{1})',
+        menuTOC: 'Table of Contents',
+        labelSource: 'Source: ',
+        manualSystemDesc: 'User guide, page {0}.',
+        manual:
+        [
+            {
+                title: 'Introduction',
+                contents:
+`Welcome to the Parametric L-systems Renderer! This guide aims to help you ` +
+`understand parametric L-systems in detail, as well as instructions on how ` +
+`to effectively use this theory to construct and render them.
+
+Let's start discovering the wonders of L-systems (and the renderer).
+
+Notice: A gallery for regular L-systems has opened! Visit that theory instead.`
+            },
+        ]
+    }
+};
+
+/**
+ * Returns a localised string.
+ * @param {string} name the string's internal name.
+ * @returns {string}
+ */
+let getLoc = (name, lang = menuLang) =>
+{
+    if(lang in locStrings && name in locStrings[lang])
+        return locStrings[lang][name];
+
+    if(name in locStrings.en)
+        return locStrings.en[name];
+    
+    return `String missing: ${lang}.${name}`;
+}
+
+/**
+ * Returns a string of a fixed decimal number, with a fairly uniform width.
+ * @param {number} x the number.
+ * @returns {string}
+ */
+let getCoordString = (x) => x.toFixed(x >= -0.01 ?
+    (x <= 9.999 ? 3 : (x <= 99.99 ? 2 : 1)) :
+    (x < -9.99 ? (x < -99.9 ? 0 : 1) : 2)
+);
 
 /**
  * Represents an instance of the Xorshift RNG.
@@ -524,7 +692,7 @@ class LSystem
         {
             ruleMatches.push([...rules[i].replace(TRIM_SP, '').match(
             LS_RULE)]);
-            // Indices 1, 2, 3 are context, condition, and all derivations
+            // Indices 1, 3, 4 are context, condition, and all derivations
         }
         this.rules = new Map();
         this.models = new Map();
@@ -536,23 +704,24 @@ class LSystem
             // left, middle, and right respectively
             if(!contextMatch[6])
                 continue;
-            
+
             let tmpRule = {};
             let ruleParams = {};
+            if(contextMatch[8])
             {
                 let params = contextMatch[8].split(',');
                 for(let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['m', j];
             }
             tmpRule.left = contextMatch[2];
-            if(tmpRule.left)
+            if(tmpRule.left && contextMatch[4])
             {
                 let params = contextMatch[4].split(',');
                 for(let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['l', j];
             }
             tmpRule.right = contextMatch[10];
-            if(tmpRule.right)
+            if(tmpRule.right && contextMatch[12])
             {
                 let params = contextMatch[12].split(',');
                 for(let j = 0; j < params.length; ++j)
@@ -599,14 +768,14 @@ class LSystem
                 // MathExpression eval: (v) => rule.paramMap(v, params[l], ...)
             }
 
-            // [i][2]: condition
-            if(ruleMatches[i][2])
-                tmpRule.condition = MathExpression.parse(ruleMatches[i][2]);
+            // [i][3]: condition
+            if(ruleMatches[i][3])
+                tmpRule.condition = MathExpression.parse(ruleMatches[i][3]);
             else
-                tmpRule.condition = MathExpression.parse('true');
+                tmpRule.condition = MathExpression.parse('1');
 
-            // [i][3]: everything else
-            let tmpRuleMatches = ruleMatches[i][3].split(',');
+            // [i][4]: everything else
+            let tmpRuleMatches = ruleMatches[i][4].split(',');
             for(let j = 0; j < tmpRuleMatches.length; ++j)
             {
                 if(typeof tmpRuleMatches[j] === 'undefined')
@@ -892,16 +1061,19 @@ class LSystem
                             ++k)
                             {
                                 let derivPi = null;
-                                for(let l = 0; l < tmpRules[j].parameters[k].
-                                length; ++l)
+                                if(tmpRules[j].parameters[k])
                                 {
-                                    if(tmpRules[j].parameters[k][l])
+                                    for(let l = 0; l < tmpRules[j].parameters[
+                                    k].length; ++l)
                                     {
-                                        if(!derivPi)
-                                            derivPi = [];
-                                        derivPi.push(
-                                        tmpRules[j].parameters[k][l].evaluate(
-                                        tmpParamMap));
+                                        if(tmpRules[j].parameters[k][l])
+                                        {
+                                            if(!derivPi)
+                                                derivPi = [];
+                                            derivPi.push(tmpRules[j].
+                                            parameters[k][l].evaluate(
+                                            tmpParamMap));
+                                        }
                                     }
                                 }
                                 derivParams.push(derivPi);
@@ -2723,7 +2895,9 @@ let camMeasurer = new Measurer('renderer.camera', 30);
 
 let testSuite = () =>
 {
-    let a = new LSystem('[+(30)G]F/(180)A(2)',['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5,C:0.5'], 30, 1);
+    let a = new LSystem('[+(30)G]F/(180)A(2)', [
+        'A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.4,:0,C:0'
+    ], 30, 1);
     // A(0)
     let a0 = 'A';
     let a0p = [[BigNumber.ZERO]];
@@ -2738,4 +2912,20 @@ let testSuite = () =>
     let a2 = tmpDeriv.result;
     let a2p = tmpDeriv.params;
     log(a.reconstruct(a2, a2p));
+
+    let b0 = 'X';
+    let b0p = [null];
+    let bt0 = arrow.getAncestree(b0);
+    tmpDeriv = arrow.derive(b0, b0p, bt0.ancestors, bt0.children, 0);
+    let b1 = tmpDeriv.result;
+    let b1p = tmpDeriv.params;
+    log(arrow.reconstruct(b1, b1p));
+
+    let bt1 = arrow.getAncestree(b1);
+    tmpDeriv = arrow.derive(b1, b1p, bt1.ancestors, bt1.children, 0);
+    let b2 = tmpDeriv.result;
+    let b2p = tmpDeriv.params;
+    log(arrow.reconstruct(b2, b2p));
 }
+
+testSuite();

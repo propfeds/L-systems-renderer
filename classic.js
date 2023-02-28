@@ -937,6 +937,7 @@ let getLoc = (name, lang = menuLang) =>
 
 /**
  * Returns a string of a fixed decimal number, with a fairly uniform width.
+ * @param {number} x the number.
  * @returns {string}
  */
 let getCoordString = (x) => x.toFixed(x >= -0.01 ?
