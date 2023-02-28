@@ -15,15 +15,14 @@ let tickDelayMode = false;
 let resetLvlOnConstruct = true;
 let measurePerformance = false;
 let debugCamPath = false;
-let maxCharsPerTick = 1000;
+let maxCharsPerTick = 1250;
 let menuLang = Localization.language;
 
 const TRIM_SP = /\s+/g;
-const LS_RULE = /(.+):(.+)=(([^:]+)(:([^,]+))?)(,([^:]+)(:([^,]+))?)*/;
+const LS_RULE = /(.+):(.+)=(.*)/;
 // Context doesn't need to check for nested brackets!
 const LS_CONTEXT =
 /((.)(\(([^\)]+)\))?<)?((.)(\(([^\)]+)\))?)(>(.)(\(([^\)]+)\))?)?/;
-// But individual symbols do.
 
 /**
  * Represents an instance of the Xorshift RNG.
@@ -432,18 +431,31 @@ class ParametricLSystem
             tmpRule.paramMap = (v, l, m, r) =>
             {
                 let pos = tmpRule.params[v][0];
+                let result = null;
                 switch(pos)
                 {
                     case 'm':
                         if(m)
-                            return m[tmpRule.params[v][1]];
+                        {
+                            result = m[tmpRule.params[v][1]];
+                            log(`m = ${m}`)
+                            break;
+                        }
                     case 'l':
                         if(l)
-                            return l[tmpRule.params[v][1]];
+                        {
+                            result = l[tmpRule.params[v][1]];
+                            break;
+                        }
                     case 'r':
                         if(r)
+                        {
                             return r[tmpRule.params[v][1]];
+                            break;
+                        }
                 }
+                log(`${v} = ${result}`);
+                return result;
                 // MathExpression eval: (v) => rule.paramMap(v, params[l], ...)
             }
 
@@ -453,28 +465,17 @@ class ParametricLSystem
             else
                 tmpRule.condition = MathExpression.parse('true');
 
-            // [i][4+4k]: derivation(s)
-            // [i][6+4k]: probability
-            // j = 4k
-            for(let j = 0; j + 4 < ruleMatches[i].length; j += 4)
+            // [i][3]: everything else
+            let tmpRuleMatches = ruleMatches[i][3].split(',');
+            for(let j = 0; j < tmpRuleMatches.length; ++j)
             {
-                if(!ruleMatches[i][j + 4])
+                if(typeof tmpRuleMatches[j] === 'undefined')
                     continue;
 
-                let tmpDeriv = this.parseSequence(ruleMatches[i][j + 4]);
+                log(`j = ${j}`)
+                tmpRuleMatches[j] = tmpRuleMatches[j].split(':');
+                let tmpDeriv = this.parseSequence(tmpRuleMatches[j][0]);
                 let derivParams = tmpDeriv.params;
-                // for(let i = 0; i < this.axiomParams.length; ++i)
-                // {
-                //     if(!this.axiomParams[i])
-                //         continue;
-
-                //     let params = this.axiomParams[i].split(',');
-                //     // console.log(params)
-                //     for(let j = 0; j < params.length; ++j)
-                //         params[j] = MathExpression.parse(params[j]).evaluate();
-                //     this.axiomParams[i] = params;
-                //     // Maybe leave them at BigNumber?
-                // }
                 for(let k = 0; k < derivParams.length; ++k)
                 {
                     if(!derivParams[k])
@@ -491,9 +492,9 @@ class ParametricLSystem
                     tmpRule.derivations = [tmpRule.derivations,
                     tmpDeriv.result];
                     tmpRule.parameters = [tmpRule.parameters, derivParams];
-                    if(ruleMatches[i][j + 6])
+                    if(tmpRuleMatches[j][1])
                         tmpRule.chances = [tmpRule.chances,
-                        MathExpression.parse(ruleMatches[i][j + 6])];
+                        MathExpression.parse(tmpRuleMatches[j][1])];
                     else
                         tmpRule.chances = [tmpRule.chances,
                         MathExpression.parse('1')];
@@ -502,9 +503,9 @@ class ParametricLSystem
                 {
                     tmpRule.derivations = tmpDeriv.result;
                     tmpRule.parameters = derivParams;
-                    if(ruleMatches[i][j + 6])
+                    if(tmpRuleMatches[j][1])
                         tmpRule.chances = MathExpression.parse(
-                        ruleMatches[i][j + 6]);
+                        tmpRuleMatches[j][1]);
                     else
                         tmpRule.chances = MathExpression.parse('1');
                 }
@@ -512,12 +513,13 @@ class ParametricLSystem
                 {
                     tmpRule.derivations.push(tmpDeriv.result);
                     tmpRule.parameters.push(derivParams);
-                    if(ruleMatches[i][j + 6])
+                    if(tmpRuleMatches[j][1])
                         tmpRule.chances.push(MathExpression.parse(
-                        ruleMatches[i][j + 6]));
+                        tmpRuleMatches[j][1]));
                     else
                         tmpRule.chances.push(MathExpression.parse('1'));
                 }
+                log(tmpRule.derivations.toString())
             }
 
             // Finally, push rule
@@ -711,7 +713,6 @@ class ParametricLSystem
                 continue;
             else if(this.rules.has(sequence[i]))
             {
-                log(i);
                 let tmpRules = this.rules.get(sequence[i]);
                 for(let j = 0; j < tmpRules.length; ++j)
                 {
@@ -735,6 +736,8 @@ class ParametricLSystem
                             continue;
                     }
 
+                    if(typeof seqParams[i] !== 'undefined')
+                    log(seqParams[i].toString())
                     let tmpParamMap = (v) => tmpRules[j].paramMap(v,
                     seqParams[ancestors[i]], seqParams[i], seqParams[right]);
                     // Next up is the condition
@@ -763,6 +766,7 @@ class ParametricLSystem
                     else    // Stochastic time
                     {
                         let roll = this.RNG.nextFloat();
+                        log(`roll = ${roll}`)
                         let chanceSum = 0;
                         let choice = -1;
                         for(let k = 0; k < tmpRules[j].derivations.length; ++k)
@@ -777,12 +781,12 @@ class ParametricLSystem
                             tmpParamMap);
                             if(chanceSum > roll)    // select this
                             {
+                                choice = k;
                                 deriv = tmpRules[j].derivations[k];
                                 log(deriv)
                                 if(tmpRules[j].parameters[k])
                                 {
                                     derivParams = [];
-                                    log(JSON.stringify(tmpRules[j].parameters[k], undefined, 4))
                                     for(let l = 0; l < tmpRules[j].
                                     parameters[k].length; ++l)
                                     {
@@ -805,6 +809,7 @@ class ParametricLSystem
                                 break;
                             }
                         }
+                        log(`choice = ${choice}`)
                         if(choice == -1)
                             continue;
                         break;
@@ -816,6 +821,7 @@ class ParametricLSystem
 
             result += deriv;
             resultParams.push(derivParams);
+            log(`${i} ${resultParams.length}`)
         }
         return {
             next: 0,
@@ -851,11 +857,12 @@ class ParametricLSystem
     }
 }
 
-let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5']);
+let a = new ParametricLSystem('[+(30)G]F/(180)A(2)', ['A(t):t<=5=[+(30)G]F/(180)A(t+2):0.5,[-(30)G]F\\(180)A(t+2):0.5,:0.5,C:0.5'], 30, 1);
 // A(0)
 let a0 = 'A';
 let a0p = [[BigNumber.ZERO]];
-let tmpDeriv = a.derive(a0, a0p, [null], [null], 0);
+let at0 = a.getAncestree(a0);
+let tmpDeriv = a.derive(a0, a0p, at0.ancestors, at0.children, 0);
 let a1 = tmpDeriv.result;
 let a1p = tmpDeriv.params;
 log(a1);
