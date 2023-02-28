@@ -1,7 +1,7 @@
 import { MathExpression } from "../api/MathExpression";
 
 var id = 'parametric_L_systems_renderer';
-var name = 'Parametric L-systems Renderer';
+var name = 'Param. L-systems Renderer';
 var description = 'Get wrecked.';
 var authors = 'propfeds#5988';
 var version = 0;
@@ -601,7 +601,11 @@ class ParametricLSystem
         };
         // Tested this out on Chrome console, it worked.
     }
-
+    /**
+     * Returns and ancestree and a child tree for a sequence.
+     * @param {string} sequence the sequence.
+     * @returns {object}
+     */
     getAncestree(sequence)
     {
         // Scanning behaviour should be very similar to renderer drawing.
@@ -836,9 +840,107 @@ class ParametricLSystem
         };
     }
 
-    deriveModel(symbol, symbolParams)
+    deriveModel(symbol, params)
     {
+        let result = '';
+        let resultParams = [];
+        if(this.models.has(symbol))
+        {
+            let tmpRules = this.models.get(symbol);
+            for(let j = 0; j < tmpRules.length; ++j)
+            {
+                let tmpParamMap = (v) => tmpRules[j].paramMap(v,
+                null, null, params);
+                // Next up is the condition
+                if(!tmpRules[j].condition.evaluate(tmpParamMap))
+                    continue;
 
+                if(typeof tmpRules[j].derivations === 'string')
+                {
+                    result = tmpRules[j].derivations;
+                    if(tmpRules[j].parameters)
+                    {
+                        for(let k = 0; k < tmpRules[j].parameters.length;
+                        ++k)
+                        {
+                            let derivPi = null;
+                            for(let l = 0; l < tmpRules[j].parameters[k].
+                            length; ++l)
+                            {
+                                if(tmpRules[j].parameters[k][l])
+                                {
+                                    if(!derivPi)
+                                        derivPi = [];
+                                    derivPi.push(
+                                    tmpRules[j].parameters[k][l].evaluate(
+                                    tmpParamMap));
+                                }
+                            }
+                            resultParams.push(derivPi);
+                        }
+                    }
+                    break;
+                }
+                else    // Stochastic time
+                {
+                    // Models can be drawn any time, thus, the RNG should be
+                    // separate from actual rule processing.
+                    let roll = globalRNG.nextFloat();
+                    let chanceSum = 0;
+                    let choice = -1;
+                    for(let k = 0; k < tmpRules[j].derivations.length; ++k)
+                    {
+                        // Example
+                        // roll: 0.50
+                        // chance 1: 0.00 - 0.49
+                        // sum after 1: 0.50
+                        // chance 2: 0.50 - 0.99
+                        // sum after 2: 1 (select!)
+                        chanceSum += tmpRules[j].chances[k].evaluate(
+                        tmpParamMap);
+                        if(chanceSum > roll)    // select this
+                        {
+                            choice = k;
+                            result = tmpRules[j].derivations[k];
+                            if(tmpRules[j].parameters[k])
+                            {
+                                for(let l = 0; l < tmpRules[j].
+                                parameters[k].length; ++l)
+                                {
+                                    let derivPi = null;
+                                    if(tmpRules[j].parameters[k][l])
+                                    {
+                                        for(let m = 0; m < tmpRules[j].
+                                        parameters[k][l].length; ++m)
+                                        {
+                                            if(tmpRules[j].
+                                            parameters[k][l][m])
+                                            {
+                                                if(!derivPi)
+                                                    derivPi = [];
+                                                derivPi.push(tmpRules[j].
+                                                parameters[k][l][m].
+                                                evaluate(tmpParamMap));
+                                            }
+                                        }
+                                    }
+                                    resultParams.push(derivPi);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    // log(`roll = ${roll} choice = ${choice}`)
+                    if(choice == -1)
+                        continue;
+                    break;
+                }
+            }
+        }
+        return {
+            result: result,
+            params: resultParams
+        };
     }
 
     reconstruct(sequence, params)
@@ -871,6 +973,38 @@ class ParametricLSystem
             }
         }
         return result;
+    }
+    /**
+     * Returns a deep copy (hopefully) of the user input to prevent overwrites.
+     * @returns {{
+     *  axiom: string,
+     *  rules: string[],
+     *  turnAngle: string,
+     *  seed: number,
+     *  ignoreList: string,
+     *  tropism: string,
+     *  variables: object
+     * }}
+     */
+    get object()
+    {
+        return {
+            axiom: this.userInput.axiom,
+            rules: this.purgeEmpty(this.userInput.rules),
+            turnAngle: this.userInput.turnAngle,
+            seed: this.userInput.seed,
+            ignoreList: this.userInput.ignoreList,
+            tropism: this.userInput.tropism,
+            variables: this.userInput.variables
+        };
+    }
+    /**
+     * Returns the system's string representation.
+     * @returns {string}
+     */
+    toString()
+    {
+        return JSON.stringify(this.object, null, 4);
     }
 }
 
