@@ -316,7 +316,7 @@ Note 2: The list of context-ignored symbols can be configured in the ` +
 `letter 🅱, starts from the 🅱ase of the tree and travels to the to🅿️.
 
 Axiom: B[+AAA]A[-AA]A[+A]A
-B < A = B
+B<A = B
 B = A
 Context-ignored: +-
 Turning angle: 30°
@@ -324,6 +324,33 @@ Turning angle: 30°
 Applies static camera:
 Scale: 4
 Centre: (0, 2, 0)
+Upright`
+            },
+            {
+                title: 'Example: Cellular botanica',
+                contents:
+`A cellular automaton that has been transformed into a tree. Originally ` +
+`studied in 1974 by Hogeweg and Hesper, this is one of the 3584 patterns ` +
+`generated in the study using symbols 0 and 1.
+
+Axiom: F1F1F1
+0<0>0 = 0
+0<0>1 = 1[-F1F1]
+0<1>0 = 1
+0<1>1 = 1
+1<0>0 = 0
+1<0>1 = 1F1
+1<1>0 = 1
+1<1>1 = 0
++ = -
+- = +
+Turtle-ignored: 01
+Context-ignored: F+-
+Turning angle: 22.5°
+
+Applies static camera:
+Scale: lv+2
+Centre: (0, lv/2+1, 0)
 Upright`
             }
         ]
@@ -712,6 +739,8 @@ class LSystem
      * @param {string} turnAngle the turning angle (in degrees).
      * @param {number} seed the seed used for stochastic systems.
      * @param {string} ignoreList a list of symbols to be ignored by the turtle.
+     * @param {string} ctxIgnoreList a list of symbols ignored when deriving
+     * context.
      * @param {string} tropism the tropism factor.
      * @param {object} variables NOT IMPLEMENTED
      */
@@ -2966,8 +2995,34 @@ const zUpQuat = new Quaternion(0, 0, 0, 1);
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalRNG = new Xorshift(Date.now());
-let contentsTable = [0];
-let manualSystems = {};
+let contentsTable = [0, 1, 2];
+let manualSystems =
+{
+    3:
+    {
+        system: new LSystem('B[+AAA]A[-AA]A[+A]A', [
+            'B<A=B',
+            'B=A'
+        ], 30, 0, '', '+-'),
+        config: [4, 0, 2, 0, true]
+    },
+    4:
+    {
+        system: new LSystem('F1F1F1', [
+            '0<0>0=0',
+            '0<0>1=1[-F1F1]',
+            '0<1>0=1',
+            '0<1>1=1',
+            '1<0>0=0',
+            '1<0>1=1F1',
+            '1<1>0=1',
+            '1<1>1=0',
+            '+=-',
+            '-=+'
+        ], 22.5, 0, '01', 'F+-'),
+        config: ['lv+2', 0, 'lv/2+1', 0, true]
+    }
+};
 let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
