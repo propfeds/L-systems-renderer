@@ -5153,7 +5153,7 @@ let createSeqViewMenu = (level) =>
 {
     let pageTitle = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelChars'),
+        text: Localization.format(getLoc('labelLevelSeq'), level,
         renderer.levels[level].length),
         margin: new Thickness(0, 4),
         heightRequest: 20,
@@ -5168,11 +5168,47 @@ let createSeqViewMenu = (level) =>
         renderer.levelParams[level]),
         lineBreakMode: LineBreakMode.CHARACTER_WRAP
     });
+    let prevButton = ui.createButton
+    ({
+        text: getLoc('btnPrev'),
+        row: 0,
+        column: 0,
+        isVisible: level > 0,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            if(level > 0)
+                setPage(level - 1);
+        }
+    });
+    let nextButton = ui.createButton
+    ({
+        text: getLoc('btnNext'),
+        row: 0,
+        column: 1,
+        isVisible: level < renderer.levels.length - 1,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            if(level < renderer.levels.length - 1)
+                setPage(level + 1);
+        }
+    });
+    let setPage = (p) =>
+    {
+        level = p;
+        pageTitle.text = Localization.format(getLoc('labelLevelSeq'), level,
+        renderer.levels[level].length);
+        pageContents.text = renderer.system.reconstruct(renderer.levels[level],
+        renderer.levelParams[level]);
+
+        prevButton.isVisible = level > 0;
+        nextButton.isVisible = level < renderer.levels.length - 1;
+    };
 
     let menu = ui.createPopup
     ({
-        title: Localization.format(getLoc('menuSequence'), tmpSystemName,
-        level),
+        title: tmpSystemName,
         isPeekable: true,
         content: ui.createStackLayout
         ({
@@ -5193,6 +5229,20 @@ let createSeqViewMenu = (level) =>
                             ]
                         })
                     })
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createGrid
+                ({
+                    columnDefinitions: ['50*', '50*'],
+                    children:
+                    [
+                        prevButton,
+                        nextButton
+                    ]
                 })
             ]
         })

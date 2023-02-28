@@ -48,10 +48,12 @@
   would've been already stripped down by the time it gets to the turtle
   - `~`: Parameters of the following symbol can control model size in rule
 
-- [ ] Revamp sequence menu
+- [x] Revamp sequence menu
   - Level 0: 10 chars (`View`)
   - [x] Classic LS: displays the entire string in a label
   - Parametric LS: displays symbols and parameters side by side, one symbol/row
+    - Scrapped lol
+  - [x] Stage navigation
 
 - [x] Turning angles (and tropism)
   - Formula expressions allow shenanigans such as `360/7`, mostly
