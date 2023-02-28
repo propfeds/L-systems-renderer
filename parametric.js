@@ -368,22 +368,18 @@ class ParametricLSystem
                 continue;
 
             let params = this.axiomParams[i].split(',');
-            // console.log(params)
             for(let j = 0; j < params.length; ++j)
                 params[j] = MathExpression.parse(params[j]).evaluate();
             this.axiomParams[i] = params;
             // Maybe leave them at BigNumber?
         }
-        // console.log(this.axiomParams.toString());
         
         let ruleMatches = [];
         for(let i = 0; i < rules.length; ++i)
         {
             ruleMatches.push([...rules[i].replace(TRIM_SP, '').match(
             LS_RULE)]);
-            // console.log(ruleMatches[i].toString());
-            // Indices 1, 2, 4+4k, 6+4k are context, condition, derivation and
-            // probability respectively
+            // Indices 1, 2, 3 are context, condition, and all derivations
         }
         this.rules = new Map();
         this.models = new Map();
@@ -438,7 +434,6 @@ class ParametricLSystem
                         if(m)
                         {
                             result = m[tmpRule.params[v][1]];
-                            log(`m = ${m}`)
                             break;
                         }
                     case 'l':
@@ -450,7 +445,7 @@ class ParametricLSystem
                     case 'r':
                         if(r)
                         {
-                            return r[tmpRule.params[v][1]];
+                            result = r[tmpRule.params[v][1]];
                             break;
                         }
                 }
@@ -472,7 +467,6 @@ class ParametricLSystem
                 if(typeof tmpRuleMatches[j] === 'undefined')
                     continue;
 
-                log(`j = ${j}`)
                 tmpRuleMatches[j] = tmpRuleMatches[j].split(':');
                 let tmpDeriv = this.parseSequence(tmpRuleMatches[j][0]);
                 let derivParams = tmpDeriv.params;
@@ -519,7 +513,6 @@ class ParametricLSystem
                     else
                         tmpRule.chances.push(MathExpression.parse('1'));
                 }
-                log(tmpRule.derivations.toString())
             }
 
             // Finally, push rule
@@ -753,12 +746,20 @@ class ParametricLSystem
                             for(let k = 0; k < tmpRules[j].parameters.length;
                             ++k)
                             {
-                                if(tmpRules[j].parameters[k])
-                                    derivParams.push(
-                                    tmpRules[j].parameters[k].evaluate(
-                                    tmpParamMap));
-                                else
-                                    derivParams.push(null);
+                                let derivPi = null;
+                                for(let l = 0; l < tmpRules[j].parameters[k].
+                                length; ++l)
+                                {
+                                    if(tmpRules[j].parameters[k][l])
+                                    {
+                                        if(!derivPi)
+                                            derivPi = [];
+                                        derivPi.push(
+                                        tmpRules[j].parameters[k][l].evaluate(
+                                        tmpParamMap));
+                                    }
+                                }
+                                derivParams.push(derivPi);
                             }
                         }
                         break;
@@ -783,27 +784,30 @@ class ParametricLSystem
                             {
                                 choice = k;
                                 deriv = tmpRules[j].derivations[k];
-                                log(deriv)
                                 if(tmpRules[j].parameters[k])
                                 {
                                     derivParams = [];
                                     for(let l = 0; l < tmpRules[j].
                                     parameters[k].length; ++l)
                                     {
+                                        let derivPi = null;
                                         if(tmpRules[j].parameters[k][l])
                                         {
-                                            let tmpParams = [];
                                             for(let m = 0; m < tmpRules[j].
                                             parameters[k][l].length; ++m)
                                             {
-                                                tmpParams.push(
-                                                tmpRules[j].parameters[k][l][m].
-                                                evaluate(tmpParamMap));
+                                                if(tmpRules[j].
+                                                parameters[k][l][m])
+                                                {
+                                                    if(!derivPi)
+                                                        derivPi = [];
+                                                    derivPi.push(tmpRules[j].
+                                                    parameters[k][l][m].
+                                                    evaluate(tmpParamMap));
+                                                }
                                             }
-                                            derivParams.push(tmpParams);
                                         }
-                                        else
-                                            derivParams.push(null);
+                                        derivParams.push(derivPi);
                                     }
                                 }
                                 break;
@@ -817,10 +821,16 @@ class ParametricLSystem
                 }
             }
             else
+            {
                 deriv = sequence[i];
+                derivParams = seqParams[i];
+            }
 
             result += deriv;
-            resultParams.push(derivParams);
+            if(derivParams)
+                resultParams.push(...derivParams);
+            else
+                resultParams.push(derivParams);
             log(`${i} ${resultParams.length}`)
         }
         return {
