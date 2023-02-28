@@ -1179,16 +1179,18 @@ class LSystem
                         ++k)
                         {
                             let derivPi = null;
-                            for(let l = 0; l < tmpRules[j].parameters[k].
-                            length; ++l)
+                            if(tmpRules[j].parameters[k])
                             {
-                                if(tmpRules[j].parameters[k][l])
+                                for(let l = 0; l < tmpRules[j].parameters[k].
+                                length; ++l)
                                 {
-                                    if(!derivPi)
-                                        derivPi = [];
-                                    derivPi.push(
-                                    tmpRules[j].parameters[k][l].evaluate(
-                                    tmpParamMap));
+                                    if(tmpRules[j].parameters[k][l])
+                                    {
+                                        if(!derivPi)
+                                            derivPi = [];
+                                        derivPi.push(tmpRules[j].parameters[k][
+                                        l].evaluate(tmpParamMap));
+                                    }
                                 }
                             }
                             resultParams.push(derivPi);
