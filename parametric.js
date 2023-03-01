@@ -386,12 +386,12 @@ T(g): applies a tropism force of g.`
 `using parametric L-systems.
 
 Axiom: F(1)
-F(d) = F(d/3)+F(d/3)--F(d/3)+F(d/3)
+F(d) = F(d/3)+F(d/3)-(120)F(d/3)+F(d/3)
 Turning angle: 60°
 
 Applies static camera:
-Scale: 1
-Centre: (1/2, sqrt(3)/8, 0)`
+Scale: 1/2
+Centre: (1/2, sqrt(3)/12, 0)`
             },
             {
                 title: 'Parametric L-systems',
@@ -3078,9 +3078,9 @@ let manualSystems =
     6:
     {
         system: new LSystem('F(1)', [
-            'F(d)=F(d/3)+F(d/3)--F(d/3)+F(d/3)'
+            'F(d)=F(d/3)+F(d/3)-(120)F(d/3)+F(d/3)'
         ], 60),
-        config: [1, '1/2', 'sqrt(3)/8', 0, false]
+        config: ['1/2', '1/2', 'sqrt(3)/12', 0, false]
     }
 };
 let tmpSystem = null;
