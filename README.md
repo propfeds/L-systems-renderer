@@ -2,9 +2,25 @@
 
 L-systems renderer in Exponential Idle.
 
+## Installation
+
+Two editions of LSR are available. The Classic edition of LSR is lighter in
+terms of processing, but does not support parametric or context-sensitive
+syntax.
+
+- [Classic](./classic.js)
+- [Parametric](./parametric.js)
+
+Navigate to the edition you want to download, click on the link, then click on
+`Raw`. You will be delivered to the theory's raw code. Copy the page's URL.
+
+Then, access the custom theory panel within the game (unlocked after finishing
+T9, the last theory) then enter the picking menu. Press the `+` symbol and
+paste the URL in.
+
 ## Features
 
-Supported L-system features:
+- Parametric, context-sensitive (2L) systems
 - Stochastic (randomised) rules
 - 3D turtle controls
 - Polygon modelling
@@ -19,17 +35,6 @@ been converted to JSON instead of pure text. However, it still might break.
 Be sure to back it up to another save before updating, and in case it's
 corrupted, please contact me. From now on, there's also an option to export the
 internal state in the theory menu, so please back it up.
-
-## Installation
-
-Current version: 0.21.1
-
-Navigate to [`renderer.js`](./renderer.js) and click on `Raw`. You will be
-delivered to this theory's raw code. Copy the page's URL.
-
-Then, access the custom theory panel within the game (unlocked after finishing
-T9, the last theory) then enter the picking menu. Press the `+` symbol and
-paste the URL in.
 
 ## Screenshots
 

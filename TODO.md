@@ -22,7 +22,6 @@
   - [ ] Option to use old tropisme
   - [ ] Tropism direction
     - Maybe can have 4 arguments
-- [x] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 - [ ] Compress internal state? LZW, LZP
   - [ ] Or just separate into multiple lines, with an add button
 
@@ -49,6 +48,9 @@
 
 ## 1.0: Completed
 
+- [x] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
+- [x] Fix precision problem with BigNumber and/or Quaternions
+  - Source of error: missing a conversion of BN -> Number in LS constructor
 - [x] Turning angles (and tropism)
   - Formula expressions allow shenanigans such as `360/7`, mostly
   - [ ] Button to change mode between degrees and radians?

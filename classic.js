@@ -49,7 +49,7 @@ var getDescription = (language) =>
     let descs =
     {
         en:
-`An educational tool that allows you to model plants and other fractal figures.
+`An educational tool that allows you to model fractals figures and plants.
 
 Supported L-system features:
 - Stochastic (randomised) rules
@@ -264,7 +264,7 @@ const locStrings =
         menuManual: 'User Guide ({0}/{1})',
         menuTOC: 'Table of Contents',
         labelSource: 'Source: ',
-        manualSystemDesc: 'User guide, page {0}.',
+        manualSystemDesc: 'From the user guide, page {0}.',
         manual:
         [
             {
@@ -1468,8 +1468,8 @@ class LSystem
         /**
          * @type {number} half the turning angle (in radians) for use in quats.
          */
-        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate() *
-        Math.PI / 360;
+        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate().
+        toNumber() * Math.PI / 360;
         /**
          * @type {Map<string, Quaternion>} a map of rotation quaternions for
          * quicker calculations.
@@ -1486,7 +1486,8 @@ class LSystem
         /**
          * @type {number} the tropism factor.
          */
-        this.tropism = MathExpression.parse(tropism.toString()).evaluate();
+        this.tropism = MathExpression.parse(tropism.toString()).evaluate().
+        toNumber();
     }
 
     /**
