@@ -68,7 +68,7 @@ let resetLvlOnConstruct = true;
 let measurePerformance = false;
 let debugCamPath = false;
 let normaliseQuaternions = false;
-let maxCharsPerTick = 1250;
+let maxCharsPerTick = 250;
 let menuLang = Localization.language;
 
 let savedSystems = new Map();
@@ -1095,59 +1095,70 @@ class LSystem
      * @param {string} sequence the sequence.
      * @returns {object}
      */
-    getAncestree(sequence)
+    getAncestree(sequence, task = {})
     {
         // Scanning behaviour should be very similar to renderer drawing.
-        let stack = [];
-        let idxStack = [];
-        let ancestors = [];
-        let children = [];
-        let i;  // Piece of shit Javascript doesn't let me put the let in the
-        // for loop normally.
-        for(i = 0; i < sequence.length; ++i)
+        let tmpStack = task.stack || [];
+        let tmpIdxStack = task.idxStack || [];
+        let tmpAncestors = task.ancestors || [];
+        let tmpChildren = task.children || [];
+        let i = task.next || 0;
+        for(; i < sequence.length; ++i)
         {
+            if(i - task.next > maxCharsPerTick)
+            {
+                return {
+                    next: i,
+                    stack: tmpStack,
+                    idxStack: tmpIdxStack,
+                    ancestors: tmpAncestors,
+                    children: tmpChildren
+                };
+            }
             switch(sequence[i])
             {
                 case ' ':
                     log('Blank space detected.')
                     break;
                 case '[':
-                    idxStack.push(stack.length);
+                    tmpIdxStack.push(tmpStack.length);
                     break;
                 case ']':
-                    if(stack.length == 0)
+                    if(tmpStack.length == 0)
                     {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
-                    while(stack.length > idxStack[idxStack.length - 1])     
-                        stack.pop();
+                    while(tmpStack.length > tmpIdxStack[tmpIdxStack.length - 1])
+                        tmpStack.pop();
 
-                    idxStack.pop();
+                    tmpIdxStack.pop();
                     break;
                 default:
                     let ignored = this.ctxIgnoreList.has(sequence[i]);
                     if(ignored)
                         break;
                     
-                    if(stack.length > 0)
+                    if(tmpStack.length > 0)
                     {
-                        let ancIdx = stack[stack.length - 1];
-                        ancestors[i] = ancIdx;
-                        if(typeof children[ancIdx] === 'undefined')
-                            children[ancIdx] = [];
-                        children[ancIdx].push(i);
+                        let ancIdx = tmpStack[tmpStack.length - 1];
+                        tmpAncestors[i] = ancIdx;
+                        if(typeof tmpChildren[ancIdx] === 'undefined')
+                            tmpChildren[ancIdx] = [];
+                        tmpChildren[ancIdx].push(i);
                     }
 
-                    stack.push(i);
+                    tmpStack.push(i);
                     break;
             }
         }
         return {
-            ancestors: ancestors,
-            children: children
+            next: 0,
+            stack: tmpStack,
+            idxStack: tmpIdxStack,
+            ancestors: tmpAncestors,
+            children: tmpChildren
         };
-        // Tested this out on Chrome console, it worked.
     }
 
     /**
@@ -1157,22 +1168,23 @@ class LSystem
      * @param {string} sequence the input string.
      * @returns {{next: number, result: string}}
      */
-    derive(sequence, seqParams, ancestors, children, start = 0)
+    derive(sequence, seqParams, ancestors, children, task = {})
     {
-        let result = '';
-        let resultParams = [];
-        for(let i = start; i < sequence.length; ++i)
+        let result = task.derivation || '';
+        let resultParams = task.parameters || [];
+        let i = task.next || 0;
+        let charCount = 0;
+        for(; i < sequence.length; ++i)
         {
-            if(result.length > maxCharsPerTick)
+            if(charCount > maxCharsPerTick)
             {
                 return {
                     next: i,
-                    result: result,
-                    params: resultParams
+                    charCount: charCount,
+                    derivation: result,
+                    parameters: resultParams
                 };
             }
-            let deriv;
-            let derivParams = null;
             if(sequence[i] == '%')
             {
                 let branchLvl = 0;
@@ -1191,7 +1203,11 @@ class LSystem
                         break;
                 }
                 if(sequence[i] == ']')
-                    deriv = sequence[i];
+                {
+                    result += sequence[i];
+                    ++charCount;
+                    resultParams.push(null);
+                }
                 else
                     continue;
             }
@@ -1236,10 +1252,10 @@ class LSystem
 
                     if(typeof tmpRules[j].derivations === 'string')
                     {
-                        deriv = tmpRules[j].derivations;
+                        result += tmpRules[j].derivations;
+                        charCount += tmpRules[j].derivations.length;
                         if(tmpRules[j].parameters)
                         {
-                            derivParams = [];
                             for(let k = 0; k < tmpRules[j].parameters.length;
                             ++k)
                             {
@@ -1259,7 +1275,7 @@ class LSystem
                                         }
                                     }
                                 }
-                                derivParams.push(derivPi);
+                                resultParams.push(derivPi);
                             }
                         }
                         ruleChoice = j;
@@ -1283,10 +1299,10 @@ class LSystem
                             if(chanceSum > roll)    // select this
                             {
                                 choice = k;
-                                deriv = tmpRules[j].derivations[k];
+                                result += tmpRules[j].derivations[k];
+                                charCount += tmpRules[j].derivations[k].length;
                                 if(tmpRules[j].parameters[k])
                                 {
-                                    derivParams = [];
                                     for(let l = 0; l < tmpRules[j].
                                     parameters[k].length; ++l)
                                     {
@@ -1307,7 +1323,7 @@ class LSystem
                                                 }
                                             }
                                         }
-                                        derivParams.push(derivPi);
+                                        resultParams.push(derivPi);
                                     }
                                 }
                                 break;
@@ -1322,26 +1338,23 @@ class LSystem
                 }
                 if(ruleChoice == -1)
                 {
-                    deriv = sequence[i];
-                    derivParams = [seqParams[i]];
+                    result += sequence[i];
+                    ++charCount;
+                    resultParams.push(...[seqParams[i]]);
                 }
             }
             else
             {
-                deriv = sequence[i];
-                derivParams = [seqParams[i]];
+                result += sequence[i];
+                ++charCount;
+                resultParams.push(...[seqParams[i]]);
             }
-
-            result += deriv;
-            if(derivParams)
-                resultParams.push(...derivParams);
-            else
-                resultParams.push(derivParams);
         }
         return {
             next: 0,
-            result: result,
-            params: resultParams
+            charCount: charCount,
+            derivation: result,
+            parameters: resultParams
         };
     }
 
@@ -1655,9 +1668,6 @@ class Renderer
          */
         this.levels = [];
         this.levelParams = [];
-        // Only stores one level, temporari
-        this.ancestors = null;
-        this.children = null;
         /**
          * @type {number} the current level (updates after buying the variable).
          */
@@ -1709,9 +1719,19 @@ class Renderer
          */
         this.lastCamVel = new Vector3(0, 0, 0);
         /**
-         * @type {number} the next index to update for the current level.
+         * @type {object} the current ancestree task.
          */
-        this.nextDeriveIdx = 0;
+        this.ancestreeTask =
+        {
+            next: 0
+        };
+        /**
+         * @type {object} the current derivation task.
+         */
+        this.deriveTask =
+        {
+            next: 0
+        };
         /**
          * @type {number} how many nested polygons currently in (pls keep at 1).
          */
@@ -1752,44 +1772,57 @@ class Renderer
             if(charCount > maxCharsPerTick)
                 return;
 
-            if(i == 0)
+            if(i == 0 && !('derivation' in this.deriveTask))
             {
-                this.levels[i] = this.system.axiom;
-                this.levelParams[i] = this.system.axiomParams;
-                charCount += this.levels[i].length;
-                this.nextDeriveIdx = 0;
+                this.deriveTask =
+                {
+                    next: 0,
+                    derivation: this.system.axiom,
+                    parameters: this.system.axiomParams
+                };
+                charCount += this.system.axiom.length;
             }
             else
             {
-                if(!this.ancestors)
-                {
-                    let at = this.system.getAncestree(this.levels[i - 1]);
-                    this.ancestors = at.ancestors;
-                    this.children = at.children;
-                    charCount += this.ancestors.length;
-                }
-                let ret = this.system.derive(this.levels[i - 1],
-                this.levelParams[i - 1], this.ancestors, this.children,
-                this.nextDeriveIdx);
-                if(this.nextDeriveIdx == 0)
-                {
-                    this.levels[i] = ret.result;
-                    this.levelParams[i] = ret.params;
-                }
-                else
-                {
-                    this.levels[i] += ret.result;
-                    this.levelParams[i].push(...ret.params);
-                }
+                // If no ancestor (next is obviously 0): do work
+                // If no ancestor and next isn't 0: panik
+                // If has ancestor and next is 0: move to derive work
+                // If has ancestor and next isn't 0: do work
 
-                this.nextDeriveIdx = ret.next;
-                charCount += ret.result.length;
+                while(!('ancestors' in this.ancestreeTask) ||
+                ('ancestors' in this.ancestreeTask && this.ancestreeTask.next))
+                {
+                    let at = this.system.getAncestree(this.levels[i - 1],
+                    this.ancestreeTask);
+                    charCount += (at.next - this.ancestreeTask.next);
+                    this.ancestreeTask = at;
+                    if(charCount > maxCharsPerTick)
+                        return;
+                }
+                // TODO: convert derivation to new tasking model
+                if(!('derivation' in this.deriveTask) ||
+                ('derivation' in this.deriveTask && this.deriveTask.next))
+                {
+                    let ret = this.system.derive(this.levels[i - 1],
+                    this.levelParams[i - 1], this.ancestreeTask.ancestors,
+                    this.ancestreeTask.children, this.deriveTask);
+                    charCount += ret.charCount;
+                    this.deriveTask = ret;
+                }
             }
-            if(this.nextDeriveIdx == 0)
+            this.levels[i] = this.deriveTask.derivation;
+            this.levelParams[i] = this.deriveTask.parameters;
+            if(!this.deriveTask.next)
             {
                 ++this.loaded;
-                this.ancestors = null;
-                this.children = null;
+                this.ancestreeTask =
+                {
+                    next: 0
+                };
+                this.deriveTask =
+                {
+                    next: 0
+                };
             }
             else
                 return;
@@ -1929,7 +1962,14 @@ class Renderer
         this.system = system;
         this.levels = [];
         this.levelParams = [];
-        this.nextDeriveIdx = 0;
+        this.ancestreeTask =
+        {
+            next: 0
+        };
+        this.deriveTask =
+        {
+            next: 0
+        };
         this.loaded = -1;
         this.loadTarget = 0;
         if(resetLvlOnConstruct)
@@ -1943,7 +1983,14 @@ class Renderer
     set seed(seed)
     {
         this.system.seed = seed;
-        this.nextDeriveIdx = 0;
+        this.ancestreeTask =
+        {
+            next: 0
+        };
+        this.deriveTask =
+        {
+            next: 0
+        };
         this.loaded = -1;
         this.loadTarget = this.lv;
         this.update(this.lv, true);
@@ -3019,7 +3066,11 @@ class Measurer
             this.records[i] = closingStamp - this.lastStamp;
             this.windowSum += this.records[i];
             this.sum += this.records[i];
-            this.max = Math.max(this.max, this.records[i]);
+            if(this.records[i] > this.max)
+            {
+                this.max = this.records[i];
+                // log(`Boom! ${this.title} took ${this.records[i]}ms.`)
+            }
             this.lastStamp = null;
             ++this.ticksPassed;
         }

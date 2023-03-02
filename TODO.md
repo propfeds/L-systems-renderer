@@ -26,6 +26,10 @@
 ## 1.0, Mistletoe ed.
 
 - [ ] Complete new manual
+- [x] Split workload for ancestree (AND for derive too if this works well)
+  - [ ] Apply split technique to sequence menu
+  - [ ] And collatz?
+- [ ] Separate update measurer from draw
 
 ## 1.0: Completed
 
