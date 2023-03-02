@@ -4542,24 +4542,61 @@ let createNamingMenu = () =>
 
 let createSystemClipboardMenu = (values) =>
 {
-    let tmpSys = values;
-    let sysEntry = ui.createEntry
+    let totalLength = 0;
+    let tmpSys = [];
+    let sysEntries = [];
+    for(let i = 0; i * ENTRY_CHAR_LIMIT < values.length; ++i)
+    {
+        tmpSys.push(values.slice(i * ENTRY_CHAR_LIMIT, (i + 1) *
+        ENTRY_CHAR_LIMIT));
+        sysEntries.push(ui.createEntry
+        ({
+            text: tmpSys[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpSys[i] = nt;
+                totalLength += (nt ? nt.length : 0) - (ot ? ot.length : 0);
+                lengthLabel.text = Localization.format(getLoc(
+                'labelTotalLength'), totalLength);
+            }
+        }));
+    }
+    let lengthLabel = ui.createLatexLabel
     ({
-        text: tmpSys,
-        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
-        onTextChanged: (ot, nt) =>
-        {
-            tmpSys = nt;
-            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
-        }
+        text: Localization.format(getLoc('labelTotalLength'), totalLength),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
     });
-    let warningEntry = ui.createLatexLabel
+    let entryStack = ui.createStackLayout
     ({
-        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
-        text: Localization.format(getLoc('labelEntryCharLimit'),
-        ENTRY_CHAR_LIMIT),
-        margin: new Thickness(0, 0, 0, 4),
-        verticalTextAlignment: TextAlignment.CENTER
+        children: sysEntries
+    });
+    let addEntryButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = sysEntries.length;
+            tmpSys[i] = '';
+            sysEntries.push(ui.createEntry
+            ({
+                text: tmpSys[i],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpSys[i] = nt;
+                    totalLength += (nt ? nt.length : 0) - (ot ? ot.length : 0);
+                    lengthLabel.text = Localization.format(getLoc(
+                    'labelTotalLength'), totalLength);
+                }
+            }));
+            entryStack.children = sysEntries;
+        }
     });
 
     let menu = ui.createPopup
@@ -4569,20 +4606,28 @@ let createSystemClipboardMenu = (values) =>
         ({
             children:
             [
-                sysEntry,
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        lengthLabel,
+                        addEntryButton
+                    ]
+                }),
+                entryStack,
                 ui.createBox
                 ({
                     heightRequest: 1,
                     margin: new Thickness(0, 6)
                 }),
-                warningEntry,
                 ui.createButton
                 ({
                     text: getLoc('btnConstruct'),
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        let sv = JSON.parse(tmpSys);
+                        let sv = JSON.parse(tmpSys.join(''));
                         tmpSystemName = sv.title;
                         tmpSystemDesc = sv.desc;
                         renderer.constructSystem = new LSystem(sv.system.axiom,
@@ -4592,58 +4637,6 @@ let createSystemClipboardMenu = (values) =>
                         tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
-                        menu.hide();
-                    }
-                })
-            ]
-        })
-    });
-    return menu;
-}
-
-let createStateClipboardMenu = (values) =>
-{
-    let tmpState = values;
-    let sysEntry = ui.createEntry
-    ({
-        text: tmpState,
-        // clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
-        onTextChanged: (ot, nt) =>
-        {
-            tmpState = nt;
-            warningEntry.isVisible = sysEntry.text.length >= ENTRY_CHAR_LIMIT;
-        }
-    });
-    let warningEntry = ui.createLatexLabel
-    ({
-        isVisible: sysEntry.text.length >= ENTRY_CHAR_LIMIT,
-        text: Localization.format(getLoc('labelEntryCharLimit'),
-        ENTRY_CHAR_LIMIT),
-        margin: new Thickness(0, 0, 0, 4),
-        verticalTextAlignment: TextAlignment.CENTER
-    });
-
-    let menu = ui.createPopup
-    ({
-        title: getLoc('menuClipboard'),
-        content: ui.createStackLayout
-        ({
-            children:
-            [
-                sysEntry,
-                ui.createBox
-                ({
-                    heightRequest: 1,
-                    margin: new Thickness(0, 6)
-                }),
-                warningEntry,
-                ui.createButton
-                ({
-                    text: getLoc('btnImport'),
-                    onClicked: () =>
-                    {
-                        Sound.playClick();
-                        setInternalState(tmpState);
                         menu.hide();
                     }
                 })
@@ -5624,6 +5617,103 @@ let createSequenceMenu = () =>
                     heightRequest: () => Math.max(SMALL_BUTTON_HEIGHT,
                     Math.min(ui.screenHeight * 0.36, seqGrid.height)),
                     content: seqGrid
+                })
+            ]
+        })
+    });
+    return menu;
+}
+
+let createStateClipboardMenu = (values) =>
+{
+    let totalLength = 0;
+    let tmpState = [];
+    let stateEntries = [];
+    for(let i = 0; i * ENTRY_CHAR_LIMIT < values.length; ++i)
+    {
+        tmpState.push(values.slice(i * ENTRY_CHAR_LIMIT, (i + 1) *
+        ENTRY_CHAR_LIMIT));
+        stateEntries.push(ui.createEntry
+        ({
+            text: tmpState[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpState[i] = nt;
+                totalLength += (nt ? nt.length : 0) - (ot ? ot.length : 0);
+                lengthLabel.text = Localization.format(getLoc(
+                'labelTotalLength'), totalLength);
+            }
+        }));
+    }
+    let lengthLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelTotalLength'), totalLength),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let entryStack = ui.createStackLayout
+    ({
+        children: stateEntries
+    });
+    let addEntryButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = stateEntries.length;
+            tmpState[i] = '';
+            stateEntries.push(ui.createEntry
+            ({
+                text: tmpState[i],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpState[i] = nt;
+                    totalLength += (nt ? nt.length : 0) - (ot ? ot.length : 0);
+                    lengthLabel.text = Localization.format(getLoc(
+                    'labelTotalLength'), totalLength);
+                }
+            }));
+            entryStack.children = stateEntries;
+        }
+    });
+
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuClipboard'),
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        lengthLabel,
+                        addEntryButton
+                    ]
+                }),
+                entryStack,
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: getLoc('btnImport'),
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        setInternalState(tmpState.join(''));
+                        menu.hide();
+                    }
                 })
             ]
         })

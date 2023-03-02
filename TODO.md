@@ -25,11 +25,12 @@
 
 ## 1.0, Mistletoe ed.
 
-- [ ] Compress internal state? LZW, LZP
-  - [ ] Or just separate into multiple lines, with an add button
+- [ ] Complete new manual
 
 ## 1.0: Completed
 
+- [ ] Compress internal state? LZW, LZP
+  - [x] Or just separate into multiple lines, with an add button
 - [x] Parametric systems
   - [x] Input context-ignored symbols
   - [x] New option in constructor for MathExpression variables
