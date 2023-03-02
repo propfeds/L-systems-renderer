@@ -291,7 +291,10 @@ This is different from how it was defined in The Algorithmic Beauty of ` +
 `Plants, where rules with a context are prioritised. Therefore, arrange your ` +
 `rules accordingly.
 
-Declaring models now has a different syntax to align more with ` +
+The syntax for multiple derivations on the same line has also changed from , ` +
+`(comma) to ; (semi-colon), due to the introduction of parameters.
+
+Finally, declaring models now has a different syntax to align more with ` +
 `context-sensitivity:
 ~ > {symbol} = {model}
 Referencing a model in another rule still uses the old syntax:
@@ -407,7 +410,7 @@ Centre: (1/2, sqrt(3)/12, 0)`
 `symbols to hold additional information such as its state of growth, elapsed ` +
 `time, etc. They can be even peeked at in context rules!
 The syntax for a parametric rule goes as follows:
-{symbol}({param_0},...) : {condition*} = {derivation_0} : {probability**},...
+{symbol}({param_0},...) : {condition*} = {derivation_0} : {probability**} ;...
 
 Examples:
 I(t) : t>0 = FI(t-1)
@@ -951,7 +954,8 @@ class LSystem
                 tmpRule.condition = MathExpression.parse('1');
 
             // [i][4]: everything else
-            let tmpRuleMatches = ruleMatches[i][4].split(',');
+            // Doing just comma instead of semi-colon will ruin the parameters!
+            let tmpRuleMatches = ruleMatches[i][4].split(';');
             for(let j = 0; j < tmpRuleMatches.length; ++j)
             {
                 if(typeof tmpRuleMatches[j] === 'undefined')

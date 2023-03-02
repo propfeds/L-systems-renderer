@@ -29,6 +29,8 @@
 
 ## 1.0: Completed
 
+- [x] Issue: multiple parameters not working at all
+  - Cause: splitting commas -> Solution: semi-colons
 - [x] Split workload for ancestree (AND for derive too if this works well)
   - [x] Apply split technique to sequence menu
 - [ ] Compress internal state? LZW, LZP
