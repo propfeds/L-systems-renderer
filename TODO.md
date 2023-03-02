@@ -26,13 +26,11 @@
 ## 1.0, Mistletoe ed.
 
 - [ ] Complete new manual
-- [x] Split workload for ancestree (AND for derive too if this works well)
-  - [ ] Apply split technique to sequence menu
-  - [ ] And collatz?
-- [ ] Separate update measurer from draw
 
 ## 1.0: Completed
 
+- [x] Split workload for ancestree (AND for derive too if this works well)
+  - [x] Apply split technique to sequence menu
 - [ ] Compress internal state? LZW, LZP
   - [x] Or just separate into multiple lines, with an add button
 - [x] Parametric systems

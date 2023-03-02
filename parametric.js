@@ -1102,13 +1102,13 @@ class LSystem
         let tmpIdxStack = task.idxStack || [];
         let tmpAncestors = task.ancestors || [];
         let tmpChildren = task.children || [];
-        let i = task.next || 0;
+        let i = task.start || 0;
         for(; i < sequence.length; ++i)
         {
-            if(i - task.next > maxCharsPerTick)
+            if(i - task.start > maxCharsPerTick)
             {
                 return {
-                    next: i,
+                    start: i,
                     stack: tmpStack,
                     idxStack: tmpIdxStack,
                     ancestors: tmpAncestors,
@@ -1153,7 +1153,7 @@ class LSystem
             }
         }
         return {
-            next: 0,
+            start: 0,
             stack: tmpStack,
             idxStack: tmpIdxStack,
             ancestors: tmpAncestors,
@@ -1166,20 +1166,20 @@ class LSystem
      * position to be derived next tick. `result` contains the work completed
      * for the current tick.
      * @param {string} sequence the input string.
-     * @returns {{next: number, result: string}}
+     * @returns {{start: number, result: string}}
      */
     derive(sequence, seqParams, ancestors, children, task = {})
     {
         let result = task.derivation || '';
         let resultParams = task.parameters || [];
-        let i = task.next || 0;
+        let i = task.start || 0;
         let charCount = 0;
         for(; i < sequence.length; ++i)
         {
             if(charCount > maxCharsPerTick)
             {
                 return {
-                    next: i,
+                    start: i,
                     charCount: charCount,
                     derivation: result,
                     parameters: resultParams
@@ -1351,7 +1351,7 @@ class LSystem
             }
         }
         return {
-            next: 0,
+            start: 0,
             charCount: charCount,
             derivation: result,
             parameters: resultParams
@@ -1471,16 +1471,27 @@ class LSystem
         };
     }
 
-    reconstruct(sequence, params)
+    reconstruct(sequence, params, task = {})
     {
-        let result = '';
-        for(let i = 0; i < sequence.length; ++i)
+        let result = task.result || '';
+        let i = task.start || 0;
+        for(; i < sequence.length; ++i)
         {
+            if((i - task.start) * (task.start + 1) > maxCharsPerTick)
+            {
+                return {
+                    start: i,
+                    result: result
+                }
+            }
             result += sequence[i];
             if(params[i])
                 result += `(${params[i].join(', ')})`;
         }
-        return result;
+        return {
+            start: 0,
+            result: result
+        };
     }
     /**
      * Purge the rules of empty lines.
@@ -1723,14 +1734,14 @@ class Renderer
          */
         this.ancestreeTask =
         {
-            next: 0
+            start: 0
         };
         /**
          * @type {object} the current derivation task.
          */
         this.deriveTask =
         {
-            next: 0
+            start: 0
         };
         /**
          * @type {number} how many nested polygons currently in (pls keep at 1).
@@ -1776,7 +1787,7 @@ class Renderer
             {
                 this.deriveTask =
                 {
-                    next: 0,
+                    start: 0,
                     derivation: this.system.axiom,
                     parameters: this.system.axiomParams
                 };
@@ -1790,18 +1801,18 @@ class Renderer
                 // If has ancestor and next isn't 0: do work
 
                 while(!('ancestors' in this.ancestreeTask) ||
-                ('ancestors' in this.ancestreeTask && this.ancestreeTask.next))
+                ('ancestors' in this.ancestreeTask && this.ancestreeTask.start))
                 {
                     let at = this.system.getAncestree(this.levels[i - 1],
                     this.ancestreeTask);
-                    charCount += (at.next - this.ancestreeTask.next);
+                    charCount += (at.start - this.ancestreeTask.start);
                     this.ancestreeTask = at;
                     if(charCount > maxCharsPerTick)
                         return;
                 }
                 // TODO: convert derivation to new tasking model
                 if(!('derivation' in this.deriveTask) ||
-                ('derivation' in this.deriveTask && this.deriveTask.next))
+                ('derivation' in this.deriveTask && this.deriveTask.start))
                 {
                     let ret = this.system.derive(this.levels[i - 1],
                     this.levelParams[i - 1], this.ancestreeTask.ancestors,
@@ -1812,16 +1823,16 @@ class Renderer
             }
             this.levels[i] = this.deriveTask.derivation;
             this.levelParams[i] = this.deriveTask.parameters;
-            if(!this.deriveTask.next)
+            if(!this.deriveTask.start)
             {
                 ++this.loaded;
                 this.ancestreeTask =
                 {
-                    next: 0
+                    start: 0
                 };
                 this.deriveTask =
                 {
-                    next: 0
+                    start: 0
                 };
             }
             else
@@ -1964,11 +1975,11 @@ class Renderer
         this.levelParams = [];
         this.ancestreeTask =
         {
-            next: 0
+            start: 0
         };
         this.deriveTask =
         {
-            next: 0
+            start: 0
         };
         this.loaded = -1;
         this.loadTarget = 0;
@@ -1985,11 +1996,11 @@ class Renderer
         this.system.seed = seed;
         this.ancestreeTask =
         {
-            next: 0
+            start: 0
         };
         this.deriveTask =
         {
-            next: 0
+            start: 0
         };
         this.loaded = -1;
         this.loadTarget = this.lv;
@@ -5656,6 +5667,21 @@ let createManualMenu = () =>
 
 let createSeqViewMenu = (level) =>
 {
+    let reconstructionTask =
+    {
+        start: 0
+    };
+    let updateReconstruction = () =>
+    {
+        if(!('result' in reconstructionTask) ||
+        ('result' in reconstructionTask && reconstructionTask.start))
+        {
+            reconstructionTask = renderer.system.reconstruct(
+            renderer.levels[level], renderer.levelParams[level],
+            reconstructionTask);
+        }
+        return reconstructionTask.result;
+    }
     let pageTitle = ui.createLatexLabel
     ({
         text: Localization.format(getLoc('labelLevelSeq'), level,
@@ -5669,8 +5695,7 @@ let createSeqViewMenu = (level) =>
     ({
         fontFamily: FontFamily.CMU_REGULAR,
         fontSize: 16,
-        text: renderer.system.reconstruct(renderer.levels[level],
-        renderer.levelParams[level]),
+        text: () => updateReconstruction(),
         lineBreakMode: LineBreakMode.CHARACTER_WRAP
     });
     let prevButton = ui.createButton
@@ -5704,8 +5729,10 @@ let createSeqViewMenu = (level) =>
         level = p;
         pageTitle.text = Localization.format(getLoc('labelLevelSeq'), level,
         renderer.levels[level].length);
-        pageContents.text = renderer.system.reconstruct(renderer.levels[level],
-        renderer.levelParams[level]);
+        reconstructionTask =
+        {
+            start: 0
+        };
 
         prevButton.isVisible = level > 0;
         nextButton.isVisible = level < renderer.levels.length - 1;
