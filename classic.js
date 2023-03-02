@@ -241,6 +241,7 @@ const locStrings =
         labelApplyCamera: 'Applies static camera: ',
 
         menuClipboard: 'Clipboard Menu',
+        labelTotalLength: 'Total length: {0}',
         labelEntryCharLimit: `Warning: This entry has been capped at {0} ` +
         `characters. Proceed with caution.`,
 
@@ -4356,14 +4357,14 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 let values = new LSystem().object;
                                 axiomEntry.text = values.axiom;
-                                angleEntry.text = values.turnAngle;
+                                angleEntry.text = values.turnAngle.toString();
                                 tmpRules = values.rules;
                                 ruleEntries = [];
                                 rulesLabel.text = Localization.format(
                                 getLoc('labelRules'), ruleEntries.length);
                                 ruleStack.children = ruleEntries;
                                 ignoreEntry.text = values.ignoreList;
-                                tropismEntry.text = values.tropism;
+                                tropismEntry.text = values.tropism.toString();
                                 seedEntry.text = values.seed.toString();
                             }
                         })
