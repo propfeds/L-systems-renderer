@@ -18,19 +18,22 @@
 - [ ] Localisation
 - [ ] Folders for saved systems
 - [ ] Ask Gilles about changing the spline used in 3D graph
-- Too much hassle to implement, defer them to LG:
+- Too much hassle to implement, defer them to LG?
   - [ ] Option to use old tropisme
   - [ ] Tropism direction
     - Maybe can have 4 arguments
-- [ ] Compress internal state? LZW, LZP
-  - [ ] Or just separate into multiple lines, with an add button
 
 ## 1.0, Mistletoe ed.
 
-- [ ] Parametric systems
+- [ ] Compress internal state? LZW, LZP
+  - [ ] Or just separate into multiple lines, with an add button
+
+## 1.0: Completed
+
+- [x] Parametric systems
   - [x] Input context-ignored symbols
-  - [ ] New option in constructor for MathExpression variables
-    - [ ] Button in LS menu next to axiom entry
+  - [x] New option in constructor for MathExpression variables
+    - [x] Button in LS menu next to axiom entry
   - Different classes
     - Button in LS menu / save menu to switch modes?
     - Theory settings?
@@ -45,9 +48,6 @@
   - Round brackets gonna make it hard for actual drawing - although maybe it
   would've been already stripped down by the time it gets to the turtle
   - `~`: Parameters of the following symbol can control model size in rule
-
-## 1.0: Completed
-
 - [x] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
 - [x] Fix precision problem with BigNumber and/or Quaternions
   - Source of error: missing a conversion of BN -> Number in LS constructor

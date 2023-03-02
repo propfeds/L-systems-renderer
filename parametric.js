@@ -160,6 +160,7 @@ const locStrings =
         btnSave: 'Save',
         btnClear: 'Clear All',
         btnDefault: '* Reset to Defaults',
+        btnVar: 'Variables',
         btnAdd: 'Add',
         btnUp: '▲',
         btnDown: '▼',
@@ -205,6 +206,8 @@ const locStrings =
         labelCtxIgnored: 'Context-ignored: ',
         labelTropism: 'Tropism (gravity): ',
         labelSeed: 'Seed (≠ 0): ',
+        menuVariables: 'Define Variables',
+        labelVars: 'Variables: {0}',
 
         menuRenderer: 'Renderer Menu',
         labelInitScale: '* Initial scale: ',
@@ -814,7 +817,7 @@ class LSystem
      * @param {string} ctxIgnoreList a list of symbols ignored when deriving
      * context.
      * @param {string} tropism the tropism factor.
-     * @param {object} variables NOT IMPLEMENTED
+     * @param {object} variables globally defined variables for the system.
      */
     constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
     ignoreList = '', ctxIgnoreList = '', tropism = 0, variables = {})
@@ -831,6 +834,13 @@ class LSystem
             tropism: tropism,
             variables: variables
         };
+        // I want to transfer them to a map to deep copy them. LS menu uses
+        // arrays so we're fine on that.
+        this.variables = new Map();
+        for(let key in variables)
+            this.variables.set(key, MathExpression.parse(variables[key]).
+            evaluate());
+
         let axiomMatches = this.parseSequence(axiom.replace(TRIM_SP, ''));
         this.axiom = axiomMatches.result;
         this.axiomParams = axiomMatches.params;
@@ -843,7 +853,8 @@ class LSystem
 
             let params = this.axiomParams[i].split(',');
             for(let j = 0; j < params.length; ++j)
-                params[j] = MathExpression.parse(params[j]).evaluate();
+                params[j] = MathExpression.parse(params[j]).evaluate(
+                (v) => this.variables.get(v));
             this.axiomParams[i] = params;
             // Maybe leave them at BigNumber?
         }
@@ -1009,7 +1020,8 @@ class LSystem
         this.ctxIgnoreList = new Set(ctxIgnoreList);
 
         this.RNG = new Xorshift(seed);
-        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate().
+        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate(
+        (v) => this.variables.get(v)).
         toNumber() * Math.PI / 360;
         
         this.rotations = new Map();
@@ -1022,7 +1034,8 @@ class LSystem
         this.rotations.set('\\', new Quaternion(-c, s, 0, 0));
         this.rotations.set('/', new Quaternion(-c, -s, 0, 0));
 
-        this.tropism = MathExpression.parse(tropism.toString()).evaluate().
+        this.tropism = MathExpression.parse(tropism.toString()).evaluate(
+        (v) => this.variables.get(v)).
         toNumber();
     }
 
@@ -1213,8 +1226,9 @@ class LSystem
                             continue;
                     }
 
-                    let tmpParamMap = (v) => tmpRules[j].paramMap(v,
-                    seqParams[ancestors[i]], seqParams[i], seqParams[right]);
+                    let tmpParamMap = (v) => this.variables.get(v) ||
+                    tmpRules[j].paramMap(v, seqParams[ancestors[i]],
+                    seqParams[i], seqParams[right]);
                     // Next up is the condition
                     if(!tmpRules[j].condition.evaluate(tmpParamMap))
                         continue;
@@ -1340,8 +1354,8 @@ class LSystem
             let ruleChoice = -1;
             for(let j = 0; j < tmpRules.length; ++j)
             {
-                let tmpParamMap = (v) => tmpRules[j].paramMap(v,
-                null, null, params);
+                let tmpParamMap = (v) => this.variables.get(v) ||
+                tmpRules[j].paramMap(v, null, null, params);
                 // Next up is the condition
                 if(!tmpRules[j].condition.evaluate(tmpParamMap))
                     continue;
@@ -3944,6 +3958,159 @@ let createConfigMenu = () =>
     return menu;
 }
 
+let createVariableMenu = (variables) =>
+{
+    // Q: Does Object.entries mean that its contents are references, and 
+    // therefore overwritable from afar?
+    let tmpVars = [];
+    let varEntries = [];
+    for(let i = 0; i < variables.length; ++i)
+    {
+        // I'm just making sure these are deep copied
+        tmpVars[i] = [];
+        tmpVars[i][0] = variables[i][0];
+        tmpVars[i][1] = variables[i][1];
+
+        varEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 0,
+            text: tmpVars[i][0],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpVars[i][0] = nt;
+            }
+        }));
+        varEntries.push(ui.createLatexLabel
+        ({
+            text: '=',
+            row: i,
+            column: 1,
+            horizontalTextAlignment: TextAlignment.CENTER,
+            verticalTextAlignment: TextAlignment.CENTER
+        }));
+        varEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 2,
+            text: tmpVars[i][1],
+            horizontalTextAlignment: TextAlignment.END,
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpVars[i][1] = nt;
+            }
+        }));
+    }
+    let varsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelVars'), tmpVars.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let varStack = ui.createGrid
+    ({
+        columnDefinitions: ['50*', '20*', '30*'],
+        children: varEntries
+    });
+    let addVarButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = tmpVars.length;
+
+            tmpVars[i] = [];
+            tmpVars[i][0] = '';
+            tmpVars[i][1] = '';
+
+            varEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 0,
+                text: tmpVars[i][0],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpVars[i][0] = nt;
+                }
+            }));
+            varEntries.push(ui.createLatexLabel
+            ({
+                text: '=',
+                row: i,
+                column: 1,
+                horizontalTextAlignment: TextAlignment.CENTER,
+                verticalTextAlignment: TextAlignment.CENTER
+            }));
+            varEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 2,
+                text: tmpVars[i][1],
+                horizontalTextAlignment: TextAlignment.END,
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpVars[i][1] = nt;
+                }
+            }));
+            varsLabel.text = Localization.format(getLoc('labelVars'),
+            tmpVars.length);
+            varStack.children = varEntries;
+        }
+    });
+    let menu = ui.createPopup
+    ({
+        title: getLoc('menuVariables'),
+        isPeekable: true,
+        content: ui.createStackLayout
+        ({
+            children:
+            [
+                ui.createGrid
+                ({
+                    columnDefinitions: ['70*', '30*'],
+                    children:
+                    [
+                        varsLabel,
+                        addVarButton
+                    ]
+                }),
+                ui.createScrollView
+                ({
+                    content: varStack
+                }),
+                ui.createBox
+                ({
+                    heightRequest: 1,
+                    margin: new Thickness(0, 6)
+                }),
+                ui.createButton
+                ({
+                    text: getLoc('btnSave'),
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        // This will telepathically clear the variables outside
+                        variables.length = 0;
+                        for(let i = 0; i < tmpVars.length; ++i)
+                            if(tmpVars[i][0] && tmpVars[i][1])
+                                variables.push(tmpVars[i]);
+                        menu.hide();
+                    }
+                }),
+            ]
+        })
+    });
+    return menu;
+}
+
 let createSystemMenu = () =>
 {
     let values = renderer.system.object;
@@ -3957,6 +4124,20 @@ let createSystemMenu = () =>
         onTextChanged: (ot, nt) =>
         {
             tmpAxiom = nt;
+        }
+    });
+    let tmpVars = Object.entries(values.variables);
+    let varButton = ui.createButton
+    ({
+        text: getLoc('btnVar'),
+        row: 0,
+        column: 2,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let varMenu = createVariableMenu(tmpVars);
+            varMenu.show();
         }
     });
     let tmpRules = values.rules;
@@ -4151,7 +4332,7 @@ let createSystemMenu = () =>
                         [
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '80*'],
+                                columnDefinitions: ['20*', '50*', '30*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -4163,6 +4344,7 @@ let createSystemMenu = () =>
                                         TextAlignment.CENTER
                                     }),
                                     axiomEntry,
+                                    varButton
                                 ]
                             }),
                             ui.createGrid
@@ -4244,7 +4426,7 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                tmpTropism);
+                                tmpTropism, Object.fromEntries(tmpVars));
                                 if(tmpSystem)
                                 {
                                     tmpSystem = null;
@@ -4265,6 +4447,7 @@ let createSystemMenu = () =>
                                 let values = new LSystem().object;
                                 axiomEntry.text = values.axiom;
                                 angleEntry.text = values.turnAngle.toString();
+                                tmpVars = Object.entries(values.variables);
                                 tmpRules = values.rules;
                                 ruleEntries = [];
                                 rulesLabel.text = Localization.format(
@@ -4280,7 +4463,7 @@ let createSystemMenu = () =>
                 })
             ]
         })
-    })
+    });
     return menu;
 }
 
@@ -4674,6 +4857,20 @@ let createViewMenu = (title, parentMenu) =>
             tmpAxiom = nt;
         }
     });
+    let tmpVars = Object.entries(values.variables);
+    let varButton = ui.createButton
+    ({
+        text: getLoc('btnVar'),
+        row: 0,
+        column: 2,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let varMenu = createVariableMenu(tmpVars);
+            varMenu.show();
+        }
+    });
     let tmpRules = [];
     for(let i = 0; i < values.rules.length; ++i)
         tmpRules[i] = values.rules[i];
@@ -4876,7 +5073,7 @@ let createViewMenu = (title, parentMenu) =>
                             }),
                             ui.createGrid
                             ({
-                                columnDefinitions: ['20*', '80*'],
+                                columnDefinitions: ['20*', '50*', '30*'],
                                 children:
                                 [
                                     ui.createLatexLabel
@@ -4888,6 +5085,7 @@ let createViewMenu = (title, parentMenu) =>
                                         TextAlignment.CENTER
                                     }),
                                     axiomEntry,
+                                    varButton
                                 ]
                             }),
                             ui.createGrid
@@ -5011,7 +5209,7 @@ let createViewMenu = (title, parentMenu) =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                tmpTropism);
+                                tmpTropism, Object.fromEntries(tmpVars));
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
@@ -5034,7 +5232,8 @@ let createViewMenu = (title, parentMenu) =>
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
                                     tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                    tmpTropism).object,
+                                    tmpTropism, Object.fromEntries(tmpVars)).
+                                    object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
                                 });
@@ -5857,7 +6056,8 @@ var setInternalState = (stateStr) =>
             tmpSystemDesc = state.system.desc;
             tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList,
-            state.system.ctxIgnoreList, state.system.tropism);
+            state.system.ctxIgnoreList, state.system.tropism,
+            state.system.variables);
         }
         
         if('renderer' in state)
