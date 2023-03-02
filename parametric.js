@@ -141,7 +141,9 @@ const locStrings =
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
-        rendererLoading: `\\begin{{matrix}}Loading...&\\text{{Stg. {0}}}&({1}
+        rendererBuildingTree: `\\begin{{matrix}}Building\\enspace ancestree...&
+        \\text{{Stg. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}`,
+        rendererDeriving: `\\begin{{matrix}}Deriving...&\\text{{Stg. {0}}}&({1}
 \\text{{ chars}})\\end{{matrix}}`,
 
         currencyTime: ' (elapsed)',
@@ -196,6 +198,7 @@ const locStrings =
 
         menuSequence: '{0} (Stage {1})',
         labelLevelSeq: 'Stage {0}: {1} chars',
+        labelLevelSeqLoading: 'Stage {0}: {1}/{2} chars',
         labelChars: '({0} chars)',
 
         menuLSystem: 'L-system Menu',
@@ -2675,10 +2678,11 @@ class Renderer
      */
     get loadingString()
     {
-        let len = typeof this.levels[this.loaded + 1] === 'undefined' ? 0 :
-        this.levels[this.loaded + 1].length;
-        return Localization.format(getLoc('rendererLoading'), this.loaded + 1,
-        len);
+        if(typeof this.levels[this.loaded + 1] === 'undefined')
+            return Localization.format(getLoc('rendererBuildingTree'),
+            this.loaded + 1, this.ancestreeTask.start);
+        return Localization.format(getLoc('rendererDeriving'), this.loaded + 1,
+        this.levels[this.loaded + 1].length);
     }
     /**
      * Returns the cursor's position as a string.
