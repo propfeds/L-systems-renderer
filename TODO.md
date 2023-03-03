@@ -20,8 +20,6 @@
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - Too much hassle to implement, defer them to LG?
   - [ ] Option to use old tropisme
-  - [ ] Tropism direction
-    - Maybe can have 4 arguments
 
 ## 1.0, Mistletoe ed.
 
@@ -29,6 +27,8 @@
 
 ## 1.0: Completed
 
+- [x] Tropism direction
+  - Maybe can have 4 arguments
 - [x] Issue: multiple parameters not working at all
   - Cause: splitting commas -> Solution: semi-colons
 - [x] Split workload for ancestree (AND for derive too if this works well)

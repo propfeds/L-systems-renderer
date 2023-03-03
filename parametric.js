@@ -1423,7 +1423,6 @@ class LSystem
         if(this.models.has(symbol))
         {
             let tmpRules = this.models.get(symbol);
-            let ruleChoice = -1;
             for(let j = 0; j < tmpRules.length; ++j)
             {
                 let tmpParamMap = (v) => this.variables.get(v) ||
@@ -1459,7 +1458,6 @@ class LSystem
                             resultParams.push(derivPi);
                         }
                     }
-                    ruleChoice = j;
                     break;
                 }
                 else    // Stochastic time
@@ -1514,14 +1512,8 @@ class LSystem
                     // log(`roll = ${roll} choice = ${choice}`)
                     if(choice == -1)
                         continue;
-                    ruleChoice = j;
                     break;
                 }
-            }
-            if(ruleChoice == -1)
-            {
-                deriv = sequence[i];
-                derivParams = [seqParams[i]];
             }
         }
         return {
