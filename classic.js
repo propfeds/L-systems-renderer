@@ -67,8 +67,8 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 
     return descs[language] || descs.en;
 }
-var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
-                'for providing help with quaternions\nskyhigh173#3120, for ' +
+var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
+                'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
 var version = 1;
 

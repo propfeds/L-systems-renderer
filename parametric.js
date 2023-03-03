@@ -53,8 +53,8 @@ Note: Systems from LSR can be ported to P-LSR with minimal changes. However,` +
 
     return descs[language] || descs.en;
 }
-var authors =   'propfeds#5988\n\nThanks to:\nSir Gilles-Philippe Paillé, ' +
-                'for providing help with quaternions\nskyhigh173#3120, for ' +
+var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
+                'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
 var version = 0;
 
@@ -263,7 +263,7 @@ const locStrings =
 
         menuManual: 'User Guide ({0}/{1})',
         menuTOC: 'Table of Contents',
-        labelSource: 'Source: ',
+        labelSource: 'Reference: ',
         manualSystemDesc: 'From the user guide, page {0}.',
         manual:
         [
@@ -443,26 +443,29 @@ type <= 3: closed flower,
 and the 's' parameter controlling the model's size.
 
 Variables: b = 2.25
-The variable b controls how quickly the model type switches
+The variable b controls how quickly the model type switches, with lower ` +
+`values being faster. A lower value also decreases the organ density.
 
 Axiom: FA(1)
-A(t) = F(b/2.5)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)
+A(t): t<=5*b = F(2/b)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)
 B(t) = ~J(0.15, t/b-2)
 J(s, type) = ~J(s*0.75+0.25, type)
 ~>J(s, type): type<=0 = {[+(32)F(s).-TF(s)TF.-TF(s)..][-(32)F(s)+(16)[TF(s)TF.].]}
 ~>J(s, type): type<=1 = [F~p(s)/(60)~p(s)/(60)~p(s)]
 ~>p(s) = {[+F(s/2).--F(s/2).][-F(s/2).].}
-~>J(s, type): type<=2 = [F~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]
+~>J(s, type): type<=2 = [FT~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]
 ~>k(s) = {[F(s).+(72)[&F(s-0.3).][F(s)..][^F(s-0.3).].]}
-~>J(s, type): type<=3 = [F~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]
+~>J(s, type): type<=3 = [FT~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]
 ~>m(s) = {[+(24)F(s).-F(s/2)..].}
+Turtle-ignored: A
 Turning angle: 48°
 Tropism: 0.16
 
 Applies static camera:
 Scale: 7
 Centre: (0, lv/2+1, 0)
-Upright`
+Upright`,
+                source: 'https://www.houdinikitchen.net/2019/12/21/how-to-create-l-systems/'
             },
             {
                 title: 'Appendix: Model discussions',
@@ -499,7 +502,8 @@ If by any chance you have not yet tried this game, I highly recommend it. ` +
 `book 'The Algorithmic Beauty of Plants', which has been the primary source ` +
 `of reference in the development of LSR, including the various syntax and ` +
 `processing rules, as well as explanations to the scientific motives behind ` +
-`the design of L-systems. `
+`the design of L-systems.`,
+                source: 'http://algorithmicbotany.org/'
             }
         ]
     }
@@ -3281,18 +3285,18 @@ let manualSystems =
     8:
     {
         system: new LSystem('FA(1)', [
-            'A(t) = F(b/2.5)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)',
+            'A(t): t<=5*b = F(2/b)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)',
             'B(t) = ~J(0.15, t/b-2)',
             'J(s, type) = ~J(s*0.75+0.25, type)',
             '~>J(s, type): type<=0 = {[+(32)F(s).-TF(s)TF.-TF(s)..][-(32)F(s)+(16)[TF(s)TF.].]}',
             '~>J(s, type): type<=1 = [F~p(s)/(60)~p(s)/(60)~p(s)]',
             '~>p(s) = {[+F(s/2).--F(s/2).][-F(s/2).].}',
-            '~>J(s, type): type<=2 = [F~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]',
+            '~>J(s, type): type<=2 = [FT~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]',
             '~>k(s) = {[F(s).+(72)[&F(s-0.3).][F(s)..][^F(s-0.3).].]}',
-            '~>J(s, type): type<=3 = [F~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]',
+            '~>J(s, type): type<=3 = [FT~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]',
             '~>m(s) = {[+(24)F(s).-F(s/2)..].}'
-        ], '48', 0, '', '', 0.16, {
-            'b':'2.25'
+        ], '48', 0, 'A', '', 0.16, {
+            'b': '2.25'
         }),
         'config': ['7', '0', 'lv/2+1', '0', true]
     }
@@ -5596,7 +5600,7 @@ let createManualMenu = () =>
     let sourceGrid = ui.createGrid
     ({
         isVisible: 'source' in manualPages[page],
-        columnDefinitions: ['20*', '80*'],
+        columnDefinitions: ['auto', '1*'],
         children:
         [
             ui.createLatexLabel
@@ -5604,7 +5608,7 @@ let createManualMenu = () =>
                 text: getLoc('labelSource'),
                 row: 0,
                 column: 0,
-                horizontalOptions: LayoutOptions.END,
+                horizontalTextAlignment: TextAlignment.START,
                 verticalTextAlignment: TextAlignment.CENTER
             }),
             sourceEntry
