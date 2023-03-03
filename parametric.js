@@ -1296,7 +1296,8 @@ class LSystem
                     tmpRules[j].paramMap(v, seqParams[ancestors[i]],
                     seqParams[i], seqParams[right]);
                     // Next up is the condition
-                    if(!tmpRules[j].condition.evaluate(tmpParamMap))
+                    if(tmpRules[j].condition.evaluate(tmpParamMap) ==
+                    BigNumber.ZERO)
                         continue;
 
                     if(typeof tmpRules[j].derivations === 'string')
@@ -1420,7 +1421,8 @@ class LSystem
                 let tmpParamMap = (v) => this.variables.get(v) ||
                 tmpRules[j].paramMap(v, null, null, params);
                 // Next up is the condition
-                if(!tmpRules[j].condition.evaluate(tmpParamMap))
+                if(tmpRules[j].condition.evaluate(tmpParamMap) ==
+                BigNumber.ZERO)
                     continue;
 
                 if(typeof tmpRules[j].derivations === 'string')
