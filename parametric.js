@@ -382,9 +382,10 @@ Then, a solution to that would be the ability to embed extra information ` +
 `parametric L-systems.
 
 F(d): moves turtle forward by a distance d, and draw a line.
-(Note: other letters don't follow this syntax, and always move by 1.)
+(Note: other letters move by 1 instead of taking the parameter.)
 +-&^\\/(a): rotate turtle by an angle of a degrees.
-T(g): applies a tropism force of g.`
+T(g): applies a tropism force of g.
+T(g, x, y, z): applies a tropism of g in the direction (x, y, z).`
             },
             {
                 title: 'Example: The Koch curve',
@@ -766,7 +767,7 @@ class Quaternion
     }
     /**
      * https://stackoverflow.com/questions/71518531/how-do-i-convert-a-direction-vector-to-a-quaternion
-     * (Deprecated) Applies a gravi-tropism vector to the quaternion. Inaccurat!
+     * (Deprecated) Applies a gravi-tropism vector to the quaternion.
      * @param {number} weight the vector's length (negative for upwards).
      * @returns {Quaternion}
      */
@@ -787,16 +788,23 @@ class Quaternion
     /**
      * Applies a gravi-tropism vector to the quaternion.
      * @param {number} weight the branch's susceptibility to bending.
+     * @param {number} x the tropism vector's x component.
+     * @param {number} y the tropism vector's y component.
+     * @param {number} z the tropism vector's z component.
      * @returns {Quaternion}
      */
-    applyTropism(weight = 0)
+    applyTropism(weight = 0, x = 0, y = -1, z = 0)
     {
         if(weight == 0)
             return this;
 
         // a = e * |HxT| (n)
         let curHead = this.headingVector;
-        let rotAxis = new Vector3(curHead.z, 0, -curHead.x);
+        let rotAxis = new Vector3(
+            curHead.y * z - curHead.z * y,
+            curHead.z * x - curHead.x * z,
+            curHead.x * y - curHead.y * x,
+        );
         let n = rotAxis.length;
         if(n == 0)
             return this;
@@ -2208,11 +2216,20 @@ class Renderer
                             this.ori = this.ori.alignToVertical();
                             break;
                         case 'T':
-                            if(this.modelParams[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]])
-                                this.ori = this.ori.applyTropism(
-                                this.modelParams[this.models.length - 1][
-                                this.mdi[this.mdi.length - 1]][0].toNumber());
+                            let args = this.modelParams[this.models.length - 1][
+                            this.mdi[this.mdi.length - 1]];
+                            if(args)
+                            {
+                                if(args.length >= 4)
+                                    this.ori = this.ori.applyTropism(
+                                    args[0].toNumber(),
+                                    args[1].toNumber(),
+                                    args[2].toNumber(),
+                                    args[3].toNumber());
+                                else
+                                    this.ori = this.ori.applyTropism(
+                                    args[0].toNumber());
+                            }
                             else
                                 this.ori = this.ori.applyTropism(
                                 this.system.tropism);
@@ -2431,9 +2448,19 @@ class Renderer
                         this.ori = this.ori.alignToVertical();
                         break;
                     case 'T':
-                        if(this.levelParams[this.lv][this.i])
-                            this.ori = this.ori.applyTropism(this.levelParams[
-                            this.lv][this.i][0].toNumber());
+                        let args = this.levelParams[this.lv][this.i];
+                        if(args)
+                        {
+                            if(args.length >= 4)
+                                this.ori = this.ori.applyTropism(
+                                args[0].toNumber(),
+                                args[1].toNumber(),
+                                args[2].toNumber(),
+                                args[3].toNumber());
+                            else
+                                this.ori = this.ori.applyTropism(
+                                args[0].toNumber());
+                        }
                         else
                             this.ori = this.ori.applyTropism(
                             this.system.tropism);
