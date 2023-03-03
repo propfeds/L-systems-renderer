@@ -143,7 +143,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0, Work in Progress',
+        versionName: 'v1.0',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -698,8 +698,11 @@ To reference a model in another rule, attach a tilde in front of the symbol ` +
 Note: The symbol will not disappear from the rule after the model has been ` +
 `drawn, but it will be ignored by the turtle.
 
-Note 2: The model only lasts for one level, and needs to be refreshed ` + 
-`(example follows in the next page).`
+Note 2: Unlike the incorporated surfaces described in the Algorithmic Beauty ` +
+`of Plants, models in LSR work differently. The model symbol in LSR only ` +
+`lasts for one level (and disappears afterwards), and thus, models need to ` +
+`be continuously refreshed.
+(Example follows in the next page)`
             },
             {
                 title: 'Example: Lilac branch',

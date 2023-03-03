@@ -135,7 +135,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0, Mistletoe ed. (WIP)',
+        versionName: 'v1.0, Mistletoe ed.',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -429,6 +429,48 @@ Conversion from boolean to number is also unavailable.
 
 * When omitted, the condition is assumed to be always true.
 ** When omitted, the chance is assumed to be 100%.`
+            },
+            {
+                title: 'Example: ',
+                contents:
+``
+            },
+            {
+                title: 'Appendix: Model discussions',
+                contents:
+`About the differences between LSR models (which disappear after one stage) ` +
+`and The Algorithmic Beauty of Plants (which stick around).
+The motive behind this mechanism in LSR, is that when a symbol moves to ` +
+`another place, the original ~ (tilde) ends up referencing another symbol ` +
+`entirely, which both wastes one space and can introduce errors by drawing ` +
+`the wrong model.
+This design choice is not final, and if feedback can prove its ` +
+`inconvenience, further considerations can be made: should it stick around ` +
+`like defined in Abop? Should references be ditched entirely and models be ` +
+`drawn automatically without having to reference? Will the syntax cease to ` +
+`make sense?`
+            },
+            {
+                title: 'Appendix: Credits',
+                contents:
+`First of all, a biggest thanks goes out to Sir Gilles-Philippe Paillé of ` +
+`Conic Games. Without his work on the game Exponential Idle, the foundation ` +
+`for this theory, perhaps I would have never found myself writing this page ` +
+`today. He, along with the people in the #custom-theories-dev channel, has ` +
+`also helped me with numerous problems of custom theories (CT) development.
+If by any chance you have not yet tried this game, I highly recommend it. ` +
+`The download link is provided at the bottom of this page.`,
+                source: 'https://conicgames.github.io/exponentialidle'
+            },
+            {
+                title: 'Credits (2)',
+                contents:
+`The other massive thanks goes to Algorithmic Botany, the research team that ` +
+`has been expanding Lindenmayer's work on L-systems. The site also hosts the ` +
+`book 'The Algorithmic Beauty of Plants', which has been the primary source ` +
+`of reference in the development of LSR, including the various syntax and ` +
+`processing rules, as well as explanations to the scientific motives behind ` +
+`the design of L-systems. `
             }
         ]
     }
