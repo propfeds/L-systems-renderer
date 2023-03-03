@@ -432,9 +432,37 @@ Conversion from boolean to number is also unavailable.
 ** When omitted, the chance is assumed to be 100%.`
             },
             {
-                title: 'Example: ',
+                title: 'Example: Stamp stick',
                 contents:
-``
+`Adopted from an L-system made in Houdini. The symbol J represents 4 organs ` +
+`at the same time, with the 'type' parameter controlling which model to load:
+type <= 0: leaves,
+type <= 1: flower bud,
+type <= 2: blooming flower,
+type <= 3: closed flower,
+and the 's' parameter controlling the model's size.
+
+Variables: b = 2.25
+The variable b controls how quickly the model type switches
+
+Axiom: FA(1)
+A(t) = F(b/2.5)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)
+B(t) = ~J(0.15, t/b-2)
+J(s, type) = ~J(s*0.75+0.25, type)
+~>J(s, type): type<=0 = {[+(32)F(s).-TF(s)TF.-TF(s)..][-(32)F(s)+(16)[TF(s)TF.].]}
+~>J(s, type): type<=1 = [F~p(s)/(60)~p(s)/(60)~p(s)]
+~>p(s) = {[+F(s/2).--F(s/2).][-F(s/2).].}
+~>J(s, type): type<=2 = [F~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]
+~>k(s) = {[F(s).+(72)[&F(s-0.3).][F(s)..][^F(s-0.3).].]}
+~>J(s, type): type<=3 = [F~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]
+~>m(s) = {[+(24)F(s).-F(s/2)..].}
+Turning angle: 48°
+Tropism: 0.16
+
+Applies static camera:
+Scale: 7
+Centre: (0, lv/2+1, 0)
+Upright`
             },
             {
                 title: 'Appendix: Model discussions',
@@ -3249,6 +3277,24 @@ let manualSystems =
             'F(d)=F(d/3)+F(d/3)-(120)F(d/3)+F(d/3)'
         ], 60),
         config: ['1/2', '1/2', 'sqrt(3)/12', 0, false]
+    },
+    8:
+    {
+        system: new LSystem('FA(1)', [
+            'A(t) = F(b/2.5)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)',
+            'B(t) = ~J(0.15, t/b-2)',
+            'J(s, type) = ~J(s*0.75+0.25, type)',
+            '~>J(s, type): type<=0 = {[+(32)F(s).-TF(s)TF.-TF(s)..][-(32)F(s)+(16)[TF(s)TF.].]}',
+            '~>J(s, type): type<=1 = [F~p(s)/(60)~p(s)/(60)~p(s)]',
+            '~>p(s) = {[+F(s/2).--F(s/2).][-F(s/2).].}',
+            '~>J(s, type): type<=2 = [F~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]',
+            '~>k(s) = {[F(s).+(72)[&F(s-0.3).][F(s)..][^F(s-0.3).].]}',
+            '~>J(s, type): type<=3 = [F~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]',
+            '~>m(s) = {[+(24)F(s).-F(s/2)..].}'
+        ], '48', 0, '', '', 0.16, {
+            'b':'2.25'
+        }),
+        'config': ['7', '0', 'lv/2+1', '0', true]
     }
 };
 let tmpSystem = null;
