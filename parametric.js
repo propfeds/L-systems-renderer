@@ -478,6 +478,11 @@ The motive behind this mechanism in LSR, is that when a symbol moves to ` +
 `another place, the original ~ (tilde) ends up referencing another symbol ` +
 `entirely, which both wastes one space and can introduce errors by drawing ` +
 `the wrong model.
+Another reason is due to the fact that models in LSR consist of regular ` +
+`symbols instead of being created using traditional techniques, but the ` +
+`resulting models are not derivable, perhaps it is a more intuitive choice ` +
+`to let them disappear.
+
 This design choice is not final, and if feedback can prove its ` +
 `inconvenience, further considerations can be made: should it stick around ` +
 `like defined in Abop? Should references be ditched entirely and models be ` +
@@ -546,40 +551,51 @@ class Xorshift
      * @constructor
      * @param {number} seed must be initialized to non-zero.
      */
-    constructor(seed = 1752)
+    constructor(seed = 0)
     {
-        this.state = seed;
-        this.mod = 0x100000000;
-                // 0x ffffffff + 1
+        this.x = seed;
+        this.y = 0;
+        this.z = 0;
+        this.w = 0;
+        for(let i = 0; i < 64; ++i)
+            this.nextInt;
     }
     /**
-     * Returns a random integer within [0, 2^32) probably.
+     * Returns a random integer within [0, 2^31) probably.
      * @returns {number}
      */
     get nextInt()
     {
-        let x = this.state;
-        x ^= x << 13;
-        x ^= x >> 17;
-        x ^= x << 5;
-        this.state = x;
-        return this.state;
+        let t = this.x ^ (this.x << 11);
+        this.x = this.y;
+        this.y = this.z;
+        this.z = this.w;
+        this.w ^= (this.w >> 19) ^ t ^ (t >> 8);
+        return this.w;
     }
     /**
-     * Returns a random floating point number within [0, 1] or [0, 1).
-     * @param {boolean} [includeEnd] (default: false) whether to include the
-     * number 1 in the range.
+     * Returns a random floating point number within [0, 1).
      * @returns {number}
      */
-    nextFloat(includeEnd = false)
+    get nextFloat()
     {
-        let result;
-        if(includeEnd)  // [-1, 1]
-            result = this.nextInt / (this.mod - 1);
-        else            // [-1, 1)
-            result = this.nextInt / this.mod;
-
-        return (result + 1) / 2;
+        return (this.nextInt >>> 0) / ((1 << 30) * 2);
+    }
+    /**
+     * Returns a full random double floating point number using 2 rolls.
+     * @returns {number}
+     */
+    get nextDouble()
+    {
+        let top, bottom, result;
+        do
+        {
+            top = this.nextInt >>> 10;
+            bottom = this.nextFloat;
+            result = (top + bottom) / (1 << 21);
+        }
+        while(result === 0);
+        return result;
     }
     /**
      * Returns a random integer within a range of [start, end).
@@ -591,7 +607,7 @@ class Xorshift
     {
         // [start, end)
         let size = end - start;
-        return start + Math.floor(this.nextFloat() * size);
+        return start + Math.floor(this.nextFloat * size);
     }
     /**
      * Returns a random element from an array.
@@ -1375,7 +1391,7 @@ class LSystem
                     }
                     else    // Stochastic time
                     {
-                        let roll = this.RNG.nextFloat();
+                        let roll = this.RNG.nextFloat;
                         let chanceSum = 0;
                         let choice = -1;
                         for(let k = 0; k < tmpRules[j].derivations.length; ++k)
@@ -1498,7 +1514,7 @@ class LSystem
                 {
                     // Models can be drawn any time, thus, the RNG should be
                     // separate from actual rule processing.
-                    let roll = globalRNG.nextFloat();
+                    let roll = globalRNG.nextFloat;
                     let chanceSum = 0;
                     let choice = -1;
                     for(let k = 0; k < tmpRules[j].derivations.length; ++k)
@@ -3443,7 +3459,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        margin: new Thickness(5, 4),
+        margin: new Thickness(8, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
