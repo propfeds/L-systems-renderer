@@ -135,9 +135,9 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0, Mistletoe ed.',
-        welcomeSystemName: 'Arrow',
-        welcomeSystemDesc: 'Welcome to L-systems Renderer!',
+        versionName: 'v1.0',
+        welcomeSystemName: 'Mistletoe',
+        welcomeSystemDesc: 'Welcome to the Parametric L-systems Renderer.',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -426,7 +426,9 @@ Note: All arithmetic processing in parameters is done using the game's ` +
 == (equality)
 true, false (keywords)
 a ? b : c (conditional ternary)
-Conversion from boolean to number is also unavailable.
+Conversion (from boolean to number)
+For more information, check the Math Expression manual in the Auto-prestige ` +
+`settings.
 
 * When omitted, the condition is assumed to be always true.
 ** When omitted, the chance is assumed to be 100%.`
@@ -3248,7 +3250,7 @@ const zUpQuat = new Quaternion(0, 0, 0, 1);
 let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
 let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
 let globalRNG = new Xorshift(Date.now());
-let contentsTable = [0, 1, 2, 5, 7];
+let contentsTable = [0, 1, 2, 5, 7, 9, 10];
 let manualSystems =
 {
     3:

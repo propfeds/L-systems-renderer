@@ -145,7 +145,7 @@ const locStrings =
     {
         versionName: 'v1.0',
         welcomeSystemName: 'Arrow',
-        welcomeSystemDesc: 'Welcome to L-systems Renderer!',
+        welcomeSystemDesc: 'Welcome to the L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -689,28 +689,23 @@ Upright`
 `remains, as writing the model in a different rule will delay its drawing by ` +
 `one level. With a special kind of rule, we can assign dedicated models to ` +
 `each symbol to be drawn instantly.
-To declare a model rule, attach a tilde in front of the symbol on the left side:
+To declare a model rule, attach a ~ (tilde) in front of the symbol:
 ~{symbol} = {model}
 
-To reference a model in another rule, attach a tilde in front of the symbol ` +
-`in the same way it was declared.
+To reference a model in another rule, attach a tilde in the same way it was ` +
+`declared. The model will be represented as a temporary sequence that cannot ` +
+`evolve, replacing the default action of drawing a straight line.
+The tilde, and subsequently its model, will disappear in the following level.
 
-Note: The symbol will not disappear from the rule after the model has been ` +
-`drawn, but it will be ignored by the turtle.
-
-Note 2: Unlike the incorporated surfaces described in the Algorithmic Beauty ` +
-`of Plants, models in LSR work differently. The model symbol in LSR only ` +
-`lasts for one level (and disappears afterwards), and thus, models need to ` +
-`be continuously refreshed.
-(Example follows in the next page)`
+Note: This is unlike the incorporated surfaces described in the Algorithmic ` +
+`Beauty of Plants, where the tilde does not need to be refreshed.`
             },
             {
                 title: 'Example: Lilac branch',
                 contents:
-`Ripped straight off of page 92 of The Algorithmic Beauty of Plants. But I ` +
-`made the model myself.
-K represents the flower, and its model is refreshed every level with the ` +
-`rule K = ~K.
+`Ripped straight off of page 92 of The Algorithmic Beauty of Plants.
+K represents the flower, and its model has to be refreshed every level with ` +
+`the rule K = ~K.
 
 Axiom: A~K
 A = [--//~K][++//~K]I///A

@@ -24,6 +24,8 @@
 ## 1.0, Mistletoe ed.
 
 - [ ] Complete new manual
+- [ ] Make a mistletoe for P-LSR
+  - To prevent lag, probably only create one stage with full models
 
 ## 1.0: Completed
 
