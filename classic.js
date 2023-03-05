@@ -4121,9 +4121,11 @@ let createSystemMenu = () =>
                 onClicked: () =>
                 {
                     Sound.playClick();
-                    let tmpRule = ruleEntries[i].text;
-                    ruleEntries[i].text = ruleEntries[i - 1].text;
-                    ruleEntries[i - 1].text = tmpRule;
+                    let tmpRule = tmpRules[i];
+                    tmpRules[i] = tmpRules[i - 1];
+                    tmpRules[i - 1] = tmpRule;
+                    ruleEntries[i - 1].text = tmpRules[i - 1];
+                    ruleEntries[i].text = tmpRules[i];
                 }
             }));
         }
@@ -4149,11 +4151,12 @@ let createSystemMenu = () =>
         {
             Sound.playClick();
             let i = ruleEntries.length;
+            tmpRules[i] = '';
             ruleEntries.push(ui.createEntry
             ({
                 row: i,
                 column: 0,
-                text: '',
+                text: tmpRules[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
                 {
@@ -4171,9 +4174,11 @@ let createSystemMenu = () =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        let tmpRule = ruleEntries[i].text;
-                        ruleEntries[i].text = ruleEntries[i - 1].text;
-                        ruleEntries[i - 1].text = tmpRule;
+                        let tmpRule = tmpRules[i];
+                        tmpRules[i] = tmpRules[i - 1];
+                        tmpRules[i - 1] = tmpRule;
+                        ruleEntries[i - 1].text = tmpRules[i - 1];
+                        ruleEntries[i].text = tmpRules[i];
                     }
                 }));
             }
@@ -4809,9 +4814,11 @@ let createViewMenu = (title, parentMenu) =>
                 onClicked: () =>
                 {
                     Sound.playClick();
-                    let tmpRule = ruleEntries[i].text;
-                    ruleEntries[i].text = ruleEntries[i - 1].text;
-                    ruleEntries[i - 1].text = tmpRule;
+                    let tmpRule = tmpRules[i];
+                    tmpRules[i] = tmpRules[i - 1];
+                    tmpRules[i - 1] = tmpRule;
+                    ruleEntries[i - 1].text = tmpRules[i - 1];
+                    ruleEntries[i].text = tmpRules[i];
                 }
             }));
         }
@@ -4837,11 +4844,12 @@ let createViewMenu = (title, parentMenu) =>
         {
             Sound.playClick();
             let i = ruleEntries.length;
+            tmpRules[i] = '';
             ruleEntries.push(ui.createEntry
             ({
                 row: i,
                 column: 0,
-                text: '',
+                text: tmpRules[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
                 {
@@ -4859,9 +4867,11 @@ let createViewMenu = (title, parentMenu) =>
                     onClicked: () =>
                     {
                         Sound.playClick();
-                        let tmpRule = ruleEntries[i].text;
-                        ruleEntries[i].text = ruleEntries[i - 1].text;
-                        ruleEntries[i - 1].text = tmpRule;
+                        let tmpRule = tmpRules[i];
+                        tmpRules[i] = tmpRules[i - 1];
+                        tmpRules[i - 1] = tmpRule;
+                        ruleEntries[i - 1].text = tmpRules[i - 1];
+                        ruleEntries[i].text = tmpRules[i];
                     }
                 }));
             }
