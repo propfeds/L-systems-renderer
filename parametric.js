@@ -470,6 +470,32 @@ Upright`,
                 source: 'https://www.houdinikitchen.net/2019/12/21/how-to-create-l-systems/'
             },
             {
+                title: 'Example: Mistletoe',
+                contents:
+`Welcome to the Parametric L-systems Renderer!
+
+Axiom: ++M(0)
+M(t): t<2 = F~M(t+1)
+M(t): t<3 = [&T$~M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]
+M(t, i): t<5 = F~M(t+1, i): 0.7-i; F~K(0)~M(t+1, i+0.3): 0.3+i
+M(t, i): t>=5 = [&T~M(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]
+~> M(t): t<3 = [+(48)~L(t)]/(180)[+(48)~L(t)]
+~> M(t, i) = [+(48)~L(2+0.4*t)]/(180)[+(48)~L(2+0.4*t)]
+~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}
+K(t): t<3 = ~K(t+1)
+K(t): t>=3 = [&&\\~B(0.3)]/(120)[&&/~B(0.24)]/(120)[&&~B(0.33)]
+~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]
+B(s) = ~B(s*0.8+0.2)
+~> B(s) = {[-(67.5)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).]}
+Turning angle: 32°
+Seed: 1362151494
+Tropism: 0.16
+
+Applies static camera:
+Scale: 6
+Centre: (3, 3, 0)`
+            },
+            {
                 title: 'Appendix: Model discussions',
                 contents:
 `About the differences between LSR models (which disappear after one stage) ` +
@@ -3263,10 +3289,23 @@ const xUpQuat = new Quaternion(0, 1, 0, 0);
 const yUpQuat = new Quaternion(0, 0, 1, 0);
 const zUpQuat = new Quaternion(0, 0, 0, 1);
 
-let arrow = new LSystem('X', ['F=FF', 'X=F[+X][-X]FX'], 30);
-let renderer = new Renderer(arrow, '2^lv', 0, '2^lv');
+let toe = new LSystem('++M(0)', [
+    'M(t): t<2 = F~M(t+1)',
+    'M(t): t<3 = [&T$~M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]',
+    'M(t, i): t<5 = F~M(t+1, i): 0.7-i; F~K(0)~M(t+1, i+0.3): 0.3+i',
+    'M(t, i): t>=5 = [&T~M(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]',
+    '~> M(t): t<3 = [+(48)~L(t)]/(180)[+(48)~L(t)]',
+    '~> M(t, i) = [+(48)~L(2+0.4*t)]/(180)[+(48)~L(2+0.4*t)]',
+    '~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}',
+    'K(t): t<3 = ~K(t+1)',
+    'K(t): t>=3 = [&&\\~B(0.3)]/(120)[&&/~B(0.24)]/(120)[&&~B(0.33)]',
+    '~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]',
+    'B(s) = ~B(s*0.8+0.2)',
+    '~> B(s) = {[-(67.5)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).]}',
+], '32', 1362151494, '', '', 0.16, {});
+let renderer = new Renderer(toe, 6, 0, 3, 3, 0);
 let globalRNG = new Xorshift(Date.now());
-let contentsTable = [0, 1, 2, 5, 7, 9, 10];
+let contentsTable = [0, 1, 2, 5, 7, 10, 11];
 let manualSystems =
 {
     3:
@@ -3316,7 +3355,12 @@ let manualSystems =
         ], '48', 0, 'A', '', 0.16, {
             'b': '2.25'
         }),
-        'config': ['7', '0', 'lv/2+1', '0', true]
+        config: ['7', '0', 'lv/2+1', '0', true]
+    },
+    9:
+    {
+        system: toe,
+        config: ['6', '3', '3', '0', false]
     }
 };
 let tmpSystem = null;
