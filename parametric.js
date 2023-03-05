@@ -47,7 +47,7 @@ Other features:
 - Camera modes: static and turtle-following
 - Drawing speed and advanced stroke options!
 
-Note: Systems from LSR can be ported to P-LSR with minimal changes. However,` +
+Note: Systems from LSR can be ported to P-LSR with minimal changes. However, ` +
 `the opposite is rarely true.`,
     };
 

@@ -1,12 +1,11 @@
-# L-systems-renderer
+# L-systems Renderer
 
-L-systems renderer in Exponential Idle.
+An implementation of L-systems in Exponential Idle.
 
 ## Installation
 
-Two editions of LSR are available. The Classic edition of LSR is lighter in
-terms of processing, but does not support parametric or context-sensitive
-syntax.
+Two editions of the LSR are available. The Classic edition is lighter in terms
+of processing, but does not support parametric or context-sensitive syntax.
 
 - [Classic](./classic.js)
 - [Parametric](./parametric.js)
