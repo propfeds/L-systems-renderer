@@ -1,14 +1,13 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [Other considerations](#other-considerations)
-  - [1.0, Mistletoe ed.](#10-mistletoe-ed)
+  - [Considerations](#considerations)
   - [1.0: Completed](#10-completed)
   - [0.21: Completed](#021-completed)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## Other considerations
+## Considerations
 
 - [ ] Add more comments in the code
 - [ ] A more detailed README
@@ -21,14 +20,11 @@
 - Too much hassle to implement, defer them to LG?
   - [ ] Option to use old tropisme
 
-## 1.0, Mistletoe ed.
-
-- [ ] Complete new manual
-- [ ] Make a mistletoe for P-LSR
-  - To prevent lag, probably only create one stage with full models
-
 ## 1.0: Completed
 
+- [x] Complete new manual
+- [x] Make a mistletoe for P-LSR
+  - To prevent lag, probably only create one stage with full models
 - [x] Tropism direction
   - Maybe can have 4 arguments
 - [x] Issue: multiple parameters not working at all

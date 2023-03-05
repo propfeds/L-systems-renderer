@@ -38,12 +38,12 @@ internal state in the theory menu, so please back it up.
 
 ## Screenshots
 
-![ss1](screenshots/33.jpg "Lilac branch")
+![ss1](screenshots/35.jpg "Lilac branch")
 
-![ss2](screenshots/34.jpg "Single lilac model")
+![ss2](screenshots/36.jpg "Sierpinski's Triangle")
 
-![ss3](screenshots/32.jpg "Clover model")
+![ss3](screenshots/38.jpg "Stamp stick")
 
-![ss3](screenshots/31.jpg "3D Hilbert curve")
+![ss3](screenshots/37.jpg "LS menu")
 
-![ss3](screenshots/30.jpg "Sierpinski triangle")
+![ss3](screenshots/39.jpg "Guide menu")
