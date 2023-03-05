@@ -1,65 +1,76 @@
 # LSR: To-do List
 
 - [LSR: To-do List](#lsr-to-do-list)
-  - [1.00, the Mistletoe Update](#100-the-mistletoe-update)
+  - [Considerations](#considerations)
+  - [1.0: Completed](#10-completed)
   - [0.21: Completed](#021-completed)
   - [0.20: Completed](#020-completed)
   - [Impossible or Scrapped](#impossible-or-scrapped)
 
-## 1.00, the Mistletoe Update
+## Considerations
 
 - [ ] Add more comments in the code
-- [ ] Turtle controls summary page in guide
 - [ ] A more detailed README
   - Showcases the power of tickspeed and stroke options
   - Discusses limitations of the game
   - Like a blog post, sort of
 - [ ] Localisation
-- [ ] Folders for saved systems?
-  - Directory separator?
-- [ ] Compress internal state? LZW, LZP
+- [ ] Folders for saved systems
 - [ ] Ask Gilles about changing the spline used in 3D graph
-- [ ] How about locking rotation? (for Navier Stokes)
-- [ ] Rework quickdraw / BT logic
-  - [ ] Add a cooldown system
-  - [ ] Hesitate on both ends if hesitation is on?
-  - [ ] If the stack hasn't detected any movement, just don't do anything
-  (because of the ignored stuff)
-  - [ ] Remove the backtrack list option
-    - Also, backtrack on the way back and forward needs different lists?
+- Too much hassle to implement, defer them to LG?
+  - [ ] Option to use old tropisme
 
-- [ ] Investigate Houdini stochastic syntax for weighted derivations
-`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
-  - Can multiple derivations on the same rule still be made? Ruins parity
-  - Allow both modes to exist
+## 1.0: Completed
 
-- [ ] Change how models work:
-  - Stochastic models are no longer available
-    - Please define stochastic rules for the actual symbol instead, pre-model 
-  - Models are no longer recursively derived
-    - This will remove their permanence
-  - Instead, they will be processed by the renderer using a queue
-    - The processing code will be positioned below (?) the main renderer loop
-    - Almost the exact same code as main loop, but with `~` queue controls
-  - Having a model also means that symbol should be ignored (no extra F)
-    - Easy, just add the model map's keys to the set
-    - Update the manual
-  - Backtrack models?
-
-- [ ] Parametric systems
-  - Different classes or merge into regular?
-    - Different classes means less overhead processing for regular systems
-  - Regex magic to separate string to actual sequence of symbols?
+- [x] Complete new manual
+- [x] Make a mistletoe for P-LSR
+  - To prevent lag, probably only create one stage with full models
+- [x] Tropism direction
+  - Maybe can have 4 arguments
+- [x] Issue: multiple parameters not working at all
+  - Cause: splitting commas -> Solution: semi-colons
+- [x] Split workload for ancestree (AND for derive too if this works well)
+  - [x] Apply split technique to sequence menu
+- [ ] Compress internal state? LZW, LZP
+  - [x] Or just separate into multiple lines, with an add button
+- [x] Parametric systems
+  - [x] Input context-ignored symbols
+  - [x] New option in constructor for MathExpression variables
+    - [x] Button in LS menu next to axiom entry
+  - Different classes
+    - Button in LS menu / save menu to switch modes?
+    - Theory settings?
+    - Lemma stages?
+  - Make `f` move without returning like `F`
+  - Top-down processing priority
+  - [x] Regex magic to separate string into actual sequence of symbols
+  - [x] Issue: regex for nested brackets in parameters?
   - Equal comparison changed to `==` instead of `=` in abop to differentiate
   from the syntax
   - Store as an extra array of objects
   - Round brackets gonna make it hard for actual drawing - although maybe it
   would've been already stripped down by the time it gets to the turtle
   - `~`: Parameters of the following symbol can control model size in rule
-
-- [ ] Context sensitivity
+- [x] Split into two versions: Classic Renderer and Paramatric L-systems Rdr
+- [x] Fix precision problem with BigNumber and/or Quaternions
+  - Source of error: missing a conversion of BN -> Number in LS constructor
+- [x] Turning angles (and tropism)
+  - Formula expressions allow shenanigans such as `360/7`, mostly
+  - [ ] Button to change mode between degrees and radians?
+    - Probably scrap too lol
+- [x] Revamp sequence menu
+  - Level 0: 10 chars (`View`)
+  - [x] Classic LS: displays the entire string in a label
+  - [ ] Parametric LS: displays symbols and params side by side, one symbol/row
+    - Scrapped lol
+  - [x] Stage navigation
+- [x] Investigate Houdini stochastic syntax for weighted derivations
+`[left_ctx<] symbol [>right_ctx] [:condition] = replacement [:probability]`
+  - Stochastic in PLSR: has to be on the same line
+- [x] Context sensitivity
   - `b < a > c → aa`
-  - Skipping over brackets? hmm, difficult
+  - Parametric: **context ignore** replaces regular ignore list in LS menu
+  - [x] Skipping over brackets? hmm, difficult
     - Mapping vertex depth, can be checked by tracking brackets and stacks.
     - Actually it's pretty hard to make an algo for this, because it could be:
     `01[23[456][45][4]][234]2`, and you would have to find all the 2s if you
@@ -70,23 +81,63 @@
     - Ancestor means the index of whomever the fuck is on top of the idx stack.
     - Does this work with the dynamic loading system with all the data passing?
   - If stored by maps: Keys can be any data type.
-  - If stored by objects:
-  ```js
-  // v2
-  let contextRulesLR =
-  {
-    'ABC': 'D', // Two ways: A<B>C = D
-    'FBG': 'H'  // F<B>G = H
-  };
-  let contextRulesL =
-  {
-    'AB': 'E'   // One way: A<B = E
-  };
-  let contextRulesR =
-  {
-    'BA': 'E'   // One way: B>A = E
-  };
-  ```
+  - If stored by objects: written in `parametric_lsystem.js`
+- [x] Update docstrings
+- [x] Buttons in LS menu to move up down (swap rules)
+  - How to update rule entries?
+- [x] Issue: Renderer.tick() cuts off 1 tick at the backtrack tail end
+- [x] Investigate tropism (capital T)
+  - [x] Separate starting quaternions for upright and sideways
+    - Stop swizzling!
+    - Tropism is still the same direction, so we can simulate sideways vines
+    - Houdini: Apply tropism vector (gravity). This angles the turtle towards the negative Y axis. The amount of change is governed by g. The default change is to use the Gravity parameter.
+- [x] Investigate vertical heading (`$`) (NOT helio-tropism)
+  - Houdini: $(x,y,z)
+  Rotates the turtle so the up vector is (0,1,0). Points the turtle in the direction of the point (x,y,z). Default behavior is only to orient and not to change the direction.
+  - Abop: The symbol $ rolls the turtle around its own axis so that vector L pointing to the left of the turtle is brought to a horizontal position. Consequently, the branch plane is “closest to a horizontal plane,” as required by Honda’s model. From a technical point of view, $ modifies the turtle orientation in space according to the formulae
+  L = V × H / |V × H| and U = H × L,
+  where vectors H, L and U are the heading (`\ /`), left (`& ^`) and up (`+ -`) vectors associated with the turtle, V is the direction opposite to gravity, and |A| denotes the length of vector A.
+  - main: roll the turtle around the H axis so that H and U lie in a common vertical plane with U closest to up
+- [x] Add T and $ to gude
+- [x] Issue: models are broken because of backtrack rework
+- [x] Change how models work:
+  - Stochastic models are no longer available
+    - Instead define stochastic rules for the actual symbol instead, pre-model 
+  - Models are no longer recursively derived
+    - This will remove their permanence and increase performance
+  - Instead, they will be processed by the renderer using a queue
+    - The processing code will be positioned below (?) the main renderer loop
+    - Almost the exact same code as main loop, but with `~` queue controls
+  - Having a model also means that symbol should be ignored (no extra F)
+    - Easy, just add the model map's keys to the set
+    - Update the manual
+  - Backtrack models?
+- [x] Update guide about models
+- Can multiple derivations on the same rule still be made? Ruins parity
+  - [x] Allow both modes to exist (ONLY in Classic)
+- [x] Implement new RNG (Xorshift) instead of th fucjuing Lcg
+- [x] Screen adaptive button sizes (40, 44, 48) plus other stuff maybe
+- [x] Rework quickdraw / BT logic (**good enough!**)
+  - Progress: Regular, backtrack, quickdraw done
+  - Test suites:
+    - [x] Arrow (8/8)
+    - [x] Cantor (8/8)
+    - [ ] Snowflake (0/8) - still wasting time on ignored shits
+  - [x] Add a cooldown system
+  - [x] Hesitate on both ends if hesitation is on?
+  - [x] When just pushing onto the stack normally (on an F point), don't push
+  if the position hasn't changed, because the orientation doesn't matter if
+  the stack point isn't a `[` bracket point
+  - [x] Issue: quick BT still forces hesitation on the way forward
+  - [x] If the `]]]]]` are stacked, hesitation time is massive
+    - [x] If the stack hasn't detected any movement, just don't do anything
+    - [x] Hesitate only when the turtle was moved compared to last time?
+    - [ ] Does it work with ignored? No
+  (because of the ignored stuff)
+  - [x] The pop in `]` might be a problem if the branch stack has nothing yet?
+  - [x] Remove the backtrack list option
+    - Also, backtrack on the way back and forward needs different lists?
+- [x] Turtle controls summary page in guide
 
 ## 0.21: Completed
 
@@ -181,11 +232,11 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
   `Parametric L-systems Renderer`, with a better randomiser lol
   - Scrapped. Just make a new class.
 - Strict model format for each symbol
-  - Array of Vector3s denoting a path of vertices
-    - Don't write `(0, 0, 0)` at start or end
+  - Array of Vector3s den 0)` at start or end
     - Flow: the previous path ended at `(0, 0, 0)` of this path. We'll follow
     through the model's queue one by one until we reach the end. But we won't
-    go back to `(0, 0, 0)`, we go forward to the next symbol. This would allow
+    go back to `(0, 0, 0)`, weoting a path of vertices
+    - Don't write `(0, 0, go forward to the next symbol. This would allow
     us to draw different lengthed lines if we defined the model to include only
     one point: `(L, 0, 0)`. But... that would delay processing by one turn?
   - Well, we can't include the tilde then. Hardcoded models can still be a thing
@@ -196,3 +247,16 @@ needs to store two boolean properties `isContextSensitive` and `isParametric`.
     index of an array?
   - Model storage
     - How to load? How to edit?
+- Counter argument to new model format:
+  - Permanence can be solved by cutting with `%`, albeit with a 1 tick cost for
+  renderer hesitation (or 2)
+    - Solution: Renderer only pushes on `[` if the position / ori has changed
+    - This makes more sense thematically, as cut wounds will leave scars
+      - Lemma's Garden: this will slightly slow down growth
+  - If models were to be processed by renderer, then they cannot evolve
+    - On the other hand, they can 'evolve' in another sense where each parameter
+    value can have a different model
+  - [x] Having a model also means that symbol should be ignored (no extra F)
+    - Easy, just add the model map's keys to the set
+    - [x] Update the manual
+  - Lemma's Garden: Complex models such as flowers will bog down the growth cost
