@@ -152,6 +152,7 @@ const locStrings =
         varTdDesc: '\\text{{Tick length: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick length: }}\\infty',
         varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
+        varIdDesc: '\\text{{Init. delay: }}{0}\\text{{ sec}}',
         upgResumeInfo: 'Resumes the last rendered system',
 
         saPatienceTitle: 'You\'re watching grass grow.',
@@ -1844,6 +1845,7 @@ class Renderer
          * @type {number} the elapsed time.
          */
         this.elapsed = 0;
+        this.firstPoint = true;
         /**
          * @type {number} the number of turns before the renderer starts working
          * again.
@@ -1982,11 +1984,12 @@ class Renderer
         this.models = [];
         this.modelParams = [];
         this.mdi = [];
-        this.cooldown = 0;
         this.polygonMode = 0;
         if(clearGraph)
         {
+            this.cooldown = delay.level;
             this.elapsed = 0;
+            this.firstPoint = true;
             time = 0;
             theory.clearGraph();
         }
@@ -2182,9 +2185,11 @@ class Renderer
             return;
         
         // This is to prevent the renderer from skipping the first point.
-        if(this.elapsed <= 0.101)
+        if(this.firstPoint)
+        {
+            this.firstPoint = false;
             return;
-
+        }
         /*
         Don't worry, it'll not run forever. This is just to prevent the renderer
         from hesitating for 1 tick every loop.
@@ -2437,7 +2442,7 @@ class Renderer
                             
                             if(this.quickDraw && !btAhead)
                                 break;
-                            else if(this.polygonMode <= 0)
+                            else if(this.polygonMode <= 0 && !ignored)
                             {
                                 ++this.mdi[this.mdi.length - 1];
                                 return;
@@ -2654,7 +2659,7 @@ class Renderer
                         
                         if(this.quickDraw && !btAhead)
                             break;
-                        else if(this.polygonMode <= 0)
+                        else if(this.polygonMode <= 0 && !ignored)
                         {
                             ++this.i;
                             return;
@@ -3369,9 +3374,9 @@ let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
-var l, ts;
+var l, ts, delay;
 // Variable controls
-let lvlControls, tsControls;
+let lvlControls, tsControls, idControls;
 
 // Measure drawing performance
 let drawMeasurer = new Measurer('renderer.draw()', 30);
@@ -3427,6 +3432,27 @@ var init = () =>
         tsControls = new VariableControls(ts, true);
     }
 
+    // Initial delay
+    {
+        let getDesc = (level) =>
+        {
+            return Localization.format(getLoc('varIdDesc'),
+            (level / 10).toString());
+        };
+        let getInfo = (level) => `\\text{Id=}${level.toString()}/s`;
+        delay = theory.createUpgrade(2, progress, new FreeCost);
+        delay.getDescription = (_) => Utils.getMath(getDesc(delay.level));
+        delay.getInfo = (amount) => Utils.getMathTo(getInfo(delay.level),
+        getInfo(delay.level + amount));
+        delay.maxLevel = 2;
+        delay.canBeRefunded = (_) => true;
+        delay.boughtOrRefunded = (_) =>
+        {
+            idControls.updateAllButtons();
+            renderer.reset();
+        };
+        idControls = new VariableControls(delay);
+    }
     theory.createSecretAchievement(0, null,
         getLoc('saPatienceTitle'),
         getLoc('saPatienceDesc'),
@@ -3581,6 +3607,14 @@ var getUpgradeListDelegate = () =>
     let tsBuy = tsControls.createBuyButton();
     tsBuy.column = 1;
 
+    let delayButton = idControls.createVariableButton();
+    delayButton.row = 2;
+    delayButton.column = 0;
+    let delayRefund = idControls.createRefundButton('–');
+    delayRefund.column = 0;
+    let delayBuy = idControls.createBuyButton();
+    delayBuy.column = 1;
+
     let sysButton = createButton(getLoc('btnMenuLSystem'), () =>
     createSystemMenu().show());
     sysButton.row = 0;
@@ -3629,6 +3663,7 @@ var getUpgradeListDelegate = () =>
                     rowDefinitions:
                     [
                         BUTTON_HEIGHT,
+                        BUTTON_HEIGHT,
                         BUTTON_HEIGHT
                     ],
                     columnDefinitions: ['50*', '50*'],
@@ -3658,6 +3693,19 @@ var getUpgradeListDelegate = () =>
                             [
                                 tsRefund,
                                 tsBuy
+                            ]
+                        }),
+                        delayButton,
+                        ui.createGrid
+                        ({
+                            row: 2,
+                            column: 1,
+                            columnSpacing: 7,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                delayRefund,
+                                delayBuy
                             ]
                         })
                     ]
