@@ -70,7 +70,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
                 'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 1;
+var version = 1.01;
 
 let time = 0;
 let page = 0;
@@ -143,7 +143,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0',
+        versionName: 'v1.01',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to the L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -158,6 +158,7 @@ const locStrings =
         varTdDesc: '\\text{{Tick length: }}{0}\\text{{ sec}}',
         varTdDescInf: '\\text{{Tick length: }}\\infty',
         varTsDesc: '\\text{{Tickspeed: }}{0}/\\text{{sec}}',
+        varIdDesc: '\\text{{Init. delay: }}{0}\\text{{ sec}}',
         upgResumeInfo: 'Resumes the last rendered system',
 
         saPatienceTitle: 'You\'re watching grass grow.',
@@ -254,7 +255,7 @@ const locStrings =
 
         menuTheory: 'Theory Settings',
         labelOfflineReset: 'Reset graph on tabbing in: ',
-        labelResetLvl: 'Reset level on construction: ',
+        labelResetLvl: 'Reset renderer controls on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
@@ -692,27 +693,20 @@ Upright`
 To declare a model rule, attach a ~ (tilde) in front of the symbol:
 ~{symbol} = {model}
 
-To reference a model in another rule, attach a tilde in the same way it was ` +
-`declared. The model will be represented as a temporary sequence that cannot ` +
-`evolve, replacing the default action of drawing a straight line.
-The tilde, and subsequently its model, will disappear in the following level.
-
-Note: This is unlike the incorporated surfaces described in the Algorithmic ` +
-`Beauty of Plants, where the tilde does not need to be refreshed.`
+The model will be represented as a temporary sequence that cannot evolve, ` +
+`replacing the default action of drawing a straight line.`
             },
             {
                 title: 'Example: Lilac branch',
                 contents:
 `Ripped straight off of page 92 of The Algorithmic Beauty of Plants.
-K represents the flower, and its model has to be refreshed every level with ` +
-`the rule K = ~K.
+K represents the flower, and A the flower buds.
 
-Axiom: A~K
-A = [--//~K][++//~K]I///A
+Axiom: AK
+A = [--//K][++//K]I///A
 I = Fi
 i = Fj
 j = J[--FFA][++FFA]
-K = ~K
 ~K = F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]
 Turning angle: 30°
 
@@ -741,7 +735,7 @@ $: aligns turtle's up vector to vertical.
 .: sets a polygon vertex.
 }: ends the polygon drawing mode.
 
-~: declares/references a symbol's model.
+~: declares a symbol's model.
 ,: separates between stochastic derivations.`
             },
             {
@@ -847,17 +841,16 @@ Maybe over Discord. Reddit account. Arcane-mail logistics!`
 `A more complex version of the previous lilac branch in the Models section, ` +
 `complete with detailed models and copious utilisation of tropism.
 
-Axiom: +S~A
+Axiom: +SA
 S = FS
-A = T[--//~K][++//~K]I///~A
-~A = [+++~a~a~a~a]
+A = T[--//K][++//K]I///A
+~A = [+++aaaa]
 ~a = -{[^-F.][--FF.][&-F.].}+^^^
-K = ~K
-~K = [FT[F]+++~k~k~k~k]
+~K = [FT[F]+++kkkk]
 ~k = -{[^--F.][F-^-F.][^--F|++^--F|+F+F.][-F+F.][&--F|++&--F|+F+F.][F-&-F.][&--F.].}+^^^
 I = Fi
 i = Fj
-j = J[--FF~A][++FF~A]
+j = J[--FFA][++FFA]
 Turning angle: 30°
 Tropism: 0.16
 
@@ -1785,6 +1778,7 @@ class Renderer
          * @type {number} the elapsed time.
          */
         this.elapsed = 0;
+        this.firstPoint = true;
         /**
          * @type {number} the number of turns before the renderer starts working
          * again.
@@ -1880,11 +1874,12 @@ class Renderer
         this.i = 0;
         this.models = [];
         this.mdi = [];
-        this.cooldown = 0;
         this.polygonMode = 0;
         if(clearGraph)
         {
+            this.cooldown = delay.level;
             this.elapsed = 0;
+            this.firstPoint = true;
             time = 0;
             theory.clearGraph();
         }
@@ -2002,7 +1997,11 @@ class Renderer
         this.loaded = -1;
         this.loadTarget = 0;
         if(resetLvlOnConstruct)
+        {
             l.level = 0;
+            ts.level = 0;
+            delay.level = 0;
+        }
         this.update(l.level);
     }
     /**
@@ -2065,9 +2064,11 @@ class Renderer
             return;
         
         // This is to prevent the renderer from skipping the first point.
-        if(this.elapsed <= 0.101)
+        if(this.firstPoint)
+        {
+            this.firstPoint = false;
             return;
-
+        }
         /*
         Don't worry, it'll not run forever. This is just to prevent the renderer
         from hesitating for 1 tick every loop.
@@ -2130,17 +2131,7 @@ class Renderer
                             this.system.tropism);
                             break;
                         case '~':
-                            if(!this.system.models.has(
-                            this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1] + 1]))
-                                break;
-
-                            ++this.mdi[this.mdi.length - 1];
-                            this.models.push(this.system.models.get(
-                            this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]]));
-                            this.mdi.push(0);
-                            return;
+                            break;
                         case '[':
                             this.idxStack.push(this.stack.length);
                             this.stack.push([this.state, this.ori]);
@@ -2210,10 +2201,19 @@ class Renderer
                                 return;
                             }
 
-                            let ignored = this.system.ignoreList.has(
+                            if(this.loadModels && this.system.models.has(
                             this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]]) ||
-                            this.loadModels && this.system.models.has(
+                            this.mdi[this.mdi.length - 1]]))
+                            {
+                                this.models.push(this.system.models.get(
+                                this.models[this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]]));
+                                this.mdi.push(0);
+                                ++this.mdi[this.mdi.length - 2];
+                                return;
+                            }
+
+                            let ignored = this.system.ignoreList.has(
                             this.models[this.models.length - 1][
                             this.mdi[this.mdi.length - 1]]);
                             let breakAhead = BACKTRACK_LIST.has(
@@ -2245,7 +2245,7 @@ class Renderer
                             
                             if(this.quickDraw && !btAhead)
                                 break;
-                            else if(this.polygonMode <= 0)
+                            else if(this.polygonMode <= 0 && !ignored)
                             {
                                 ++this.mdi[this.mdi.length - 1];
                                 return;
@@ -2298,15 +2298,7 @@ class Renderer
                         this.ori = this.ori.applyTropism(this.system.tropism);
                         break;
                     case '~':
-                        if(!this.loadModels || !this.system.models.has(
-                        this.levels[this.lv][this.i + 1]))
-                            break;
-
-                        ++this.i;
-                        this.models.push(this.system.models.get(
-                        this.levels[this.lv][this.i]));
-                        this.mdi.push(0);
-                        return;
+                        break;
                     case '[':
                         this.idxStack.push(this.stack.length);
                         this.stack.push([this.state, this.ori]);
@@ -2376,9 +2368,18 @@ class Renderer
                             return;
                         }
 
+                        if(this.loadModels && this.system.models.has(
+                        this.levels[this.lv][this.i]))
+                        {
+                            this.models.push(this.system.models.get(
+                            this.levels[this.lv][this.i]));
+                            this.mdi.push(0);
+                            ++this.i;
+                            return;
+                        }
+
                         let ignored = this.system.ignoreList.has(
-                        this.levels[this.lv][this.i]) || this.loadModels &&
-                        this.system.models.has(this.levels[this.lv][this.i]);
+                        this.levels[this.lv][this.i]);
                         let breakAhead = BACKTRACK_LIST.has(
                         this.levels[this.lv][this.i + 1]);
                         let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
@@ -2405,7 +2406,7 @@ class Renderer
                         
                         if(this.quickDraw && !btAhead)
                             break;
-                        else if(this.polygonMode <= 0)
+                        else if(this.polygonMode <= 0 && !ignored)
                         {
                             ++this.i;
                             return;
@@ -3126,29 +3127,27 @@ let manualSystems =
     },
     22:
     {
-        system: new LSystem('A~K', [
-            'A=[--//~K][++//~K]I///A',
+        system: new LSystem('AK', [
+            'A=[--//K][++//K]I///A',
             'I=Fi',
             'i=Fj',
             'j=J[--FFA][++FFA]',
-            'K=~K',
             '~K=F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]'
         ], 30),
         config: ['3*lv', 0, '1.5*lv', 0, true]
     },
     28:
     {
-        system: new LSystem('+S~A', [
+        system: new LSystem('+SA', [
             'S=FS',
-            'A=T[--//~K][++//~K]I///~A',
-            '~A=[+++~a~a~a~a]',
+            'A=T[--//K][++//K]I///A',
+            '~A=[+++aaaa]',
             '~a=-{[^-F.][--FF.][&-F.].}+^^^',
-            'K=~K',
-            '~K=[FT[F]+++~k~k~k~k]',
+            '~K=[FT[F]+++kkkk]',
             '~k=-{[^--F.][F-^-F.][^--F|++^--F|+F+F.][-F+F.][&--F|++&--F|+F+F.][F-&-F.][&--F.].}+^^^',
             'I=Fi',
             'i=Fj',
-            'j=J[--FF~A][++FF~A]'
+            'j=J[--FFA][++FFA]'
         ], 30, 0, '', 0.16),
         config: ['2*lv+1', '2*lv+1', 'lv/2+3/4', 0, false]
     },
@@ -3176,9 +3175,9 @@ let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
-var l, ts;
+var l, ts, delay;
 // Variable controls
-let lvlControls, tsControls;
+let lvlControls, tsControls, idControls;
 
 // Measure drawing performance
 let drawMeasurer = new Measurer('renderer.draw()', 30);
@@ -3232,6 +3231,27 @@ var init = () =>
             time = 0;
         };
         tsControls = new VariableControls(ts, true);
+    }
+    // Initial delay
+    {
+        let getDesc = (level) =>
+        {
+            return Localization.format(getLoc('varIdDesc'),
+            (level / 10).toString());
+        };
+        let getInfo = (level) => `\\text{Id=}${level.toString()}/s`;
+        delay = theory.createUpgrade(2, progress, new FreeCost);
+        delay.getDescription = (_) => Utils.getMath(getDesc(delay.level));
+        delay.getInfo = (amount) => Utils.getMathTo(getInfo(delay.level),
+        getInfo(delay.level + amount));
+        delay.maxLevel = 2;
+        delay.canBeRefunded = (_) => true;
+        delay.boughtOrRefunded = (_) =>
+        {
+            idControls.updateAllButtons();
+            renderer.reset();
+        };
+        idControls = new VariableControls(delay);
     }
     // Resume last system (upgrade idea)
     // { 
@@ -3326,7 +3346,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        margin: new Thickness(8, 4),
+        margin: new Thickness(6, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
@@ -3442,6 +3462,14 @@ var getUpgradeListDelegate = () =>
     let tsBuy = tsControls.createBuyButton();
     tsBuy.column = 1;
 
+    let delayButton = idControls.createVariableButton();
+    delayButton.row = 2;
+    delayButton.column = 0;
+    let delayRefund = idControls.createRefundButton('–');
+    delayRefund.column = 0;
+    let delayBuy = idControls.createBuyButton();
+    delayBuy.column = 1;
+
     let sysButton = createButton(getLoc('btnMenuLSystem'), () =>
     createSystemMenu().show());
     sysButton.row = 0;
@@ -3490,6 +3518,7 @@ var getUpgradeListDelegate = () =>
                     rowDefinitions:
                     [
                         BUTTON_HEIGHT,
+                        BUTTON_HEIGHT,
                         BUTTON_HEIGHT
                     ],
                     columnDefinitions: ['50*', '50*'],
@@ -3519,6 +3548,19 @@ var getUpgradeListDelegate = () =>
                             [
                                 tsRefund,
                                 tsBuy
+                            ]
+                        }),
+                        delayButton,
+                        ui.createGrid
+                        ({
+                            row: 2,
+                            column: 1,
+                            columnSpacing: 7,
+                            columnDefinitions: ['50*', '50*'],
+                            children:
+                            [
+                                delayRefund,
+                                delayBuy
                             ]
                         })
                     ]
