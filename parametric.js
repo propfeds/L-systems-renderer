@@ -254,7 +254,7 @@ const locStrings =
 
         menuTheory: 'Theory Settings',
         labelOfflineReset: 'Reset graph on tabbing in: ',
-        labelResetLvl: 'Reset to stage 0 on construction: ',
+        labelResetLvl: 'Reset renderer controls on construction: ',
         labelTerEq: 'Tertiary equation: {0}',
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
@@ -2093,7 +2093,11 @@ class Renderer
         this.loaded = -1;
         this.loadTarget = 0;
         if(resetLvlOnConstruct)
+        {
             l.level = 0;
+            ts.level = 0;
+            delay.level = 0;
+        }
         this.update(l.level);
     }
     /**
