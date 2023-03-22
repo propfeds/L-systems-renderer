@@ -693,27 +693,20 @@ Upright`
 To declare a model rule, attach a ~ (tilde) in front of the symbol:
 ~{symbol} = {model}
 
-To reference a model in another rule, attach a tilde in the same way it was ` +
-`declared. The model will be represented as a temporary sequence that cannot ` +
-`evolve, replacing the default action of drawing a straight line.
-The tilde, and subsequently its model, will disappear in the following level.
-
-Note: This is unlike the incorporated surfaces described in the Algorithmic ` +
-`Beauty of Plants, where the tilde does not need to be refreshed.`
+The model will be represented as a temporary sequence that cannot evolve, ` +
+`replacing the default action of drawing a straight line.`
             },
             {
                 title: 'Example: Lilac branch',
                 contents:
 `Ripped straight off of page 92 of The Algorithmic Beauty of Plants.
-K represents the flower, and its model has to be refreshed every level with ` +
-`the rule K = ~K.
+K represents the flower, and A the flower buds.
 
-Axiom: A~K
-A = [--//~K][++//~K]I///A
+Axiom: AK
+A = [--//K][++//K]I///A
 I = Fi
 i = Fj
 j = J[--FFA][++FFA]
-K = ~K
 ~K = F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]
 Turning angle: 30°
 
@@ -742,7 +735,7 @@ $: aligns turtle's up vector to vertical.
 .: sets a polygon vertex.
 }: ends the polygon drawing mode.
 
-~: declares/references a symbol's model.
+~: declares a symbol's model.
 ,: separates between stochastic derivations.`
             },
             {
@@ -848,17 +841,16 @@ Maybe over Discord. Reddit account. Arcane-mail logistics!`
 `A more complex version of the previous lilac branch in the Models section, ` +
 `complete with detailed models and copious utilisation of tropism.
 
-Axiom: +S~A
+Axiom: +SA
 S = FS
-A = T[--//~K][++//~K]I///~A
-~A = [+++~a~a~a~a]
+A = T[--//K][++//K]I///A
+~A = [+++aaaa]
 ~a = -{[^-F.][--FF.][&-F.].}+^^^
-K = ~K
-~K = [FT[F]+++~k~k~k~k]
+~K = [FT[F]+++kkkk]
 ~k = -{[^--F.][F-^-F.][^--F|++^--F|+F+F.][-F+F.][&--F|++&--F|+F+F.][F-&-F.][&--F.].}+^^^
 I = Fi
 i = Fj
-j = J[--FF~A][++FF~A]
+j = J[--FFA][++FFA]
 Turning angle: 30°
 Tropism: 0.16
 
@@ -2135,17 +2127,7 @@ class Renderer
                             this.system.tropism);
                             break;
                         case '~':
-                            if(!this.system.models.has(
-                            this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1] + 1]))
-                                break;
-
-                            ++this.mdi[this.mdi.length - 1];
-                            this.models.push(this.system.models.get(
-                            this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]]));
-                            this.mdi.push(0);
-                            return;
+                            break;
                         case '[':
                             this.idxStack.push(this.stack.length);
                             this.stack.push([this.state, this.ori]);
@@ -2215,10 +2197,19 @@ class Renderer
                                 return;
                             }
 
-                            let ignored = this.system.ignoreList.has(
+                            if(this.loadModels && this.system.models.has(
                             this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]]) ||
-                            this.loadModels && this.system.models.has(
+                            this.mdi[this.mdi.length - 1]]))
+                            {
+                                this.models.push(this.system.models.get(
+                                this.models[this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]]));
+                                this.mdi.push(0);
+                                ++this.mdi[this.mdi.length - 2];
+                                return;
+                            }
+
+                            let ignored = this.system.ignoreList.has(
                             this.models[this.models.length - 1][
                             this.mdi[this.mdi.length - 1]]);
                             let breakAhead = BACKTRACK_LIST.has(
@@ -2303,15 +2294,7 @@ class Renderer
                         this.ori = this.ori.applyTropism(this.system.tropism);
                         break;
                     case '~':
-                        if(!this.loadModels || !this.system.models.has(
-                        this.levels[this.lv][this.i + 1]))
-                            break;
-
-                        ++this.i;
-                        this.models.push(this.system.models.get(
-                        this.levels[this.lv][this.i]));
-                        this.mdi.push(0);
-                        return;
+                        break;
                     case '[':
                         this.idxStack.push(this.stack.length);
                         this.stack.push([this.state, this.ori]);
@@ -2381,9 +2364,18 @@ class Renderer
                             return;
                         }
 
+                        if(this.loadModels && this.system.models.has(
+                        this.levels[this.lv][this.i]))
+                        {
+                            this.models.push(this.system.models.get(
+                            this.levels[this.lv][this.i]));
+                            this.mdi.push(0);
+                            ++this.i;
+                            return;
+                        }
+
                         let ignored = this.system.ignoreList.has(
-                        this.levels[this.lv][this.i]) || this.loadModels &&
-                        this.system.models.has(this.levels[this.lv][this.i]);
+                        this.levels[this.lv][this.i]);
                         let breakAhead = BACKTRACK_LIST.has(
                         this.levels[this.lv][this.i + 1]);
                         let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
@@ -3131,29 +3123,27 @@ let manualSystems =
     },
     22:
     {
-        system: new LSystem('A~K', [
-            'A=[--//~K][++//~K]I///A',
+        system: new LSystem('AK', [
+            'A=[--//K][++//K]I///A',
             'I=Fi',
             'i=Fj',
             'j=J[--FFA][++FFA]',
-            'K=~K',
             '~K=F[+++[--F+F]^^^[--F+F]^^^[--F+F]^^^[--F+F]]'
         ], 30),
         config: ['3*lv', 0, '1.5*lv', 0, true]
     },
     28:
     {
-        system: new LSystem('+S~A', [
+        system: new LSystem('+SA', [
             'S=FS',
-            'A=T[--//~K][++//~K]I///~A',
-            '~A=[+++~a~a~a~a]',
+            'A=T[--//K][++//K]I///A',
+            '~A=[+++aaaa]',
             '~a=-{[^-F.][--FF.][&-F.].}+^^^',
-            'K=~K',
-            '~K=[FT[F]+++~k~k~k~k]',
+            '~K=[FT[F]+++kkkk]',
             '~k=-{[^--F.][F-^-F.][^--F|++^--F|+F+F.][-F+F.][&--F|++&--F|+F+F.][F-&-F.][&--F.].}+^^^',
             'I=Fi',
             'i=Fj',
-            'j=J[--FF~A][++FF~A]'
+            'j=J[--FFA][++FFA]'
         ], 30, 0, '', 0.16),
         config: ['2*lv+1', '2*lv+1', 'lv/2+3/4', 0, false]
     },

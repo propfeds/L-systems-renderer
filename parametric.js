@@ -295,11 +295,8 @@ This is different from how it was defined in The Algorithmic Beauty of ` +
 The syntax for multiple derivations on the same line has also changed from , ` +
 `(comma) to ; (semi-colon), due to the introduction of parameters.
 
-Finally, declaring models now has a different syntax to align more with ` +
-`context-sensitivity:
-~ > {symbol} = {model}
-Referencing a model in another rule still uses the old syntax:
-~{symbol}`
+Finally, declaring models now has a slightly different syntax for some reason:
+~> {symbol} = {model}`
             },
             {
                 title: 'Context-sensitivity',
@@ -451,14 +448,14 @@ The variable b controls how quickly the model type switches, with lower ` +
 
 Axiom: FA(1)
 A(t): t<=5*b = F(2/b)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)
-B(t) = ~J(0.15, t/b-2)
-J(s, type) = ~J(s*0.75+0.25, type)
+B(t) = J(0.15, t/b-2)
+J(s, type) = J(s*0.75+0.25, type)
 ~>J(s, type): type<=0 = {[+(32)F(s).-TF(s)TF.-TF(s)..][-(32)F(s)+(16)[TF(s)TF.].]}
-~>J(s, type): type<=1 = [F~p(s)/(60)~p(s)/(60)~p(s)]
+~>J(s, type): type<=1 = [Fp(s)/(60)p(s)/(60)p(s)]
 ~>p(s) = {[+F(s/2).--F(s/2).][-F(s/2).].}
-~>J(s, type): type<=2 = [FT~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]
+~>J(s, type): type<=2 = [FTk(s)/(72)k(s)/(72)k(s)/(72)k(s)/(72)k(s)]
 ~>k(s) = {[F(s).+(72)[&F(s-0.3).][F(s)..][^F(s-0.3).].]}
-~>J(s, type): type<=3 = [FT~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]
+~>J(s, type): type<=3 = [FTm(s)/(72)m(s)/(72)m(s)/(72)m(s)/(72)m(s)]
 ~>m(s) = {[+(24)F(s).-F(s/2)..].}
 Turtle-ignored: A
 Turning angle: 48°
@@ -476,18 +473,18 @@ Upright`,
 `Welcome to the Parametric L-systems Renderer!
 
 Axiom: ++M(0)
-M(t): t<2 = F~M(t+1)
-M(t): t<3 = [&T$~M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]
-M(t, i): t<5 = F~M(t+1, i): 0.7-i; F~K(0)~M(t+1, i+0.3): 0.3+i
-M(t, i): t>=5 = [&T~M(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]
-~> M(t): t<3 = [+(48)~L(t)]/(180)[+(48)~L(t)]
-~> M(t, i) = [+(48)~L(2+0.4*t)]/(180)[+(48)~L(2+0.4*t)]
+M(t): t<2 = FM(t+1)
+M(t): t<3 = [&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]
+M(t, i): t<5 = FM(t+1, i): 0.7-i; FK(0)M(t+1, i+0.3): 0.3+i
+M(t, i): t>=5 = [&TM(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]
+~> M(t): t<3 = [+(48)L(t)]/(180)[+(48)L(t)]
+~> M(t, i) = [+(48)L(2+0.4*t)]/(180)[+(48)L(2+0.4*t)]
 ~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}
-K(c)>M(t, i): c<3 = ~K(c+1): 0.7-t/10, ~B(0.3): 0.3+t/10
-K(t): t<3 = ~K(t+1): 0.3+t/10, : 0.7-t/10
-K(t): t>=3 = [&&\\~B(0.3)]/(120)[&&\\~B(0.24)]/(120)[&&~B(0.27)]
+K(c)>M(t, i): c<3 = K(c+1): 0.7-t/10, B(0.3): 0.3+t/10
+K(t): t<3 = K(t+1): 0.3+t/10, : 0.7-t/10
+K(t): t>=3 = [&&\\B(0.3)]/(120)[&&\\B(0.24)]/(120)[&&B(0.27)]
 ~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]
-B(s) = ~B(s*0.9+0.1)
+B(s) = B(s*0.9+0.1)
 ~> B(s) = {[-(67.5)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).]}
 Turning angle: 32°
 Seed: 1362151494
@@ -496,26 +493,6 @@ Tropism: 0.16
 Applies static camera:
 Scale: 6
 Centre: (3, 3, 0)`
-            },
-            {
-                title: 'Appendix: Model discussions',
-                contents:
-`About the differences between LSR models (which disappear after one stage) ` +
-`and The Algorithmic Beauty of Plants (which stick around).
-The motive behind this mechanism in LSR, is that when a symbol moves to ` +
-`another place, the original ~ (tilde) ends up referencing another symbol ` +
-`entirely, which both wastes one space and can introduce errors by drawing ` +
-`the wrong model.
-Another reason is due to the fact that models in LSR consist of regular ` +
-`symbols instead of being created using traditional techniques, but the ` +
-`resulting models are not derivable, perhaps it is a more intuitive choice ` +
-`to let them disappear.
-
-This design choice is not final, and if feedback can prove its ` +
-`inconvenience, further considerations can be made: should it stick around ` +
-`like defined in Abop? Should references be ditched entirely and models be ` +
-`drawn automatically without having to reference? Will the syntax cease to ` +
-`make sense?`
             },
             {
                 title: 'Appendix: Credits',
@@ -2309,22 +2286,7 @@ class Renderer
                                 this.system.tropism);
                             break;
                         case '~':
-                            if(!this.system.models.has(
-                            this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1] + 1]))
-                                break;
-
-                            ++this.mdi[this.mdi.length - 1];
-                            let model = this.system.deriveModel(this.models[
-                            this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]], this.modelParams[
-                            this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]]);
-
-                            this.models.push(model.result);
-                            this.modelParams.push(model.params);
-                            this.mdi.push(0);
-                            return;
+                            break;
                         case '[':
                             this.idxStack.push(this.stack.length);
                             this.stack.push([this.state, this.ori]);
@@ -2394,10 +2356,24 @@ class Renderer
                                 return;
                             }
 
-                            let ignored = this.system.ignoreList.has(
+                            if(this.loadModels && this.system.models.has(
                             this.models[this.models.length - 1][
-                            this.mdi[this.mdi.length - 1]]) ||
-                            this.loadModels && this.system.models.has(
+                            this.mdi[this.mdi.length - 1]]))
+                            {
+                                let model = this.system.deriveModel(this.models[
+                                this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]],
+                                this.modelParams[this.models.length - 1][
+                                this.mdi[this.mdi.length - 1]]);
+
+                                this.models.push(model.result);
+                                this.modelParams.push(model.params);
+                                this.mdi.push(0);
+                                ++this.mdi[this.mdi.length - 2];
+                                return;
+                            }
+
+                            let ignored = this.system.ignoreList.has(
                             this.models[this.models.length - 1][
                             this.mdi[this.mdi.length - 1]]);
                             let breakAhead = BACKTRACK_LIST.has(
@@ -2540,18 +2516,7 @@ class Renderer
                             this.system.tropism);
                         break;
                     case '~':
-                        if(!this.loadModels || !this.system.models.has(
-                        this.levels[this.lv][this.i + 1]))
-                            break;
-
-                        ++this.i;
-                        let model = this.system.deriveModel(this.levels[
-                        this.lv][this.i], this.levelParams[this.lv][this.i]);
-
-                        this.models.push(model.result);
-                        this.modelParams.push(model.params);
-                        this.mdi.push(0);
-                        return;
+                        break;
                     case '[':
                         this.idxStack.push(this.stack.length);
                         this.stack.push([this.state, this.ori]);
@@ -2621,9 +2586,22 @@ class Renderer
                             return;
                         }
 
+                        if(this.loadModels && this.system.models.has(
+                        this.levels[this.lv][this.i]))
+                        {
+                            let model = this.system.deriveModel(this.levels[
+                            this.lv][this.i], this.levelParams[this.lv][
+                            this.i]);
+
+                            this.models.push(model.result);
+                            this.modelParams.push(model.params);
+                            this.mdi.push(0);
+                            ++this.i;
+                            return;
+                        }
+
                         let ignored = this.system.ignoreList.has(
-                        this.levels[this.lv][this.i]) || this.loadModels &&
-                        this.system.models.has(this.levels[this.lv][this.i]);
+                        this.levels[this.lv][this.i]);
                         let breakAhead = BACKTRACK_LIST.has(
                         this.levels[this.lv][this.i + 1]);
                         let btAhead = this.levels[this.lv][this.i + 1] == ']' ||
@@ -3296,23 +3274,23 @@ const yUpQuat = new Quaternion(0, 0, 1, 0);
 const zUpQuat = new Quaternion(0, 0, 0, 1);
 
 let toe = new LSystem('++M(0)', [
-    'M(t): t<2 = F~M(t+1)',
-    'M(t): t<3 = [&T$~M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]',
-    'M(t, i): t<5 = F~M(t+1, i): 0.7-i; F~K(0)~M(t+1, i+0.3): 0.3+i',
-    'M(t, i): t>=5 = [&T~M(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]',
-    '~> M(t): t<3 = [+(48)~L(t)]/(180)[+(48)~L(t)]',
-    '~> M(t, i) = [+(48)~L(2+0.4*t)]/(180)[+(48)~L(2+0.4*t)]',
+    'M(t): t<2 = FM(t+1)',
+    'M(t): t<3 = [&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]',
+    'M(t, i): t<5 = FM(t+1, i): 0.7-i; FK(0)M(t+1, i+0.3): 0.3+i',
+    'M(t, i): t>=5 = [&TM(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]',
+    '~> M(t): t<3 = [+(48)L(t)]/(180)[+(48)L(t)]',
+    '~> M(t, i) = [+(48)L(2+0.4*t)]/(180)[+(48)L(2+0.4*t)]',
     '~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}',
-    'K(c)>M(t, i): c<3 = ~K(c+1): 0.7-t/10, ~B(0.3): 0.3+t/10',
-    'K(t): t<3 = ~K(t+1): 0.3+t/10, : 0.7-t/10',
-    'K(t): t>=3 = [&&\\~B(0.3)]/(120)[&&\\~B(0.24)]/(120)[&&~B(0.27)]',
+    'K(c)>M(t, i): c<3 = K(c+1): 0.7-t/10, B(0.3): 0.3+t/10',
+    'K(t): t<3 = K(t+1): 0.3+t/10, : 0.7-t/10',
+    'K(t): t>=3 = [&&\\B(0.3)]/(120)[&&\\B(0.24)]/(120)[&&B(0.27)]',
     '~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]',
-    'B(s) = ~B(s*0.9+0.1)',
+    'B(s) = B(s*0.9+0.1)',
     '~> B(s) = {[-(67.5)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).]}',
-], '32', 157120112, '', 'F+-&^/\\~{}', 0.16, {});
+], '32', 157120112, '', 'F+-&^/\\{}', 0.16, {});
 let renderer = new Renderer(toe, 6, 0, 3, 3, 0);
 let globalRNG = new Xorshift(Date.now());
-let contentsTable = [0, 1, 2, 5, 7, 10, 11];
+let contentsTable = [0, 1, 2, 5, 7, 10];
 let manualSystems =
 {
     3:
@@ -3350,14 +3328,14 @@ let manualSystems =
     {
         system: new LSystem('FA(1)', [
             'A(t): t<=5*b = F(2/b)//[+(24)&B(t)]//[&B(t)]//[&B(t)]A(t+1)',
-            'B(t) = ~J(0.15, t/b-2)',
-            'J(s, type) = ~J(s*0.75+0.25, type)',
+            'B(t) = J(0.15, t/b-2)',
+            'J(s, type) = J(s*0.75+0.25, type)',
             '~>J(s, type): type<=0 = {[+(32)F(s).-TF(s)TF.-TF(s)..][-(32)F(s)+(16)[TF(s)TF.].]}',
-            '~>J(s, type): type<=1 = [F~p(s)/(60)~p(s)/(60)~p(s)]',
+            '~>J(s, type): type<=1 = [Fp(s)/(60)p(s)/(60)p(s)]',
             '~>p(s) = {[+F(s/2).--F(s/2).][-F(s/2).].}',
-            '~>J(s, type): type<=2 = [FT~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)/(72)~k(s)]',
+            '~>J(s, type): type<=2 = [FTk(s)/(72)k(s)/(72)k(s)/(72)k(s)/(72)k(s)]',
             '~>k(s) = {[F(s).+(72)[&F(s-0.3).][F(s)..][^F(s-0.3).].]}',
-            '~>J(s, type): type<=3 = [FT~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)/(72)~m(s)]',
+            '~>J(s, type): type<=3 = [FTm(s)/(72)m(s)/(72)m(s)/(72)m(s)/(72)m(s)]',
             '~>m(s) = {[+(24)F(s).-F(s/2)..].}'
         ], '48', 0, 'A', '', 0.16, {
             'b': '2.25'
