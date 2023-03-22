@@ -56,7 +56,7 @@ Note: Systems from LSR can be ported to P-LSR with minimal changes. However, ` +
 var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
                 'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.01;
+var version = 0.011;
 
 let time = 0;
 let page = 0;
@@ -135,7 +135,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.01',
+        versionName: 'v1.01.1',
         welcomeSystemName: 'Mistletoe',
         welcomeSystemDesc: 'Welcome to the Parametric L-systems Renderer.',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -964,7 +964,7 @@ class LSystem
             if(!this.axiomParams[i])
                 continue;
 
-            let params = this.axiomParams[i].split(',');
+            let params = this.parseParams(this.axiomParams[i]);
             for(let j = 0; j < params.length; ++j)
                 params[j] = MathExpression.parse(params[j]).evaluate(
                 (v) => this.variables.get(v));
@@ -1075,7 +1075,7 @@ class LSystem
                     if(!derivParams[k])
                         continue;
 
-                    let params = derivParams[k].split(',');
+                    let params = this.parseParams(derivParams[k]);
                     for(let l = 0; l < params.length; ++l)
                         params[l] = MathExpression.parse(params[l]);
 
@@ -1203,6 +1203,50 @@ class LSystem
         };
         // Tested this out on Chrome console, it worked.
     }
+    /**
+     * Parse a string to return one array of parameter strings.
+     * Replaces split(',').
+     * @param {string} string the string to be parsed.
+     * @returns {string[]}
+     */
+    parseParams(string)
+    {
+        let result = [];
+        let bracketLvl = 0;
+        let start = 0;
+        for(let i = 0; i < string.length; ++i)
+        {
+            switch(string[i])
+            {
+                case ' ':
+                    log('Blank space detected.')
+                    break;
+                case '(':
+                    ++bracketLvl;
+                    break;
+                case ')':
+                    if(!bracketLvl)
+                    {
+                        log('You\'ve clearly made a bracket error.');
+                        break;
+                    }
+                    --bracketLvl;
+                    break;
+                case ',':
+                    if(!bracketLvl)
+                    {
+                        result.push(string.slice(start, i));
+                        start = i + 1;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        result.push(string.slice(start, string.length));
+        return result;
+    }
+
     /**
      * Returns and ancestree and a child tree for a sequence.
      * @param {string} sequence the sequence.
@@ -3514,7 +3558,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        margin: new Thickness(6, 4),
+        margin: new Thickness(4, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
