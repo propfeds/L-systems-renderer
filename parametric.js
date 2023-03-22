@@ -56,7 +56,7 @@ Note: Systems from LSR can be ported to P-LSR with minimal changes. However, ` +
 var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
                 'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0;
+var version = 0.01;
 
 let time = 0;
 let page = 0;
@@ -135,7 +135,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0',
+        versionName: 'v1.01',
         welcomeSystemName: 'Mistletoe',
         welcomeSystemDesc: 'Welcome to the Parametric L-systems Renderer.',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -295,7 +295,8 @@ This is different from how it was defined in The Algorithmic Beauty of ` +
 The syntax for multiple derivations on the same line has also changed from , ` +
 `(comma) to ; (semi-colon), due to the introduction of parameters.
 
-Finally, declaring models now has a slightly different syntax for some reason:
+Finally, declaring models now has a slightly different syntax due to changes ` +
+`to (legacy) rule processing to account for context-sensitivity:
 ~> {symbol} = {model}`
             },
             {
@@ -3509,7 +3510,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        margin: new Thickness(8, 4),
+        margin: new Thickness(6, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });

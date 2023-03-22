@@ -70,7 +70,7 @@ Warning: v0.20 might break your internal state. Be sure to back it up, and ` +
 var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
                 'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 1;
+var version = 1.01;
 
 let time = 0;
 let page = 0;
@@ -143,7 +143,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.0',
+        versionName: 'v1.01',
         welcomeSystemName: 'Arrow',
         welcomeSystemDesc: 'Welcome to the L-systems Renderer!',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -3342,7 +3342,7 @@ var getEquationOverlay = () =>
     let result = ui.createLatexLabel
     ({
         text: overlayText,
-        margin: new Thickness(8, 4),
+        margin: new Thickness(6, 4),
         fontSize: 9,
         textColor: Color.TEXT_MEDIUM
     });
