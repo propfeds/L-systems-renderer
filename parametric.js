@@ -4777,9 +4777,14 @@ let createSystemMenu = () =>
                                 tmpVars = Object.entries(values.variables);
                                 tmpRules = values.rules;
                                 ruleEntries = [];
+                                ruleMoveBtns = [];
                                 rulesLabel.text = Localization.format(
                                 getLoc('labelRules'), ruleEntries.length);
-                                ruleStack.children = ruleEntries;
+                                ruleStack.children =
+                                [
+                                    ...ruleEntries,
+                                    ...ruleMoveBtns
+                                ];
                                 ignoreEntry.text = values.ignoreList;
                                 CIEntry.text = values.ctxIgnoreList;
                                 tropismEntry.text = values.tropism.toString();
@@ -6913,4 +6918,36 @@ let testAngle = () =>
     let bigNumConvert = BigNumber.from('120').toNumber();
     let expressionResult = MathExpression.parse('120').evaluate().toNumber();
     log(`${straightNum} vs. ${bigNumConvert} vs. ${expressionResult}`);
+}
+
+let testSystem = () =>
+{
+    renderer.constructSystem = new LSystem('-(9)A(0.12, 0)',
+    [
+        'A(r, t): t>=2 && r>=flowerThreshold = F(0.48, 1.2)K(0)',
+        'A(r, t): r>=flowerThreshold = [++A(r-0.15, 0)][--I(0)]',
+        'A(r, t): t<2 = A(r+0.06, t+1)',
+        'A(r, t) = F(0.36, 0.96)T[++L(0.06, maxLeafSize)]/(180)[++L(0.06, maxLeafSize)]/(90)A(r, -2)',
+        'I(t): t<3 = F(0.36, 0.96)T[+L(0.03, maxLeafSize/5)]/(137.508)I(t+1)',
+        'I(t) = F(0.48, 1.2)K(0)',
+        'K(p): p<maxFlowerSize = K(p+0.25)',
+        'L(r, lim): r<lim = L(r+0.03, lim)',
+        'F(l, lim): l<lim = F(l+0.12, lim)',
+        '~> *= Model specification',
+        '~> K(p): p<1.25 = {[w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)]F(p/4)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)]}',
+        '~> K(p): p<2 = {[w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)]F(1.25/4)[k(min(p, 1.5)/4, p*18)k(min(p, 1.5)/4, p*18)k(min(p, 1.5)/4, p*18-3)k(min(p, 1.5)/4, p*18-3)k(min(p, 1.5)/4, p*18-3)k(min(p, 1.5)/4, p*18-3)k(min(p, 1.5)*0.24, p*18-6)k(min(p, 1.5)*0.24, p*18-6)k(min(p, 1.5)*0.24, p*18-6)k(min(p, 1.5)*0.23, p*18-6)k(min(p, 1.5)*0.24, p*18-6)k(min(p, 1.5)*0.24, p*18-9)k(min(p, 1.5)*0.23, p*18-15)][o(min(p, 1.5)*0.22, p*17.5)]}',
+        '~> K(p) = {[w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))]F(1.25/4)[k(1.5/4, p*18)k(1.5/4, p*18)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.23, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-9)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.24, p*18-18)][o(1.5/4, p*22.5)o(1.5*0.22, p*17.5)o(1.5*0.18, p*10)]}',
+        '~> w(p, a): p<0.25 = [--(a)F(0.5).+++(a)F(0.5).^+(a)F(0.5).]/[--(a)F(0.5)+++(a)F(0.5).^+(a)F(0.5).]/[--(a)F(0.5)+++(a)F(0.5).^+(a)F(0.5).]/[--(a)F(0.5)[+++(a)F(0.5).].]',
+        '~> w(p, a): p<0.5 = [--(a)F(p).++F(p).^+F(p).]/[--(a)F(p)++F(p).^+F(p).]/[--(a)F(p)++F(p).^+F(p).]/[--(a)F(p)[++F(p).].]',
+        '~> w(p, a) = [--(a)F(p).++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)[++F(p).].]',
+        '~> k(p, a): p<0.25 = [---(a)F(p/2).+^F(p*2).+&F(p).][---(a)F(p/2)[+&F(p*2)[+^F(p).].].]/(137.508)',
+        '~> k(p, a): p<0.35 = [---(a)F(p/2).+^F(p*2).&F(p).][---(a)F(p/2)[+&F(p*2)[^F(p).].].]/(137.508)',
+        '~> k(p, a) = [---(a)F(p/2).+^F(p*2).-&F(p).][---(a)F(p/2)[+&F(p*2)[-^F(p).].].]/(137.508)',
+        '~> o(p, a) = [-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]',
+        '~> L(p, lim) = {\\(90)F(sqrt(p)).[-(48)F(sqrt(p)).+F(sqrt(p)).+&F(sqrt(p)).+F(sqrt(p)).][F(sqrt(p))[&F(sqrt(p))[F(sqrt(p))[^F(sqrt(p)).].].].].[+(48)F(sqrt(p)).-F(sqrt(p)).-&F(sqrt(p)).-F(sqrt(p)).][F(sqrt(p))[&F(sqrt(p))[F(sqrt(p))[^F(sqrt(p)).].].].]}'
+    ], 15, 0, 'A', '', -0.24, {
+        'flowerThreshold': '0.9',
+        'maxFlowerSize': '3',
+        'maxLeafSize': '0.6'
+    });
 }
