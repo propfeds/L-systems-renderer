@@ -191,6 +191,7 @@ const locStrings =
         btnResume: 'Resume – {0}',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
+        btnLoadTest: 'Load test',
 
         measurement: '{0}: max {1}ms, avg {2}ms over {3} ticks',
 
@@ -3401,6 +3402,44 @@ let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
+let testSystem = new LSystem('-(3)A(0.12, 0)',
+[
+    'A(r, t): t>=2 && r>=flowerThreshold = F(0.9, 2.1)K(0)',
+    'A(r, t): r>=flowerThreshold = [&A(r-0.15, 0)][^I(0)]',
+    'A(r, t): t<2 = A(r+0.06, t+1)',
+    'A(r, t) = F(0.24, 0.72)T[-L(0.06, maxLeafSize-r/4)]/(180)[-L(0.06, maxLeafSize-r/4)]/(90)A(r, -2)',
+    'I(t): t<3 = F(0.36, 0.84)T[-L(0.06, maxLeafSize/3)]/(137.508)I(t+1)',
+    'I(t) = F(0.6, 1.44)K(0)',
+    'K(p): p<maxFlowerSize = K(p+0.25)',
+    'L(r, lim): r<lim = L(r+0.02, lim)',
+    'F(l, lim): l<lim = F(l+0.12, lim)',
+    '~> *= Model specification',
+    '~> K(p): p<1 = {[w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)]F(p/10+0.1)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)]}',
+    '~> K(p): p<1.5 = {[w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)]F(p/10+0.1)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.23, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-9)k(p*0.23, p*18-15)][o(p*0.22, p*17.5)]}',
+    '~> K(p) = {[w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)]F(p/10+0.1)[k(1.5/4, p*18)k(1.5/4, p*18)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.23, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-9)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.24, p*18-15)][o(1.5/4, p*22.5)o(1.5*0.22, p*17.5)o(1.5*0.18, p*10)]}',
+    '~> w(p, a): p<0.1 = [--(a)F(0.2).+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)[+++(a)F(0.2).].]',
+    '~> w(p, a): p<0.2 = [--(a)F(0.2).+++F(0.2).^+F(0.2).]/[--(a)F(0.2)+++F(0.2).^+F(0.2).]/[--(a)F(0.2)+++F(0.2).^+F(0.2).]/[--(a)F(0.2)[+++F(0.2).].]',
+    '~> w(p, a): p<0.25 = [--(a)F(p).++F(p).^F(p).]/[--(a)F(p)++F(p).^F(p).]/[--(a)F(p)++F(p).^F(p).]/[--(a)F(p)[++F(p).].]',
+    '~> w(p, a) = [--(a)F(p).++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)[++F(p).].]',
+    '~> k(p, a): p<0.3 = [---(a)F(p/2).+^F(p*2).+&F(p).][---(a)F(p/2)[+&F(p*2)[+^F(p).].].]/(137.508)',
+    '~> k(p, a) = [---(a)F(p/2).+^F(p*2).&F(p).][---(a)F(p/2)[+&F(p*2)[^F(p).].].]/(137.508)',
+    '~> o(p, a) = [-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]',
+    '~> L(p, lim): p<=maxLeafSize/4 = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].].[^F(p).F(p).^-F(p).&&-F(p).&F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].]}',
+    '~> L(p, lim): p<=maxLeafSize/3 = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].]}',
+    '~> L(p, lim) = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].]}'
+], 15, 0, 'AI', '', -0.2, {
+    'flowerThreshold': '0.9',
+    'maxFlowerSize': '3',
+    'maxLeafSize': '0.72'
+});
+let testCamera = [
+    6,
+    0,
+    'min(max(3.75, lv/4), 5)',
+    0,
+    true
+]
+
 var l, ts, delay;
 // Variable controls
 let lvlControls, tsControls, idControls;
@@ -3662,6 +3701,14 @@ var getUpgradeListDelegate = () =>
     createWorldMenu().show());
     theoryButton.row = 2;
     theoryButton.column = 0;
+    let testButton = createButton(getLoc('btnLoadTest'), () =>
+    {
+        renderer.constructSystem = testSystem;
+        renderer.configureStaticCamera(...testCamera);
+    });
+    testButton.row = 2;
+    testButton.column = 1;
+    testButton.isVisible = () => testSystem ? true : false;
     let resumeButton = createButton(Localization.format(getLoc('btnResume'),
     tmpSystemName), () =>
     {
@@ -3759,7 +3806,8 @@ var getUpgradeListDelegate = () =>
                         cfgButton,
                         slButton,
                         manualButton,
-                        theoryButton
+                        theoryButton,
+                        testButton
                     ]
                 })
             ]
@@ -6918,38 +6966,4 @@ let testAngle = () =>
     let bigNumConvert = BigNumber.from('120').toNumber();
     let expressionResult = MathExpression.parse('120').evaluate().toNumber();
     log(`${straightNum} vs. ${bigNumConvert} vs. ${expressionResult}`);
-}
-
-let testSystem = () =>
-{
-    renderer.constructSystem = new LSystem('-(9)A(0.12, 0)',
-    [
-        'A(r, t): t>=2 && r>=flowerThreshold = F(0.78, 1.5)K(0)',
-        'A(r, t): r>=flowerThreshold = [++A(r-0.15, 0)][--I(0)]',
-        'A(r, t): t<2 = A(r+0.06, t+1)',
-        'A(r, t) = F(0.36, 0.84)T[-L(0.06, maxLeafSize)]/(180)[-L(0.06, maxLeafSize)]/(90)A(r, -2)',
-        'I(t): t<3 = F(0.36, 0.84)T[-L(0.03, maxLeafSize/3)]/(137.508)I(t+1)',
-        'I(t) = F(0.48, 1.2)K(0)',
-        'K(p): p<maxFlowerSize = K(p+0.25)',
-        'L(r, lim): r<lim = L(r+0.03, lim)',
-        'F(l, lim): l<lim = F(l+0.12, lim)',
-        '~> *= Model specification',
-        '~> K(p): p<1 = {[w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)w(p/4, 42)]F(p/4)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)]}',
-        '~> K(p): p<1.5 = {[w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)]F(0.25)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.23, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-9)k(p*0.23, p*18-15)][o(p*0.22, p*17.5)]}',
-        '~> K(p) = {[w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))w(0.25, max(p*18, 42))]F(1.25/4)[k(1.5/4, p*18)k(1.5/4, p*18)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.23, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-9)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.24, p*18-15)][o(1.5/4, p*22.5)o(1.5*0.22, p*17.5)o(1.5*0.18, p*10)]}',
-        '~> w(p, a): p<0.25 = [--(a)F(0.25).+++(a)F(0.25).^+(a)F(0.25).]/[--(a)F(0.25)+++(a)F(0.25).^+(a)F(0.25).]/[--(a)F(0.25)+++(a)F(0.25).^+(a)F(0.25).]/[--(a)F(0.25)[+++(a)F(0.25).].]',
-        '~> w(p, a): p<0.5 = [--(a)F(p).++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)[++F(p).].]',
-        '~> w(p, a) = [--(a)F(p).++F(p).^-(a)F(p).]/[--(a)F(p)++F(p).^-(a)F(p).]/[--(a)F(p)++F(p).^-(a)F(p).]/[--(a)F(p)[++F(p).].]',
-        '~> k(p, a): p<0.25 = [---(a)F(p/2).+^F(p*2).+&F(p).][---(a)F(p/2)[+&F(p*2)[+^F(p).].].]/(137.508)',
-        '~> k(p, a): p<0.35 = [---(a)F(p/2).+^F(p*2).&F(p).][---(a)F(p/2)[+&F(p*2)[^F(p).].].]/(137.508)',
-        '~> k(p, a) = [---(a)F(p/2).+^F(p*2).-&F(p).][---(a)F(p/2)[+&F(p*2)[-^F(p).].].]/(137.508)',
-        '~> o(p, a) = [-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]',
-        '~> L(p, lim): p<=maxLeafSize/4 = {T(p*0.8)[&F(p).F(p).&-F(p).^^-F(p).^F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].].[^F(p).F(p).^-F(p).&&-F(p).&F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].]}',
-        '~> L(p, lim): p<=maxLeafSize/2 = {T(p*1.6)[&F(p).F(p).&-F(p).^^-F(p).^-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].]}',
-        '~> L(p, lim) = {T(p*1.6)[&F(p).F(p).&-F(p).^^-F(p).^--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].]}'
-    ], 15, 0, 'A', '', -0.24, {
-        'flowerThreshold': '0.9',
-        'maxFlowerSize': '3',
-        'maxLeafSize': '0.6'
-    });
 }
