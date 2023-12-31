@@ -1456,6 +1456,10 @@ class LSystem {
         if (this.models.has(symbol)) {
             let tmpRules = this.models.get(symbol);
             for (let j = 0; j < tmpRules.length; ++j) {
+                // Param count check
+                let count = params ? params.length : 0;
+                if(tmpRules[j].count[2] != count)
+                    continue;
                 let tmpParamMap = (v) => this.varGetter(v) ??
                     tmpRules[j].paramMap(v, null, null, params);
                 // Next up is the condition
@@ -3352,24 +3356,12 @@ let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
-let testSystem = new LSystem('/(90)BA(0.18, 0)',
+let testSystem = new LSystem('A(0.04, 3)',
 [
-    'A(r, t) = S(0)F(0.12, 0.96)K(0.02, 8)',
-    'A(r, t): t<3 = A(r+0.06, t+1)',
-    'A(r, t) = F(0.12, 1.44)[&[I(0)]T(0.2)L(0.06, min(r+0.12, maxLeafSize), 0)]/(180)[&L(0.06, min(r+0.12, maxLeafSize), 0)]/(90)A(r-0.06, 0)',
-    'S(type) < I(t): type>=1 = S(type)',
-    'I(t): t<5 = I(t+1)',
-    'I(t) = /(90)F(0.12, 0.72)T[&L(0.03, maxLeafSize/2, 0)]/(180)[&L(0.03, maxLeafSize/2, 0)]I(-6)',
-    'K(s, t): t>0 = K(s+0.02, 0)/(90)F(0.12, 0.84)K(0.02, t-1)',
-    'K(s, t): s<1 = K(s+0.02, t)',
-    'L(p, lim, s): s<1 && p<lim = L(p+0.03, lim, s)',
-    'S(type) < L(p, lim, s): s<1 = L(p, p, 1)',
-    'L(p, lim, s): s>=1 && p>0.06 = L(p-0.06, lim, s)',
-    'F(l, lim) > S(type): type<=0 = S(type)F(l, lim)',
-    'S(type) < F(l, lim): type>=1 = F(l, lim)S(type)',
-    'S(type) =',
-    'B > S(type): type<=0 = BS(1)',
-    'F(l, lim): l<lim = F(l+0.12, lim)',
+    'A(r, t): t>0 = A(r+0.02, t-1)',
+    'A(r, t) = F(0.05, 0.3)[-&(45)L(0.02)][-^(45)L(0.02)]/(137.508)A(r, 3)',
+    'F(l, lim): l<lim = F(l+0.05, lim)',
+    'L(s) = L(s+0.02)',
     '~> #= Model specification',
     '~> K(t) = {[k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))]}',
     '~> k(size): size<0.5 = [+++&F(size/2).[^^--F(size/2).]][+++^F(size/2).]',
@@ -3377,14 +3369,14 @@ let testSystem = new LSystem('/(90)BA(0.18, 0)',
     '~> k(size) = [++F(size/3).++[&F(size/3).&F(size/4).][--F(size/3)[-F(size/6).].]..[^F(size/3).^F(size/4).][--F(size/3)[-F(size/6).].]..[-F(size/2).]..[F(size/3).-F(size/3).].]',
     '~> L(p, lim, s): s<1 = {T(p*0.9)F(sqrt(p)).[-(48)F(p).+F(p).+&F(p).+F(p).][F(p)[&F(p)[F(p)[^F(p).].].].].[+(48)F(p).-F(p).-&F(p).-F(p).][F(p)[&F(p)[F(p)[^F(p).].].].]}',
     '~> L(p, lim, s) = {T(lim*1.2)F(sqrt(lim)).[--F(lim).+&F(lim).+&F(lim).+F(lim)..][F(lim)[&F(lim)[&F(lim)[&F(lim).].].].].[++F(lim).-&F(lim).-&F(lim).-F(lim)..][F(lim)[&F(lim)[&F(lim)[&F(lim).].].].]}',
-], 30, 0, 'BASIL', '+-&^/\\T', -0.16, {
+], 30, 0, 'PEA', '+-&^/\\T', -0.16, {
     'flowerThreshold': '0.96',
     'maxLeafSize': '0.6'
 });
 let testCamera = [
     4,
     0,
-    4,
+    0,
     0,
     true
 ];
