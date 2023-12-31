@@ -1,23 +1,22 @@
+import { BigNumber } from '../api/BigNumber';
 import { FreeCost } from '../api/Costs';
+import { Localization } from '../api/Localization';
+import { MathExpression } from '../api/MathExpression';
 import { theory } from '../api/Theory';
+import { Upgrade } from '../api/Upgrades';
 import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
+import { Frame } from '../api/ui/Frame';
 import { ui } from '../api/ui/UI';
+import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 import { Color } from '../api/ui/properties/Color';
 import { FontFamily } from '../api/ui/properties/FontFamily';
 import { Keyboard } from '../api/ui/properties/Keyboard';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
+import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
-import { Localization } from '../api/Localization';
-import { MathExpression } from '../api/MathExpression';
-import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
-import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
-import { BigNumber } from '../api/BigNumber';
-import { Upgrade } from '../api/Upgrades';
-import { Button } from '../api/ui/Button';
-import { Frame } from '../api/ui/Frame';
 
 var id = 'parametric_L_systems_renderer';
 var getName = (language) =>
@@ -919,101 +918,87 @@ class Quaternion
 /**
  * Represents a parametric L-system.
  */
-class LSystem
-{
-    /**
-     * @constructor
-     * @param {string} axiom the starting sequence.
-     * @param {string[]} rules the production rules.
-     * @param {string} turnAngle the turning angle (in degrees).
-     * @param {number} seed the seed used for stochastic systems.
-     * @param {string} ignoreList a list of symbols to be ignored by the turtle.
-     * @param {string} ctxIgnoreList a list of symbols ignored when deriving
-     * context.
-     * @param {string} tropism the tropism factor.
-     * @param {object} variables globally defined variables for the system.
-     */
-    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', ctxIgnoreList = '', tropism = 0, variables = {})
-    {
+class LSystem {
+    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0, ignoreList = '', ctxIgnoreList = '', tropism = 0, variables = {}, models = []) {
         // User input
         this.userInput =
-        {
-            axiom: axiom,
-            rules: this.purgeEmpty(rules),
-            turnAngle: turnAngle,
-            seed: seed,
-            ignoreList: ignoreList,
-            ctxIgnoreList: ctxIgnoreList,
-            tropism: tropism,
-            variables: variables
-        };
+            {
+                axiom: axiom,
+                rules: purgeEmpty(rules),
+                models: purgeEmpty(models),
+                turnAngle: turnAngle,
+                seed: seed,
+                ignoreList: ignoreList,
+                ctxIgnoreList: ctxIgnoreList,
+                tropism: tropism,
+                variables: variables
+            };
         // I want to transfer them to a map to deep copy them. LS menu uses
         // arrays so we're fine on that.
         this.variables = new Map();
-        for(let key in variables)
+        for (let key in variables)
             this.variables.set(key, MathExpression.parse(variables[key]).
-            evaluate());
-
+                evaluate());
         let axiomMatches = this.parseSequence(axiom.replace(TRIM_SP, ''));
         this.axiom = axiomMatches.result;
-        this.axiomParams = axiomMatches.params;
-
+        let axiomParamStrings = axiomMatches.params;
+        this.axiomParams = [];
+        this.varGetter = (v) => this.variables.get(v);
         // Manually calculate axiom parameters
-        for(let i = 0; i < this.axiomParams.length; ++i)
-        {
-            if(!this.axiomParams[i])
+        for (let i = 0; i < axiomParamStrings.length; ++i) {
+            if (!axiomParamStrings[i]) {
+                this.axiomParams[i] = null;
                 continue;
-
-            let params = this.parseParams(this.axiomParams[i]);
-            for(let j = 0; j < params.length; ++j)
-                params[j] = MathExpression.parse(params[j]).evaluate(
-                (v) => this.variables.get(v));
-            this.axiomParams[i] = params;
+            }
+            let params = this.parseParams(axiomParamStrings[i]);
+            this.axiomParams[i] = [];
+            for (let j = 0; j < params.length; ++j)
+                this.axiomParams[i][j] = MathExpression.parse(params[j]).
+                    evaluate(this.varGetter);
             // Maybe leave them at BigNumber?
         }
-        
         let ruleMatches = [];
-        for(let i = 0; i < this.userInput.rules.length; ++i)
-        {
-            ruleMatches.push([...this.userInput.rules[i].replace(TRIM_SP, '').
-            match(LS_RULE)]);
+        let concatRules = this.userInput.rules.concat(this.userInput.models);
+        for (let i = 0; i < concatRules.length; ++i) {
+            ruleMatches.push([...concatRules[i].replace(TRIM_SP, '').
+                    match(LS_RULE)]);
             // Indices 1, 3, 4 are context, condition, and all derivations
         }
         this.rules = new Map();
         this.models = new Map();
-        for(let i = 0; i < ruleMatches.length; ++i)
-        {
+        for (let i = 0; i < ruleMatches.length; ++i) {
             // [i][1]: context
             let contextMatch = [...ruleMatches[i][1].match(LS_CONTEXT)];
             // Indices 2, 4, 6, 8, 10, 12 are the symbols and parameters of
             // left, middle, and right respectively
-            if(!contextMatch[6])
+            if (!contextMatch[6])
                 continue;
-
-            let tmpRule = {};
+            let tmpRule = {
+                count: [0, 0, 0]
+            };
             let ruleParams = {};
-            if(contextMatch[8])
-            {
+            // Middle
+            if (contextMatch[8]) {
                 let params = contextMatch[8].split(',');
-                for(let j = 0; j < params.length; ++j)
+                tmpRule.count[1] = params.length;
+                for (let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['m', j];
             }
+            // Left
             tmpRule.left = contextMatch[2];
-            if(tmpRule.left && contextMatch[4])
-            {
+            if (tmpRule.left && contextMatch[4]) {
                 let params = contextMatch[4].split(',');
-                for(let j = 0; j < params.length; ++j)
+                tmpRule.count[0] = params.length;
+                for (let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['l', j];
             }
+            // Right
             tmpRule.right = contextMatch[10];
-            if(tmpRule.right && contextMatch[12])
-            {
+            if (tmpRule.right && contextMatch[12]) {
                 let params = contextMatch[12].split(',');
-                for(let j = 0; j < params.length; ++j)
-                {
+                tmpRule.count[2] = params.length;
+                for (let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['r', j];
-                }
             }
             tmpRule.params = ruleParams;
             /*  // O(1) lookup with O(n) memory, I think
@@ -1024,27 +1009,22 @@ class LSystem
                 'd': ['r', 1]
             };
             */
-            tmpRule.paramMap = (v, l, m, r) =>
-            {
+            tmpRule.paramMap = (v, l, m, r) => {
                 let pos = tmpRule.params[v][0];
                 let result = null;
-                switch(pos)
-                {
+                switch (pos) {
                     case 'm':
-                        if(m)
-                        {
+                        if (m) {
                             result = m[tmpRule.params[v][1]];
                             break;
                         }
                     case 'l':
-                        if(l)
-                        {
+                        if (l) {
                             result = l[tmpRule.params[v][1]];
                             break;
                         }
                     case 'r':
-                        if(r)
-                        {
+                        if (r) {
                             result = r[tmpRule.params[v][1]];
                             break;
                         }
@@ -1052,93 +1032,77 @@ class LSystem
                 // log(`${v} = ${result}`);
                 return result;
                 // MathExpression eval: (v) => rule.paramMap(v, params[l], ...)
-            }
-
+            };
             // [i][3]: condition
-            if(ruleMatches[i][3])
+            if (ruleMatches[i][3])
                 tmpRule.condition = MathExpression.parse(ruleMatches[i][3]);
             else
                 tmpRule.condition = MathExpression.parse('1');
-
             // [i][4]: everything else
             // Doing just comma instead of semi-colon will ruin the parameters!
             let tmpRuleMatches = ruleMatches[i][4].split(';');
-            for(let j = 0; j < tmpRuleMatches.length; ++j)
-            {
-                if(typeof tmpRuleMatches[j] === 'undefined')
+            for (let j = 0; j < tmpRuleMatches.length; ++j) {
+                if (typeof tmpRuleMatches[j] === 'undefined')
                     continue;
-
                 tmpRuleMatches[j] = tmpRuleMatches[j].split(':');
                 let tmpDeriv = this.parseSequence(tmpRuleMatches[j][0]);
-                let derivParams = tmpDeriv.params;
-                for(let k = 0; k < derivParams.length; ++k)
-                {
-                    if(!derivParams[k])
+                let derivParamStrings = tmpDeriv.params;
+                let derivParams = [];
+                for (let k = 0; k < derivParamStrings.length; ++k) {
+                    if (!derivParamStrings[k]) {
+                        derivParams[k] = null;
                         continue;
-
-                    let params = this.parseParams(derivParams[k]);
-                    for(let l = 0; l < params.length; ++l)
-                        params[l] = MathExpression.parse(params[l]);
-
-                    derivParams[k] = params;
+                    }
+                    let params = this.parseParams(derivParamStrings[k]);
+                    derivParams[k] = [];
+                    for (let l = 0; l < params.length; ++l)
+                        derivParams[k][l] = MathExpression.parse(params[l]);
                 }
-                if(typeof tmpRule.derivations === 'string')
-                {
+                if (typeof tmpRule.derivations === 'string') {
                     tmpRule.derivations = [tmpRule.derivations,
-                    tmpDeriv.result];
+                        tmpDeriv.result];
                     tmpRule.parameters = [tmpRule.parameters, derivParams];
-                    if(tmpRuleMatches[j][1])
+                    if (tmpRuleMatches[j][1])
                         tmpRule.chances = [tmpRule.chances,
-                        MathExpression.parse(tmpRuleMatches[j][1])];
+                            MathExpression.parse(tmpRuleMatches[j][1])];
                     else
                         tmpRule.chances = [tmpRule.chances,
-                        MathExpression.parse('1')];
+                            MathExpression.parse('1')];
                 }
-                else if(!tmpRule.derivations)
-                {
+                else if (!tmpRule.derivations) {
                     tmpRule.derivations = tmpDeriv.result;
                     tmpRule.parameters = derivParams;
-                    if(tmpRuleMatches[j][1])
-                        tmpRule.chances = MathExpression.parse(
-                        tmpRuleMatches[j][1]);
+                    if (tmpRuleMatches[j][1])
+                        tmpRule.chances = MathExpression.parse(tmpRuleMatches[j][1]);
                     else
                         tmpRule.chances = MathExpression.parse('1');
                 }
-                else    // Already an array
-                {
+                else // Already an array
+                 {
                     tmpRule.derivations.push(tmpDeriv.result);
                     tmpRule.parameters.push(derivParams);
-                    if(tmpRuleMatches[j][1])
-                        tmpRule.chances.push(MathExpression.parse(
-                        tmpRuleMatches[j][1]));
+                    if (tmpRuleMatches[j][1])
+                        tmpRule.chances.push(MathExpression.parse(tmpRuleMatches[j][1]));
                     else
                         tmpRule.chances.push(MathExpression.parse('1'));
                 }
             }
-
             // Finally, push rule
-            if(contextMatch[6] == '~')
-            {
-                if(!this.models.has(contextMatch[10]))
+            if (contextMatch[6] == '~') {
+                if (!this.models.has(contextMatch[10]))
                     this.models.set(contextMatch[10], []);
                 this.models.get(contextMatch[10]).push(tmpRule);
             }
-            else
-            {
-                if(!this.rules.has(contextMatch[6]))
+            else {
+                if (!this.rules.has(contextMatch[6]))
                     this.rules.set(contextMatch[6], []);
                 this.rules.get(contextMatch[6]).push(tmpRule);
             }
         }
-
         this.ignoreList = new Set(ignoreList);
         this.ctxIgnoreList = new Set(ctxIgnoreList);
-
         this.RNG = new Xorshift(seed);
-        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate(
-        (v) => this.variables.get(v)).
-        toNumber() * Math.PI / 360;
-        
+        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate(this.varGetter).toNumber() * Math.PI / 360;
         this.rotations = new Map();
         let s = Math.sin(this.halfAngle);
         let c = Math.cos(this.halfAngle);
@@ -1148,52 +1112,43 @@ class LSystem
         this.rotations.set('^', new Quaternion(-c, 0, -s, 0));
         this.rotations.set('\\', new Quaternion(-c, s, 0, 0));
         this.rotations.set('/', new Quaternion(-c, -s, 0, 0));
-
-        this.tropism = MathExpression.parse(tropism.toString()).evaluate(
-        (v) => this.variables.get(v)).
-        toNumber();
+        this.tropism = MathExpression.parse(tropism.toString()).evaluate(this.varGetter).toNumber();
     }
-
     /**
      * Parse a sequence to return one array of characters and one of parameters.
      * Is only used when initialising the L-system.
      * @param {string} sequence the sequence to be parsed.
      * @returns {object}
      */
-    parseSequence(sequence)
-    {
+    parseSequence(sequence) {
         let result = '';
         let resultParams = [];
         let bracketLvl = 0;
         let start = null;
-        for(let i = 0; i < sequence.length; ++i)
-        {
-            switch(sequence[i])
-            {
+        for (let i = 0; i < sequence.length; ++i) {
+            switch (sequence[i]) {
                 case ' ':
-                    log('Blank space detected.')
+                    log('Blank space detected.');
                     break;
                 case '(':
                     ++bracketLvl;
-                    if(bracketLvl == 1)
+                    if (bracketLvl == 1)
                         start = i + 1;
                     break;
                 case ')':
-                    if(!bracketLvl)
-                    {
+                    if (!bracketLvl) {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
                     --bracketLvl;
-                    if(!bracketLvl)
+                    if (!bracketLvl)
                         resultParams.push(sequence.slice(start, i));
                     break;
                 default:
-                    if(bracketLvl)
+                    if (bracketLvl)
                         break;
-                    
                     result += sequence[i];
-                    if(sequence[i + 1] != '(')
+                    if (sequence[i + 1] != '(')
                         resultParams.push(null);
                     break;
             }
@@ -1207,36 +1162,31 @@ class LSystem
     /**
      * Parse a string to return one array of parameter strings.
      * Replaces split(',').
-     * @param {string} string the string to be parsed.
+     * @param {string} sequence the string to be parsed.
      * @returns {string[]}
      */
-    parseParams(string)
-    {
+    parseParams(sequence) {
         let result = [];
         let bracketLvl = 0;
         let start = 0;
-        for(let i = 0; i < string.length; ++i)
-        {
-            switch(string[i])
-            {
+        for (let i = 0; i < sequence.length; ++i) {
+            switch (sequence[i]) {
                 case ' ':
-                    log('Blank space detected.')
+                    log('Blank space detected.');
                     break;
                 case '(':
                     ++bracketLvl;
                     break;
                 case ')':
-                    if(!bracketLvl)
-                    {
+                    if (!bracketLvl) {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
                     --bracketLvl;
                     break;
                 case ',':
-                    if(!bracketLvl)
-                    {
-                        result.push(string.slice(start, i));
+                    if (!bracketLvl) {
+                        result.push(sequence.slice(start, i));
                         start = i + 1;
                     }
                     break;
@@ -1244,27 +1194,23 @@ class LSystem
                     break;
             }
         }
-        result.push(string.slice(start, string.length));
+        result.push(sequence.slice(start, sequence.length));
         return result;
     }
-
     /**
      * Returns and ancestree and a child tree for a sequence.
      * @param {string} sequence the sequence.
      * @returns {object}
      */
-    getAncestree(sequence, task = {})
-    {
+    getAncestree(sequence, task = {}) {
         // Scanning behaviour should be very similar to renderer drawing.
-        let tmpStack = task.stack || [];
-        let tmpIdxStack = task.idxStack || [];
-        let tmpAncestors = task.ancestors || [];
-        let tmpChildren = task.children || [];
-        let i = task.start || 0;
-        for(; i < sequence.length; ++i)
-        {
-            if(i - task.start > maxCharsPerTick)
-            {
+        let tmpStack = task.stack ?? [];
+        let tmpIdxStack = task.idxStack ?? [];
+        let tmpAncestors = task.ancestors ?? [];
+        let tmpChildren = task.children ?? [];
+        let i = task.start ?? 0;
+        for (; i < sequence.length; ++i) {
+            if (i - task.start > MAX_CHARS_PER_TICK * 2) {
                 return {
                     start: i,
                     stack: tmpStack,
@@ -1273,39 +1219,33 @@ class LSystem
                     children: tmpChildren
                 };
             }
-            switch(sequence[i])
-            {
+            switch (sequence[i]) {
                 case ' ':
-                    log('Blank space detected.')
+                    log('Blank space detected.');
                     break;
                 case '[':
                     tmpIdxStack.push(tmpStack.length);
                     break;
                 case ']':
-                    if(tmpStack.length == 0)
-                    {
+                    if (tmpStack.length == 0) {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
-                    while(tmpStack.length > tmpIdxStack[tmpIdxStack.length - 1])
+                    while (tmpStack.length > tmpIdxStack[tmpIdxStack.length - 1])
                         tmpStack.pop();
-
                     tmpIdxStack.pop();
                     break;
                 default:
                     let ignored = this.ctxIgnoreList.has(sequence[i]);
-                    if(ignored)
+                    if (ignored)
                         break;
-                    
-                    if(tmpStack.length > 0)
-                    {
+                    if (tmpStack.length > 0) {
                         let ancIdx = tmpStack[tmpStack.length - 1];
                         tmpAncestors[i] = ancIdx;
-                        if(typeof tmpChildren[ancIdx] === 'undefined')
+                        if (typeof tmpChildren[ancIdx] === 'undefined')
                             tmpChildren[ancIdx] = [];
                         tmpChildren[ancIdx].push(i);
                     }
-
                     tmpStack.push(i);
                     break;
             }
@@ -1318,38 +1258,27 @@ class LSystem
             children: tmpChildren
         };
     }
-
     /**
-     * Derive a sequence from the input string. `next` denotes the starting
-     * position to be derived next tick. `result` contains the work completed
-     * for the current tick.
-     * @param {string} sequence the input string.
-     * @returns {{start: number, result: string}}
+     * Derive a sequence from the input string. Returns the work completed for
+     * the current tick. `start` denotes the next tick's starting position.
      */
-    derive(sequence, seqParams, ancestors, children, task = {})
-    {
-        let result = task.derivation || '';
-        let resultParams = task.parameters || [];
-        let i = task.start || 0;
+    derive(sequence, seqParams, ancestors, children, task = {}) {
+        let result = task.derivation ?? '';
+        let resultParams = task.parameters ?? [];
+        let i = task.start ?? 0;
         let charCount = 0;
-        for(; i < sequence.length; ++i)
-        {
-            if(charCount > maxCharsPerTick)
-            {
+        for (; i < sequence.length; ++i) {
+            if (charCount > MAX_CHARS_PER_TICK) {
                 return {
                     start: i,
-                    charCount: charCount,
                     derivation: result,
                     parameters: resultParams
                 };
             }
-            if(sequence[i] == '%')
-            {
+            if (sequence[i] == '%') {
                 let branchLvl = 0;
-                for(; i < sequence.length; ++i)
-                {
-                    switch(sequence[i])
-                    {
+                for (; i < sequence.length; ++i) {
+                    switch (sequence[i]) {
                         case '[':
                             ++branchLvl;
                             break;
@@ -1357,11 +1286,10 @@ class LSystem
                             --branchLvl;
                             break;
                     }
-                    if(branchLvl < 0)
+                    if (branchLvl < 0)
                         break;
                 }
-                if(sequence[i] == ']')
-                {
+                if (sequence[i] == ']') {
                     result += sequence[i];
                     ++charCount;
                     resultParams.push(null);
@@ -1369,68 +1297,60 @@ class LSystem
                 else
                     continue;
             }
-            else if(sequence[i] == '~')
-                continue;
-            else if(this.rules.has(sequence[i]))
-            {
+            // else if(sequence[i] == '~')
+            //     continue;
+            else if (this.rules.has(sequence[i])) {
                 let tmpRules = this.rules.get(sequence[i]);
                 let ruleChoice = -1;
-                for(let j = 0; j < tmpRules.length; ++j)
-                {
-                    // Left and right first
-                    if(tmpRules[j].left && tmpRules[j].left !=
-                    sequence[ancestors[i]])
+                for (let j = 0; j < tmpRules.length; ++j) {
+                    // Param count check
+                    let count = seqParams[i] ? seqParams[i].length : 0;
+                    if (tmpRules[j].count[1] != count)
                         continue;
-
+                    // Left check
+                    let left = ancestors[i];
+                    if (tmpRules[j].left) {
+                        count = seqParams[left] ? seqParams[left].length : 0;
+                        if (tmpRules[j].left != sequence[left] ||
+                            tmpRules[j].count[0] != count)
+                            continue;
+                    }
+                    // Right check
                     let right = -1;
-                    if(tmpRules[j].right)
-                    {
-                        if(children[i])
-                        {
-                            for(let k = 0; k < children[i].length; ++k)
-                            {
-                                if(tmpRules[j].right == sequence[children[i][
-                                k]])
-                                {
+                    if (tmpRules[j].right) {
+                        if (children[i]) {
+                            for (let k = 0; k < children[i].length; ++k) {
+                                count = seqParams[children[i][k]] ?
+                                    seqParams[children[i][k]].length : 0;
+                                if (tmpRules[j].right == sequence[children[i][k]]
+                                    && tmpRules[j].count[2] == count) {
                                     right = children[i][k];
                                     break;
                                 }
                             }
                         }
-                        if(right == -1)
+                        if (right == -1)
                             continue;
                     }
-
-                    let tmpParamMap = (v) => this.variables.get(v) ||
-                    tmpRules[j].paramMap(v, seqParams[ancestors[i]],
-                    seqParams[i], seqParams[right]);
+                    let tmpParamMap = (v) => this.varGetter(v) ??
+                        tmpRules[j].paramMap(v, seqParams[left], seqParams[i], seqParams[right]);
                     // Next up is the condition
-                    if(tmpRules[j].condition.evaluate(tmpParamMap) ==
-                    BigNumber.ZERO)
+                    if (tmpRules[j].condition.evaluate(tmpParamMap)?.isZero)
                         continue;
-
-                    if(typeof tmpRules[j].derivations === 'string')
-                    {
+                    if (typeof tmpRules[j].derivations === 'string') {
                         result += tmpRules[j].derivations;
                         charCount += tmpRules[j].derivations.length;
-                        if(tmpRules[j].parameters)
-                        {
-                            for(let k = 0; k < tmpRules[j].parameters.length;
-                            ++k)
-                            {
+                        if (tmpRules[j].parameters) {
+                            for (let k = 0; k < tmpRules[j].parameters.length; ++k) {
                                 let derivPi = null;
-                                if(tmpRules[j].parameters[k])
-                                {
-                                    for(let l = 0; l < tmpRules[j].parameters[
-                                    k].length; ++l)
-                                    {
-                                        if(tmpRules[j].parameters[k][l])
-                                        {
-                                            if(!derivPi)
+                                let tmpParams = tmpRules[j].
+                                    parameters[k];
+                                if (tmpParams) {
+                                    for (let l = 0; l < tmpParams.length; ++l) {
+                                        if (tmpParams[l]) {
+                                            if (!derivPi)
                                                 derivPi = [];
-                                            derivPi.push(tmpRules[j].
-                                            parameters[k][l].evaluate(
-                                            tmpParamMap));
+                                            derivPi.push(tmpParams[l].evaluate(tmpParamMap));
                                         }
                                     }
                                 }
@@ -1440,45 +1360,36 @@ class LSystem
                         ruleChoice = j;
                         break;
                     }
-                    else    // Stochastic time
-                    {
+                    else // Stochastic time
+                     {
                         let roll = this.RNG.nextFloat;
                         let chanceSum = 0;
                         let choice = -1;
-                        for(let k = 0; k < tmpRules[j].derivations.length; ++k)
-                        {
+                        for (let k = 0; k < tmpRules[j].derivations.length; ++k) {
                             // Example
                             // roll: 0.50
                             // chance 1: 0.00 - 0.49
                             // sum after 1: 0.50
                             // chance 2: 0.50 - 0.99
                             // sum after 2: 1 (select!)
-                            chanceSum += tmpRules[j].chances[k].evaluate(
-                            tmpParamMap);
-                            if(chanceSum > roll)    // select this
-                            {
+                            chanceSum += tmpRules[j].chances[k].evaluate(tmpParamMap);
+                            if (chanceSum > roll) // select this
+                             {
                                 choice = k;
                                 result += tmpRules[j].derivations[k];
                                 charCount += tmpRules[j].derivations[k].length;
-                                if(tmpRules[j].parameters[k])
-                                {
-                                    for(let l = 0; l < tmpRules[j].
-                                    parameters[k].length; ++l)
-                                    {
+                                if (tmpRules[j].parameters[k]) {
+                                    for (let l = 0; l < tmpRules[j].
+                                        parameters[k].length; ++l) {
                                         let derivPi = null;
-                                        if(tmpRules[j].parameters[k][l])
-                                        {
-                                            for(let m = 0; m < tmpRules[j].
-                                            parameters[k][l].length; ++m)
-                                            {
-                                                if(tmpRules[j].
-                                                parameters[k][l][m])
-                                                {
-                                                    if(!derivPi)
+                                        let tmpParams = tmpRules[j].parameters[k][l];
+                                        if (tmpParams) {
+                                            for (let m = 0; m < tmpParams.length; ++m) {
+                                                if (tmpParams[m]) {
+                                                    if (!derivPi)
                                                         derivPi = [];
-                                                    derivPi.push(tmpRules[j].
-                                                    parameters[k][l][m].
-                                                    evaluate(tmpParamMap));
+                                                    derivPi.push(tmpParams[m].
+                                                        evaluate(tmpParamMap));
                                                 }
                                             }
                                         }
@@ -1489,21 +1400,19 @@ class LSystem
                             }
                         }
                         // log(`roll = ${roll} choice = ${choice}`)
-                        if(choice == -1)
+                        if (choice == -1)
                             continue;
                         ruleChoice = j;
                         break;
                     }
                 }
-                if(ruleChoice == -1)
-                {
+                if (ruleChoice == -1) {
                     result += sequence[i];
                     ++charCount;
                     resultParams.push(...[seqParams[i]]);
                 }
             }
-            else
-            {
+            else {
                 result += sequence[i];
                 ++charCount;
                 resultParams.push(...[seqParams[i]]);
@@ -1511,48 +1420,34 @@ class LSystem
         }
         return {
             start: 0,
-            charCount: charCount,
             derivation: result,
             parameters: resultParams
         };
     }
-
-    deriveModel(symbol, params)
-    {
+    deriveModel(symbol, params) {
         let result = '';
         let resultParams = [];
-        if(this.models.has(symbol))
-        {
+        if (this.models.has(symbol)) {
             let tmpRules = this.models.get(symbol);
-            for(let j = 0; j < tmpRules.length; ++j)
-            {
-                let tmpParamMap = (v) => this.variables.get(v) ||
-                tmpRules[j].paramMap(v, null, null, params);
+            for (let j = 0; j < tmpRules.length; ++j) {
+                let tmpParamMap = (v) => this.varGetter(v) ??
+                    tmpRules[j].paramMap(v, null, null, params);
                 // Next up is the condition
-                if(tmpRules[j].condition.evaluate(tmpParamMap) ==
-                BigNumber.ZERO)
+                if (tmpRules[j].condition.evaluate(tmpParamMap)?.isZero)
                     continue;
-
-                if(typeof tmpRules[j].derivations === 'string')
-                {
+                if (typeof tmpRules[j].derivations === 'string') {
                     result = tmpRules[j].derivations;
-                    if(tmpRules[j].parameters)
-                    {
-                        for(let k = 0; k < tmpRules[j].parameters.length;
-                        ++k)
-                        {
+                    if (tmpRules[j].parameters) {
+                        for (let k = 0; k < tmpRules[j].parameters.length; ++k) {
                             let derivPi = null;
-                            if(tmpRules[j].parameters[k])
-                            {
-                                for(let l = 0; l < tmpRules[j].parameters[k].
-                                length; ++l)
-                                {
-                                    if(tmpRules[j].parameters[k][l])
-                                    {
-                                        if(!derivPi)
+                            let tmpParams = tmpRules[j].
+                                parameters[k];
+                            if (tmpParams) {
+                                for (let l = 0; l < tmpParams.length; ++l) {
+                                    if (tmpParams[l]) {
+                                        if (!derivPi)
                                             derivPi = [];
-                                        derivPi.push(tmpRules[j].parameters[k][
-                                        l].evaluate(tmpParamMap));
+                                        derivPi.push(tmpParams[l].evaluate(tmpParamMap));
                                     }
                                 }
                             }
@@ -1561,46 +1456,37 @@ class LSystem
                     }
                     break;
                 }
-                else    // Stochastic time
-                {
+                else // Stochastic time
+                 {
                     // Models can be drawn any time, thus, the RNG should be
                     // separate from actual rule processing.
                     let roll = globalRNG.nextFloat;
                     let chanceSum = 0;
                     let choice = -1;
-                    for(let k = 0; k < tmpRules[j].derivations.length; ++k)
-                    {
+                    for (let k = 0; k < tmpRules[j].derivations.length; ++k) {
                         // Example
                         // roll: 0.50
                         // chance 1: 0.00 - 0.49
                         // sum after 1: 0.50
                         // chance 2: 0.50 - 0.99
                         // sum after 2: 1 (select!)
-                        chanceSum += tmpRules[j].chances[k].evaluate(
-                        tmpParamMap);
-                        if(chanceSum > roll)    // select this
-                        {
+                        chanceSum += tmpRules[j].chances[k].evaluate(tmpParamMap);
+                        if (chanceSum > roll) // select this
+                         {
                             choice = k;
                             result = tmpRules[j].derivations[k];
-                            if(tmpRules[j].parameters[k])
-                            {
-                                for(let l = 0; l < tmpRules[j].
-                                parameters[k].length; ++l)
-                                {
+                            if (tmpRules[j].parameters[k]) {
+                                for (let l = 0; l < tmpRules[j].
+                                    parameters[k].length; ++l) {
                                     let derivPi = null;
-                                    if(tmpRules[j].parameters[k][l])
-                                    {
-                                        for(let m = 0; m < tmpRules[j].
-                                        parameters[k][l].length; ++m)
-                                        {
-                                            if(tmpRules[j].
-                                            parameters[k][l][m])
-                                            {
-                                                if(!derivPi)
+                                    const tmpParams = tmpRules[j].parameters[k][l];
+                                    if (tmpParams) {
+                                        for (let m = 0; m < tmpParams.length; ++m) {
+                                            if (tmpParams[m]) {
+                                                if (!derivPi)
                                                     derivPi = [];
-                                                derivPi.push(tmpRules[j].
-                                                parameters[k][l][m].
-                                                evaluate(tmpParamMap));
+                                                derivPi.push(tmpParams[m].
+                                                    evaluate(tmpParamMap));
                                             }
                                         }
                                     }
@@ -1611,7 +1497,7 @@ class LSystem
                         }
                     }
                     // log(`roll = ${roll} choice = ${choice}`)
-                    if(choice == -1)
+                    if (choice == -1)
                         continue;
                     break;
                 }
@@ -1622,67 +1508,88 @@ class LSystem
             params: resultParams
         };
     }
-
-    reconstruct(sequence, params, task = {})
-    {
-        let result = task.result || '';
-        let i = task.start || 0;
-        for(; i < sequence.length; ++i)
-        {
-            if((i - task.start) * (task.start + 1) > maxCharsPerTick)
-            {
+    /**
+     * Reconstructs the string representation of a sequence.
+     * @param {Colony} colony the plant colony.
+     * @param {string} filter the filter.
+     * @param {boolean} displayParams whether to display parameters.
+     * @param {number} indentation the number of spaces to indent.
+     * @param {Task} task the current task.
+     * @returns {Task}
+     */
+    reconstruct(colony, filter = '', displayParams = true, indentation = 4, task = {}) {
+        if (indentation < 0)
+            indentation = -indentation;
+        let sequence = colony.sequence;
+        let params = colony.params;
+        let level = 0;
+        let lineStart = false;
+        if (!displayParams && !filter) {
+            return {
+                start: 0,
+                level: level,
+                result: sequence
+            };
+        }
+        let filterSet = new Set(filter);
+        let result = task.result ?? '';
+        let i = task.start ?? 0;
+        for (; i < sequence.length; ++i) {
+            if (i - task.start > MAX_CHARS_PER_TICK) {
                 return {
                     start: i,
+                    level: level,
                     result: result
+                };
+            }
+            if (displayParams && lineStart) {
+                result += `\n${' '.repeat(indentation * Math.max(0, level))}`;
+                lineStart = false;
+            }
+            let writesToResult = !filter || filterSet.has(sequence[i]);
+            if (writesToResult) {
+                switch (sequence[i]) {
+                    case '[':
+                        ++level;
+                        lineStart = true;
+                        break;
+                    case ']':
+                        lineStart = true;
+                        break;
+                }
+                result += sequence[i];
+                if (displayParams && params[i]) {
+                    let paramStrings = [];
+                    for (let j = 0; j < params[i].length; ++j)
+                        paramStrings[j] = getCString(params[i][j]);
+                    result += `(${paramStrings.join(', ')})`;
+                }
+                switch (sequence[i + 1]) {
+                    case '[':
+                        lineStart = true;
+                        break;
+                    case ']':
+                        --level;
+                        lineStart = true;
+                        break;
                 }
             }
-            result += sequence[i];
-            if(params[i])
-                result += `(${params[i].join(', ')})`;
         }
         return {
             start: 0,
+            level: level,
             result: result
         };
     }
     /**
-     * Purge the rules of empty lines.
-     * @param {string[]} rules rules.
-     * @returns {string[]}
-     */
-    purgeEmpty(rules)
-    {
-        let result = [];
-        let idx = 0;
-        for(let i = 0; i < rules.length; ++i)
-        {
-            // I hope this deep-copies
-            if(rules[i])
-            {
-                result[idx] = rules[i];
-                ++idx;
-            }
-        }
-        return result;
-    }
-    /**
      * Returns a deep copy (hopefully) of the user input to prevent overwrites.
-     * @returns {{
-     *  axiom: string,
-     *  rules: string[],
-     *  turnAngle: string,
-     *  seed: number,
-     *  ignoreList: string,
-     *  ctxIgnoreList: string,
-     *  tropism: string,
-     *  variables: object
-     * }}
+     * @returns {LSystemInput}
      */
-    get object()
-    {
+    toJSON() {
         return {
             axiom: this.userInput.axiom,
-            rules: this.purgeEmpty(this.userInput.rules),
+            rules: purgeEmpty(this.userInput.rules),
+            models: purgeEmpty(this.userInput.models),
             turnAngle: this.userInput.turnAngle,
             seed: this.userInput.seed,
             ignoreList: this.userInput.ignoreList,
@@ -1695,9 +1602,8 @@ class LSystem
      * Returns the system's string representation.
      * @returns {string}
      */
-    toString()
-    {
-        return JSON.stringify(this.object, null, 4);
+    toString() {
+        return JSON.stringify(this, null, 4);
     }
 }
 
@@ -3402,8 +3308,42 @@ let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
-let testSystem = null;
-let testCamera = null;
+let testSystem = new LSystem('/(90)BA(0.18, 0)',
+[
+    'A(r, t) = S(0)F(0.12, 0.96)K(0.02, 8)',
+    'A(r, t): t<3 = A(r+0.06, t+1)',
+    'A(r, t) = F(0.12, 1.44)[&[I(0)]T(0.2)L(0.06, min(r+0.12, maxLeafSize), 0)]/(180)[&L(0.06, min(r+0.12, maxLeafSize), 0)]/(90)A(r-0.06, 0)',
+    'S(type) < I(t): type>=1 = S(type)',
+    'I(t): t<5 = I(t+1)',
+    'I(t) = /(90)F(0.12, 0.72)T[&L(0.03, maxLeafSize/2, 0)]/(180)[&L(0.03, maxLeafSize/2, 0)]I(-6)',
+    'K(s, t): t>0 = K(s+0.02, 0)/(90)F(0.12, 0.84)K(0.02, t-1)',
+    'K(s, t): s<1 = K(s+0.02, t)',
+    'L(p, lim, s): s<1 && p<lim = L(p+0.03, lim, s)',
+    'S(type) < L(p, lim, s): s<1 = L(p, p, 1)',
+    'L(p, lim, s): s>=1 && p>0.06 = L(p-0.06, lim, s)',
+    'F(l, lim) > S(type): type<=0 = S(type)F(l, lim)',
+    'S(type) < F(l, lim): type>=1 = F(l, lim)S(type)',
+    'S(type) =',
+    'B > S(type): type<=0 = BS(1)',
+    'F(l, lim): l<lim = F(l+0.12, lim)',
+    '~> #= Model specification',
+    '~> K(t) = {[k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))]}',
+    '~> k(size): size<0.5 = [+++&F(size/2).[^^--F(size/2).]][+++^F(size/2).]',
+    '~> k(size): size<0.7 = [++F(size/3).++[&F(size/3).][--F(size/3)[+F(size/6).].].[^F(size/3).][--F(size/3)[+F(size/6).].].[--&F(size/3).^^-F(size/3).][--^F(size/3).].]',
+    '~> k(size) = [++F(size/3).++[&F(size/3).&F(size/4).][--F(size/3)[-F(size/6).].]..[^F(size/3).^F(size/4).][--F(size/3)[-F(size/6).].]..[-F(size/2).]..[F(size/3).-F(size/3).].]',
+    '~> L(p, lim, s): s<1 = {T(p*0.9)F(sqrt(p)).[-(48)F(p).+F(p).+&F(p).+F(p).][F(p)[&F(p)[F(p)[^F(p).].].].].[+(48)F(p).-F(p).-&F(p).-F(p).][F(p)[&F(p)[F(p)[^F(p).].].].]}',
+    '~> L(p, lim, s) = {T(lim*1.2)F(sqrt(lim)).[--F(lim).+&F(lim).+&F(lim).+F(lim)..][F(lim)[&F(lim)[&F(lim)[&F(lim).].].].].[++F(lim).-&F(lim).-&F(lim).-F(lim)..][F(lim)[&F(lim)[&F(lim)[&F(lim).].].].]}',
+], 30, 0, 'BASIL', '+-&^/\\T', -0.16, {
+    'flowerThreshold': '0.96',
+    'maxLeafSize': '0.6'
+});
+let testCamera = [
+    4,
+    0,
+    4,
+    0,
+    true
+];
 
 var l, ts, delay;
 // Variable controls
