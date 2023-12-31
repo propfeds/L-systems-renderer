@@ -120,6 +120,24 @@ let getSmallBtnSize = (width) =>
     return 32;
 }
 
+/**
+ * Purge a string array of empty lines.
+ * @param {string[]} arr the array.
+ * @returns {string[]}
+ */
+let purgeEmpty = (arr) => {
+    let result = [];
+    let idx = 0;
+    for (let i = 0; i < arr.length; ++i) {
+        // I hope this deep-copies
+        if (arr[i]) {
+            result[idx] = arr[i];
+            ++idx;
+        }
+    }
+    return result;
+};
+
 const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
 const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
@@ -1210,7 +1228,7 @@ class LSystem {
         let tmpChildren = task.children ?? [];
         let i = task.start ?? 0;
         for (; i < sequence.length; ++i) {
-            if (i - task.start > MAX_CHARS_PER_TICK * 2) {
+            if (i - task.start > maxCharsPerTick * 2) {
                 return {
                     start: i,
                     stack: tmpStack,
@@ -1268,7 +1286,7 @@ class LSystem {
         let i = task.start ?? 0;
         let charCount = 0;
         for (; i < sequence.length; ++i) {
-            if (charCount > MAX_CHARS_PER_TICK) {
+            if (charCount > maxCharsPerTick) {
                 return {
                     start: i,
                     derivation: result,
@@ -1535,7 +1553,7 @@ class LSystem {
         let result = task.result ?? '';
         let i = task.start ?? 0;
         for (; i < sequence.length; ++i) {
-            if (i - task.start > MAX_CHARS_PER_TICK) {
+            if (i - task.start > maxCharsPerTick) {
                 return {
                     start: i,
                     level: level,
