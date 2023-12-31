@@ -55,7 +55,7 @@ Note: Systems from LSR can be ported to P-LSR with minimal changes. However, ` +
 var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
                 'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.011;
+var version = 0.02;
 
 let time = 0;
 let page = 0;
@@ -121,6 +121,14 @@ let getSmallBtnSize = (width) =>
 }
 
 /**
+ * Returns a C-style formatted string from a BigNumber. Note that it can only
+ * handle up to the Number limit.
+ * @param {BigNumber} x the number.
+ * @returns {string}
+ */
+let getCString = (x) => parseFloat(x.toString(6)).toString();
+
+/**
  * Purge a string array of empty lines.
  * @param {string[]} arr the array.
  * @returns {string[]}
@@ -152,9 +160,9 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.01.1',
-        welcomeSystemName: 'Mistletoe',
-        welcomeSystemDesc: 'Welcome to the Parametric L-systems Renderer.',
+        versionName: 'v1.02, WIP',
+        welcomeSystemName: 'Calendula',
+        welcomeSystemDesc: 'The classic flower to start a month.',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
@@ -3247,22 +3255,40 @@ const xUpQuat = new Quaternion(0, 1, 0, 0);
 const yUpQuat = new Quaternion(0, 0, 1, 0);
 const zUpQuat = new Quaternion(0, 0, 0, 1);
 
-let toe = new LSystem('++M(0)', [
-    'M(t): t<2 = FM(t+1)',
-    'M(t): t<3 = [&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]',
-    'M(t, i): t<5 = FM(t+1, i): 0.7-i; FK(0)M(t+1, i+0.3): 0.3+i',
-    'M(t, i): t>=5 = [&TM(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]',
-    '~> M(t): t<3 = [+(48)L(t)]/(180)[+(48)L(t)]',
-    '~> M(t, i) = [+(48)L(2+0.4*t)]/(180)[+(48)L(2+0.4*t)]',
-    '~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}',
-    'K(c)>M(t, i): c<3 = K(c+1): 0.7-t/10',
-    'K(t): t<3 = K(t+1): 0.3+t/10',
-    'K(t): t>=3 = [&&\\B(0.3)]/(120)[&&\\B(0.24)]/(120)[&&B(0.27)]',
-    '~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]',
-    'B(s) = B(s*0.9+0.1)',
-    '~> B(s) = {[-(67.5)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).]}',
-], '32', 157120112, '', 'F+-&^/\\{}', 0.16, {});
-let renderer = new Renderer(toe, 6, 0, 3, 3, 0);
+let welcomeSystem = new LSystem('-(3)A(0.06, 4)',
+[
+    'A(r, t): t<=0 && r>=AThreshold = F(0.78, 2.1)K(0)',
+    'A(r, t): r>=AThreshold = [&A(r-0.15, 2)][^I(3)]',
+    'A(r, t): t>0 = A(r+0.06, t-1)',
+    'A(r, t) = F(0.12, 0.6)T[-L(0.06, maxLSize)]/(180)[-L(0.06, maxLSize)]/(90)A(r, 4)',
+    'I(t): t>0 = F(0.24, 0.84)T[-L(0.06, maxLSize/3)]/(137.508)I(t-1)',
+    'I(t) = F(0.48, 1.44)K(0)',
+    'K(p): p<maxKSize = K(p+0.25)',
+    'L(r, lim): r<lim = L(r+0.02, lim)',
+    'F(l, lim): l<lim = F(l+0.12, lim)'
+], 15, 0, 'AI', '', -0.2, {
+    'AThreshold': '0.96',
+    'maxKSize': '3',
+    'maxLSize': '0.68'
+},
+[
+    '~> K(p): p<1 = {[w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)]F(p/10+0.1)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)]}',
+    '~> K(p): p<1.5 = {[w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)]F(p/10+0.1)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.23, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-9)k(p*0.23, p*18-15)][o(p*0.22, p*17.5)]}',
+    '~> K(p) = {[w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)]F(p/10+0.1)[k(1.5/4, p*18)k(1.5/4, p*18)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.23, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-9)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.24, p*18-15)][o(1.5/4, p*22.5)o(1.5*0.22, p*17.5)o(1.5*0.18, p*10)]}',
+    '~> w(p, a): p<0.1 = [--(a)F(0.2).+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)[+++(a)F(0.2).].]',
+    '~> w(p, a): p<0.2 = [--(a)F(0.2).+++F(0.2).^+F(0.2).]/[--(a)F(0.2)+++F(0.2).^+F(0.2).]/[--(a)F(0.2)+++F(0.2).^+F(0.2).]/[--(a)F(0.2)[+++F(0.2).].]',
+    '~> w(p, a): p<0.25 = [--(a)F(p).++F(p).^F(p).]/[--(a)F(p)++F(p).^F(p).]/[--(a)F(p)++F(p).^F(p).]/[--(a)F(p)[++F(p).].]',
+    '~> w(p, a) = [--(a)F(p).++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)[++F(p).].]',
+    '~> k(p, a): p<0.3 = [---(a)F(p/2).+^F(p*2).+&F(p).][---(a)F(p/2)[+&F(p*2)[+^F(p).].].]/(137.508)',
+    '~> k(p, a) = [---(a)F(p/2).+^F(p*2).&F(p).][---(a)F(p/2)[+&F(p*2)[^F(p).].].]/(137.508)',
+    '~> o(p, a) = [-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]',
+    '~> L(p, lim): p<=maxLSize/4 = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].].[^F(p).F(p).^-F(p).&&-F(p).&F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].]}',
+    '~> L(p, lim): p<=maxLSize/3 = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].]}',
+    '~> L(p, lim) = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].]}'
+]);
+
+let renderer = new Renderer(welcomeSystem, 6, 0, 0, 'max(3.75, min(lv/4, 5))',
+0, 0.15, 0, true);
 let globalRNG = new Xorshift(Date.now());
 let contentsTable = [0, 1, 2, 5, 7, 10];
 let manualSystems =
@@ -3318,7 +3344,7 @@ let manualSystems =
     },
     9:
     {
-        system: toe,
+        system: welcomeSystem,
         config: ['6', '3', '3', '0', false]
     }
 };
@@ -4406,7 +4432,7 @@ let createVariableMenu = (variables) =>
 
 let createSystemMenu = () =>
 {
-    let values = renderer.system.object;
+    let values = renderer.system.toJSON();
     let tmpAxiom = values.axiom;
     let axiomEntry = ui.createEntry
     ({
@@ -4742,7 +4768,7 @@ let createSystemMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let values = new LSystem().object;
+                                let values = new LSystem().toJSON();
                                 axiomEntry.text = values.axiom;
                                 angleEntry.text = values.turnAngle.toString();
                                 tmpVars = Object.entries(values.variables);
@@ -5923,8 +5949,10 @@ let createSeqViewMenu = (level) =>
         ('result' in reconstructionTask && reconstructionTask.start))
         {
             reconstructionTask = renderer.system.reconstruct(
-            renderer.levels[level], renderer.levelParams[level],
-            reconstructionTask);
+            {
+                sequence: renderer.levels[level],
+                params: renderer.levelParams[level],
+            }, '', true, 4, reconstructionTask);
         }
         return reconstructionTask.result;
     }
@@ -6420,12 +6448,12 @@ var getInternalState = () => JSON.stringify
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
-        ...tmpSystem.object
+        ...tmpSystem.toJSON()
     } :
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
-        ...renderer.system.object
+        ...renderer.system.toJSON()
     },
     savedSystems: Object.fromEntries(savedSystems)
 });
