@@ -231,7 +231,8 @@ const locStrings =
         menuLSystem: 'L-system Menu',
         labelAxiom: 'Axiom: ',
         labelAngle: 'Turning angle (°): ',
-        labelRules: 'Production rules: {0}',
+        labelRules: `Production rules: {0}`,
+        labelModels: `Model specifications: {0}`,
         labelIgnored: 'Turtle-ignored: ',
         labelCtxIgnored: 'Context-ignored: ',
         labelTropism: 'Tropism (gravity): ',
@@ -2826,7 +2827,7 @@ class Renderer
      * Returns the object representation of the renderer.
      * @returns {object}
      */
-    get object()
+    toJSON()
     {
         return {
             figureScale: this.figScaleStr,
@@ -2851,7 +2852,7 @@ class Renderer
      */
     toString()
     {
-        return JSON.stringify(this.object, null, 4);
+        return JSON.stringify(this.toJSON(), null, 4);
     }
 }
 
@@ -3356,27 +3357,22 @@ let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
 
-let testSystem = new LSystem('A(0.04, 3)',
+let testSystem = new LSystem('\\(45)A(0.04, 3)',
 [
     'A(r, t): t>0 = A(r+0.02, t-1)',
-    'A(r, t) = F(0.05, 0.3)[-&(45)L(0.02)][-^(45)L(0.02)]/(137.508)A(r, 3)',
-    'F(l, lim): l<lim = F(l+0.05, lim)',
-    'L(s) = L(s+0.02)',
+    'A(r, t) = F(0.05)[-&(45)L(0.02)][-^(45)L(0.02)]/(137.508)A(r, 3)',
+    'F(l): l<FMaxSize = F(l+0.05)',
+    'L(s): s<LMaxSize = L(s+0.02)',
     '~> #= Model specification',
-    '~> K(t) = {[k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))//k(min(0.75, t*5))]}',
-    '~> k(size): size<0.5 = [+++&F(size/2).[^^--F(size/2).]][+++^F(size/2).]',
-    '~> k(size): size<0.7 = [++F(size/3).++[&F(size/3).][--F(size/3)[+F(size/6).].].[^F(size/3).][--F(size/3)[+F(size/6).].].[--&F(size/3).^^-F(size/3).][--^F(size/3).].]',
-    '~> k(size) = [++F(size/3).++[&F(size/3).&F(size/4).][--F(size/3)[-F(size/6).].]..[^F(size/3).^F(size/4).][--F(size/3)[-F(size/6).].]..[-F(size/2).]..[F(size/3).-F(size/3).].]',
-    '~> L(p, lim, s): s<1 = {T(p*0.9)F(sqrt(p)).[-(48)F(p).+F(p).+&F(p).+F(p).][F(p)[&F(p)[F(p)[^F(p).].].].].[+(48)F(p).-F(p).-&F(p).-F(p).][F(p)[&F(p)[F(p)[^F(p).].].].]}',
-    '~> L(p, lim, s) = {T(lim*1.2)F(sqrt(lim)).[--F(lim).+&F(lim).+&F(lim).+F(lim)..][F(lim)[&F(lim)[&F(lim)[&F(lim).].].].].[++F(lim).-&F(lim).-&F(lim).-F(lim)..][F(lim)[&F(lim)[&F(lim)[&F(lim).].].].]}',
-], 30, 0, 'PEA', '+-&^/\\T', -0.16, {
-    'flowerThreshold': '0.96',
-    'maxLeafSize': '0.6'
+    '~> L(s) = {F(s/4)T(4*s)[\\(90-480*s)&(45)F(s/6).&F(s/3).^^F(s/3).^F(s/3).^F(s/3).^F(s/6).][F(s)..].[/(90-480*s)^(45)F(s/6).^F(s/3).&&F(s/3).&F(s/3).&F(s/3).&F(s/6).][F(s)..]}',
+], 30, 0, 'A', '+-&^/\\T', 0, {
+    'FMaxSize': '0.3',
+    'LMaxSize': '0.12'
 });
 let testCamera = [
-    4,
+    1,
     0,
-    0,
+    0.625,
     0,
     true
 ];
@@ -4544,6 +4540,99 @@ let createSystemMenu = () =>
             ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
         }
     });
+    let tmpModels = values.models;
+    let modelEntries = [];
+    let modelMoveBtns = [];
+    for(let i = 0; i < tmpModels.length; ++i)
+    {
+        modelEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 0,
+            text: tmpModels[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpModels[i] = nt;
+            }
+        }));
+        if(i)
+        {
+            modelMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 1,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpModel = tmpModels[i];
+                    tmpModels[i] = tmpModels[i - 1];
+                    tmpModels[i - 1] = tmpModel;
+                    modelEntries[i - 1].text = tmpModels[i - 1];
+                    modelEntries[i].text = tmpModels[i];
+                }
+            }));
+        }
+    }
+    let modelsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelModels'), modelEntries.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let modelStack = ui.createGrid
+    ({
+        columnDefinitions: ['7*', '1*'],
+        children: [...modelEntries, ...modelMoveBtns]
+    });
+    let addModelButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = modelEntries.length;
+            tmpModels[i] = '';
+            modelEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 0,
+                text: tmpModels[i],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpModels[i] = nt;
+                }
+            }));
+            if(i)
+            {
+                modelMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 1,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpModel = tmpModels[i];
+                        tmpModels[i] = tmpModels[i - 1];
+                        tmpModels[i - 1] = tmpModel;
+                        modelEntries[i - 1].text = tmpModels[i - 1];
+                        modelEntries[i].text = tmpModels[i];
+                    }
+                }));
+            }
+            modelsLabel.text = Localization.format(getLoc('labelModels'),
+            modelEntries.length);
+            modelStack.children = [...modelEntries, ...modelMoveBtns];
+        }
+    });
     let tmpIgnore = values.ignoreList || '';
     let ignoreEntry = ui.createEntry
     ({
@@ -4678,6 +4767,16 @@ let createSystemMenu = () =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
+                                    modelsLabel,
+                                    addModelButton
+                                ]
+                            }),
+                            modelStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelIgnored'),
@@ -4742,7 +4841,8 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                tmpTropism, Object.fromEntries(tmpVars));
+                                tmpTropism, Object.fromEntries(tmpVars),
+                                tmpModels);
                                 if(tmpSystem)
                                 {
                                     tmpSystem = null;
@@ -4773,6 +4873,16 @@ let createSystemMenu = () =>
                                 [
                                     ...ruleEntries,
                                     ...ruleMoveBtns
+                                ];
+                                tmpModels = values.models;
+                                modelEntries = [];
+                                modelMoveBtns = [];
+                                modelsLabel.text = Localization.format(
+                                getLoc('labelModels'), modelEntries.length);
+                                modelStack.children =
+                                [
+                                    ...modelEntries,
+                                    ...modelMoveBtns
                                 ];
                                 ignoreEntry.text = values.ignoreList;
                                 CIEntry.text = values.ctxIgnoreList;
@@ -4848,7 +4958,7 @@ let createNamingMenu = () =>
                 Sound.playClick();
                 savedSystems.set(title, {
                     desc: savedSystems.get(title).desc,
-                    system: renderer.system.object,
+                    system: renderer.system.toJSON(),
                     config: renderer.staticCamera
                 });
                 tmpSystemName = title;
@@ -4939,7 +5049,7 @@ let createNamingMenu = () =>
                             tmpName += getLoc('duplicateSuffix');
                         savedSystems.set(tmpName, {
                             desc: tmpDesc,
-                            system: renderer.system.object,
+                            system: renderer.system.toJSON(),
                             config: renderer.staticCamera
                         });
                         tmpSystemName = tmpName;
@@ -5047,7 +5157,7 @@ let createSystemClipboardMenu = (values) =>
                         sv.system.rules, sv.system.turnAngle,
                         sv.system.seed, sv.system.ignoreList,
                         sv.system.ctxIgnoreList, sv.system.tropism,
-                        sv.system.variables);
+                        sv.system.variables, sv.system.models);
                         tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
@@ -5281,6 +5391,99 @@ let createViewMenu = (title, parentMenu) =>
             ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
         }
     });
+    let tmpModels = values.models;
+    let modelEntries = [];
+    let modelMoveBtns = [];
+    for(let i = 0; i < tmpModels.length; ++i)
+    {
+        modelEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 0,
+            text: tmpModels[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpModels[i] = nt;
+            }
+        }));
+        if(i)
+        {
+            modelMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 1,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpModel = tmpModels[i];
+                    tmpModels[i] = tmpModels[i - 1];
+                    tmpModels[i - 1] = tmpModel;
+                    modelEntries[i - 1].text = tmpModels[i - 1];
+                    modelEntries[i].text = tmpModels[i];
+                }
+            }));
+        }
+    }
+    let modelsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelModels'), modelEntries.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let modelStack = ui.createGrid
+    ({
+        columnDefinitions: ['7*', '1*'],
+        children: [...modelEntries, ...modelMoveBtns]
+    });
+    let addModelButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = modelEntries.length;
+            tmpModels[i] = '';
+            modelEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 0,
+                text: tmpModels[i],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpModels[i] = nt;
+                }
+            }));
+            if(i)
+            {
+                modelMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 1,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpModel = tmpModels[i];
+                        tmpModels[i] = tmpModels[i - 1];
+                        tmpModels[i - 1] = tmpModel;
+                        modelEntries[i - 1].text = tmpModels[i - 1];
+                        modelEntries[i].text = tmpModels[i];
+                    }
+                }));
+            }
+            modelsLabel.text = Localization.format(getLoc('labelModels'),
+            modelEntries.length);
+            modelStack.children = [...modelEntries, ...modelMoveBtns];
+        }
+    });
     let tmpIgnore = values.ignoreList || '';
     let ignoreEntry = ui.createEntry
     ({
@@ -5423,6 +5626,16 @@ let createViewMenu = (title, parentMenu) =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
+                                    modelsLabel,
+                                    addModelButton
+                                ]
+                            }),
+                            modelStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelIgnored'),
@@ -5529,7 +5742,8 @@ let createViewMenu = (title, parentMenu) =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                tmpTropism, Object.fromEntries(tmpVars));
+                                tmpTropism, Object.fromEntries(tmpVars),
+                                tmpModels);
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
@@ -5552,7 +5766,8 @@ let createViewMenu = (title, parentMenu) =>
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
                                     tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                    tmpTropism, Object.fromEntries(tmpVars)).
+                                    tmpTropism, Object.fromEntries(tmpVars),
+                                    tmpModels).
                                     object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
@@ -5678,7 +5893,7 @@ let createSaveMenu = () =>
                                 {
                                     title: tmpSystemName,
                                     desc: tmpSystemDesc,
-                                    system: renderer.system.object,
+                                    system: renderer.system.toJSON(),
                                     config: renderer.staticCamera
                                 }));
                                 clipMenu.show();
@@ -6435,7 +6650,7 @@ var getInternalState = () => JSON.stringify
     measurePerformance: measurePerformance,
     debugCamPath: debugCamPath,
     maxCharsPerTick: maxCharsPerTick,
-    renderer: renderer.object,
+    renderer: renderer.toJSON(),
     system: tmpSystem ?
     {
         title: tmpSystemName,
@@ -6492,7 +6707,7 @@ var setInternalState = (stateStr) =>
             tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList,
             state.system.ctxIgnoreList, state.system.tropism,
-            state.system.variables);
+            state.system.variables, state.system.models);
         }
         
         if('renderer' in state)
