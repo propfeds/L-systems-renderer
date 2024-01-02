@@ -167,9 +167,9 @@ const locStrings =
         equationOverlay: '{0}\n\n{1}',
 
         rendererBuildingTree: `\\begin{{matrix}}Building\\enspace ancestree...&
-        \\text{{Stg. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}`,
+        \\text{{Stg. {0}}}&({1}\\text{{ symbols}})\\end{{matrix}}`,
         rendererDeriving: `\\begin{{matrix}}Deriving...&\\text{{Stg. {0}}}&({1}
-\\text{{ chars}})\\end{{matrix}}`,
+\\text{{ symbols}})\\end{{matrix}}`,
 
         currencyTime: ' (elapsed)',
 
@@ -224,9 +224,11 @@ const locStrings =
         resetRenderer: 'You are about to reset the renderer.',
 
         menuSequence: '{0} (Stage {1})',
-        labelLevelSeq: 'Stage {0}: {1} chars',
-        labelLevelSeqLoading: 'Stage {0}: {1}/{2} chars',
-        labelChars: '({0} chars)',
+        labelLevelSeq: 'Stage {0}: {1} symbols',
+        labelLevelSeqLoading: 'Stage {0}: {1}/{2} symbols',
+        labelChars: '({0} symbols)',
+        labelFilter: 'Filter: ',
+        labelParams: 'Parameters: ',
 
         menuLSystem: 'L-system Menu',
         labelAxiom: 'Axiom: ',
@@ -286,7 +288,7 @@ const locStrings =
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
         debugCamPath: 'Debug camera path: ',
-        labelMaxCharsPerTick: 'Maximum loaded chars/tick: ',
+        labelMaxCharsPerTick: 'Maximum loaded symbols/tick: ',
         labelInternalState: 'Internal state: ',
 
         menuManual: 'User Guide ({0}/{1})',
@@ -6146,10 +6148,46 @@ let createManualMenu = () =>
 
 let createSeqViewMenu = (level) =>
 {
+    let filter = '';
+    let params = true;
     let reconstructionTask =
     {
         start: 0
     };
+    let filterEntry = ui.createEntry
+    ({
+        column: 1,
+        text: filter,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            filter = nt;
+            reconstructionTask =
+            {
+                start: 0
+            };
+        }
+    });
+    let paramSwitch = ui.createSwitch
+    ({
+        isToggled: params,
+        column: 3,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                params = !params;
+                paramSwitch.isToggled = params;
+                reconstructionTask =
+                {
+                    start: 0
+                };
+            }
+        }
+    });
     let updateReconstruction = () =>
     {
         if(!('result' in reconstructionTask) ||
@@ -6159,7 +6197,7 @@ let createSeqViewMenu = (level) =>
             {
                 sequence: renderer.levels[level],
                 params: renderer.levelParams[level],
-            }, '', true, 4, reconstructionTask);
+            }, filter, params, 4, reconstructionTask);
         }
         return reconstructionTask.result;
     }
@@ -6242,6 +6280,29 @@ let createSeqViewMenu = (level) =>
                             ]
                         })
                     })
+                }),
+                ui.createGrid
+                ({
+                    minimumHeightRequest: SMALL_BUTTON_HEIGHT,
+                    columnDefinitions: ['20*', '30*', '35*', '15*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelFilter'),
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        filterEntry,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelParams'),
+                            column: 2,
+                            horizontalOptions: LayoutOptions.END,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        paramSwitch
+                    ]
                 }),
                 ui.createBox
                 ({
