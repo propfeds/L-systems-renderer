@@ -160,7 +160,7 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.02, WIP',
+        versionName: 'v1.02',
         welcomeSystemName: 'Calendula',
         welcomeSystemDesc: 'The classic flower to start a month.',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
@@ -4450,14 +4450,23 @@ let createSystemMenu = () =>
         }
     });
     let tmpRules = values.rules;
+    let ruleNumbers = [];
     let ruleEntries = [];
     let ruleMoveBtns = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
+        ruleNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
         ruleEntries.push(ui.createEntry
         ({
             row: i,
-            column: 0,
+            column: 1,
             text: tmpRules[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -4470,7 +4479,7 @@ let createSystemMenu = () =>
             ruleMoveBtns.push(ui.createButton
             ({
                 row: i,
-                column: 1,
+                column: 2,
                 text: getLoc('btnUp'),
                 heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
@@ -4487,14 +4496,14 @@ let createSystemMenu = () =>
     }
     let rulesLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        text: Localization.format(getLoc('labelRules'), tmpRules.length),
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let ruleStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*'],
-        children: [...ruleEntries, ...ruleMoveBtns]
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...ruleNumbers, ...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
     ({
@@ -4507,10 +4516,18 @@ let createSystemMenu = () =>
             Sound.playClick();
             let i = ruleEntries.length;
             tmpRules[i] = '';
+            ruleNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
             ruleEntries.push(ui.createEntry
             ({
                 row: i,
-                column: 0,
+                column: 1,
                 text: tmpRules[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -4523,7 +4540,7 @@ let createSystemMenu = () =>
                 ruleMoveBtns.push(ui.createButton
                 ({
                     row: i,
-                    column: 1,
+                    column: 2,
                     text: getLoc('btnUp'),
                     heightRequest: SMALL_BUTTON_HEIGHT,
                     onClicked: () =>
@@ -4539,18 +4556,28 @@ let createSystemMenu = () =>
             }
             rulesLabel.text = Localization.format(getLoc('labelRules'),
             ruleEntries.length);
-            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
+            ruleStack.children = [...ruleNumbers, ...ruleEntries,
+            ...ruleMoveBtns];
         }
     });
     let tmpModels = values.models;
+    let modelNumbers = [];
     let modelEntries = [];
     let modelMoveBtns = [];
     for(let i = 0; i < tmpModels.length; ++i)
     {
+        modelNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
         modelEntries.push(ui.createEntry
         ({
             row: i,
-            column: 0,
+            column: 1,
             text: tmpModels[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -4563,7 +4590,7 @@ let createSystemMenu = () =>
             modelMoveBtns.push(ui.createButton
             ({
                 row: i,
-                column: 1,
+                column: 2,
                 text: getLoc('btnUp'),
                 heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
@@ -4580,14 +4607,14 @@ let createSystemMenu = () =>
     }
     let modelsLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelModels'), modelEntries.length),
+        text: Localization.format(getLoc('labelModels'), tmpModels.length),
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let modelStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*'],
-        children: [...modelEntries, ...modelMoveBtns]
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...modelNumbers, ...modelEntries, ...modelMoveBtns]
     });
     let addModelButton = ui.createButton
     ({
@@ -4600,10 +4627,18 @@ let createSystemMenu = () =>
             Sound.playClick();
             let i = modelEntries.length;
             tmpModels[i] = '';
+            modelNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
             modelEntries.push(ui.createEntry
             ({
                 row: i,
-                column: 0,
+                column: 1,
                 text: tmpModels[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -4616,7 +4651,7 @@ let createSystemMenu = () =>
                 modelMoveBtns.push(ui.createButton
                 ({
                     row: i,
-                    column: 1,
+                    column: 2,
                     text: getLoc('btnUp'),
                     heightRequest: SMALL_BUTTON_HEIGHT,
                     onClicked: () =>
@@ -4632,7 +4667,8 @@ let createSystemMenu = () =>
             }
             modelsLabel.text = Localization.format(getLoc('labelModels'),
             modelEntries.length);
-            modelStack.children = [...modelEntries, ...modelMoveBtns];
+            modelStack.children = [...modelNumbers, ...modelEntries,
+            ...modelMoveBtns];
         }
     });
     let tmpIgnore = values.ignoreList || '';
@@ -4867,22 +4903,26 @@ let createSystemMenu = () =>
                                 angleEntry.text = values.turnAngle.toString();
                                 tmpVars = Object.entries(values.variables);
                                 tmpRules = values.rules;
+                                ruleNumbers = [];
                                 ruleEntries = [];
                                 ruleMoveBtns = [];
                                 rulesLabel.text = Localization.format(
                                 getLoc('labelRules'), ruleEntries.length);
                                 ruleStack.children =
                                 [
+                                    ...ruleNumbers,
                                     ...ruleEntries,
                                     ...ruleMoveBtns
                                 ];
                                 tmpModels = values.models;
+                                modelNumbers = [];
                                 modelEntries = [];
                                 modelMoveBtns = [];
                                 modelsLabel.text = Localization.format(
                                 getLoc('labelModels'), modelEntries.length);
                                 modelStack.children =
                                 [
+                                    ...modelNumbers,
                                     ...modelEntries,
                                     ...modelMoveBtns
                                 ];
@@ -5301,14 +5341,23 @@ let createViewMenu = (title, parentMenu) =>
     let tmpRules = [];
     for(let i = 0; i < values.rules.length; ++i)
         tmpRules[i] = values.rules[i];
+    let ruleNumbers = [];
     let ruleEntries = [];
     let ruleMoveBtns = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
+        ruleNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
         ruleEntries.push(ui.createEntry
         ({
             row: i,
-            column: 0,
+            column: 1,
             text: tmpRules[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -5321,7 +5370,7 @@ let createViewMenu = (title, parentMenu) =>
             ruleMoveBtns.push(ui.createButton
             ({
                 row: i,
-                column: 1,
+                column: 2,
                 text: getLoc('btnUp'),
                 heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
@@ -5338,14 +5387,14 @@ let createViewMenu = (title, parentMenu) =>
     }
     let rulesLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        text: Localization.format(getLoc('labelRules'), tmpRules.length),
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let ruleStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*'],
-        children: [...ruleEntries, ...ruleMoveBtns]
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...ruleNumbers, ...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
     ({
@@ -5358,10 +5407,18 @@ let createViewMenu = (title, parentMenu) =>
             Sound.playClick();
             let i = ruleEntries.length;
             tmpRules[i] = '';
+            ruleNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
             ruleEntries.push(ui.createEntry
             ({
                 row: i,
-                column: 0,
+                column: 1,
                 text: tmpRules[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -5374,7 +5431,7 @@ let createViewMenu = (title, parentMenu) =>
                 ruleMoveBtns.push(ui.createButton
                 ({
                     row: i,
-                    column: 1,
+                    column: 2,
                     text: getLoc('btnUp'),
                     heightRequest: SMALL_BUTTON_HEIGHT,
                     onClicked: () =>
@@ -5390,18 +5447,30 @@ let createViewMenu = (title, parentMenu) =>
             }
             rulesLabel.text = Localization.format(getLoc('labelRules'),
             ruleEntries.length);
-            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
+            ruleStack.children = [...ruleNumbers, ...ruleEntries,
+            ...ruleMoveBtns];
         }
     });
-    let tmpModels = values.models;
+    let tmpModels = [];
+    for(let i = 0; i < values.models.length; ++i)
+        tmpModels[i] = values.models[i];
+    let modelNumbers = [];
     let modelEntries = [];
     let modelMoveBtns = [];
     for(let i = 0; i < tmpModels.length; ++i)
     {
+        modelNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
         modelEntries.push(ui.createEntry
         ({
             row: i,
-            column: 0,
+            column: 1,
             text: tmpModels[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -5414,7 +5483,7 @@ let createViewMenu = (title, parentMenu) =>
             modelMoveBtns.push(ui.createButton
             ({
                 row: i,
-                column: 1,
+                column: 2,
                 text: getLoc('btnUp'),
                 heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
@@ -5431,14 +5500,14 @@ let createViewMenu = (title, parentMenu) =>
     }
     let modelsLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelModels'), modelEntries.length),
+        text: Localization.format(getLoc('labelModels'), tmpModels.length),
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let modelStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*'],
-        children: [...modelEntries, ...modelMoveBtns]
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...modelNumbers, ...modelEntries, ...modelMoveBtns]
     });
     let addModelButton = ui.createButton
     ({
@@ -5451,10 +5520,18 @@ let createViewMenu = (title, parentMenu) =>
             Sound.playClick();
             let i = modelEntries.length;
             tmpModels[i] = '';
+            modelNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
             modelEntries.push(ui.createEntry
             ({
                 row: i,
-                column: 0,
+                column: 1,
                 text: tmpModels[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -5467,7 +5544,7 @@ let createViewMenu = (title, parentMenu) =>
                 modelMoveBtns.push(ui.createButton
                 ({
                     row: i,
-                    column: 1,
+                    column: 2,
                     text: getLoc('btnUp'),
                     heightRequest: SMALL_BUTTON_HEIGHT,
                     onClicked: () =>
@@ -5483,7 +5560,8 @@ let createViewMenu = (title, parentMenu) =>
             }
             modelsLabel.text = Localization.format(getLoc('labelModels'),
             modelEntries.length);
-            modelStack.children = [...modelEntries, ...modelMoveBtns];
+            modelStack.children = [...modelNumbers, ...modelEntries,
+            ...modelMoveBtns];
         }
     });
     let tmpIgnore = values.ignoreList || '';
