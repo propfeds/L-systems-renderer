@@ -1,23 +1,22 @@
+import { BigNumber } from '../api/BigNumber';
 import { FreeCost } from '../api/Costs';
+import { Localization } from '../api/Localization';
+import { MathExpression } from '../api/MathExpression';
 import { theory } from '../api/Theory';
+import { Upgrade } from '../api/Upgrades';
 import { Utils } from '../api/Utils';
 import { Vector3 } from '../api/Vector3';
+import { Frame } from '../api/ui/Frame';
 import { ui } from '../api/ui/UI';
+import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
 import { Color } from '../api/ui/properties/Color';
 import { FontFamily } from '../api/ui/properties/FontFamily';
 import { Keyboard } from '../api/ui/properties/Keyboard';
 import { LayoutOptions } from '../api/ui/properties/LayoutOptions';
+import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
 import { TextAlignment } from '../api/ui/properties/TextAlignment';
 import { Thickness } from '../api/ui/properties/Thickness';
 import { TouchType } from '../api/ui/properties/TouchType';
-import { Localization } from '../api/Localization';
-import { MathExpression } from '../api/MathExpression';
-import { ClearButtonVisibility } from '../api/ui/properties/ClearButtonVisibility';
-import { LineBreakMode } from '../api/ui/properties/LineBreakMode';
-import { BigNumber } from '../api/BigNumber';
-import { Upgrade } from '../api/Upgrades';
-import { Button } from '../api/ui/Button';
-import { Frame } from '../api/ui/Frame';
 
 var id = 'parametric_L_systems_renderer';
 var getName = (language) =>
@@ -56,7 +55,7 @@ Note: Systems from LSR can be ported to P-LSR with minimal changes. However, ` +
 var authors =   'propfeds\n\nThanks to:\nSir Gilles-Philippe Paillé, for ' +
                 'providing help with quaternions\nskyhigh173#3120, for ' +
                 'suggesting clipboard and JSON internal state formatting';
-var version = 0.011;
+var version = 0.02;
 
 let time = 0;
 let page = 0;
@@ -121,6 +120,32 @@ let getSmallBtnSize = (width) =>
     return 32;
 }
 
+/**
+ * Returns a C-style formatted string from a BigNumber. Note that it can only
+ * handle up to the Number limit.
+ * @param {BigNumber} x the number.
+ * @returns {string}
+ */
+let getCString = (x) => parseFloat(x.toString(6)).toString();
+
+/**
+ * Purge a string array of empty lines.
+ * @param {string[]} arr the array.
+ * @returns {string[]}
+ */
+let purgeEmpty = (arr) => {
+    let result = [];
+    let idx = 0;
+    for (let i = 0; i < arr.length; ++i) {
+        // I hope this deep-copies
+        if (arr[i]) {
+            result[idx] = arr[i];
+            ++idx;
+        }
+    }
+    return result;
+};
+
 const BUTTON_HEIGHT = getBtnSize(ui.screenWidth);
 const SMALL_BUTTON_HEIGHT = getSmallBtnSize(ui.screenWidth);
 const ENTRY_CHAR_LIMIT = 5000;
@@ -135,16 +160,16 @@ const locStrings =
 {
     en:
     {
-        versionName: 'v1.01.1',
-        welcomeSystemName: 'Mistletoe',
-        welcomeSystemDesc: 'Welcome to the Parametric L-systems Renderer.',
+        versionName: 'v1.02',
+        welcomeSystemName: 'Calendula',
+        welcomeSystemDesc: 'The classic flower to start a month.',
         equationOverlayLong: '{0} – {1}\n\n{2}\n\n{3}',
         equationOverlay: '{0}\n\n{1}',
 
         rendererBuildingTree: `\\begin{{matrix}}Building\\enspace ancestree...&
-        \\text{{Stg. {0}}}&({1}\\text{{ chars}})\\end{{matrix}}`,
+        \\text{{Stg. {0}}}&({1}\\text{{ symbols}})\\end{{matrix}}`,
         rendererDeriving: `\\begin{{matrix}}Deriving...&\\text{{Stg. {0}}}&({1}
-\\text{{ chars}})\\end{{matrix}}`,
+\\text{{ symbols}})\\end{{matrix}}`,
 
         currencyTime: ' (elapsed)',
 
@@ -191,6 +216,7 @@ const locStrings =
         btnResume: 'Resume – {0}',
         btnStartMeasure: 'Measure performance',
         btnEndMeasure: 'Stop measuring',
+        btnLoadTest: 'Load test system',
 
         measurement: '{0}: max {1}ms, avg {2}ms over {3} ticks',
 
@@ -198,14 +224,17 @@ const locStrings =
         resetRenderer: 'You are about to reset the renderer.',
 
         menuSequence: '{0} (Stage {1})',
-        labelLevelSeq: 'Stage {0}: {1} chars',
-        labelLevelSeqLoading: 'Stage {0}: {1}/{2} chars',
-        labelChars: '({0} chars)',
+        labelLevelSeq: 'Stage {0}: {1} symbols',
+        labelLevelSeqLoading: 'Stage {0}: {1}/{2} symbols',
+        labelChars: '({0} symbols)',
+        labelFilter: 'Filter: ',
+        labelParams: 'Parameters: ',
 
         menuLSystem: 'L-system Menu',
         labelAxiom: 'Axiom: ',
         labelAngle: 'Turning angle (°): ',
-        labelRules: 'Production rules: {0}',
+        labelRules: `Production rules: {0}`,
+        labelModels: `Model specifications: {0}`,
         labelIgnored: 'Turtle-ignored: ',
         labelCtxIgnored: 'Context-ignored: ',
         labelTropism: 'Tropism (gravity): ',
@@ -259,7 +288,7 @@ const locStrings =
         terEqModes: ['Coordinates', 'Orientation'],
         labelMeasure: 'Measure performance: ',
         debugCamPath: 'Debug camera path: ',
-        labelMaxCharsPerTick: 'Maximum loaded chars/tick: ',
+        labelMaxCharsPerTick: 'Maximum loaded symbols/tick: ',
         labelInternalState: 'Internal state: ',
 
         menuManual: 'User Guide ({0}/{1})',
@@ -481,8 +510,8 @@ M(t, i): t>=5 = [&TM(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]
 ~> M(t): t<3 = [+(48)L(t)]/(180)[+(48)L(t)]
 ~> M(t, i) = [+(48)L(2+0.4*t)]/(180)[+(48)L(2+0.4*t)]
 ~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}
-K(c)>M(t, i): c<3 = K(c+1): 0.7-t/10, B(0.3): 0.3+t/10
-K(t): t<3 = K(t+1): 0.3+t/10, : 0.7-t/10
+K(c)>M(t, i): c<3 = K(c+1): 0.7-t/10; B(0.3): 0.3+t/10
+K(t): t<3 = K(t+1): 0.3+t/10; : 0.7-t/10
 K(t): t>=3 = [&&\\B(0.3)]/(120)[&&\\B(0.24)]/(120)[&&B(0.27)]
 ~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]
 B(s) = B(s*0.9+0.1)
@@ -918,101 +947,87 @@ class Quaternion
 /**
  * Represents a parametric L-system.
  */
-class LSystem
-{
-    /**
-     * @constructor
-     * @param {string} axiom the starting sequence.
-     * @param {string[]} rules the production rules.
-     * @param {string} turnAngle the turning angle (in degrees).
-     * @param {number} seed the seed used for stochastic systems.
-     * @param {string} ignoreList a list of symbols to be ignored by the turtle.
-     * @param {string} ctxIgnoreList a list of symbols ignored when deriving
-     * context.
-     * @param {string} tropism the tropism factor.
-     * @param {object} variables globally defined variables for the system.
-     */
-    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0,
-    ignoreList = '', ctxIgnoreList = '', tropism = 0, variables = {})
-    {
+class LSystem {
+    constructor(axiom = '', rules = [], turnAngle = 0, seed = 0, ignoreList = '', ctxIgnoreList = '', tropism = 0, variables = {}, models = []) {
         // User input
         this.userInput =
-        {
-            axiom: axiom,
-            rules: this.purgeEmpty(rules),
-            turnAngle: turnAngle,
-            seed: seed,
-            ignoreList: ignoreList,
-            ctxIgnoreList: ctxIgnoreList,
-            tropism: tropism,
-            variables: variables
-        };
+            {
+                axiom: axiom,
+                rules: purgeEmpty(rules),
+                models: purgeEmpty(models),
+                turnAngle: turnAngle,
+                seed: seed,
+                ignoreList: ignoreList,
+                ctxIgnoreList: ctxIgnoreList,
+                tropism: tropism,
+                variables: variables
+            };
         // I want to transfer them to a map to deep copy them. LS menu uses
         // arrays so we're fine on that.
         this.variables = new Map();
-        for(let key in variables)
+        for (let key in variables)
             this.variables.set(key, MathExpression.parse(variables[key]).
-            evaluate());
-
+                evaluate());
         let axiomMatches = this.parseSequence(axiom.replace(TRIM_SP, ''));
         this.axiom = axiomMatches.result;
-        this.axiomParams = axiomMatches.params;
-
+        let axiomParamStrings = axiomMatches.params;
+        this.axiomParams = [];
+        this.varGetter = (v) => this.variables.get(v);
         // Manually calculate axiom parameters
-        for(let i = 0; i < this.axiomParams.length; ++i)
-        {
-            if(!this.axiomParams[i])
+        for (let i = 0; i < axiomParamStrings.length; ++i) {
+            if (!axiomParamStrings[i]) {
+                this.axiomParams[i] = null;
                 continue;
-
-            let params = this.parseParams(this.axiomParams[i]);
-            for(let j = 0; j < params.length; ++j)
-                params[j] = MathExpression.parse(params[j]).evaluate(
-                (v) => this.variables.get(v));
-            this.axiomParams[i] = params;
+            }
+            let params = this.parseParams(axiomParamStrings[i]);
+            this.axiomParams[i] = [];
+            for (let j = 0; j < params.length; ++j)
+                this.axiomParams[i][j] = MathExpression.parse(params[j]).
+                    evaluate(this.varGetter);
             // Maybe leave them at BigNumber?
         }
-        
         let ruleMatches = [];
-        for(let i = 0; i < this.userInput.rules.length; ++i)
-        {
-            ruleMatches.push([...this.userInput.rules[i].replace(TRIM_SP, '').
-            match(LS_RULE)]);
+        let concatRules = this.userInput.rules.concat(this.userInput.models);
+        for (let i = 0; i < concatRules.length; ++i) {
+            ruleMatches.push([...concatRules[i].replace(TRIM_SP, '').
+                    match(LS_RULE)]);
             // Indices 1, 3, 4 are context, condition, and all derivations
         }
         this.rules = new Map();
         this.models = new Map();
-        for(let i = 0; i < ruleMatches.length; ++i)
-        {
+        for (let i = 0; i < ruleMatches.length; ++i) {
             // [i][1]: context
             let contextMatch = [...ruleMatches[i][1].match(LS_CONTEXT)];
             // Indices 2, 4, 6, 8, 10, 12 are the symbols and parameters of
             // left, middle, and right respectively
-            if(!contextMatch[6])
+            if (!contextMatch[6])
                 continue;
-
-            let tmpRule = {};
+            let tmpRule = {
+                count: [0, 0, 0]
+            };
             let ruleParams = {};
-            if(contextMatch[8])
-            {
+            // Middle
+            if (contextMatch[8]) {
                 let params = contextMatch[8].split(',');
-                for(let j = 0; j < params.length; ++j)
+                tmpRule.count[1] = params.length;
+                for (let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['m', j];
             }
+            // Left
             tmpRule.left = contextMatch[2];
-            if(tmpRule.left && contextMatch[4])
-            {
+            if (tmpRule.left && contextMatch[4]) {
                 let params = contextMatch[4].split(',');
-                for(let j = 0; j < params.length; ++j)
+                tmpRule.count[0] = params.length;
+                for (let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['l', j];
             }
+            // Right
             tmpRule.right = contextMatch[10];
-            if(tmpRule.right && contextMatch[12])
-            {
+            if (tmpRule.right && contextMatch[12]) {
                 let params = contextMatch[12].split(',');
-                for(let j = 0; j < params.length; ++j)
-                {
+                tmpRule.count[2] = params.length;
+                for (let j = 0; j < params.length; ++j)
                     ruleParams[params[j]] = ['r', j];
-                }
             }
             tmpRule.params = ruleParams;
             /*  // O(1) lookup with O(n) memory, I think
@@ -1023,27 +1038,22 @@ class LSystem
                 'd': ['r', 1]
             };
             */
-            tmpRule.paramMap = (v, l, m, r) =>
-            {
+            tmpRule.paramMap = (v, l, m, r) => {
                 let pos = tmpRule.params[v][0];
                 let result = null;
-                switch(pos)
-                {
+                switch (pos) {
                     case 'm':
-                        if(m)
-                        {
+                        if (m) {
                             result = m[tmpRule.params[v][1]];
                             break;
                         }
                     case 'l':
-                        if(l)
-                        {
+                        if (l) {
                             result = l[tmpRule.params[v][1]];
                             break;
                         }
                     case 'r':
-                        if(r)
-                        {
+                        if (r) {
                             result = r[tmpRule.params[v][1]];
                             break;
                         }
@@ -1051,93 +1061,77 @@ class LSystem
                 // log(`${v} = ${result}`);
                 return result;
                 // MathExpression eval: (v) => rule.paramMap(v, params[l], ...)
-            }
-
+            };
             // [i][3]: condition
-            if(ruleMatches[i][3])
+            if (ruleMatches[i][3])
                 tmpRule.condition = MathExpression.parse(ruleMatches[i][3]);
             else
                 tmpRule.condition = MathExpression.parse('1');
-
             // [i][4]: everything else
             // Doing just comma instead of semi-colon will ruin the parameters!
             let tmpRuleMatches = ruleMatches[i][4].split(';');
-            for(let j = 0; j < tmpRuleMatches.length; ++j)
-            {
-                if(typeof tmpRuleMatches[j] === 'undefined')
+            for (let j = 0; j < tmpRuleMatches.length; ++j) {
+                if (typeof tmpRuleMatches[j] === 'undefined')
                     continue;
-
                 tmpRuleMatches[j] = tmpRuleMatches[j].split(':');
                 let tmpDeriv = this.parseSequence(tmpRuleMatches[j][0]);
-                let derivParams = tmpDeriv.params;
-                for(let k = 0; k < derivParams.length; ++k)
-                {
-                    if(!derivParams[k])
+                let derivParamStrings = tmpDeriv.params;
+                let derivParams = [];
+                for (let k = 0; k < derivParamStrings.length; ++k) {
+                    if (!derivParamStrings[k]) {
+                        derivParams[k] = null;
                         continue;
-
-                    let params = this.parseParams(derivParams[k]);
-                    for(let l = 0; l < params.length; ++l)
-                        params[l] = MathExpression.parse(params[l]);
-
-                    derivParams[k] = params;
+                    }
+                    let params = this.parseParams(derivParamStrings[k]);
+                    derivParams[k] = [];
+                    for (let l = 0; l < params.length; ++l)
+                        derivParams[k][l] = MathExpression.parse(params[l]);
                 }
-                if(typeof tmpRule.derivations === 'string')
-                {
+                if (typeof tmpRule.derivations === 'string') {
                     tmpRule.derivations = [tmpRule.derivations,
-                    tmpDeriv.result];
+                        tmpDeriv.result];
                     tmpRule.parameters = [tmpRule.parameters, derivParams];
-                    if(tmpRuleMatches[j][1])
+                    if (tmpRuleMatches[j][1])
                         tmpRule.chances = [tmpRule.chances,
-                        MathExpression.parse(tmpRuleMatches[j][1])];
+                            MathExpression.parse(tmpRuleMatches[j][1])];
                     else
                         tmpRule.chances = [tmpRule.chances,
-                        MathExpression.parse('1')];
+                            MathExpression.parse('1')];
                 }
-                else if(!tmpRule.derivations)
-                {
+                else if (!tmpRule.derivations) {
                     tmpRule.derivations = tmpDeriv.result;
                     tmpRule.parameters = derivParams;
-                    if(tmpRuleMatches[j][1])
-                        tmpRule.chances = MathExpression.parse(
-                        tmpRuleMatches[j][1]);
+                    if (tmpRuleMatches[j][1])
+                        tmpRule.chances = MathExpression.parse(tmpRuleMatches[j][1]);
                     else
                         tmpRule.chances = MathExpression.parse('1');
                 }
-                else    // Already an array
-                {
+                else // Already an array
+                 {
                     tmpRule.derivations.push(tmpDeriv.result);
                     tmpRule.parameters.push(derivParams);
-                    if(tmpRuleMatches[j][1])
-                        tmpRule.chances.push(MathExpression.parse(
-                        tmpRuleMatches[j][1]));
+                    if (tmpRuleMatches[j][1])
+                        tmpRule.chances.push(MathExpression.parse(tmpRuleMatches[j][1]));
                     else
                         tmpRule.chances.push(MathExpression.parse('1'));
                 }
             }
-
             // Finally, push rule
-            if(contextMatch[6] == '~')
-            {
-                if(!this.models.has(contextMatch[10]))
+            if (contextMatch[6] == '~') {
+                if (!this.models.has(contextMatch[10]))
                     this.models.set(contextMatch[10], []);
                 this.models.get(contextMatch[10]).push(tmpRule);
             }
-            else
-            {
-                if(!this.rules.has(contextMatch[6]))
+            else {
+                if (!this.rules.has(contextMatch[6]))
                     this.rules.set(contextMatch[6], []);
                 this.rules.get(contextMatch[6]).push(tmpRule);
             }
         }
-
         this.ignoreList = new Set(ignoreList);
         this.ctxIgnoreList = new Set(ctxIgnoreList);
-
         this.RNG = new Xorshift(seed);
-        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate(
-        (v) => this.variables.get(v)).
-        toNumber() * Math.PI / 360;
-        
+        this.halfAngle = MathExpression.parse(turnAngle.toString()).evaluate(this.varGetter).toNumber() * Math.PI / 360;
         this.rotations = new Map();
         let s = Math.sin(this.halfAngle);
         let c = Math.cos(this.halfAngle);
@@ -1147,52 +1141,43 @@ class LSystem
         this.rotations.set('^', new Quaternion(-c, 0, -s, 0));
         this.rotations.set('\\', new Quaternion(-c, s, 0, 0));
         this.rotations.set('/', new Quaternion(-c, -s, 0, 0));
-
-        this.tropism = MathExpression.parse(tropism.toString()).evaluate(
-        (v) => this.variables.get(v)).
-        toNumber();
+        this.tropism = MathExpression.parse(tropism.toString()).evaluate(this.varGetter).toNumber();
     }
-
     /**
      * Parse a sequence to return one array of characters and one of parameters.
      * Is only used when initialising the L-system.
      * @param {string} sequence the sequence to be parsed.
      * @returns {object}
      */
-    parseSequence(sequence)
-    {
+    parseSequence(sequence) {
         let result = '';
         let resultParams = [];
         let bracketLvl = 0;
         let start = null;
-        for(let i = 0; i < sequence.length; ++i)
-        {
-            switch(sequence[i])
-            {
+        for (let i = 0; i < sequence.length; ++i) {
+            switch (sequence[i]) {
                 case ' ':
-                    log('Blank space detected.')
+                    log('Blank space detected.');
                     break;
                 case '(':
                     ++bracketLvl;
-                    if(bracketLvl == 1)
+                    if (bracketLvl == 1)
                         start = i + 1;
                     break;
                 case ')':
-                    if(!bracketLvl)
-                    {
+                    if (!bracketLvl) {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
                     --bracketLvl;
-                    if(!bracketLvl)
+                    if (!bracketLvl)
                         resultParams.push(sequence.slice(start, i));
                     break;
                 default:
-                    if(bracketLvl)
+                    if (bracketLvl)
                         break;
-                    
                     result += sequence[i];
-                    if(sequence[i + 1] != '(')
+                    if (sequence[i + 1] != '(')
                         resultParams.push(null);
                     break;
             }
@@ -1206,36 +1191,31 @@ class LSystem
     /**
      * Parse a string to return one array of parameter strings.
      * Replaces split(',').
-     * @param {string} string the string to be parsed.
+     * @param {string} sequence the string to be parsed.
      * @returns {string[]}
      */
-    parseParams(string)
-    {
+    parseParams(sequence) {
         let result = [];
         let bracketLvl = 0;
         let start = 0;
-        for(let i = 0; i < string.length; ++i)
-        {
-            switch(string[i])
-            {
+        for (let i = 0; i < sequence.length; ++i) {
+            switch (sequence[i]) {
                 case ' ':
-                    log('Blank space detected.')
+                    log('Blank space detected.');
                     break;
                 case '(':
                     ++bracketLvl;
                     break;
                 case ')':
-                    if(!bracketLvl)
-                    {
+                    if (!bracketLvl) {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
                     --bracketLvl;
                     break;
                 case ',':
-                    if(!bracketLvl)
-                    {
-                        result.push(string.slice(start, i));
+                    if (!bracketLvl) {
+                        result.push(sequence.slice(start, i));
                         start = i + 1;
                     }
                     break;
@@ -1243,27 +1223,23 @@ class LSystem
                     break;
             }
         }
-        result.push(string.slice(start, string.length));
+        result.push(sequence.slice(start, sequence.length));
         return result;
     }
-
     /**
      * Returns and ancestree and a child tree for a sequence.
      * @param {string} sequence the sequence.
      * @returns {object}
      */
-    getAncestree(sequence, task = {})
-    {
+    getAncestree(sequence, task = {}) {
         // Scanning behaviour should be very similar to renderer drawing.
-        let tmpStack = task.stack || [];
-        let tmpIdxStack = task.idxStack || [];
-        let tmpAncestors = task.ancestors || [];
-        let tmpChildren = task.children || [];
-        let i = task.start || 0;
-        for(; i < sequence.length; ++i)
-        {
-            if(i - task.start > maxCharsPerTick)
-            {
+        let tmpStack = task.stack ?? [];
+        let tmpIdxStack = task.idxStack ?? [];
+        let tmpAncestors = task.ancestors ?? [];
+        let tmpChildren = task.children ?? [];
+        let i = task.start ?? 0;
+        for (; i < sequence.length; ++i) {
+            if (i - task.start > maxCharsPerTick * 2) {
                 return {
                     start: i,
                     stack: tmpStack,
@@ -1272,39 +1248,33 @@ class LSystem
                     children: tmpChildren
                 };
             }
-            switch(sequence[i])
-            {
+            switch (sequence[i]) {
                 case ' ':
-                    log('Blank space detected.')
+                    log('Blank space detected.');
                     break;
                 case '[':
                     tmpIdxStack.push(tmpStack.length);
                     break;
                 case ']':
-                    if(tmpStack.length == 0)
-                    {
+                    if (tmpStack.length == 0) {
                         log('You\'ve clearly made a bracket error.');
                         break;
                     }
-                    while(tmpStack.length > tmpIdxStack[tmpIdxStack.length - 1])
+                    while (tmpStack.length > tmpIdxStack[tmpIdxStack.length - 1])
                         tmpStack.pop();
-
                     tmpIdxStack.pop();
                     break;
                 default:
                     let ignored = this.ctxIgnoreList.has(sequence[i]);
-                    if(ignored)
+                    if (ignored)
                         break;
-                    
-                    if(tmpStack.length > 0)
-                    {
+                    if (tmpStack.length > 0) {
                         let ancIdx = tmpStack[tmpStack.length - 1];
                         tmpAncestors[i] = ancIdx;
-                        if(typeof tmpChildren[ancIdx] === 'undefined')
+                        if (typeof tmpChildren[ancIdx] === 'undefined')
                             tmpChildren[ancIdx] = [];
                         tmpChildren[ancIdx].push(i);
                     }
-
                     tmpStack.push(i);
                     break;
             }
@@ -1317,38 +1287,27 @@ class LSystem
             children: tmpChildren
         };
     }
-
     /**
-     * Derive a sequence from the input string. `next` denotes the starting
-     * position to be derived next tick. `result` contains the work completed
-     * for the current tick.
-     * @param {string} sequence the input string.
-     * @returns {{start: number, result: string}}
+     * Derive a sequence from the input string. Returns the work completed for
+     * the current tick. `start` denotes the next tick's starting position.
      */
-    derive(sequence, seqParams, ancestors, children, task = {})
-    {
-        let result = task.derivation || '';
-        let resultParams = task.parameters || [];
-        let i = task.start || 0;
+    derive(sequence, seqParams, ancestors, children, task = {}) {
+        let result = task.derivation ?? '';
+        let resultParams = task.parameters ?? [];
+        let i = task.start ?? 0;
         let charCount = 0;
-        for(; i < sequence.length; ++i)
-        {
-            if(charCount > maxCharsPerTick)
-            {
+        for (; i < sequence.length; ++i) {
+            if (charCount > maxCharsPerTick) {
                 return {
                     start: i,
-                    charCount: charCount,
                     derivation: result,
                     parameters: resultParams
                 };
             }
-            if(sequence[i] == '%')
-            {
+            if (sequence[i] == '%') {
                 let branchLvl = 0;
-                for(; i < sequence.length; ++i)
-                {
-                    switch(sequence[i])
-                    {
+                for (; i < sequence.length; ++i) {
+                    switch (sequence[i]) {
                         case '[':
                             ++branchLvl;
                             break;
@@ -1356,11 +1315,10 @@ class LSystem
                             --branchLvl;
                             break;
                     }
-                    if(branchLvl < 0)
+                    if (branchLvl < 0)
                         break;
                 }
-                if(sequence[i] == ']')
-                {
+                if (sequence[i] == ']') {
                     result += sequence[i];
                     ++charCount;
                     resultParams.push(null);
@@ -1368,68 +1326,60 @@ class LSystem
                 else
                     continue;
             }
-            else if(sequence[i] == '~')
-                continue;
-            else if(this.rules.has(sequence[i]))
-            {
+            // else if(sequence[i] == '~')
+            //     continue;
+            else if (this.rules.has(sequence[i])) {
                 let tmpRules = this.rules.get(sequence[i]);
                 let ruleChoice = -1;
-                for(let j = 0; j < tmpRules.length; ++j)
-                {
-                    // Left and right first
-                    if(tmpRules[j].left && tmpRules[j].left !=
-                    sequence[ancestors[i]])
+                for (let j = 0; j < tmpRules.length; ++j) {
+                    // Param count check
+                    let count = seqParams[i] ? seqParams[i].length : 0;
+                    if (tmpRules[j].count[1] != count)
                         continue;
-
+                    // Left check
+                    let left = ancestors[i];
+                    if (tmpRules[j].left) {
+                        count = seqParams[left] ? seqParams[left].length : 0;
+                        if (tmpRules[j].left != sequence[left] ||
+                            tmpRules[j].count[0] != count)
+                            continue;
+                    }
+                    // Right check
                     let right = -1;
-                    if(tmpRules[j].right)
-                    {
-                        if(children[i])
-                        {
-                            for(let k = 0; k < children[i].length; ++k)
-                            {
-                                if(tmpRules[j].right == sequence[children[i][
-                                k]])
-                                {
+                    if (tmpRules[j].right) {
+                        if (children[i]) {
+                            for (let k = 0; k < children[i].length; ++k) {
+                                count = seqParams[children[i][k]] ?
+                                    seqParams[children[i][k]].length : 0;
+                                if (tmpRules[j].right == sequence[children[i][k]]
+                                    && tmpRules[j].count[2] == count) {
                                     right = children[i][k];
                                     break;
                                 }
                             }
                         }
-                        if(right == -1)
+                        if (right == -1)
                             continue;
                     }
-
-                    let tmpParamMap = (v) => this.variables.get(v) ||
-                    tmpRules[j].paramMap(v, seqParams[ancestors[i]],
-                    seqParams[i], seqParams[right]);
+                    let tmpParamMap = (v) => this.varGetter(v) ??
+                        tmpRules[j].paramMap(v, seqParams[left], seqParams[i], seqParams[right]);
                     // Next up is the condition
-                    if(tmpRules[j].condition.evaluate(tmpParamMap) ==
-                    BigNumber.ZERO)
+                    if (tmpRules[j].condition.evaluate(tmpParamMap)?.isZero)
                         continue;
-
-                    if(typeof tmpRules[j].derivations === 'string')
-                    {
+                    if (typeof tmpRules[j].derivations === 'string') {
                         result += tmpRules[j].derivations;
                         charCount += tmpRules[j].derivations.length;
-                        if(tmpRules[j].parameters)
-                        {
-                            for(let k = 0; k < tmpRules[j].parameters.length;
-                            ++k)
-                            {
+                        if (tmpRules[j].parameters) {
+                            for (let k = 0; k < tmpRules[j].parameters.length; ++k) {
                                 let derivPi = null;
-                                if(tmpRules[j].parameters[k])
-                                {
-                                    for(let l = 0; l < tmpRules[j].parameters[
-                                    k].length; ++l)
-                                    {
-                                        if(tmpRules[j].parameters[k][l])
-                                        {
-                                            if(!derivPi)
+                                let tmpParams = tmpRules[j].
+                                    parameters[k];
+                                if (tmpParams) {
+                                    for (let l = 0; l < tmpParams.length; ++l) {
+                                        if (tmpParams[l]) {
+                                            if (!derivPi)
                                                 derivPi = [];
-                                            derivPi.push(tmpRules[j].
-                                            parameters[k][l].evaluate(
-                                            tmpParamMap));
+                                            derivPi.push(tmpParams[l].evaluate(tmpParamMap));
                                         }
                                     }
                                 }
@@ -1439,45 +1389,36 @@ class LSystem
                         ruleChoice = j;
                         break;
                     }
-                    else    // Stochastic time
-                    {
+                    else // Stochastic time
+                     {
                         let roll = this.RNG.nextFloat;
                         let chanceSum = 0;
                         let choice = -1;
-                        for(let k = 0; k < tmpRules[j].derivations.length; ++k)
-                        {
+                        for (let k = 0; k < tmpRules[j].derivations.length; ++k) {
                             // Example
                             // roll: 0.50
                             // chance 1: 0.00 - 0.49
                             // sum after 1: 0.50
                             // chance 2: 0.50 - 0.99
                             // sum after 2: 1 (select!)
-                            chanceSum += tmpRules[j].chances[k].evaluate(
-                            tmpParamMap);
-                            if(chanceSum > roll)    // select this
-                            {
+                            chanceSum += tmpRules[j].chances[k].evaluate(tmpParamMap);
+                            if (chanceSum > roll) // select this
+                             {
                                 choice = k;
                                 result += tmpRules[j].derivations[k];
                                 charCount += tmpRules[j].derivations[k].length;
-                                if(tmpRules[j].parameters[k])
-                                {
-                                    for(let l = 0; l < tmpRules[j].
-                                    parameters[k].length; ++l)
-                                    {
+                                if (tmpRules[j].parameters[k]) {
+                                    for (let l = 0; l < tmpRules[j].
+                                        parameters[k].length; ++l) {
                                         let derivPi = null;
-                                        if(tmpRules[j].parameters[k][l])
-                                        {
-                                            for(let m = 0; m < tmpRules[j].
-                                            parameters[k][l].length; ++m)
-                                            {
-                                                if(tmpRules[j].
-                                                parameters[k][l][m])
-                                                {
-                                                    if(!derivPi)
+                                        let tmpParams = tmpRules[j].parameters[k][l];
+                                        if (tmpParams) {
+                                            for (let m = 0; m < tmpParams.length; ++m) {
+                                                if (tmpParams[m]) {
+                                                    if (!derivPi)
                                                         derivPi = [];
-                                                    derivPi.push(tmpRules[j].
-                                                    parameters[k][l][m].
-                                                    evaluate(tmpParamMap));
+                                                    derivPi.push(tmpParams[m].
+                                                        evaluate(tmpParamMap));
                                                 }
                                             }
                                         }
@@ -1488,21 +1429,19 @@ class LSystem
                             }
                         }
                         // log(`roll = ${roll} choice = ${choice}`)
-                        if(choice == -1)
+                        if (choice == -1)
                             continue;
                         ruleChoice = j;
                         break;
                     }
                 }
-                if(ruleChoice == -1)
-                {
+                if (ruleChoice == -1) {
                     result += sequence[i];
                     ++charCount;
                     resultParams.push(...[seqParams[i]]);
                 }
             }
-            else
-            {
+            else {
                 result += sequence[i];
                 ++charCount;
                 resultParams.push(...[seqParams[i]]);
@@ -1510,48 +1449,38 @@ class LSystem
         }
         return {
             start: 0,
-            charCount: charCount,
             derivation: result,
             parameters: resultParams
         };
     }
-
-    deriveModel(symbol, params)
-    {
+    deriveModel(symbol, params) {
         let result = '';
         let resultParams = [];
-        if(this.models.has(symbol))
-        {
+        if (this.models.has(symbol)) {
             let tmpRules = this.models.get(symbol);
-            for(let j = 0; j < tmpRules.length; ++j)
-            {
-                let tmpParamMap = (v) => this.variables.get(v) ||
-                tmpRules[j].paramMap(v, null, null, params);
-                // Next up is the condition
-                if(tmpRules[j].condition.evaluate(tmpParamMap) ==
-                BigNumber.ZERO)
+            for (let j = 0; j < tmpRules.length; ++j) {
+                // Param count check
+                let count = params ? params.length : 0;
+                if(tmpRules[j].count[2] != count)
                     continue;
-
-                if(typeof tmpRules[j].derivations === 'string')
-                {
+                let tmpParamMap = (v) => this.varGetter(v) ??
+                    tmpRules[j].paramMap(v, null, null, params);
+                // Next up is the condition
+                if (tmpRules[j].condition.evaluate(tmpParamMap)?.isZero)
+                    continue;
+                if (typeof tmpRules[j].derivations === 'string') {
                     result = tmpRules[j].derivations;
-                    if(tmpRules[j].parameters)
-                    {
-                        for(let k = 0; k < tmpRules[j].parameters.length;
-                        ++k)
-                        {
+                    if (tmpRules[j].parameters) {
+                        for (let k = 0; k < tmpRules[j].parameters.length; ++k) {
                             let derivPi = null;
-                            if(tmpRules[j].parameters[k])
-                            {
-                                for(let l = 0; l < tmpRules[j].parameters[k].
-                                length; ++l)
-                                {
-                                    if(tmpRules[j].parameters[k][l])
-                                    {
-                                        if(!derivPi)
+                            let tmpParams = tmpRules[j].
+                                parameters[k];
+                            if (tmpParams) {
+                                for (let l = 0; l < tmpParams.length; ++l) {
+                                    if (tmpParams[l]) {
+                                        if (!derivPi)
                                             derivPi = [];
-                                        derivPi.push(tmpRules[j].parameters[k][
-                                        l].evaluate(tmpParamMap));
+                                        derivPi.push(tmpParams[l].evaluate(tmpParamMap));
                                     }
                                 }
                             }
@@ -1560,46 +1489,37 @@ class LSystem
                     }
                     break;
                 }
-                else    // Stochastic time
-                {
+                else // Stochastic time
+                 {
                     // Models can be drawn any time, thus, the RNG should be
                     // separate from actual rule processing.
                     let roll = globalRNG.nextFloat;
                     let chanceSum = 0;
                     let choice = -1;
-                    for(let k = 0; k < tmpRules[j].derivations.length; ++k)
-                    {
+                    for (let k = 0; k < tmpRules[j].derivations.length; ++k) {
                         // Example
                         // roll: 0.50
                         // chance 1: 0.00 - 0.49
                         // sum after 1: 0.50
                         // chance 2: 0.50 - 0.99
                         // sum after 2: 1 (select!)
-                        chanceSum += tmpRules[j].chances[k].evaluate(
-                        tmpParamMap);
-                        if(chanceSum > roll)    // select this
-                        {
+                        chanceSum += tmpRules[j].chances[k].evaluate(tmpParamMap);
+                        if (chanceSum > roll) // select this
+                         {
                             choice = k;
                             result = tmpRules[j].derivations[k];
-                            if(tmpRules[j].parameters[k])
-                            {
-                                for(let l = 0; l < tmpRules[j].
-                                parameters[k].length; ++l)
-                                {
+                            if (tmpRules[j].parameters[k]) {
+                                for (let l = 0; l < tmpRules[j].
+                                    parameters[k].length; ++l) {
                                     let derivPi = null;
-                                    if(tmpRules[j].parameters[k][l])
-                                    {
-                                        for(let m = 0; m < tmpRules[j].
-                                        parameters[k][l].length; ++m)
-                                        {
-                                            if(tmpRules[j].
-                                            parameters[k][l][m])
-                                            {
-                                                if(!derivPi)
+                                    const tmpParams = tmpRules[j].parameters[k][l];
+                                    if (tmpParams) {
+                                        for (let m = 0; m < tmpParams.length; ++m) {
+                                            if (tmpParams[m]) {
+                                                if (!derivPi)
                                                     derivPi = [];
-                                                derivPi.push(tmpRules[j].
-                                                parameters[k][l][m].
-                                                evaluate(tmpParamMap));
+                                                derivPi.push(tmpParams[m].
+                                                    evaluate(tmpParamMap));
                                             }
                                         }
                                     }
@@ -1610,7 +1530,7 @@ class LSystem
                         }
                     }
                     // log(`roll = ${roll} choice = ${choice}`)
-                    if(choice == -1)
+                    if (choice == -1)
                         continue;
                     break;
                 }
@@ -1621,67 +1541,88 @@ class LSystem
             params: resultParams
         };
     }
-
-    reconstruct(sequence, params, task = {})
-    {
-        let result = task.result || '';
-        let i = task.start || 0;
-        for(; i < sequence.length; ++i)
-        {
-            if((i - task.start) * (task.start + 1) > maxCharsPerTick)
-            {
+    /**
+     * Reconstructs the string representation of a sequence.
+     * @param {Colony} colony the plant colony.
+     * @param {string} filter the filter.
+     * @param {boolean} displayParams whether to display parameters.
+     * @param {number} indentation the number of spaces to indent.
+     * @param {Task} task the current task.
+     * @returns {Task}
+     */
+    reconstruct(colony, filter = '', displayParams = true, indentation = 4, task = {}) {
+        if (indentation < 0)
+            indentation = -indentation;
+        let sequence = colony.sequence;
+        let params = colony.params;
+        let level = 0;
+        let lineStart = false;
+        if (!displayParams && !filter) {
+            return {
+                start: 0,
+                level: level,
+                result: sequence
+            };
+        }
+        let filterSet = new Set(filter);
+        let result = task.result ?? '';
+        let i = task.start ?? 0;
+        for (; i < sequence.length; ++i) {
+            if (i - task.start > maxCharsPerTick) {
                 return {
                     start: i,
+                    level: level,
                     result: result
+                };
+            }
+            if (displayParams && lineStart) {
+                result += `\n${' '.repeat(indentation * Math.max(0, level))}`;
+                lineStart = false;
+            }
+            let writesToResult = !filter || filterSet.has(sequence[i]);
+            if (writesToResult) {
+                switch (sequence[i]) {
+                    case '[':
+                        ++level;
+                        lineStart = true;
+                        break;
+                    case ']':
+                        lineStart = true;
+                        break;
+                }
+                result += sequence[i];
+                if (displayParams && params[i]) {
+                    let paramStrings = [];
+                    for (let j = 0; j < params[i].length; ++j)
+                        paramStrings[j] = getCString(params[i][j]);
+                    result += `(${paramStrings.join(', ')})`;
+                }
+                switch (sequence[i + 1]) {
+                    case '[':
+                        lineStart = true;
+                        break;
+                    case ']':
+                        --level;
+                        lineStart = true;
+                        break;
                 }
             }
-            result += sequence[i];
-            if(params[i])
-                result += `(${params[i].join(', ')})`;
         }
         return {
             start: 0,
+            level: level,
             result: result
         };
     }
     /**
-     * Purge the rules of empty lines.
-     * @param {string[]} rules rules.
-     * @returns {string[]}
-     */
-    purgeEmpty(rules)
-    {
-        let result = [];
-        let idx = 0;
-        for(let i = 0; i < rules.length; ++i)
-        {
-            // I hope this deep-copies
-            if(rules[i])
-            {
-                result[idx] = rules[i];
-                ++idx;
-            }
-        }
-        return result;
-    }
-    /**
      * Returns a deep copy (hopefully) of the user input to prevent overwrites.
-     * @returns {{
-     *  axiom: string,
-     *  rules: string[],
-     *  turnAngle: string,
-     *  seed: number,
-     *  ignoreList: string,
-     *  ctxIgnoreList: string,
-     *  tropism: string,
-     *  variables: object
-     * }}
+     * @returns {LSystemInput}
      */
-    get object()
-    {
+    toJSON() {
         return {
             axiom: this.userInput.axiom,
-            rules: this.purgeEmpty(this.userInput.rules),
+            rules: purgeEmpty(this.userInput.rules),
+            models: purgeEmpty(this.userInput.models),
             turnAngle: this.userInput.turnAngle,
             seed: this.userInput.seed,
             ignoreList: this.userInput.ignoreList,
@@ -1694,9 +1635,8 @@ class LSystem
      * Returns the system's string representation.
      * @returns {string}
      */
-    toString()
-    {
-        return JSON.stringify(this.object, null, 4);
+    toString() {
+        return JSON.stringify(this, null, 4);
     }
 }
 
@@ -2889,7 +2829,7 @@ class Renderer
      * Returns the object representation of the renderer.
      * @returns {object}
      */
-    get object()
+    toJSON()
     {
         return {
             figureScale: this.figScaleStr,
@@ -2914,7 +2854,7 @@ class Renderer
      */
     toString()
     {
-        return JSON.stringify(this.object, null, 4);
+        return JSON.stringify(this.toJSON(), null, 4);
     }
 }
 
@@ -3322,22 +3262,40 @@ const xUpQuat = new Quaternion(0, 1, 0, 0);
 const yUpQuat = new Quaternion(0, 0, 1, 0);
 const zUpQuat = new Quaternion(0, 0, 0, 1);
 
-let toe = new LSystem('++M(0)', [
-    'M(t): t<2 = FM(t+1)',
-    'M(t): t<3 = [&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]/(120)[&T$M(t+1, 0)]',
-    'M(t, i): t<5 = FM(t+1, i): 0.7-i; FK(0)M(t+1, i+0.3): 0.3+i',
-    'M(t, i): t>=5 = [&TM(t-2, i+0.3)]/(180)[&TM(t-2, i+0.3)]',
-    '~> M(t): t<3 = [+(48)L(t)]/(180)[+(48)L(t)]',
-    '~> M(t, i) = [+(48)L(2+0.4*t)]/(180)[+(48)L(2+0.4*t)]',
-    '~> L(t) = {[+(16)TF(t/6).&(16)-(16)TF(t/10).-TF(t/8)..][-(16)TF(t/6)[&(16)+(16)TF(t/10).].]}',
-    'K(c)>M(t, i): c<3 = K(c+1): 0.7-t/10, B(0.3): 0.3+t/10',
-    'K(t): t<3 = K(t+1): 0.3+t/10, : 0.7-t/10',
-    'K(t): t>=3 = [&&\\B(0.3)]/(120)[&&\\B(0.24)]/(120)[&&B(0.27)]',
-    '~> K(t) = [&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]/(120)[&&F(0.3+t/10)]',
-    'B(s) = B(s*0.9+0.1)',
-    '~> B(s) = {[-(67.5)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).+(45)F(s).]}',
-], '32', 157120112, '', 'F+-&^/\\{}', 0.16, {});
-let renderer = new Renderer(toe, 6, 0, 3, 3, 0);
+let welcomeSystem = new LSystem('-(3)A(0.06, 4)',
+[
+    'A(r, t): t<=0 && r>=AThreshold = F(0.78, 2.1)K(0)',
+    'A(r, t): r>=AThreshold = [&A(r-0.15, 2)][^I(3)]',
+    'A(r, t): t>0 = A(r+0.06, t-1)',
+    'A(r, t) = F(0.12, 0.6)T[-L(0.06, maxLSize)]/(180)[-L(0.06, maxLSize)]/(90)A(r, 4)',
+    'I(t): t>0 = F(0.24, 0.84)T[-L(0.06, maxLSize/3)]/(137.508)I(t-1)',
+    'I(t) = F(0.48, 1.44)K(0)',
+    'K(p): p<maxKSize = K(p+0.25)',
+    'L(r, lim): r<lim = L(r+0.02, lim)',
+    'F(l, lim): l<lim = F(l+0.12, lim)'
+], 15, 0, 'AI', '', -0.2, {
+    'AThreshold': '0.96',
+    'maxKSize': '3',
+    'maxLSize': '0.68'
+},
+[
+    '~> K(p): p<1 = {[w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)w(p/5, 42)]F(p/10+0.1)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)]}',
+    '~> K(p): p<1.5 = {[w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)w(0.2, 42)]F(p/10+0.1)[k(p/4, p*18)k(p/4, p*18)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p/4, p*18-3)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-6)k(p*0.23, p*18-6)k(p*0.24, p*18-6)k(p*0.24, p*18-9)k(p*0.23, p*18-15)][o(p*0.22, p*17.5)]}',
+    '~> K(p) = {[w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)w(0.25, 42)]F(p/10+0.1)[k(1.5/4, p*18)k(1.5/4, p*18)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5/4, p*18-3)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.23, p*18-6)k(1.5*0.24, p*18-6)k(1.5*0.24, p*18-9)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-15)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.23, p*18-18)k(1.5*0.24, p*18-15)][o(1.5/4, p*22.5)o(1.5*0.22, p*17.5)o(1.5*0.18, p*10)]}',
+    '~> w(p, a): p<0.1 = [--(a)F(0.2).+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)+++(a)F(0.2).^+(a)F(0.2).]/[--(a)F(0.2)[+++(a)F(0.2).].]',
+    '~> w(p, a): p<0.2 = [--(a)F(0.2).+++F(0.2).^+F(0.2).]/[--(a)F(0.2)+++F(0.2).^+F(0.2).]/[--(a)F(0.2)+++F(0.2).^+F(0.2).]/[--(a)F(0.2)[+++F(0.2).].]',
+    '~> w(p, a): p<0.25 = [--(a)F(p).++F(p).^F(p).]/[--(a)F(p)++F(p).^F(p).]/[--(a)F(p)++F(p).^F(p).]/[--(a)F(p)[++F(p).].]',
+    '~> w(p, a) = [--(a)F(p).++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)++F(p).^-F(p).]/[--(a)F(p)[++F(p).].]',
+    '~> k(p, a): p<0.3 = [---(a)F(p/2).+^F(p*2).+&F(p).][---(a)F(p/2)[+&F(p*2)[+^F(p).].].]/(137.508)',
+    '~> k(p, a) = [---(a)F(p/2).+^F(p*2).&F(p).][---(a)F(p/2)[+&F(p*2)[^F(p).].].]/(137.508)',
+    '~> o(p, a) = [-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]//[-(a)F(p).]',
+    '~> L(p, lim): p<=maxLSize/4 = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].].[^F(p).F(p).^-F(p).&&-F(p).&F(p).][F(p)[-F(p)[F(p)[-F(p)[F(p)[-F(p).].].].].].]}',
+    '~> L(p, lim): p<=maxLSize/3 = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&-F(p).][F(p)[-F(p)[F(p)[-F(p)[-F(p)..].].].].]}',
+    '~> L(p, lim) = {T(4*p^2)[&F(p).F(p).&-F(p).^^-F(p).^--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].].[^F(p).F(p).^-F(p).&&-F(p).&--F(p).][F(p)[-F(p)[F(p)[-F(p)[--F(p)..].].].].]}'
+]);
+
+let renderer = new Renderer(welcomeSystem, 6, 0, 0, 'max(3.75, min(lv/4, 5))',
+0, 0.15, 0, true);
 let globalRNG = new Xorshift(Date.now());
 let contentsTable = [0, 1, 2, 5, 7, 10];
 let manualSystems =
@@ -3393,13 +3351,33 @@ let manualSystems =
     },
     9:
     {
-        system: toe,
+        system: welcomeSystem,
         config: ['6', '3', '3', '0', false]
     }
 };
 let tmpSystem = null;
 let tmpSystemName = getLoc('welcomeSystemName');
 let tmpSystemDesc = getLoc('welcomeSystemDesc');
+
+let testSystem = new LSystem('\\(45)A(0.04, 3)',
+[
+    'A(r, t): t>0 = A(r+0.02, t-1)',
+    'A(r, t) = F(0.05)[-&(45)L(0.02)][-^(45)L(0.02)]/(137.508)A(r, 3)',
+    'F(l): l<FMaxSize = F(l+0.05)',
+    'L(s): s<LMaxSize = L(s+0.02)',
+    '~> #= Model specification',
+    '~> L(s) = {F(s/4)T(4*s)[\\(90-480*s)&(45)F(s/6).&F(s/3).^^F(s/3).^F(s/3).^F(s/3).^F(s/6).][F(s)..].[/(90-480*s)^(45)F(s/6).^F(s/3).&&F(s/3).&F(s/3).&F(s/3).&F(s/6).][F(s)..]}',
+], 30, 0, 'A', '+-&^/\\T', 0, {
+    'FMaxSize': '0.3',
+    'LMaxSize': '0.12'
+});
+let testCamera = [
+    1,
+    0,
+    0.625,
+    0,
+    true
+];
 
 var l, ts, delay;
 // Variable controls
@@ -3662,6 +3640,14 @@ var getUpgradeListDelegate = () =>
     createWorldMenu().show());
     theoryButton.row = 2;
     theoryButton.column = 0;
+    let testButton = createButton(getLoc('btnLoadTest'), () =>
+    {
+        renderer.constructSystem = testSystem;
+        renderer.configureStaticCamera(...testCamera);
+    });
+    testButton.row = 2;
+    testButton.column = 1;
+    testButton.isVisible = () => testSystem ? true : false;
     let resumeButton = createButton(Localization.format(getLoc('btnResume'),
     tmpSystemName), () =>
     {
@@ -3759,7 +3745,8 @@ var getUpgradeListDelegate = () =>
                         cfgButton,
                         slButton,
                         manualButton,
-                        theoryButton
+                        theoryButton,
+                        testButton
                     ]
                 })
             ]
@@ -4435,7 +4422,7 @@ let createVariableMenu = (variables) =>
 
 let createSystemMenu = () =>
 {
-    let values = renderer.system.object;
+    let values = renderer.system.toJSON();
     let tmpAxiom = values.axiom;
     let axiomEntry = ui.createEntry
     ({
@@ -4463,14 +4450,23 @@ let createSystemMenu = () =>
         }
     });
     let tmpRules = values.rules;
+    let ruleNumbers = [];
     let ruleEntries = [];
     let ruleMoveBtns = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
+        ruleNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
         ruleEntries.push(ui.createEntry
         ({
             row: i,
-            column: 0,
+            column: 1,
             text: tmpRules[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -4483,7 +4479,7 @@ let createSystemMenu = () =>
             ruleMoveBtns.push(ui.createButton
             ({
                 row: i,
-                column: 1,
+                column: 2,
                 text: getLoc('btnUp'),
                 heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
@@ -4500,14 +4496,14 @@ let createSystemMenu = () =>
     }
     let rulesLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        text: Localization.format(getLoc('labelRules'), tmpRules.length),
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let ruleStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*'],
-        children: [...ruleEntries, ...ruleMoveBtns]
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...ruleNumbers, ...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
     ({
@@ -4520,10 +4516,18 @@ let createSystemMenu = () =>
             Sound.playClick();
             let i = ruleEntries.length;
             tmpRules[i] = '';
+            ruleNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
             ruleEntries.push(ui.createEntry
             ({
                 row: i,
-                column: 0,
+                column: 1,
                 text: tmpRules[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -4536,7 +4540,7 @@ let createSystemMenu = () =>
                 ruleMoveBtns.push(ui.createButton
                 ({
                     row: i,
-                    column: 1,
+                    column: 2,
                     text: getLoc('btnUp'),
                     heightRequest: SMALL_BUTTON_HEIGHT,
                     onClicked: () =>
@@ -4552,7 +4556,119 @@ let createSystemMenu = () =>
             }
             rulesLabel.text = Localization.format(getLoc('labelRules'),
             ruleEntries.length);
-            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
+            ruleStack.children = [...ruleNumbers, ...ruleEntries,
+            ...ruleMoveBtns];
+        }
+    });
+    let tmpModels = values.models;
+    let modelNumbers = [];
+    let modelEntries = [];
+    let modelMoveBtns = [];
+    for(let i = 0; i < tmpModels.length; ++i)
+    {
+        modelNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
+        modelEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 1,
+            text: tmpModels[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpModels[i] = nt;
+            }
+        }));
+        if(i)
+        {
+            modelMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 2,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpModel = tmpModels[i];
+                    tmpModels[i] = tmpModels[i - 1];
+                    tmpModels[i - 1] = tmpModel;
+                    modelEntries[i - 1].text = tmpModels[i - 1];
+                    modelEntries[i].text = tmpModels[i];
+                }
+            }));
+        }
+    }
+    let modelsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelModels'), tmpModels.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let modelStack = ui.createGrid
+    ({
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...modelNumbers, ...modelEntries, ...modelMoveBtns]
+    });
+    let addModelButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = modelEntries.length;
+            tmpModels[i] = '';
+            modelNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
+            modelEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 1,
+                text: tmpModels[i],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpModels[i] = nt;
+                }
+            }));
+            if(i)
+            {
+                modelMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 2,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpModel = tmpModels[i];
+                        tmpModels[i] = tmpModels[i - 1];
+                        tmpModels[i - 1] = tmpModel;
+                        modelEntries[i - 1].text = tmpModels[i - 1];
+                        modelEntries[i].text = tmpModels[i];
+                    }
+                }));
+            }
+            modelsLabel.text = Localization.format(getLoc('labelModels'),
+            modelEntries.length);
+            modelStack.children = [...modelNumbers, ...modelEntries,
+            ...modelMoveBtns];
         }
     });
     let tmpIgnore = values.ignoreList || '';
@@ -4689,6 +4805,16 @@ let createSystemMenu = () =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
+                                    modelsLabel,
+                                    addModelButton
+                                ]
+                            }),
+                            modelStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelIgnored'),
@@ -4753,7 +4879,8 @@ let createSystemMenu = () =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                tmpTropism, Object.fromEntries(tmpVars));
+                                tmpTropism, Object.fromEntries(tmpVars),
+                                tmpModels);
                                 if(tmpSystem)
                                 {
                                     tmpSystem = null;
@@ -4771,15 +4898,34 @@ let createSystemMenu = () =>
                             onClicked: () =>
                             {
                                 Sound.playClick();
-                                let values = new LSystem().object;
+                                let values = new LSystem().toJSON();
                                 axiomEntry.text = values.axiom;
                                 angleEntry.text = values.turnAngle.toString();
                                 tmpVars = Object.entries(values.variables);
                                 tmpRules = values.rules;
+                                ruleNumbers = [];
                                 ruleEntries = [];
+                                ruleMoveBtns = [];
                                 rulesLabel.text = Localization.format(
                                 getLoc('labelRules'), ruleEntries.length);
-                                ruleStack.children = ruleEntries;
+                                ruleStack.children =
+                                [
+                                    ...ruleNumbers,
+                                    ...ruleEntries,
+                                    ...ruleMoveBtns
+                                ];
+                                tmpModels = values.models;
+                                modelNumbers = [];
+                                modelEntries = [];
+                                modelMoveBtns = [];
+                                modelsLabel.text = Localization.format(
+                                getLoc('labelModels'), modelEntries.length);
+                                modelStack.children =
+                                [
+                                    ...modelNumbers,
+                                    ...modelEntries,
+                                    ...modelMoveBtns
+                                ];
                                 ignoreEntry.text = values.ignoreList;
                                 CIEntry.text = values.ctxIgnoreList;
                                 tropismEntry.text = values.tropism.toString();
@@ -4854,7 +5000,7 @@ let createNamingMenu = () =>
                 Sound.playClick();
                 savedSystems.set(title, {
                     desc: savedSystems.get(title).desc,
-                    system: renderer.system.object,
+                    system: renderer.system.toJSON(),
                     config: renderer.staticCamera
                 });
                 tmpSystemName = title;
@@ -4945,7 +5091,7 @@ let createNamingMenu = () =>
                             tmpName += getLoc('duplicateSuffix');
                         savedSystems.set(tmpName, {
                             desc: tmpDesc,
-                            system: renderer.system.object,
+                            system: renderer.system.toJSON(),
                             config: renderer.staticCamera
                         });
                         tmpSystemName = tmpName;
@@ -5053,7 +5199,7 @@ let createSystemClipboardMenu = (values) =>
                         sv.system.rules, sv.system.turnAngle,
                         sv.system.seed, sv.system.ignoreList,
                         sv.system.ctxIgnoreList, sv.system.tropism,
-                        sv.system.variables);
+                        sv.system.variables, sv.system.models);
                         tmpSystem = null;
                         if('config' in sv)
                             renderer.configureStaticCamera(...sv.config);
@@ -5195,14 +5341,23 @@ let createViewMenu = (title, parentMenu) =>
     let tmpRules = [];
     for(let i = 0; i < values.rules.length; ++i)
         tmpRules[i] = values.rules[i];
+    let ruleNumbers = [];
     let ruleEntries = [];
     let ruleMoveBtns = [];
     for(let i = 0; i < tmpRules.length; ++i)
     {
+        ruleNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
         ruleEntries.push(ui.createEntry
         ({
             row: i,
-            column: 0,
+            column: 1,
             text: tmpRules[i],
             clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
             onTextChanged: (ot, nt) =>
@@ -5215,7 +5370,7 @@ let createViewMenu = (title, parentMenu) =>
             ruleMoveBtns.push(ui.createButton
             ({
                 row: i,
-                column: 1,
+                column: 2,
                 text: getLoc('btnUp'),
                 heightRequest: SMALL_BUTTON_HEIGHT,
                 onClicked: () =>
@@ -5232,14 +5387,14 @@ let createViewMenu = (title, parentMenu) =>
     }
     let rulesLabel = ui.createLatexLabel
     ({
-        text: Localization.format(getLoc('labelRules'), ruleEntries.length),
+        text: Localization.format(getLoc('labelRules'), tmpRules.length),
         verticalTextAlignment: TextAlignment.CENTER,
         margin: new Thickness(0, 12)
     });
     let ruleStack = ui.createGrid
     ({
-        columnDefinitions: ['7*', '1*'],
-        children: [...ruleEntries, ...ruleMoveBtns]
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...ruleNumbers, ...ruleEntries, ...ruleMoveBtns]
     });
     let addRuleButton = ui.createButton
     ({
@@ -5252,10 +5407,18 @@ let createViewMenu = (title, parentMenu) =>
             Sound.playClick();
             let i = ruleEntries.length;
             tmpRules[i] = '';
+            ruleNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
             ruleEntries.push(ui.createEntry
             ({
                 row: i,
-                column: 0,
+                column: 1,
                 text: tmpRules[i],
                 clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
                 onTextChanged: (ot, nt) =>
@@ -5268,7 +5431,7 @@ let createViewMenu = (title, parentMenu) =>
                 ruleMoveBtns.push(ui.createButton
                 ({
                     row: i,
-                    column: 1,
+                    column: 2,
                     text: getLoc('btnUp'),
                     heightRequest: SMALL_BUTTON_HEIGHT,
                     onClicked: () =>
@@ -5284,7 +5447,121 @@ let createViewMenu = (title, parentMenu) =>
             }
             rulesLabel.text = Localization.format(getLoc('labelRules'),
             ruleEntries.length);
-            ruleStack.children = [...ruleEntries, ...ruleMoveBtns];
+            ruleStack.children = [...ruleNumbers, ...ruleEntries,
+            ...ruleMoveBtns];
+        }
+    });
+    let tmpModels = [];
+    for(let i = 0; i < values.models.length; ++i)
+        tmpModels[i] = values.models[i];
+    let modelNumbers = [];
+    let modelEntries = [];
+    let modelMoveBtns = [];
+    for(let i = 0; i < tmpModels.length; ++i)
+    {
+        modelNumbers.push(ui.createLabel
+        ({
+            row: i, column: 0,
+            horizontalOptions: LayoutOptions.END,
+            verticalOptions: LayoutOptions.CENTER,
+            text: String(i+1),
+            fontSize: 14
+        }));
+        modelEntries.push(ui.createEntry
+        ({
+            row: i,
+            column: 1,
+            text: tmpModels[i],
+            clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+            onTextChanged: (ot, nt) =>
+            {
+                tmpModels[i] = nt;
+            }
+        }));
+        if(i)
+        {
+            modelMoveBtns.push(ui.createButton
+            ({
+                row: i,
+                column: 2,
+                text: getLoc('btnUp'),
+                heightRequest: SMALL_BUTTON_HEIGHT,
+                onClicked: () =>
+                {
+                    Sound.playClick();
+                    let tmpModel = tmpModels[i];
+                    tmpModels[i] = tmpModels[i - 1];
+                    tmpModels[i - 1] = tmpModel;
+                    modelEntries[i - 1].text = tmpModels[i - 1];
+                    modelEntries[i].text = tmpModels[i];
+                }
+            }));
+        }
+    }
+    let modelsLabel = ui.createLatexLabel
+    ({
+        text: Localization.format(getLoc('labelModels'), tmpModels.length),
+        verticalTextAlignment: TextAlignment.CENTER,
+        margin: new Thickness(0, 12)
+    });
+    let modelStack = ui.createGrid
+    ({
+        columnDefinitions: ['auto', '6*', '1*'],
+        children: [...modelNumbers, ...modelEntries, ...modelMoveBtns]
+    });
+    let addModelButton = ui.createButton
+    ({
+        text: getLoc('btnAdd'),
+        row: 0,
+        column: 1,
+        heightRequest: SMALL_BUTTON_HEIGHT,
+        onClicked: () =>
+        {
+            Sound.playClick();
+            let i = modelEntries.length;
+            tmpModels[i] = '';
+            modelNumbers.push(ui.createLabel
+            ({
+                row: i, column: 0,
+                horizontalOptions: LayoutOptions.END,
+                verticalOptions: LayoutOptions.CENTER,
+                text: String(i+1),
+                fontSize: 14
+            }));
+            modelEntries.push(ui.createEntry
+            ({
+                row: i,
+                column: 1,
+                text: tmpModels[i],
+                clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+                onTextChanged: (ot, nt) =>
+                {
+                    tmpModels[i] = nt;
+                }
+            }));
+            if(i)
+            {
+                modelMoveBtns.push(ui.createButton
+                ({
+                    row: i,
+                    column: 2,
+                    text: getLoc('btnUp'),
+                    heightRequest: SMALL_BUTTON_HEIGHT,
+                    onClicked: () =>
+                    {
+                        Sound.playClick();
+                        let tmpModel = tmpModels[i];
+                        tmpModels[i] = tmpModels[i - 1];
+                        tmpModels[i - 1] = tmpModel;
+                        modelEntries[i - 1].text = tmpModels[i - 1];
+                        modelEntries[i].text = tmpModels[i];
+                    }
+                }));
+            }
+            modelsLabel.text = Localization.format(getLoc('labelModels'),
+            modelEntries.length);
+            modelStack.children = [...modelNumbers, ...modelEntries,
+            ...modelMoveBtns];
         }
     });
     let tmpIgnore = values.ignoreList || '';
@@ -5429,6 +5706,16 @@ let createViewMenu = (title, parentMenu) =>
                                 columnDefinitions: ['70*', '30*'],
                                 children:
                                 [
+                                    modelsLabel,
+                                    addModelButton
+                                ]
+                            }),
+                            modelStack,
+                            ui.createGrid
+                            ({
+                                columnDefinitions: ['70*', '30*'],
+                                children:
+                                [
                                     ui.createLatexLabel
                                     ({
                                         text: getLoc('labelIgnored'),
@@ -5535,7 +5822,8 @@ let createViewMenu = (title, parentMenu) =>
                                 Sound.playClick();
                                 renderer.constructSystem = new LSystem(tmpAxiom,
                                 tmpRules, tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                tmpTropism, Object.fromEntries(tmpVars));
+                                tmpTropism, Object.fromEntries(tmpVars),
+                                tmpModels);
                                 tmpSystem = null;
                                 renderer.configureStaticCamera(tmpZE, tmpCX,
                                 tmpCY, tmpCZ, tmpUpright);
@@ -5558,7 +5846,8 @@ let createViewMenu = (title, parentMenu) =>
                                     desc: tmpDesc,
                                     system: new LSystem(tmpAxiom, tmpRules,
                                     tmpAngle, tmpSeed, tmpIgnore, tmpCI,
-                                    tmpTropism, Object.fromEntries(tmpVars)).
+                                    tmpTropism, Object.fromEntries(tmpVars),
+                                    tmpModels).
                                     object,
                                     config: [tmpZE, tmpCX, tmpCY, tmpCZ,
                                     tmpUpright]
@@ -5684,7 +5973,7 @@ let createSaveMenu = () =>
                                 {
                                     title: tmpSystemName,
                                     desc: tmpSystemDesc,
-                                    system: renderer.system.object,
+                                    system: renderer.system.toJSON(),
                                     config: renderer.staticCamera
                                 }));
                                 clipMenu.show();
@@ -5937,18 +6226,56 @@ let createManualMenu = () =>
 
 let createSeqViewMenu = (level) =>
 {
+    let filter = '';
+    let params = true;
     let reconstructionTask =
     {
         start: 0
     };
+    let filterEntry = ui.createEntry
+    ({
+        column: 1,
+        text: filter,
+        clearButtonVisibility: ClearButtonVisibility.WHILE_EDITING,
+        onTextChanged: (ot, nt) =>
+        {
+            filter = nt;
+            reconstructionTask =
+            {
+                start: 0
+            };
+        }
+    });
+    let paramSwitch = ui.createSwitch
+    ({
+        isToggled: params,
+        column: 3,
+        horizontalOptions: LayoutOptions.END,
+        onTouched: (e) =>
+        {
+            if(e.type == TouchType.SHORTPRESS_RELEASED ||
+                e.type == TouchType.LONGPRESS_RELEASED)
+            {
+                Sound.playClick();
+                params = !params;
+                paramSwitch.isToggled = params;
+                reconstructionTask =
+                {
+                    start: 0
+                };
+            }
+        }
+    });
     let updateReconstruction = () =>
     {
         if(!('result' in reconstructionTask) ||
         ('result' in reconstructionTask && reconstructionTask.start))
         {
             reconstructionTask = renderer.system.reconstruct(
-            renderer.levels[level], renderer.levelParams[level],
-            reconstructionTask);
+            {
+                sequence: renderer.levels[level],
+                params: renderer.levelParams[level],
+            }, filter, params, 4, reconstructionTask);
         }
         return reconstructionTask.result;
     }
@@ -6031,6 +6358,29 @@ let createSeqViewMenu = (level) =>
                             ]
                         })
                     })
+                }),
+                ui.createGrid
+                ({
+                    minimumHeightRequest: SMALL_BUTTON_HEIGHT,
+                    columnDefinitions: ['20*', '30*', '35*', '15*'],
+                    children:
+                    [
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelFilter'),
+                            column: 0,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        filterEntry,
+                        ui.createLatexLabel
+                        ({
+                            text: getLoc('labelParams'),
+                            column: 2,
+                            horizontalOptions: LayoutOptions.END,
+                            verticalTextAlignment: TextAlignment.CENTER
+                        }),
+                        paramSwitch
+                    ]
                 }),
                 ui.createBox
                 ({
@@ -6439,17 +6789,17 @@ var getInternalState = () => JSON.stringify
     measurePerformance: measurePerformance,
     debugCamPath: debugCamPath,
     maxCharsPerTick: maxCharsPerTick,
-    renderer: renderer.object,
+    renderer: renderer.toJSON(),
     system: tmpSystem ?
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
-        ...tmpSystem.object
+        ...tmpSystem.toJSON()
     } :
     {
         title: tmpSystemName,
         desc: tmpSystemDesc,
-        ...renderer.system.object
+        ...renderer.system.toJSON()
     },
     savedSystems: Object.fromEntries(savedSystems)
 });
@@ -6496,7 +6846,7 @@ var setInternalState = (stateStr) =>
             tmpSystem = new LSystem(state.system.axiom, state.system.rules,
             state.system.turnAngle, state.system.seed, state.system.ignoreList,
             state.system.ctxIgnoreList, state.system.tropism,
-            state.system.variables);
+            state.system.variables, state.system.models);
         }
         
         if('renderer' in state)
