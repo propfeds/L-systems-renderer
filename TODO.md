@@ -19,8 +19,8 @@
 - [ ] Ask Gilles about changing the spline used in 3D graph
 - Too much hassle to implement, defer them to LG?
   - [ ] Option to use old tropisme
-- [ ] Finish porting LG content
-  - [ ] Models aren't properly saved
+- [x] Finish porting LG content
+  - [x] Models aren't properly saved
 
 ## 1.0: Completed
 
